@@ -4,15 +4,11 @@ import type { ServerStatus, DbEngine, InfraDatabaseStatus, WebsiteStatus } from 
 export interface WorkspaceTable {
   id: Generated<string>;
   name: string;
-  domain: string;
-  plan: Generated<'trial' | 'active' | 'cancelled'>;
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
+  domain: string | null;
   seat_count: Generated<number>;
   contact_count: Generated<number>;
   server_count: Generated<number>;
   db_count: Generated<number>;
-  trial_ends_at: Date | null;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }
@@ -20,10 +16,12 @@ export interface WorkspaceTable {
 export interface UserTable {
   id: Generated<string>;
   workspace_id: string;
-  clerk_user_id: string;
   name: string;
   email: string;
   role: Generated<'admin' | 'member'>;
+  password_hash: string;
+  password_reset_token: string | null;
+  password_reset_expires_at: Date | null;
   last_login_at: Date | null;
   created_at: Generated<Date>;
 }
@@ -111,23 +109,6 @@ export interface AlertTable {
   created_at: Generated<Date>;
 }
 
-export interface UsageMeterTable {
-  id: Generated<string>;
-  workspace_id: string;
-  period_start: Date;
-  period_end: Date;
-  contact_count_peak: Generated<number>;
-  server_count_peak: Generated<number>;
-  db_count_peak: Generated<number>;
-  seat_count_peak: Generated<number>;
-  base_fee: Generated<number>;
-  overage_total: Generated<number>;
-  total_bill: Generated<number>;
-  stripe_invoice_id: string | null;
-  status: Generated<'pending' | 'invoiced' | 'paid' | 'failed'>;
-  created_at: Generated<Date>;
-}
-
 export interface ServerTable {
   id: Generated<string>;
   workspace_id: string;
@@ -156,9 +137,16 @@ export interface InfraDatabaseTable {
   version: string | null;
   host: string | null;
   port: number | null;
+  db_user: string | null;
+  db_password: string | null;
+  database_name: string | null;
+  use_ssl: Generated<boolean>;
   storage_gb: number | null;
   connection_count: number | null;
   replication_lag_s: number | null;
+  memory_used_mb: number | null;
+  connected_clients: number | null;
+  uptime_seconds: number | null;
   status: Generated<InfraDatabaseStatus>;
   last_checked_at: string | null;
   created_at: Generated<string>;
@@ -213,7 +201,6 @@ export interface Database {
   tasks: TaskTable;
   activities: ActivityTable;
   alerts: AlertTable;
-  usage_meters: UsageMeterTable;
   servers: ServerTable;
   infra_databases: InfraDatabaseTable;
   websites: WebsiteTable;
@@ -250,8 +237,6 @@ export type NewActivity = Insertable<ActivityTable>;
 
 export type Alert = Selectable<AlertTable>;
 export type NewAlert = Insertable<AlertTable>;
-
-export type UsageMeter = Selectable<UsageMeterTable>;
 
 export type Server = Selectable<ServerTable>;
 export type NewServer = Insertable<ServerTable>;
