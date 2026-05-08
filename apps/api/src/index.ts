@@ -17,6 +17,7 @@ import { createAlertsRouter } from './routes/alerts';
 import { createBillingRouter } from './routes/billing';
 import { createInternalRouter } from './routes/internal';
 import { createAgentRouter } from './routes/agent';
+import { createServersRouter } from './routes/servers';
 import { logger } from './lib/logger';
 
 const env = apiEnvSchema.parse(process.env);
@@ -43,6 +44,8 @@ app.use('/api/tasks', requireWorkspace, createTasksRouter(db));
 app.use('/api/activity', requireWorkspace, createActivityRouter(db));
 app.use('/api/alerts', requireWorkspace, createAlertsRouter(db));
 app.use('/api/billing', requireWorkspace, createBillingRouter(db, stripe));
+
+app.use('/api/servers', requireWorkspace, createServersRouter(db));
 
 // Internal (cron) — protected by CRON_SECRET header, not Clerk
 app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));
