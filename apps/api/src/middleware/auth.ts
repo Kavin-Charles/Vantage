@@ -68,7 +68,7 @@ export function requireAdmin(
   next: NextFunction,
 ): void {
   const { user } = req as AuthenticatedRequest;
-  if (user.role !== 'admin') {
+  if (!user || user.role !== 'admin') {
     res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
     return;
   }

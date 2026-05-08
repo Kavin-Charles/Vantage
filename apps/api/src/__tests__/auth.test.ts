@@ -58,6 +58,41 @@ describe('createRequireAuth', () => {
     await mw(req, mockRes as never, next);
     expect(next).toHaveBeenCalled();
   });
+
+  it('returns 401 if token is expired', async () => {
+    const token = jwt.sign(
+      { sub: 'user-1', role: 'admin', workspaceId: 'ws-1' },
+      JWT_SECRET,
+      { expiresIn: '-1s' }, // already expired
+    );
+    const { createRequireAuth } = await import('../middleware/auth');
+    const mw = createRequireAuth(mockDb as never, JWT_SECRET);
+    const req = { cookies: { vantage_token: token } } as unknown as Request;
+    await mw(req, mockRes as never, next);
+    expect(mockRes.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 if user not found after valid token', async () => {
+    const token = jwt.sign(
+      { sub: 'deleted-user', role: 'admin', workspaceId: 'ws-1' },
+      JWT_SECRET,
+      { expiresIn: '24h' },
+    );
+    const chainMock = {
+      where: vi.fn().mockReturnThis(),
+      selectAll: vi.fn().mockReturnThis(),
+      executeTakeFirst: vi.fn().mockResolvedValue(undefined), // user not found
+    };
+    mockDb.selectFrom.mockReturnValue(chainMock);
+
+    const { createRequireAuth } = await import('../middleware/auth');
+    const mw = createRequireAuth(mockDb as never, JWT_SECRET);
+    const req = { cookies: { vantage_token: token } } as unknown as Request;
+    await mw(req, mockRes as never, next);
+    expect(mockRes.status).toHaveBeenCalledWith(401);
+    expect(next).not.toHaveBeenCalled();
+  });
 });
 
 describe('requireAdmin', () => {
