@@ -13,10 +13,10 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn('cpu_pct', 'float4')
     .addColumn('mem_pct', 'float4')
     .addColumn('disk_pct', 'float4')
-    .addColumn('uptime_seconds', 'bigint')
+    .addColumn('uptime_seconds', 'integer')
     .addColumn('load_avg_1m', 'float4')
-    .addColumn('net_in_bytes', 'bigint')
-    .addColumn('net_out_bytes', 'bigint')
+    .addColumn('net_in_bytes', 'integer')
+    .addColumn('net_out_bytes', 'integer')
     .addColumn('status', 'varchar(20)', col => col.notNull().defaultTo('offline'))
     .addColumn('last_ping_at', 'timestamptz')
     .addColumn('created_at', 'timestamptz', col => col.notNull().defaultTo(sql`now()`))
@@ -59,16 +59,17 @@ export async function up(db: Kysely<unknown>): Promise<void> {
 
   await db.schema
     .createTable('metrics_snapshots')
-    .addColumn('id', 'uuid', col => col.defaultTo(sql`gen_random_uuid()`))
+    .addColumn('id', 'uuid', col => col.notNull().defaultTo(sql`gen_random_uuid()`))
     .addColumn('server_id', 'uuid', col => col.notNull().references('servers.id').onDelete('cascade'))
     .addColumn('workspace_id', 'uuid', col => col.notNull())
     .addColumn('cpu_pct', 'float4', col => col.notNull())
     .addColumn('mem_pct', 'float4', col => col.notNull())
     .addColumn('disk_pct', 'float4', col => col.notNull())
     .addColumn('load_avg_1m', 'float4', col => col.notNull())
-    .addColumn('net_in_bytes', 'bigint', col => col.notNull())
-    .addColumn('net_out_bytes', 'bigint', col => col.notNull())
+    .addColumn('net_in_bytes', 'integer', col => col.notNull())
+    .addColumn('net_out_bytes', 'integer', col => col.notNull())
     .addColumn('recorded_at', 'timestamptz', col => col.notNull().defaultTo(sql`now()`))
+    .addPrimaryKeyConstraint('metrics_snapshots_pkey', ['id', 'recorded_at'])
     .execute();
 
   // TimescaleDB hypertable

@@ -265,4 +265,5 @@ export type WebsiteUpdate = Updateable<WebsiteTable>;
 export type MetricsSnapshot = Selectable<MetricsSnapshotTable>;
 export type NewMetricsSnapshot = Insertable<MetricsSnapshotTable>;
 export type AlertThreshold = Selectable<AlertThresholdTable>;
+export type NewAlertThreshold = Insertable<AlertThresholdTable>;
 export type AlertThresholdUpdate = Updateable<AlertThresholdTable>;
