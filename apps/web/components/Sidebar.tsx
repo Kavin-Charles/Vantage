@@ -3,12 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
+import { useQuery } from '@tanstack/react-query';
+import { useApiToken } from '@/lib/useApiToken';
+import { apiFetch } from '@/lib/api';
 
 interface NavItem {
   href: string;
   label: string;
   icon: React.ReactNode;
   badge?: { label: string; color: 'green' | 'red' | 'amber' };
+  dot?: boolean;
 }
 
 const crmNav: NavItem[] = [
@@ -153,11 +157,27 @@ function NavLink({ item }: { item: NavItem }) {
         {item.icon}
       </span>
       {item.label}
+      {item.dot && (
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--red)', marginLeft: 'auto', flexShrink: 0 }} />
+      )}
     </Link>
   );
 }
 
 export function Sidebar() {
+  const getToken = useApiToken();
+  const { data: alertData } = useQuery({
+    queryKey: ['alerts-badge'],
+    queryFn: async () => apiFetch<{ data: unknown[]; total: number; error: null }>('/api/alerts?resolved=false&severity=critical&limit=1', { token: await getToken() }),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+  const hasCritical = (alertData?.total ?? 0) > 0;
+
+  const analyticsNavWithBadge = analyticsNav.map(item =>
+    item.href === '/alerts' ? { ...item, dot: hasCritical } : item
+  );
+
   return (
     <div style={{
       width: 'var(--sidebar-w)',
@@ -202,7 +222,7 @@ export function Sidebar() {
         <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, padding: '0 8px', marginBottom: 4 }}>
           General
         </div>
-        {analyticsNav.map(item => <NavLink key={item.href} item={item} />)}
+        {analyticsNavWithBadge.map(item => <NavLink key={item.href} item={item} />)}
       </div>
 
       {/* User */}
