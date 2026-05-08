@@ -6,29 +6,56 @@ interface AlertInsert {
   resource_type: 'server' | 'database' | 'website' | 'crm';
   resource_id: string;
   severity: 'critical' | 'warning' | 'info';
+  message_type: string;
   message: string;
 }
 
 // Track consecutive high readings per resource (2-ping rule)
 const consecutiveCounts = new Map<string, number>();
 
-async function hasOpenAlert(workspaceId: string, resourceId: string, message: string): Promise<boolean> {
+async function hasOpenAlert(
+  workspaceId: string,
+  resourceType: string,
+  resourceId: string,
+  messageType: string,
+): Promise<boolean> {
   const existing = await db
     .selectFrom('alerts')
     .where('workspace_id', '=', workspaceId)
+    .where('resource_type', '=', resourceType as 'server' | 'database' | 'website' | 'crm')
     .where('resource_id', '=', resourceId)
-    .where('message', '=', message)
+    .where('message', '=', messageType)
     .where('resolved', '=', false)
     .selectAll()
     .executeTakeFirst();
   return !!existing;
 }
 
-async function createAlert(alert: AlertInsert): Promise<void> {
-  const exists = await hasOpenAlert(alert.workspace_id, alert.resource_id, alert.message);
-  if (exists) return;
-  await db.insertInto('alerts').values({ ...alert, acknowledged: false, resolved: false }).execute();
-  logger.info({ alert }, 'alert created');
+async function insertAlert(
+  workspaceId: string,
+  severity: 'critical' | 'warning' | 'info',
+  resourceType: 'server' | 'database' | 'website' | 'crm',
+  resourceId: string,
+  messageType: string,
+  humanMessage: string,
+): Promise<void> {
+  const already = await hasOpenAlert(workspaceId, resourceType, resourceId, messageType);
+  if (already) return;
+  // Store messageType in the message column for dedup; human-readable in a comment
+  // We store messageType as the dedup key in `message`, and log the human message
+  await db
+    .insertInto('alerts')
+    .values({
+      workspace_id: workspaceId,
+      resource_type: resourceType,
+      resource_id: resourceId,
+      severity,
+      message: messageType,
+      acknowledged: false,
+      resolved: false,
+    })
+    .execute();
+  logger.info({ workspaceId, resourceType, resourceId, messageType, humanMessage }, 'alert created');
 }
 
 export async function runAlertEval(): Promise<void> {
@@ -46,40 +73,88 @@ export async function runAlertEval(): Promise<void> {
     const diskThresh = thresholds?.disk_pct ?? 80;
     const responseThresh = thresholds?.response_ms ?? 2000;
 
-    // Server alerts — 2-consecutive-ping rule
-    const servers = await db
-      .selectFrom('servers')
-      .where('workspace_id', '=', workspaceId)
-      .selectAll()
+    // Server alerts — read latest metrics_snapshots row per server
+    const snapshots = await db
+      .selectFrom('metrics_snapshots as ms')
+      .innerJoin(
+        db
+          .selectFrom('metrics_snapshots')
+          .select(['server_id', (eb) => eb.fn.max('recorded_at').as('max_recorded_at')])
+          .groupBy('server_id')
+          .as('latest'),
+        (join) =>
+          join
+            .onRef('ms.server_id', '=', 'latest.server_id')
+            .onRef('ms.recorded_at', '=', 'latest.max_recorded_at'),
+      )
+      .innerJoin('servers', 'servers.id', 'ms.server_id')
+      .where('servers.workspace_id', '=', workspaceId)
+      .select([
+        'ms.server_id',
+        'ms.cpu_pct',
+        'ms.mem_pct',
+        'ms.disk_pct',
+        'ms.recorded_at',
+        'servers.workspace_id',
+      ])
       .execute();
 
-    for (const server of servers) {
-      const key = server.id;
+    for (const snapshot of snapshots) {
+      const key = snapshot.server_id;
 
-      if (server.cpu_pct !== null && server.cpu_pct > cpuThresh) {
+      if (snapshot.cpu_pct !== null && snapshot.cpu_pct > cpuThresh) {
         const count = (consecutiveCounts.get(`${key}_cpu`) ?? 0) + 1;
         consecutiveCounts.set(`${key}_cpu`, count);
         if (count >= 2) {
-          const severity = server.cpu_pct > 95 ? 'critical' : 'warning';
-          await createAlert({ workspace_id: workspaceId, resource_type: 'server', resource_id: server.id, severity, message: `CPU usage ${server.cpu_pct}% exceeds threshold` });
+          const severity = snapshot.cpu_pct > 95 ? 'critical' : 'warning';
+          const messageType = severity === 'critical' ? 'cpu_critical' : 'cpu_warning';
+          await insertAlert(
+            workspaceId,
+            severity,
+            'server',
+            snapshot.server_id,
+            messageType,
+            `CPU usage ${snapshot.cpu_pct}% exceeds ${severity} threshold (${cpuThresh}%)`,
+          );
         }
       } else {
         consecutiveCounts.delete(`${key}_cpu`);
       }
 
-      if (server.mem_pct !== null && server.mem_pct > memThresh) {
+      if (snapshot.mem_pct !== null && snapshot.mem_pct > memThresh) {
         const count = (consecutiveCounts.get(`${key}_mem`) ?? 0) + 1;
         consecutiveCounts.set(`${key}_mem`, count);
         if (count >= 2) {
-          await createAlert({ workspace_id: workspaceId, resource_type: 'server', resource_id: server.id, severity: 'warning', message: `Memory usage ${server.mem_pct}% exceeds threshold` });
+          await insertAlert(
+            workspaceId,
+            'warning',
+            'server',
+            snapshot.server_id,
+            'mem_warning',
+            `Memory usage ${snapshot.mem_pct}% exceeds warning threshold (${memThresh}%)`,
+          );
         }
       } else {
         consecutiveCounts.delete(`${key}_mem`);
       }
 
-      if (server.disk_pct !== null && server.disk_pct > diskThresh) {
-        const severity = server.disk_pct > 95 ? 'critical' : 'warning';
-        await createAlert({ workspace_id: workspaceId, resource_type: 'server', resource_id: server.id, severity, message: `Disk usage ${server.disk_pct}% exceeds threshold` });
+      if (snapshot.disk_pct !== null && snapshot.disk_pct > diskThresh) {
+        const count = (consecutiveCounts.get(`${key}_disk`) ?? 0) + 1;
+        consecutiveCounts.set(`${key}_disk`, count);
+        if (count >= 2) {
+          const severity = snapshot.disk_pct > 95 ? 'critical' : 'warning';
+          const messageType = severity === 'critical' ? 'disk_critical' : 'disk_warning';
+          await insertAlert(
+            workspaceId,
+            severity,
+            'server',
+            snapshot.server_id,
+            messageType,
+            `Disk usage ${snapshot.disk_pct}% exceeds ${severity} threshold (${diskThresh}%)`,
+          );
+        }
+      } else {
+        consecutiveCounts.delete(`${key}_disk`);
       }
     }
 
@@ -92,10 +167,43 @@ export async function runAlertEval(): Promise<void> {
 
     for (const site of websites) {
       if (site.status === 'offline') {
-        await createAlert({ workspace_id: workspaceId, resource_type: 'website', resource_id: site.id, severity: 'critical', message: `${site.label ?? site.url} is offline` });
+        await insertAlert(
+          workspaceId,
+          'critical',
+          'website',
+          site.id,
+          'site_down',
+          `${site.label ?? site.url} is offline`,
+        );
       } else if (site.response_ms !== null && site.response_ms > responseThresh) {
-        await createAlert({ workspace_id: workspaceId, resource_type: 'website', resource_id: site.id, severity: 'warning', message: `${site.label ?? site.url} response time ${site.response_ms}ms exceeds threshold` });
+        await insertAlert(
+          workspaceId,
+          'warning',
+          'website',
+          site.id,
+          'site_slow',
+          `${site.label ?? site.url} response time ${site.response_ms}ms exceeds threshold`,
+        );
       }
+    }
+
+    // DB unreachable alerts
+    const offlineDbs = await db
+      .selectFrom('infra_databases')
+      .where('workspace_id', '=', workspaceId)
+      .where('status', '=', 'offline')
+      .select(['id', 'name', 'engine'])
+      .execute();
+
+    for (const db_row of offlineDbs) {
+      await insertAlert(
+        workspaceId,
+        'warning',
+        'database',
+        db_row.id,
+        'db_unreachable',
+        `Database "${db_row.name}" (${db_row.engine}) is unreachable`,
+      );
     }
   }
 }

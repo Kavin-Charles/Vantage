@@ -6,18 +6,25 @@ import { runUsageSnapshot } from './jobs/usage-snapshot';
 
 logger.info('Worker starting');
 
+let shuttingDown = false;
+let inflightJob: Promise<void> | null = null;
+
 let running = false;
 setInterval(async () => {
-  if (running) return;
+  if (shuttingDown || running) return;
   running = true;
-  try {
-    await runWebsitePing();
-    await runAlertEval();
-  } catch (err) {
-    logger.error({ err }, 'job error');
-  } finally {
-    running = false;
-  }
+  inflightJob = (async () => {
+    try {
+      await runWebsitePing();
+      await runAlertEval();
+    } catch (err) {
+      logger.error({ err }, 'job error');
+    } finally {
+      running = false;
+    }
+  })();
+  await inflightJob;
+  inflightJob = null;
 }, 60_000);
 
 // Usage snapshot: daily at midnight UTC
@@ -32,7 +39,10 @@ cron.schedule('0 0 * * *', async () => {
 // Run website ping immediately on start
 runWebsitePing().catch((err: unknown) => logger.error({ err }, 'initial website ping error'));
 
-process.on('SIGTERM', () => {
-  logger.info('Worker shutting down');
+process.on('SIGTERM', async () => {
+  shuttingDown = true;
+  logger.info('SIGTERM received, draining in-flight jobs...');
+  if (inflightJob) await inflightJob;
+  logger.info('Shutdown complete');
   process.exit(0);
 });

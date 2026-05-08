@@ -17,7 +17,7 @@ export async function runWebsitePing(): Promise<void> {
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10_000);
-        const res = await fetch(site.url, { signal: controller.signal, method: 'HEAD' });
+        const res = await fetch(site.url, { signal: controller.signal, method: 'GET' });
         clearTimeout(timeout);
         response_ms = Date.now() - start;
         status = res.ok ? 'online' : 'degraded';
