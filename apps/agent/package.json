@@ -1,0 +1,22 @@
+{
+  "name": "vantage-agent",
+  "version": "1.0.0",
+  "description": "Vantage infrastructure monitoring agent",
+  "main": "dist/index.js",
+  "bin": {
+    "vantage-agent": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "pnpm build"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.2",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
