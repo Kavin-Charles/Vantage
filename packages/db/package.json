@@ -7,10 +7,11 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "db:migrate": "tsx src/migrate.ts",
+    "db:migrate": "tsx --env-file=../../apps/api/.env src/migrate.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@vantage/types": "workspace:*",
     "kysely": "^0.27.0",
     "pg": "^8.11.0"
   },
