@@ -1,4 +1,4 @@
-import { getAuth } from '@clerk/express';
+import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
 import type { Database, User, Workspace } from '@vantage/db';
@@ -8,33 +8,40 @@ export interface AuthenticatedRequest extends Request {
   workspace: Workspace;
 }
 
-export function createRequireWorkspace(db: Kysely<Database>) {
-  return async function requireWorkspace(
+interface JwtPayload {
+  sub: string;
+  role: 'admin' | 'member';
+  workspaceId: string;
+}
+
+export function createRequireAuth(db: Kysely<Database>, jwtSecret: string) {
+  return async function requireAuth(
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
-    const { userId } = getAuth(req);
+    const token = req.cookies['vantage_token'] as string | undefined;
+    if (!token) {
+      res.status(401).json({ data: null, error: { code: 'UNAUTHORIZED' } });
+      return;
+    }
 
-    if (!userId) {
-      res.status(401).json({
-        data: null,
-        error: { code: 'UNAUTHORIZED', message: 'Not authenticated' },
-      });
+    let payload: JwtPayload;
+    try {
+      payload = jwt.verify(token, jwtSecret) as JwtPayload;
+    } catch {
+      res.status(401).json({ data: null, error: { code: 'UNAUTHORIZED' } });
       return;
     }
 
     const user = await db
       .selectFrom('users')
-      .where('clerk_user_id', '=', userId)
+      .where('id', '=', payload.sub)
       .selectAll()
       .executeTakeFirst();
 
     if (!user) {
-      res.status(404).json({
-        data: null,
-        error: { code: 'USER_NOT_FOUND', message: 'User not provisioned' },
-      });
+      res.status(401).json({ data: null, error: { code: 'UNAUTHORIZED' } });
       return;
     }
 
@@ -45,10 +52,7 @@ export function createRequireWorkspace(db: Kysely<Database>) {
       .executeTakeFirst();
 
     if (!workspace) {
-      res.status(404).json({
-        data: null,
-        error: { code: 'WORKSPACE_NOT_FOUND', message: 'Workspace not found' },
-      });
+      res.status(500).json({ data: null, error: { code: 'WORKSPACE_NOT_FOUND' } });
       return;
     }
 
@@ -56,4 +60,17 @@ export function createRequireWorkspace(db: Kysely<Database>) {
     (req as AuthenticatedRequest).workspace = workspace;
     next();
   };
+}
+
+export function requireAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  const { user } = req as AuthenticatedRequest;
+  if (user.role !== 'admin') {
+    res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
+    return;
+  }
+  next();
 }
