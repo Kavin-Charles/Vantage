@@ -49,7 +49,7 @@ export default function ProfilePage() {
           ].map(({ label, value }) => (
             <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: '1px solid var(--border)' }}>
               <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500 }}>{label}</span>
-              <span style={{ fontSize: 13, color: 'var(--text)', fontFamily: label === 'User ID' ? 'monospace' : 'inherit', fontSize: label === 'User ID' ? 11 : 13 } as React.CSSProperties}>{value}</span>
+              <span style={{ color: 'var(--text)', fontFamily: label === 'User ID' ? 'monospace' : 'inherit', fontSize: label === 'User ID' ? 11 : 13 } as React.CSSProperties}>{value}</span>
             </div>
           ))}
         </div>

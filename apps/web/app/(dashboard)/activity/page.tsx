@@ -111,7 +111,7 @@ export default function ActivityPage() {
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--text3)' }}>·</span>
                   <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    {timeAgo(item.created_at as string)}
+                    {timeAgo(item.created_at as unknown as string)}
                   </span>
                 </div>
                 {item.body && (
