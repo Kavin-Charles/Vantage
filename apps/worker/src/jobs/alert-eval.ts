@@ -1,34 +1,43 @@
 import { db } from '../lib/db';
 import { logger } from '../lib/logger';
 
-interface AlertInsert {
-  workspace_id: string;
-  resource_type: 'server' | 'database' | 'website' | 'crm';
-  resource_id: string;
-  severity: 'critical' | 'warning' | 'info';
-  message_type: string;
-  message: string;
+// Track consecutive high readings per resource (2-ping rule)
+// Stores { count, lastRecordedAt } to require distinct snapshots
+const consecutiveCounts = new Map<string, { count: number; lastRecordedAt: string }>();
+
+function shouldFire(key: string, recordedAt: string, required: number): boolean {
+  const entry = consecutiveCounts.get(key);
+  if (!entry || entry.lastRecordedAt === recordedAt) {
+    // Same snapshot or first time — register but don't increment
+    consecutiveCounts.set(key, { count: entry ? entry.count : 1, lastRecordedAt: recordedAt });
+    return entry ? entry.count >= required : false;
+  }
+  // New snapshot — increment
+  const newCount = entry.count + 1;
+  consecutiveCounts.set(key, { count: newCount, lastRecordedAt: recordedAt });
+  return newCount >= required;
 }
 
-// Track consecutive high readings per resource (2-ping rule)
-const consecutiveCounts = new Map<string, number>();
+function resetCount(key: string): void {
+  consecutiveCounts.delete(key);
+}
 
 async function hasOpenAlert(
   workspaceId: string,
   resourceType: string,
   resourceId: string,
-  messageType: string,
+  messagePrefix: string,
 ): Promise<boolean> {
   const existing = await db
     .selectFrom('alerts')
     .where('workspace_id', '=', workspaceId)
     .where('resource_type', '=', resourceType as 'server' | 'database' | 'website' | 'crm')
     .where('resource_id', '=', resourceId)
-    .where('message', '=', messageType)
+    .where('message', 'like', `${messagePrefix}%`)
     .where('resolved', '=', false)
-    .selectAll()
+    .select('id')
     .executeTakeFirst();
-  return !!existing;
+  return existing !== undefined;
 }
 
 async function insertAlert(
@@ -36,13 +45,11 @@ async function insertAlert(
   severity: 'critical' | 'warning' | 'info',
   resourceType: 'server' | 'database' | 'website' | 'crm',
   resourceId: string,
-  messageType: string,
-  humanMessage: string,
+  messagePrefix: string,
+  message: string,
 ): Promise<void> {
-  const already = await hasOpenAlert(workspaceId, resourceType, resourceId, messageType);
+  const already = await hasOpenAlert(workspaceId, resourceType, resourceId, messagePrefix);
   if (already) return;
-  // Store messageType in the message column for dedup; human-readable in a comment
-  // We store messageType as the dedup key in `message`, and log the human message
   await db
     .insertInto('alerts')
     .values({
@@ -50,12 +57,12 @@ async function insertAlert(
       resource_type: resourceType,
       resource_id: resourceId,
       severity,
-      message: messageType,
+      message,
       acknowledged: false,
       resolved: false,
     })
     .execute();
-  logger.info({ workspaceId, resourceType, resourceId, messageType, humanMessage }, 'alert created');
+  logger.info({ workspaceId, resourceType, resourceId, message }, 'alert created');
 }
 
 export async function runAlertEval(): Promise<void> {
@@ -101,60 +108,64 @@ export async function runAlertEval(): Promise<void> {
 
     for (const snapshot of snapshots) {
       const key = snapshot.server_id;
+      const recordedAt = String(snapshot.recorded_at);
 
       if (snapshot.cpu_pct !== null && snapshot.cpu_pct > cpuThresh) {
-        const count = (consecutiveCounts.get(`${key}_cpu`) ?? 0) + 1;
-        consecutiveCounts.set(`${key}_cpu`, count);
-        if (count >= 2) {
+        const cpuKey = `${key}_cpu`;
+        if (shouldFire(cpuKey, recordedAt, 2)) {
           const severity = snapshot.cpu_pct > 95 ? 'critical' : 'warning';
-          const messageType = severity === 'critical' ? 'cpu_critical' : 'cpu_warning';
+          const prefix =
+            severity === 'critical'
+              ? 'CPU usage exceeds critical'
+              : 'CPU usage exceeds warning';
           await insertAlert(
             workspaceId,
             severity,
             'server',
             snapshot.server_id,
-            messageType,
-            `CPU usage ${snapshot.cpu_pct}% exceeds ${severity} threshold (${cpuThresh}%)`,
+            prefix,
+            `${prefix} threshold (${snapshot.cpu_pct.toFixed(1)}%)`,
           );
         }
       } else {
-        consecutiveCounts.delete(`${key}_cpu`);
+        resetCount(`${key}_cpu`);
       }
 
       if (snapshot.mem_pct !== null && snapshot.mem_pct > memThresh) {
-        const count = (consecutiveCounts.get(`${key}_mem`) ?? 0) + 1;
-        consecutiveCounts.set(`${key}_mem`, count);
-        if (count >= 2) {
+        const memKey = `${key}_mem`;
+        if (shouldFire(memKey, recordedAt, 2)) {
           await insertAlert(
             workspaceId,
             'warning',
             'server',
             snapshot.server_id,
-            'mem_warning',
-            `Memory usage ${snapshot.mem_pct}% exceeds warning threshold (${memThresh}%)`,
+            'Memory usage exceeds warning',
+            `Memory usage exceeds warning threshold (${snapshot.mem_pct.toFixed(1)}%)`,
           );
         }
       } else {
-        consecutiveCounts.delete(`${key}_mem`);
+        resetCount(`${key}_mem`);
       }
 
       if (snapshot.disk_pct !== null && snapshot.disk_pct > diskThresh) {
-        const count = (consecutiveCounts.get(`${key}_disk`) ?? 0) + 1;
-        consecutiveCounts.set(`${key}_disk`, count);
-        if (count >= 2) {
+        const diskKey = `${key}_disk`;
+        if (shouldFire(diskKey, recordedAt, 2)) {
           const severity = snapshot.disk_pct > 95 ? 'critical' : 'warning';
-          const messageType = severity === 'critical' ? 'disk_critical' : 'disk_warning';
+          const prefix =
+            severity === 'critical'
+              ? 'Disk usage exceeds critical'
+              : 'Disk usage exceeds warning';
           await insertAlert(
             workspaceId,
             severity,
             'server',
             snapshot.server_id,
-            messageType,
-            `Disk usage ${snapshot.disk_pct}% exceeds ${severity} threshold (${diskThresh}%)`,
+            prefix,
+            `${prefix} threshold (${snapshot.disk_pct.toFixed(1)}%)`,
           );
         }
       } else {
-        consecutiveCounts.delete(`${key}_disk`);
+        resetCount(`${key}_disk`);
       }
     }
 
@@ -172,8 +183,8 @@ export async function runAlertEval(): Promise<void> {
           'critical',
           'website',
           site.id,
-          'site_down',
-          `${site.label ?? site.url} is offline`,
+          'Website is down',
+          `Website is down (HTTP ${site.status})`,
         );
       } else if (site.response_ms !== null && site.response_ms > responseThresh) {
         await insertAlert(
@@ -181,8 +192,8 @@ export async function runAlertEval(): Promise<void> {
           'warning',
           'website',
           site.id,
-          'site_slow',
-          `${site.label ?? site.url} response time ${site.response_ms}ms exceeds threshold`,
+          'Website is slow',
+          `Website is slow (${site.response_ms}ms)`,
         );
       }
     }
@@ -201,7 +212,7 @@ export async function runAlertEval(): Promise<void> {
         'warning',
         'database',
         db_row.id,
-        'db_unreachable',
+        'Database',
         `Database "${db_row.name}" (${db_row.engine}) is unreachable`,
       );
     }
