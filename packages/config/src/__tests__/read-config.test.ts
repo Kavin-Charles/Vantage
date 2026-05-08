@@ -7,11 +7,13 @@ describe('readConfig', () => {
   let tmpDir: string;
   let configPath: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vantage-config-'));
     configPath = path.join(tmpDir, 'vantage.config.json');
     process.env['CONFIG_PATH'] = configPath;
-    // Clear singleton between tests - import fresh module each time
+    // Reset singleton before each test
+    const { _resetConfig } = await import('../read-config');
+    _resetConfig();
   });
 
   afterEach(() => {
@@ -27,8 +29,7 @@ describe('readConfig', () => {
       databases: [],
     };
     fs.writeFileSync(configPath, JSON.stringify(raw));
-    const { readConfig, _resetConfig } = await import('../read-config');
-    _resetConfig();
+    const { readConfig } = await import('../read-config');
     const cfg = readConfig();
     expect(cfg.app.name).toBe('TestCo');
     expect(cfg.features.crm).toBe(true);
@@ -36,15 +37,15 @@ describe('readConfig', () => {
 
   it('throws on missing required field', async () => {
     fs.writeFileSync(configPath, JSON.stringify({ app: {} }));
-    const { readConfig, _resetConfig } = await import('../read-config');
-    _resetConfig();
+    const { readConfig } = await import('../read-config');
     expect(() => readConfig()).toThrow();
   });
 
   it('throws if config file missing', async () => {
-    const { readConfig, _resetConfig } = await import('../read-config');
-    _resetConfig();
+    // Set invalid path BEFORE singleton has been touched (already reset in beforeEach)
     process.env['CONFIG_PATH'] = '/nonexistent/path.json';
+    const { readConfig, _resetConfig } = await import('../read-config');
+    _resetConfig(); // reset again so the new path is used
     expect(() => readConfig()).toThrow();
   });
 });
