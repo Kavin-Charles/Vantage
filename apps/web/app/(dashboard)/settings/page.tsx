@@ -1,4 +1,10 @@
-import { Topbar } from '@/components/Topbar';
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+
 export default function SettingsPage() {
-  return <><Topbar /><div style={{ padding: 24 }}><p style={{ color: 'var(--text2)' }}>Settings — coming soon</p></div></>;
+  const router = useRouter();
+  useEffect(() => { router.replace('/settings/profile'); }, [router]);
+  return null;
 }
