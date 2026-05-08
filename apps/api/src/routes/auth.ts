@@ -37,49 +37,59 @@ export function createAuthRouter(
     }
     const { email, password } = parsed.data;
 
-    const user = await db
-      .selectFrom('users')
-      .where('email', '=', email)
-      .selectAll()
-      .executeTakeFirst();
+    try {
+      const user = await db
+        .selectFrom('users')
+        .where('email', '=', email)
+        .selectAll()
+        .executeTakeFirst();
 
-    if (!user) {
-      res.status(401).json({ data: null, error: { code: 'INVALID_CREDENTIALS' } });
-      return;
+      // Always run bcrypt.compare to prevent timing-based email enumeration
+      const DUMMY_HASH = '$2b$12$invalidhashpadding0000000000000000000000000000000000000';
+      const valid = user
+        ? await bcrypt.compare(password, user.password_hash)
+        : await bcrypt.compare(password, DUMMY_HASH);
+
+      if (!user || !valid) {
+        res.status(401).json({ data: null, error: { code: 'INVALID_CREDENTIALS' } });
+        return;
+      }
+
+      await db
+        .updateTable('users')
+        .set({ last_login_at: new Date() })
+        .where('id', '=', user.id)
+        .execute();
+
+      const token = jwt.sign(
+        { sub: user.id, role: user.role, workspaceId: user.workspace_id },
+        jwtSecret,
+        { expiresIn: '24h' },
+      );
+
+      res.cookie('vantage_token', token, {
+        httpOnly: true,
+        secure: process.env['NODE_ENV'] === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+
+      res.json({ data: { id: user.id, name: user.name, email: user.email, role: user.role }, error: null });
+    } catch (err) {
+      logger.error({ err }, 'POST /login error');
+      res.status(500).json({ data: null, error: { code: 'INTERNAL_ERROR' } });
     }
-
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) {
-      res.status(401).json({ data: null, error: { code: 'INVALID_CREDENTIALS' } });
-      return;
-    }
-
-    // Update last_login_at
-    await db
-      .updateTable('users')
-      .set({ last_login_at: new Date() })
-      .where('id', '=', user.id)
-      .execute();
-
-    const token = jwt.sign(
-      { sub: user.id, role: user.role, workspaceId: user.workspace_id },
-      jwtSecret,
-      { expiresIn: '24h' },
-    );
-
-    res.cookie('vantage_token', token, {
-      httpOnly: true,
-      secure: process.env['NODE_ENV'] === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-
-    res.json({ data: { id: user.id, name: user.name, email: user.email, role: user.role }, error: null });
   });
 
   // POST /api/auth/logout
   router.post('/logout', (_req, res) => {
-    res.clearCookie('vantage_token');
+    res.clearCookie('vantage_token', {
+      httpOnly: true,
+      secure: process.env['NODE_ENV'] === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
     res.json({ data: null, error: null });
   });
 
@@ -99,18 +109,23 @@ export function createAuthRouter(
       return;
     }
 
-    const user = await db
-      .selectFrom('users')
-      .where('id', '=', payload.sub)
-      .select(['id', 'name', 'email', 'role', 'workspace_id'])
-      .executeTakeFirst();
+    try {
+      const user = await db
+        .selectFrom('users')
+        .where('id', '=', payload.sub)
+        .select(['id', 'name', 'email', 'role', 'workspace_id'])
+        .executeTakeFirst();
 
-    if (!user) {
-      res.status(401).json({ data: null, error: { code: 'UNAUTHORIZED' } });
-      return;
+      if (!user) {
+        res.status(401).json({ data: null, error: { code: 'UNAUTHORIZED' } });
+        return;
+      }
+
+      res.json({ data: user, error: null });
+    } catch (err) {
+      logger.error({ err }, 'GET /me db error');
+      res.status(500).json({ data: null, error: { code: 'INTERNAL_ERROR' } });
     }
-
-    res.json({ data: user, error: null });
   });
 
   // POST /api/auth/forgot
