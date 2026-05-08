@@ -23,6 +23,9 @@ export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema.dropTable('usage_meters').ifExists().execute();
 
   // Auth columns on users
+  // NOTE: Existing users get password_hash = '' (invalid hash).
+  // After running this migration, all existing users must have their
+  // passwords reset via POST /api/users/:id/reset-password (admin).
   await db.schema
     .alterTable('users')
     .addColumn('password_hash', 'text', col => col.notNull().defaultTo(''))
@@ -45,6 +48,9 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .alterTable('infra_databases')
     .addColumn('db_user', 'text')
     .execute();
+  // NOTE: db_password is stored as plaintext. Only store credentials
+  // for databases on trusted internal networks. Restrict DB access to
+  // the Vantage API process only.
   await db.schema
     .alterTable('infra_databases')
     .addColumn('db_password', 'text')
@@ -55,7 +61,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute();
   await db.schema
     .alterTable('infra_databases')
-    .addColumn('use_ssl', 'boolean', col => col.defaultTo(false))
+    .addColumn('use_ssl', 'boolean', col => col.notNull().defaultTo(false))
     .execute();
   await db.schema
     .alterTable('infra_databases')
