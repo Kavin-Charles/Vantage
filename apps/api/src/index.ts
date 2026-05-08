@@ -1,12 +1,13 @@
 import express from 'express';
 import cors from 'cors';
-import { clerkMiddleware } from '@clerk/express';
-import Stripe from 'stripe';
-import { apiEnvSchema } from '@vantage/config';
+import cookieParser from 'cookie-parser';
+import { apiEnvSchema, readConfig } from '@vantage/config';
 import { createDb } from '@vantage/db';
 import { errorHandler } from './middleware/errors';
-import { createRequireWorkspace } from './middleware/auth';
-import { createWebhooksRouter } from './routes/webhooks';
+import { createRequireAuth, requireAdmin } from './middleware/auth';
+import { createAuthRouter } from './routes/auth';
+import { createUsersRouter } from './routes/users';
+import { createConfigRouter } from './routes/config';
 import { createMeRouter } from './routes/me';
 import { createContactsRouter } from './routes/contacts';
 import { createCompaniesRouter } from './routes/companies';
@@ -14,52 +15,63 @@ import { createDealsRouter } from './routes/deals';
 import { createTasksRouter } from './routes/tasks';
 import { createActivityRouter } from './routes/activity';
 import { createAlertsRouter } from './routes/alerts';
-import { createBillingRouter } from './routes/billing';
 import { createInternalRouter } from './routes/internal';
 import { createAgentRouter } from './routes/agent';
 import { createServersRouter } from './routes/servers';
 import { createInfraDatabasesRouter } from './routes/infra-databases';
 import { createWebsitesRouter } from './routes/websites';
 import { createAlertThresholdsRouter } from './routes/alert-thresholds';
+import { seedOnFirstBoot } from './lib/seed';
 import { logger } from './lib/logger';
 
 const env = apiEnvSchema.parse(process.env);
+const config = readConfig();
 const db = createDb(env.DATABASE_URL);
-const stripe = new Stripe(env.STRIPE_SECRET_KEY);
-const requireWorkspace = createRequireWorkspace(db);
+const requireAuth = createRequireAuth(db, env.JWT_SECRET);
 
 const app = express();
 
-app.use(cors({ origin: process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000' }));
-app.use(clerkMiddleware());
-
-// Webhooks need raw body — mount before express.json()
-app.use('/api/webhooks', createWebhooksRouter(db, stripe));
-
+app.use(cors({
+  origin: process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000',
+  credentials: true,
+}));
+app.use(cookieParser());
 app.use(express.json());
 
+// Public routes (no auth)
+app.use('/api/config', createConfigRouter(config));
+app.use('/api/auth', createAuthRouter(db, env.JWT_SECRET, config.smtp));
+
 // Authenticated routes
-app.use('/api/me', requireWorkspace, createMeRouter());
-app.use('/api/contacts', requireWorkspace, createContactsRouter(db));
-app.use('/api/companies', requireWorkspace, createCompaniesRouter(db));
-app.use('/api/deals', requireWorkspace, createDealsRouter(db));
-app.use('/api/tasks', requireWorkspace, createTasksRouter(db));
-app.use('/api/activity', requireWorkspace, createActivityRouter(db));
-app.use('/api/alerts', requireWorkspace, createAlertsRouter(db));
-app.use('/api/billing', requireWorkspace, createBillingRouter(db, stripe));
+app.use('/api/me', requireAuth, createMeRouter());
+app.use('/api/contacts', requireAuth, createContactsRouter(db));
+app.use('/api/companies', requireAuth, createCompaniesRouter(db));
+app.use('/api/deals', requireAuth, createDealsRouter(db));
+app.use('/api/tasks', requireAuth, createTasksRouter(db));
+app.use('/api/activity', requireAuth, createActivityRouter(db));
+app.use('/api/alerts', requireAuth, createAlertsRouter(db));
 
-app.use('/api/servers', requireWorkspace, createServersRouter(db));
-app.use('/api/databases', requireWorkspace, createInfraDatabasesRouter(db));
-app.use('/api/websites', requireWorkspace, createWebsitesRouter(db, env.CRON_SECRET));
-app.use('/api/alert-thresholds', requireWorkspace, createAlertThresholdsRouter(db));
+// Admin only — requireAuth + requireAdmin both applied
+app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 
-// Internal (cron) — protected by CRON_SECRET header, not Clerk
+// Infra routes
+app.use('/api/servers', requireAuth, createServersRouter(db));
+app.use('/api/databases', requireAuth, createInfraDatabasesRouter(db));
+app.use('/api/websites', requireAuth, createWebsitesRouter(db, env.CRON_SECRET));
+app.use('/api/alert-thresholds', requireAuth, createAlertThresholdsRouter(db));
+
+// Internal (cron) — protected by CRON_SECRET, no auth cookie
 app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));
 
-// Agent — protected by agent token, not Clerk
+// Agent — protected by agent token, not cookie auth
 app.use('/api/agent', createAgentRouter(db));
 
 app.use(errorHandler);
+
+// First-boot seeding (non-blocking — errors logged, don't crash)
+seedOnFirstBoot(db, config).catch((err: unknown) => {
+  logger.error({ err }, '[Vantage] First-boot seeding failed');
+});
 
 app.listen(env.PORT, () => {
   logger.info({ port: env.PORT }, 'API server running');
