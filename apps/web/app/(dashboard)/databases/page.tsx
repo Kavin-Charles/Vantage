@@ -12,6 +12,15 @@ import { listInfraDatabases, createInfraDatabase, deleteInfraDatabase } from '@/
 import type { InfraDatabase } from '@vantage/types';
 
 const ENGINES = ['postgres', 'mysql', 'redis', 'clickhouse', 'mongo', 'other'] as const;
+
+const ENGINE_COLOR: Record<string, 'blue' | 'green' | 'red' | 'amber' | 'purple' | 'gray'> = {
+  postgres: 'blue',
+  mysql: 'amber',
+  redis: 'red',
+  clickhouse: 'purple',
+  mongo: 'green',
+  other: 'gray',
+};
 const th: React.CSSProperties = { padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border)' };
 const td: React.CSSProperties = { padding: '12px 16px', fontSize: 13, color: 'var(--text)', borderBottom: '1px solid var(--border)' };
 
@@ -72,7 +81,7 @@ export default function DatabasesPage() {
                   onMouseLeave={e => (e.currentTarget.style.background = '')}
                 >
                   <td style={td}><span style={{ fontWeight: 500 }}>{db.name}</span></td>
-                  <td style={td}><Badge label={db.engine} color="blue" /></td>
+                  <td style={td}><Badge label={db.engine} color={ENGINE_COLOR[db.engine] ?? 'gray'} /></td>
                   <td style={{ ...td, color: 'var(--text2)' }}>{db.host ?? '—'}</td>
                   <td style={{ ...td, color: 'var(--text2)' }}>{db.port ?? '—'}</td>
                   <td style={td}><Badge label={db.status} color={statusColor[db.status] ?? 'gray'} /></td>

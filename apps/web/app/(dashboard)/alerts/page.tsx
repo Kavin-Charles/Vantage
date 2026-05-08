@@ -41,7 +41,7 @@ export default function AlertsPage() {
       if (tab === 'critical') { params.set('resolved', 'false'); params.set('severity', 'critical'); }
       if (tab === 'warning') { params.set('resolved', 'false'); params.set('severity', 'warning'); }
       if (tab === 'info') { params.set('resolved', 'false'); params.set('severity', 'info'); }
-      // 'all' tab: no resolved filter (backend defaults to resolved=false)
+      // 'all' tab: no resolved param — backend returns both resolved and unresolved
       return apiFetch<{ data: Alert[]; total: number; error: null }>(`/api/alerts?${params}`, { token });
     },
     refetchInterval: 30_000,

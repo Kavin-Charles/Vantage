@@ -9,17 +9,20 @@ export function createAlertsRouter(db: Kysely<Database>): ExpressRouter {
   router.get('/', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      const resolved = req.query['resolved'] === 'true';
+      const resolvedParam = req.query['resolved'];
       const severity = req.query['severity'] as string | undefined;
       const limit = Math.min(Number(req.query['limit'] ?? 25), 100);
 
       let query = db
         .selectFrom('alerts')
         .where('workspace_id', '=', workspace.id)
-        .where('resolved', '=', resolved)
         .selectAll()
         .orderBy('created_at', 'desc')
         .limit(limit);
+
+      if (resolvedParam !== undefined) {
+        query = query.where('resolved', '=', resolvedParam === 'true');
+      }
 
       if (severity) {
         const severities = severity.split(',') as Array<'critical' | 'warning' | 'info'>;
