@@ -1,22 +1,22 @@
 import { z } from 'zod';
 
+// Runtime config (vantage.config.json)
+export { readConfig, _resetConfig } from './read-config';
+export type { VantageConfig, DbSeedConfig, SmtpConfig } from './config-schema';
+export { configSchema } from './config-schema';
+
+// API env (process.env — only DB + secrets, no Clerk/Stripe)
 export const apiEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DATABASE_URL: z.string(),
-  REDIS_URL: z.string(),
-  CLERK_SECRET_KEY: z.string(),
-  CLERK_WEBHOOK_SECRET: z.string(),
-  STRIPE_SECRET_KEY: z.string(),
-  STRIPE_WEBHOOK_SECRET: z.string(),
-  AGENT_SIGNING_SECRET: z.string(),
+  JWT_SECRET: z.string(),
   CRON_SECRET: z.string(),
   PORT: z.coerce.number().default(3001),
 });
 
+// Web env
 export const webEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string(),
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string(),
-  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string(),
   NEXT_PUBLIC_API_URL: z.string(),
 });
 
