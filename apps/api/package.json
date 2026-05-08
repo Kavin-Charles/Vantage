@@ -1,0 +1,32 @@
+{
+  "name": "@vantage/api",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clerk/express": "^1.0.0",
+    "kysely": "^0.27.0",
+    "@vantage/config": "workspace:*",
+    "@vantage/db": "workspace:*",
+    "@vantage/types": "workspace:*",
+    "cors": "^2.8.5",
+    "express": "^4.19.0",
+    "pino": "^9.0.0",
+    "stripe": "^15.0.0",
+    "svix": "^1.21.0",
+    "pino-pretty": "^11.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -128,6 +128,13 @@ dist
 # pnpm
 .pnpm-store
 
+# Turbo
+.turbo/
+
+# Misc
+.DS_Store
+Thumbs.db
+
 # yarn v3
 .pnp.*
 .yarn/*
