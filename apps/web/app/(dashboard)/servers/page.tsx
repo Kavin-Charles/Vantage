@@ -137,7 +137,7 @@ export default function ServersPage() {
           <pre style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 12, fontSize: 12, overflow: 'auto' }}>
 {`npm install -g vantage-agent
 VANTAGE_TOKEN=${modal.token} \\
-VANTAGE_API_URL=${process.env['NEXT_PUBLIC_API_URL']} \\
+VANTAGE_API_URL=${process.env['NEXT_PUBLIC_API_URL'] ?? 'https://api.vantage.app'} \\
 vantage-agent`}
           </pre>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>

@@ -52,7 +52,9 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
   const server = data?.data;
   const snapshots = server?.snapshots ?? [];
 
-  function snap(key: keyof MetricsSnapshot): number[] {
+  type NumericMetric = 'cpu_pct' | 'mem_pct' | 'disk_pct' | 'load_avg_1m' | 'net_in_bytes' | 'net_out_bytes';
+
+  function snap(key: NumericMetric): number[] {
     return snapshots.map(s => Number(s[key]) || 0);
   }
 
