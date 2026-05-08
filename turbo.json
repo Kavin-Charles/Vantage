@@ -3,7 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**", "!.next/cache/**"]
+      "outputs": ["dist/**", ".next/**"]
     },
     "dev": {
       "cache": false,
@@ -14,7 +14,8 @@
       "dependsOn": ["^build"]
     },
     "db:migrate": {
-      "cache": false
+      "cache": false,
+      "env": ["DATABASE_URL"]
     }
   }
 }
