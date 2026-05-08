@@ -30,7 +30,7 @@ export function createAlertsRouter(db: Kysely<Database>): ExpressRouter {
       }
 
       const alerts = await query.execute();
-      res.json({ data: alerts, error: null });
+      res.json({ data: alerts, total: alerts.length, error: null });
     } catch (err) {
       next(err);
     }

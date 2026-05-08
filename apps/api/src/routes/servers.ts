@@ -31,7 +31,7 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
       const servers = await db
         .selectFrom('servers')
         .where('workspace_id', '=', workspace.id)
-        .selectAll()
+        .select(['id', 'workspace_id', 'name', 'region', 'ip_address', 'cpu_pct', 'mem_pct', 'disk_pct', 'uptime_seconds', 'load_avg_1m', 'net_in_bytes', 'net_out_bytes', 'status', 'last_ping_at', 'created_at', 'updated_at'])
         .orderBy('created_at', 'desc')
         .execute();
 
@@ -48,7 +48,7 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
         .selectFrom('servers')
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
-        .selectAll()
+        .select(['id', 'workspace_id', 'name', 'region', 'ip_address', 'cpu_pct', 'mem_pct', 'disk_pct', 'uptime_seconds', 'load_avg_1m', 'net_in_bytes', 'net_out_bytes', 'status', 'last_ping_at', 'created_at', 'updated_at'])
         .executeTakeFirst();
 
       if (!server) {
@@ -92,7 +92,8 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
         .executeTakeFirstOrThrow();
 
       // Return raw token once — never stored in plaintext
-      res.status(201).json({ data: { ...server, agent_token: rawToken }, error: null });
+      const { agent_token_hash: _, ...serverWithoutHash } = server;
+      res.status(201).json({ data: { ...serverWithoutHash, agent_token: rawToken }, error: null });
     } catch (err) { next(err); }
   });
 
@@ -113,7 +114,8 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Server not found' } });
         return;
       }
-      res.json({ data: server, error: null });
+      const { agent_token_hash: _h, ...updatedServerWithoutHash } = server;
+      res.json({ data: updatedServerWithoutHash, error: null });
     } catch (err) { next(err); }
   });
 
