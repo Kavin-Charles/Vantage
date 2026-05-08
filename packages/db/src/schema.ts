@@ -1,4 +1,5 @@
 import type { Generated, Insertable, Selectable, Updateable } from 'kysely';
+import type { ServerStatus, DbEngine, InfraDatabaseStatus, WebsiteStatus } from '@vantage/types';
 
 export interface WorkspaceTable {
   id: Generated<string>;
@@ -127,6 +128,82 @@ export interface UsageMeterTable {
   created_at: Generated<Date>;
 }
 
+export interface ServerTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  region: string | null;
+  ip_address: string | null;
+  agent_token_hash: string;
+  cpu_pct: number | null;
+  mem_pct: number | null;
+  disk_pct: number | null;
+  uptime_seconds: number | null;
+  load_avg_1m: number | null;
+  net_in_bytes: number | null;
+  net_out_bytes: number | null;
+  status: Generated<ServerStatus>;
+  last_ping_at: string | null;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
+export interface InfraDatabaseTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  engine: DbEngine;
+  version: string | null;
+  host: string | null;
+  port: number | null;
+  storage_gb: number | null;
+  connection_count: number | null;
+  replication_lag_s: number | null;
+  status: Generated<InfraDatabaseStatus>;
+  last_checked_at: string | null;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
+export interface WebsiteTable {
+  id: Generated<string>;
+  workspace_id: string;
+  url: string;
+  label: string | null;
+  host: string | null;
+  response_ms: number | null;
+  uptime_pct_30d: number | null;
+  ssl_expiry_date: string | null;
+  status: Generated<WebsiteStatus>;
+  last_checked_at: string | null;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
+export interface MetricsSnapshotTable {
+  id: Generated<string>;
+  server_id: string;
+  workspace_id: string;
+  cpu_pct: number;
+  mem_pct: number;
+  disk_pct: number;
+  load_avg_1m: number;
+  net_in_bytes: number;
+  net_out_bytes: number;
+  recorded_at: Generated<string>;
+}
+
+export interface AlertThresholdTable {
+  id: Generated<string>;
+  workspace_id: string;
+  cpu_pct: Generated<number>;
+  mem_pct: Generated<number>;
+  disk_pct: Generated<number>;
+  response_ms: Generated<number>;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -137,6 +214,11 @@ export interface Database {
   activities: ActivityTable;
   alerts: AlertTable;
   usage_meters: UsageMeterTable;
+  servers: ServerTable;
+  infra_databases: InfraDatabaseTable;
+  websites: WebsiteTable;
+  metrics_snapshots: MetricsSnapshotTable;
+  alert_thresholds: AlertThresholdTable;
 }
 
 // Convenience types
@@ -170,3 +252,17 @@ export type Alert = Selectable<AlertTable>;
 export type NewAlert = Insertable<AlertTable>;
 
 export type UsageMeter = Selectable<UsageMeterTable>;
+
+export type Server = Selectable<ServerTable>;
+export type NewServer = Insertable<ServerTable>;
+export type ServerUpdate = Updateable<ServerTable>;
+export type InfraDatabase = Selectable<InfraDatabaseTable>;
+export type NewInfraDatabase = Insertable<InfraDatabaseTable>;
+export type InfraDatabaseUpdate = Updateable<InfraDatabaseTable>;
+export type Website = Selectable<WebsiteTable>;
+export type NewWebsite = Insertable<WebsiteTable>;
+export type WebsiteUpdate = Updateable<WebsiteTable>;
+export type MetricsSnapshot = Selectable<MetricsSnapshotTable>;
+export type NewMetricsSnapshot = Insertable<MetricsSnapshotTable>;
+export type AlertThreshold = Selectable<AlertThresholdTable>;
+export type AlertThresholdUpdate = Updateable<AlertThresholdTable>;

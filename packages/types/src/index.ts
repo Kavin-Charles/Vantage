@@ -137,6 +137,87 @@ export interface UsageMeter {
   created_at: Date;
 }
 
+export type ServerStatus = 'online' | 'degraded' | 'offline' | 'stopped';
+export type DbEngine = 'postgres' | 'mysql' | 'redis' | 'clickhouse' | 'mongo' | 'other';
+export type InfraDatabaseStatus = 'healthy' | 'degraded' | 'offline';
+export type WebsiteStatus = 'online' | 'degraded' | 'offline';
+
+export interface Server {
+  id: string;
+  workspace_id: string;
+  name: string;
+  region: string | null;
+  ip_address: string | null;
+  agent_token_hash: string;
+  cpu_pct: number | null;
+  mem_pct: number | null;
+  disk_pct: number | null;
+  uptime_seconds: number | null;
+  load_avg_1m: number | null;
+  net_in_bytes: number | null;
+  net_out_bytes: number | null;
+  status: ServerStatus;
+  last_ping_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InfraDatabase {
+  id: string;
+  workspace_id: string;
+  name: string;
+  engine: DbEngine;
+  version: string | null;
+  host: string | null;
+  port: number | null;
+  storage_gb: number | null;
+  connection_count: number | null;
+  replication_lag_s: number | null;
+  status: InfraDatabaseStatus;
+  last_checked_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Website {
+  id: string;
+  workspace_id: string;
+  url: string;
+  label: string | null;
+  host: string | null;
+  response_ms: number | null;
+  uptime_pct_30d: number | null;
+  ssl_expiry_date: string | null;
+  status: WebsiteStatus;
+  last_checked_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MetricsSnapshot {
+  id: string;
+  server_id: string;
+  workspace_id: string;
+  cpu_pct: number;
+  mem_pct: number;
+  disk_pct: number;
+  load_avg_1m: number;
+  net_in_bytes: number;
+  net_out_bytes: number;
+  recorded_at: string;
+}
+
+export interface AlertThreshold {
+  id: string;
+  workspace_id: string;
+  cpu_pct: number;
+  mem_pct: number;
+  disk_pct: number;
+  response_ms: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ApiResponse<T> {
   data: T;
   error: null;
