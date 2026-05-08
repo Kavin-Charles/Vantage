@@ -215,6 +215,7 @@ export type WorkspaceUpdate = Updateable<WorkspaceTable>;
 
 export type User = Selectable<UserTable>;
 export type NewUser = Insertable<UserTable>;
+export type UserUpdate = Updateable<UserTable>;
 
 export type Company = Selectable<CompanyTable>;
 export type NewCompany = Insertable<CompanyTable>;
