@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
+import { useConfig } from '@/lib/useConfig';
 
 interface NavItem {
   href: string;
@@ -167,6 +168,7 @@ function NavLink({ item }: { item: NavItem }) {
 export function Sidebar() {
   const getToken = useApiToken();
   const { user, logout } = useAuth();
+  const { data: config } = useConfig();
   const { data: alertData } = useQuery({
     queryKey: ['alerts-badge'],
     queryFn: async () => apiFetch<{ data: unknown[]; total: number; error: null }>('/api/alerts?resolved=false&severity=critical&limit=1', { token: await getToken() }),
@@ -192,38 +194,48 @@ export function Sidebar() {
     }}>
       {/* Logo */}
       <div style={{ padding: '16px 20px 14px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ width: 28, height: 28, background: 'var(--text)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 2L2 14h12L8 2z" fill="white" />
-          </svg>
+        <div style={{ width: 28, height: 28, background: 'var(--text)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          {config?.app.logoUrl && config.app.logoUrl !== '/logo.png' ? (
+            <img src={config.app.logoUrl} alt="logo" style={{ width: 28, height: 28, objectFit: 'cover' }} />
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 2L2 14h12L8 2z" fill="white" />
+            </svg>
+          )}
         </div>
         <span style={{ fontFamily: 'var(--font-instrument-serif), Instrument Serif, serif', fontSize: 18, color: 'var(--text)', letterSpacing: -0.3 }}>
-          Vantage
+          {config?.app.name ?? 'Vantage'}
         </span>
       </div>
 
       {/* CRM */}
-      <div style={{ padding: '14px 12px 6px' }}>
-        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, padding: '0 8px', marginBottom: 4 }}>
-          CRM
+      {(config?.features.crm ?? true) && (
+        <div style={{ padding: '14px 12px 6px' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, padding: '0 8px', marginBottom: 4 }}>
+            CRM
+          </div>
+          {crmNav.map(item => <NavLink key={item.href} item={item} />)}
         </div>
-        {crmNav.map(item => <NavLink key={item.href} item={item} />)}
-      </div>
+      )}
 
       {/* Infrastructure */}
-      <div style={{ padding: '14px 12px 6px' }}>
-        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, padding: '0 8px', marginBottom: 4 }}>
-          Infrastructure
+      {(config?.features.infra ?? true) && (
+        <div style={{ padding: '14px 12px 6px' }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, padding: '0 8px', marginBottom: 4 }}>
+            Infrastructure
+          </div>
+          {infraNav.map(item => <NavLink key={item.href} item={item} />)}
         </div>
-        {infraNav.map(item => <NavLink key={item.href} item={item} />)}
-      </div>
+      )}
 
       {/* General */}
       <div style={{ padding: '14px 12px 6px' }}>
         <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, padding: '0 8px', marginBottom: 4 }}>
           General
         </div>
-        {analyticsNavWithBadge.map(item => <NavLink key={item.href} item={item} />)}
+        {analyticsNavWithBadge
+          .filter(item => item.href !== '/alerts' || (config?.features.alerts ?? true))
+          .map(item => <NavLink key={item.href} item={item} />)}
       </div>
 
       {/* User */}
