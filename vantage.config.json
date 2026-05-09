@@ -1,0 +1,16 @@
+{
+  "app": {
+    "name": "Vantage",
+    "logoUrl": "/logo.png",
+    "domain": "localhost"
+  },
+  "features": {
+    "crm": true,
+    "infra": true,
+    "alerts": true,
+    "analytics": false,
+    "files": false
+  },
+  "smtp": null,
+  "databases": []
+}

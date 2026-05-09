@@ -35,7 +35,9 @@ export async function seedOnFirstBoot(
     .executeTakeFirst();
 
   if (!userCount || Number(userCount.count) === 0) {
-    const password = crypto
+    const isDev = process.env['NODE_ENV'] !== 'production';
+    // Dev: fixed credentials for easy testing. Production: random password printed once.
+    const password = isDev ? 'admin123' : crypto
       .randomBytes(12)
       .toString('base64')
       .replace(/[^a-zA-Z0-9]/g, '')
@@ -54,8 +56,7 @@ export async function seedOnFirstBoot(
       })
       .execute();
 
-    // Print once to stdout — shown only on first boot
-    console.log(`\n[VANTAGE] First boot admin password: ${password}\n`);
+    console.log(`\n[VANTAGE] First boot admin: ${adminEmail} / ${password}\n`);
     logger.info({ email: adminEmail }, '[Vantage] Admin user seeded');
   }
 
