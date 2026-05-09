@@ -123,6 +123,64 @@ export interface PipelineWithStages extends Pipeline {
   stages: (PipelineStage & { fields: StageField[] })[];
 }
 
+export interface ItemGroup {
+  id: string;
+  pipeline_id: string;
+  workspace_id: string;
+  name: string;
+  color: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GroupStage {
+  id: string;
+  group_id: string;
+  name: string;
+  color: string | null;
+  position: number;
+  is_won: boolean;
+  is_lost: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ItemField {
+  id: string;
+  group_id: string;
+  label: string;
+  field_type: FieldType;
+  options: string[] | null;
+  required: boolean;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Item {
+  id: string;
+  workspace_id: string;
+  group_id: string;
+  stage_id: string;
+  title: string;
+  value: number | null;
+  owner_id: string;
+  contact_id: string | null;
+  company_id: string | null;
+  converted_from_id: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+  /** Populated when fetching items list */
+  field_values?: Record<string, string>;
+}
+
+export interface ItemGroupWithStages extends ItemGroup {
+  stages: (GroupStage & { fields: ItemField[] })[];
+  fields: ItemField[];
+}
+
 export interface Task {
   id: UUID;
   workspace_id: UUID;

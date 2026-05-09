@@ -238,6 +238,66 @@ export interface DealFieldValueTable {
   updated_at: Generated<Date>;
 }
 
+export interface ItemGroupTable {
+  id: Generated<string>;
+  pipeline_id: string;
+  workspace_id: string;
+  name: string;
+  color: string | null;
+  position: Generated<number>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface GroupStageTable {
+  id: Generated<string>;
+  group_id: string;
+  name: string;
+  color: string | null;
+  position: Generated<number>;
+  is_won: Generated<boolean>;
+  is_lost: Generated<boolean>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface ItemTable {
+  id: Generated<string>;
+  workspace_id: string;
+  group_id: string;
+  stage_id: string;
+  title: string;
+  value: number | null;
+  owner_id: string;
+  contact_id: string | null;
+  company_id: string | null;
+  converted_from_id: string | null;
+  deleted_at: Date | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface ItemFieldTable {
+  id: Generated<string>;
+  group_id: string;
+  label: string;
+  field_type: FieldType;
+  options: string[] | null;
+  required: Generated<boolean>;
+  position: Generated<number>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface ItemFieldValueTable {
+  id: Generated<string>;
+  item_id: string;
+  field_id: string;
+  value: string;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -256,6 +316,11 @@ export interface Database {
   pipeline_stages: PipelineStageTable;
   stage_fields: StageFieldTable;
   deal_field_values: DealFieldValueTable;
+  item_groups: ItemGroupTable;
+  group_stages: GroupStageTable;
+  items: ItemTable;
+  item_fields: ItemFieldTable;
+  item_field_values: ItemFieldValueTable;
 }
 
 // Convenience types
@@ -318,3 +383,22 @@ export type NewMetricsSnapshot = Insertable<MetricsSnapshotTable>;
 export type AlertThreshold = Selectable<AlertThresholdTable>;
 export type NewAlertThreshold = Insertable<AlertThresholdTable>;
 export type AlertThresholdUpdate = Updateable<AlertThresholdTable>;
+
+export type ItemGroup = Selectable<ItemGroupTable>;
+export type NewItemGroup = Insertable<ItemGroupTable>;
+export type ItemGroupUpdate = Updateable<ItemGroupTable>;
+
+export type GroupStage = Selectable<GroupStageTable>;
+export type NewGroupStage = Insertable<GroupStageTable>;
+export type GroupStageUpdate = Updateable<GroupStageTable>;
+
+export type Item = Selectable<ItemTable>;
+export type NewItem = Insertable<ItemTable>;
+export type ItemUpdate = Updateable<ItemTable>;
+
+export type ItemField = Selectable<ItemFieldTable>;
+export type NewItemField = Insertable<ItemFieldTable>;
+export type ItemFieldUpdate = Updateable<ItemFieldTable>;
+
+export type ItemFieldValue = Selectable<ItemFieldValueTable>;
+export type NewItemFieldValue = Insertable<ItemFieldValueTable>;
