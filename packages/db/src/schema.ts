@@ -1,5 +1,5 @@
 import type { Generated, Insertable, Selectable, Updateable } from 'kysely';
-import type { ServerStatus, DbEngine, InfraDatabaseStatus, WebsiteStatus } from '@vantage/types';
+import type { ServerStatus, DbEngine, InfraDatabaseStatus, WebsiteStatus, FieldType } from '@vantage/types';
 
 export interface WorkspaceTable {
   id: Generated<string>;
@@ -192,8 +192,6 @@ export interface AlertThresholdTable {
   created_at: Generated<string>;
   updated_at: Generated<string>;
 }
-
-export type FieldType = 'text' | 'number' | 'date' | 'select' | 'boolean';
 
 export interface PipelineTable {
   id: Generated<string>;
@@ -402,3 +400,4 @@ export type ItemFieldUpdate = Updateable<ItemFieldTable>;
 
 export type ItemFieldValue = Selectable<ItemFieldValueTable>;
 export type NewItemFieldValue = Insertable<ItemFieldValueTable>;
+export type ItemFieldValueUpdate = Updateable<ItemFieldValueTable>;
