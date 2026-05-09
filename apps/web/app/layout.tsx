@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { DM_Sans, Instrument_Serif } from 'next/font/google';
-import { ClerkProvider } from '@clerk/nextjs';
+import { AuthProvider } from '@/lib/AuthContext';
 import { Providers } from '@/components/Providers';
 import './globals.css';
 
@@ -24,12 +24,16 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
-      <html lang="en" className={`${dmSans.variable} ${instrumentSerif.variable}`}>
-        <body style={{ fontFamily: 'var(--font-dm-sans), DM Sans, sans-serif' }}>
+    <html
+      lang="en"
+      className={`${dmSans.variable} ${instrumentSerif.variable}`}
+      suppressHydrationWarning
+    >
+      <body suppressHydrationWarning>
+        <AuthProvider>
           <Providers>{children}</Providers>
-        </body>
-      </html>
-    </ClerkProvider>
+        </AuthProvider>
+      </body>
+    </html>
   );
 }

@@ -1,0 +1,116 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await apiFetch('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+      router.push('/pipeline');
+    } catch {
+      setError('Invalid email or password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--bg)',
+    }}>
+      <div style={{
+        width: 360,
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        padding: 32,
+      }}>
+        <div style={{ marginBottom: 24, textAlign: 'center' }}>
+          <div style={{
+            width: 40, height: 40, background: 'var(--text)',
+            borderRadius: 10, display: 'inline-flex',
+            alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+          }}>
+            <svg width="22" height="22" viewBox="0 0 16 16" fill="none">
+              <path d="M8 2L2 14h12L8 2z" fill="white" />
+            </svg>
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)' }}>Sign in</div>
+        </div>
+
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              autoFocus
+              style={{
+                width: '100%', padding: '8px 12px', borderRadius: 7,
+                border: '1px solid var(--border)', background: 'var(--bg)',
+                color: 'var(--text)', fontSize: 14, boxSizing: 'border-box',
+              }}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              style={{
+                width: '100%', padding: '8px 12px', borderRadius: 7,
+                border: '1px solid var(--border)', background: 'var(--bg)',
+                color: 'var(--text)', fontSize: 14, boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          {error && (
+            <div style={{ fontSize: 13, color: 'var(--red)', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', borderRadius: 7 }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              padding: '9px 16px', borderRadius: 7, border: 'none',
+              background: 'var(--text)', color: '#fff', fontSize: 14,
+              fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1, marginTop: 4,
+            }}
+          >
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

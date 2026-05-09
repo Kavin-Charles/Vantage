@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserButton } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { apiFetch } from '@/lib/api';
+import { useAuth } from '@/lib/AuthContext';
 
 interface NavItem {
   href: string;
@@ -166,6 +166,7 @@ function NavLink({ item }: { item: NavItem }) {
 
 export function Sidebar() {
   const getToken = useApiToken();
+  const { user, logout } = useAuth();
   const { data: alertData } = useQuery({
     queryKey: ['alerts-badge'],
     queryFn: async () => apiFetch<{ data: unknown[]; total: number; error: null }>('/api/alerts?resolved=false&severity=critical&limit=1', { token: await getToken() }),
@@ -228,7 +229,23 @@ export function Sidebar() {
       {/* User */}
       <div style={{ marginTop: 'auto', padding: 12, borderTop: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 8 }}>
-          <UserButton />
+          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--surface2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: 'var(--text2)', flexShrink: 0 }}>
+            {user ? (user.name ?? user.email)[0].toUpperCase() : '?'}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user?.name ?? user?.email ?? ''}
+            </div>
+          </div>
+          <button
+            onClick={() => void logout()}
+            title="Sign out"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 15 15" fill="none">
+              <path d="M13 7.5H6M10 4.5l3 3-3 3M8 2H2v11h6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
