@@ -1,0 +1,34 @@
+{
+  "app": {
+    "name": "AcmeCo",
+    "logoUrl": "/logo.png",
+    "domain": "app.acmeco.com"
+  },
+  "features": {
+    "crm": true,
+    "infra": true,
+    "alerts": true,
+    "analytics": false,
+    "files": false
+  },
+  "smtp": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "secure": false,
+    "user": "noreply@acmeco.com",
+    "password": "app-password",
+    "from": "AcmeCo <noreply@acmeco.com>"
+  },
+  "databases": [
+    {
+      "name": "Production Postgres",
+      "engine": "postgres",
+      "host": "localhost",
+      "port": 5432,
+      "db_user": "app",
+      "db_password": "secret",
+      "database_name": "prod",
+      "use_ssl": false
+    }
+  ]
+}
