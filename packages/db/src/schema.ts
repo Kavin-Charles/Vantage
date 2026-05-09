@@ -57,12 +57,13 @@ export interface ContactTable {
 export interface DealTable {
   id: Generated<string>;
   workspace_id: string;
+  pipeline_id: string | null;
+  stage_id: string | null;
   contact_id: string | null;
   company_id: string | null;
   owner_id: string;
   name: string;
   value: Generated<number>;
-  stage: Generated<'lead' | 'qualifying' | 'proposal' | 'closing' | 'won' | 'lost'>;
   probability: Generated<number>;
   close_date: Date | null;
   deleted_at: Date | null;
@@ -192,6 +193,51 @@ export interface AlertThresholdTable {
   updated_at: Generated<string>;
 }
 
+export type FieldType = 'text' | 'number' | 'date' | 'select' | 'boolean';
+
+export interface PipelineTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  is_default: Generated<boolean>;
+  position: Generated<number>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface PipelineStageTable {
+  id: Generated<string>;
+  pipeline_id: string;
+  name: string;
+  color: Generated<string>;
+  position: Generated<number>;
+  is_won: Generated<boolean>;
+  is_lost: Generated<boolean>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface StageFieldTable {
+  id: Generated<string>;
+  stage_id: string;
+  name: string;
+  field_type: FieldType;
+  is_required: Generated<boolean>;
+  options: string[] | null;  // jsonb
+  position: Generated<number>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface DealFieldValueTable {
+  id: Generated<string>;
+  deal_id: string;
+  field_id: string;
+  value: string;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -206,6 +252,10 @@ export interface Database {
   websites: WebsiteTable;
   metrics_snapshots: MetricsSnapshotTable;
   alert_thresholds: AlertThresholdTable;
+  pipelines: PipelineTable;
+  pipeline_stages: PipelineStageTable;
+  stage_fields: StageFieldTable;
+  deal_field_values: DealFieldValueTable;
 }
 
 // Convenience types
@@ -228,6 +278,21 @@ export type ContactUpdate = Updateable<ContactTable>;
 export type Deal = Selectable<DealTable>;
 export type NewDeal = Insertable<DealTable>;
 export type DealUpdate = Updateable<DealTable>;
+
+export type Pipeline = Selectable<PipelineTable>;
+export type NewPipeline = Insertable<PipelineTable>;
+export type PipelineUpdate = Updateable<PipelineTable>;
+
+export type PipelineStage = Selectable<PipelineStageTable>;
+export type NewPipelineStage = Insertable<PipelineStageTable>;
+export type PipelineStageUpdate = Updateable<PipelineStageTable>;
+
+export type StageField = Selectable<StageFieldTable>;
+export type NewStageField = Insertable<StageFieldTable>;
+export type StageFieldUpdate = Updateable<StageFieldTable>;
+
+export type DealFieldValue = Selectable<DealFieldValueTable>;
+export type NewDealFieldValue = Insertable<DealFieldValueTable>;
 
 export type Task = Selectable<TaskTable>;
 export type NewTask = Insertable<TaskTable>;
