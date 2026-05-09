@@ -224,7 +224,9 @@ export function Sidebar() {
           <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, padding: '0 8px', marginBottom: 4 }}>
             Infrastructure
           </div>
-          {infraNav.map(item => <NavLink key={item.href} item={item} />)}
+          {infraNav
+            .filter(item => item.href !== '/files' || (config?.features.files ?? true))
+            .map(item => <NavLink key={item.href} item={item} />)}
         </div>
       )}
 
@@ -234,6 +236,7 @@ export function Sidebar() {
           General
         </div>
         {analyticsNavWithBadge
+          .filter(item => item.href !== '/analytics' || (config?.features.analytics ?? true))
           .filter(item => item.href !== '/alerts' || (config?.features.alerts ?? true))
           .map(item => <NavLink key={item.href} item={item} />)}
       </div>
