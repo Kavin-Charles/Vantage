@@ -2,7 +2,7 @@ import { Router } from 'express';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 
-export function createInternalRouter(db: Kysely<Database>, cronSecret: string) {
+export function createInternalRouter(db: Kysely<Database>, cronSecret: string): Router {
   const router = Router();
 
   // Verify cron secret on all internal routes

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { VantageConfig } from '@vantage/config';
 
-export function createConfigRouter(config: VantageConfig) {
+export function createConfigRouter(config: VantageConfig): Router {
   const router = Router();
 
   router.get('/', (_req, res) => {

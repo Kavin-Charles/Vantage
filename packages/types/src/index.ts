@@ -1,7 +1,9 @@
 export type UUID = string;
 
 export type ContactStatus = 'prospect' | 'customer' | 'cold' | 'churned';
+/** @deprecated pipeline stages are now dynamic — use stage_id on Deal */
 export type DealStage = 'lead' | 'qualifying' | 'proposal' | 'closing' | 'won' | 'lost';
+export type FieldType = 'text' | 'number' | 'date' | 'select' | 'boolean';
 export type TaskStatus = 'todo' | 'done';
 export type AlertSeverity = 'critical' | 'warning' | 'info';
 export type UserRole = 'admin' | 'member';
@@ -73,12 +75,52 @@ export interface Deal {
   owner_id: UUID;
   name: string;
   value: number;
-  stage: DealStage;
+  pipeline_id: string | null;
+  stage_id: string | null;
   probability: number;
   close_date: Date | null;
   deleted_at: Date | null;
   created_at: Date;
   updated_at: Date;
+  /** Field values keyed by stage_field.id, included when fetching single deals */
+  field_values?: Record<string, string>;
+}
+
+export interface Pipeline {
+  id: string;
+  workspace_id: string;
+  name: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PipelineStage {
+  id: string;
+  pipeline_id: string;
+  name: string;
+  position: number;
+  color: string | null;
+  is_won: boolean;
+  is_lost: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StageField {
+  id: string;
+  stage_id: string;
+  label: string;
+  field_type: FieldType;
+  options: string[] | null;
+  required: boolean;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PipelineWithStages extends Pipeline {
+  stages: (PipelineStage & { fields: StageField[] })[];
 }
 
 export interface Task {

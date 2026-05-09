@@ -4,20 +4,24 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { FormField, Input, Select } from '@/components/ui/FormField';
-import { useApiToken } from '@/lib/useApiToken';
 import { createDeal, updateDeal } from '@/lib/deals';
-import type { Deal, DealStage } from '@vantage/types';
+import type { Deal, PipelineStage } from '@vantage/types';
 
-const STAGES: DealStage[] = ['lead', 'qualifying', 'proposal', 'closing', 'won', 'lost'];
+interface Props {
+  deal?: Deal;
+  pipelineId: string;
+  stages: PipelineStage[];
+  defaultStageId: string | null;
+  onDone: () => void;
+}
 
-export function DealForm({ deal, defaultStage, onDone }: { deal?: Deal; defaultStage?: DealStage; onDone: () => void }) {
-  const getToken = useApiToken();
+export function DealForm({ deal, pipelineId, stages, defaultStageId, onDone }: Props) {
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: deal?.name ?? '',
     value: deal?.value?.toString() ?? '0',
-    stage: deal?.stage ?? defaultStage ?? 'lead',
+    stage_id: deal?.stage_id ?? defaultStageId ?? stages[0]?.id ?? '',
     probability: deal?.probability?.toString() ?? '0',
     close_date: '',
   });
@@ -29,17 +33,25 @@ export function DealForm({ deal, defaultStage, onDone }: { deal?: Deal; defaultS
     e.preventDefault();
     setLoading(true);
     try {
-      const token = await getToken();
-      const body: Omit<Partial<Deal>, 'close_date'> & { close_date?: string; name: string; stage: DealStage; value: number; probability: number } = {
-        name: form.name,
-        stage: form.stage as DealStage,
-        value: parseFloat(form.value) || 0,
-        probability: parseInt(form.probability) || 0,
-        close_date: form.close_date || undefined,
-      };
-      if (deal) await updateDeal(token, deal.id, body);
-      else await createDeal(token, body);
-      await qc.invalidateQueries({ queryKey: ['deals'] });
+      if (deal) {
+        await updateDeal(deal.id, {
+          name: form.name,
+          stage_id: form.stage_id,
+          value: parseFloat(form.value) || 0,
+          probability: parseInt(form.probability) || 0,
+          close_date: form.close_date || undefined,
+        });
+      } else {
+        await createDeal({
+          name: form.name,
+          pipeline_id: pipelineId,
+          stage_id: form.stage_id,
+          value: parseFloat(form.value) || 0,
+          probability: parseInt(form.probability) || 0,
+          close_date: form.close_date || undefined,
+        });
+      }
+      await qc.invalidateQueries({ queryKey: ['deals', pipelineId] });
       onDone();
     } finally {
       setLoading(false);
@@ -55,8 +67,12 @@ export function DealForm({ deal, defaultStage, onDone }: { deal?: Deal; defaultS
         <Input type="number" min="0" step="0.01" value={form.value} onChange={set('value')} />
       </FormField>
       <FormField label="Stage">
-        <Select value={form.stage} onChange={set('stage')}>
-          {STAGES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+        <Select value={form.stage_id} onChange={set('stage_id')}>
+          {stages.map(s => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
         </Select>
       </FormField>
       <FormField label="Probability (%)">

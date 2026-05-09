@@ -13,7 +13,7 @@ describe('createRequireAuth', () => {
     const json = vi.fn();
     const status = vi.fn().mockReturnValue({ json });
     mockRes = { status, json };
-    next = vi.fn();
+    next = vi.fn() as unknown as NextFunction;
     mockDb = { selectFrom: vi.fn() };
   });
 

@@ -17,7 +17,7 @@ const pageTitles: Record<string, string> = {
   '/settings': 'Settings',
 };
 
-export function Topbar({ action }: { action?: React.ReactNode }) {
+export function Topbar({ action, left }: { action?: React.ReactNode; left?: React.ReactNode }) {
   const pathname = usePathname();
   const segment = '/' + (pathname.split('/')[1] ?? '');
   const title = pageTitles[segment] ?? 'Vantage';
@@ -33,14 +33,17 @@ export function Topbar({ action }: { action?: React.ReactNode }) {
       gap: 16,
       flexShrink: 0,
     }}>
-      <span style={{
-        fontFamily: 'var(--font-instrument-serif), Instrument Serif, serif',
-        fontSize: 20,
-        color: 'var(--text)',
-        flex: 1,
-      }}>
-        {title}
-      </span>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+        {left ?? (
+          <span style={{
+            fontFamily: 'var(--font-instrument-serif), Instrument Serif, serif',
+            fontSize: 20,
+            color: 'var(--text)',
+          }}>
+            {title}
+          </span>
+        )}
+      </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {/* Search */}

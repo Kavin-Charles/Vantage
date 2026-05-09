@@ -25,7 +25,7 @@ export function createAuthRouter(
   db: Kysely<Database>,
   jwtSecret: string,
   smtp: SmtpConfig | null | undefined,
-) {
+): Router {
   const router = Router();
 
   // POST /api/auth/login

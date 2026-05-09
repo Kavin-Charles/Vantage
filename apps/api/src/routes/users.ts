@@ -22,7 +22,7 @@ const resetPasswordSchema = z.object({
   password: z.string().min(8),
 });
 
-export function createUsersRouter(db: Kysely<Database>) {
+export function createUsersRouter(db: Kysely<Database>): Router {
   const router = Router();
 
   // GET /api/users — list all users in workspace
