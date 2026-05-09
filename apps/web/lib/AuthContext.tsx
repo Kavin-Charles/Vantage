@@ -25,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUser = async () => {
+    setIsLoading(true);
     try {
       const res = await apiFetch<{ data: AuthUser }>('/api/auth/me');
       setUser(res.data);
@@ -38,7 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => { void fetchUser(); }, []);
 
   const logout = async () => {
-    await apiFetch('/api/auth/logout', { method: 'POST' });
+    try {
+      await apiFetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // If logout API fails, still clear local state and redirect
+      // The cookie will expire naturally or admin can revoke
+    }
     setUser(null);
     window.location.href = '/login';
   };
