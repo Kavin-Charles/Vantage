@@ -233,8 +233,11 @@ export function Sidebar() {
             {user ? (user.name ?? user.email)[0].toUpperCase() : '?'}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user?.name ?? user?.email ?? ''}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'capitalize' }}>
+              {user?.role ?? ''}
             </div>
           </div>
           <button
