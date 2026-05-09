@@ -22,6 +22,8 @@ import { createServersRouter } from './routes/servers';
 import { createInfraDatabasesRouter } from './routes/infra-databases';
 import { createWebsitesRouter } from './routes/websites';
 import { createAlertThresholdsRouter } from './routes/alert-thresholds';
+import { createItemGroupsRouter } from './routes/item-groups';
+import { createItemsRouter } from './routes/items';
 import { seedOnFirstBoot } from './lib/seed';
 import { logger } from './lib/logger';
 
@@ -53,6 +55,8 @@ app.use('/api/stages', requireAuth, createStageFieldsRouter(db));
 app.use('/api/tasks', requireAuth, createTasksRouter(db));
 app.use('/api/activity', requireAuth, createActivityRouter(db));
 app.use('/api/alerts', requireAuth, createAlertsRouter(db));
+app.use('/api/item-groups', requireAuth, createItemGroupsRouter(db));
+app.use('/api/items', requireAuth, createItemsRouter(db));
 
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
