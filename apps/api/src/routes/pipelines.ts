@@ -1,0 +1,578 @@
+import { Router, type Router as ExpressRouter } from 'express';
+import { z } from 'zod';
+import type { Kysely } from 'kysely';
+import type { Database } from '@vantage/db';
+import type { AuthenticatedRequest } from '../middleware/auth';
+
+// ── Zod schemas ────────────────────────────────────────────────────────────────
+
+const createPipelineSchema = z.object({ name: z.string().min(1) });
+const updatePipelineSchema = z.object({
+  name: z.string().min(1).optional(),
+  is_default: z.boolean().optional(),
+});
+
+const createStageSchema = z.object({
+  name: z.string().min(1),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).default('#6366f1'),
+  position: z.number().int().min(0),
+});
+const updateStageSchema = z.object({
+  name: z.string().min(1).optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  position: z.number().int().min(0).optional(),
+});
+
+const reorderSchema = z.object({ ids: z.array(z.string().uuid()) });
+
+const createFieldSchema = z.object({
+  name: z.string().min(1),
+  field_type: z.enum(['text', 'number', 'date', 'select', 'boolean']),
+  is_required: z.boolean().default(false),
+  options: z.array(z.string()).optional(),
+  position: z.number().int().min(0),
+});
+const updateFieldSchema = z.object({
+  name: z.string().min(1).optional(),
+  field_type: z.enum(['text', 'number', 'date', 'select', 'boolean']).optional(),
+  is_required: z.boolean().optional(),
+  options: z.array(z.string()).optional(),
+  position: z.number().int().min(0).optional(),
+});
+
+// ── Pipelines router ───────────────────────────────────────────────────────────
+
+export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
+  const router = Router();
+
+  // GET / — list all pipelines with stage_count
+  router.get('/', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+
+      const pipelines = await db
+        .selectFrom('pipelines')
+        .where('workspace_id', '=', workspace.id)
+        .selectAll()
+        .orderBy('position', 'asc')
+        .execute();
+
+      // Attach stage_count to each pipeline
+      const counts = await db
+        .selectFrom('pipeline_stages')
+        .select(['pipeline_id', db.fn.count<number>('id').as('stage_count')])
+        .where(
+          'pipeline_id',
+          'in',
+          pipelines.length > 0 ? pipelines.map(p => p.id) : ['__none__'],
+        )
+        .groupBy('pipeline_id')
+        .execute();
+
+      const countMap = new Map(counts.map(c => [c.pipeline_id, Number(c.stage_count)]));
+      const data = pipelines.map(p => ({ ...p, stage_count: countMap.get(p.id) ?? 0 }));
+
+      res.json({ data, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // POST / — create pipeline (auto-creates Won + Lost stages)
+  router.post('/', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const parsed = createPipelineSchema.parse(req.body);
+
+      const pipeline = await db
+        .insertInto('pipelines')
+        .values({ workspace_id: workspace.id, name: parsed.name })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      await db
+        .insertInto('pipeline_stages')
+        .values([
+          { pipeline_id: pipeline.id, name: 'Won', color: '#22c55e', position: 0, is_won: true },
+          { pipeline_id: pipeline.id, name: 'Lost', color: '#ef4444', position: 1, is_lost: true },
+        ])
+        .execute();
+
+      res.status(201).json({ data: pipeline, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // PATCH /:id — update name / is_default
+  router.patch('/:id', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const parsed = updatePipelineSchema.parse(req.body);
+
+      const exists = await db
+        .selectFrom('pipelines')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!exists) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Pipeline not found' } });
+        return;
+      }
+
+      // If setting is_default=true, clear all others first
+      if (parsed.is_default === true) {
+        await db
+          .updateTable('pipelines')
+          .set({ is_default: false, updated_at: new Date() })
+          .where('workspace_id', '=', workspace.id)
+          .where('id', '!=', req.params['id']!)
+          .execute();
+      }
+
+      const pipeline = await db
+        .updateTable('pipelines')
+        .set({ ...parsed, updated_at: new Date() })
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      res.json({ data: pipeline, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // DELETE /:id — blocks if pipeline has deals
+  router.delete('/:id', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+
+      const pipeline = await db
+        .selectFrom('pipelines')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!pipeline) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Pipeline not found' } });
+        return;
+      }
+
+      const dealCount = await db
+        .selectFrom('deals')
+        .where('pipeline_id', '=', req.params['id']!)
+        .where('deleted_at', 'is', null)
+        .select(db.fn.count<number>('id').as('cnt'))
+        .executeTakeFirstOrThrow();
+
+      const n = Number(dealCount.cnt);
+      if (n > 0) {
+        res.status(400).json({
+          data: null,
+          error: {
+            code: 'PIPELINE_HAS_DEALS',
+            message: `Pipeline has ${n} deals. Delete or move them first.`,
+          },
+        });
+        return;
+      }
+
+      await db
+        .deleteFrom('pipelines')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .execute();
+
+      res.json({ data: { id: req.params['id'] }, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // GET /:id/stages — list stages with fields attached
+  router.get('/:id/stages', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+
+      const pipeline = await db
+        .selectFrom('pipelines')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!pipeline) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Pipeline not found' } });
+        return;
+      }
+
+      const stages = await db
+        .selectFrom('pipeline_stages')
+        .where('pipeline_id', '=', req.params['id']!)
+        .selectAll()
+        .orderBy('position', 'asc')
+        .execute();
+
+      // Attach fields to each stage
+      const fields = stages.length > 0
+        ? await db
+            .selectFrom('stage_fields')
+            .where('stage_id', 'in', stages.map(s => s.id))
+            .selectAll()
+            .orderBy('position', 'asc')
+            .execute()
+        : [];
+
+      const fieldsByStage = new Map<string, typeof fields>();
+      for (const f of fields) {
+        const arr = fieldsByStage.get(f.stage_id) ?? [];
+        arr.push(f);
+        fieldsByStage.set(f.stage_id, arr);
+      }
+
+      const data = stages.map(s => ({ ...s, fields: fieldsByStage.get(s.id) ?? [] }));
+      res.json({ data, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // POST /:id/stages — create stage (not is_won/is_lost)
+  router.post('/:id/stages', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const parsed = createStageSchema.parse(req.body);
+
+      const pipeline = await db
+        .selectFrom('pipelines')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!pipeline) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Pipeline not found' } });
+        return;
+      }
+
+      const stage = await db
+        .insertInto('pipeline_stages')
+        .values({ pipeline_id: req.params['id']!, ...parsed })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      res.status(201).json({ data: stage, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // PATCH /:id/stages/:stageId — update name/color/position (rename of won/lost allowed)
+  router.patch('/:id/stages/:stageId', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const parsed = updateStageSchema.parse(req.body);
+
+      const pipeline = await db
+        .selectFrom('pipelines')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!pipeline) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Pipeline not found' } });
+        return;
+      }
+
+      const existing = await db
+        .selectFrom('pipeline_stages')
+        .where('id', '=', req.params['stageId']!)
+        .where('pipeline_id', '=', req.params['id']!)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!existing) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Stage not found' } });
+        return;
+      }
+
+      const stage = await db
+        .updateTable('pipeline_stages')
+        .set({ ...parsed, updated_at: new Date() })
+        .where('id', '=', req.params['stageId']!)
+        .where('pipeline_id', '=', req.params['id']!)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      res.json({ data: stage, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // DELETE /:id/stages/:stageId
+  router.delete('/:id/stages/:stageId', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+
+      const pipeline = await db
+        .selectFrom('pipelines')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!pipeline) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Pipeline not found' } });
+        return;
+      }
+
+      const stage = await db
+        .selectFrom('pipeline_stages')
+        .where('id', '=', req.params['stageId']!)
+        .where('pipeline_id', '=', req.params['id']!)
+        .select(['id', 'is_won', 'is_lost'])
+        .executeTakeFirst();
+
+      if (!stage) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Stage not found' } });
+        return;
+      }
+
+      if (stage.is_won || stage.is_lost) {
+        res.status(400).json({
+          data: null,
+          error: { code: 'TERMINAL_STAGE', message: 'Cannot delete terminal stages' },
+        });
+        return;
+      }
+
+      const dealCount = await db
+        .selectFrom('deals')
+        .where('stage_id', '=', req.params['stageId']!)
+        .where('deleted_at', 'is', null)
+        .select(db.fn.count<number>('id').as('cnt'))
+        .executeTakeFirstOrThrow();
+
+      const n = Number(dealCount.cnt);
+      if (n > 0) {
+        res.status(400).json({
+          data: null,
+          error: {
+            code: 'STAGE_HAS_DEALS',
+            message: `Move or reassign ${n} deals before deleting this stage`,
+          },
+        });
+        return;
+      }
+
+      await db
+        .deleteFrom('pipeline_stages')
+        .where('id', '=', req.params['stageId']!)
+        .execute();
+
+      res.json({ data: { id: req.params['stageId'] }, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // POST /:id/stages/reorder — { ids: string[] } sets position by index
+  router.post('/:id/stages/reorder', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const parsed = reorderSchema.parse(req.body);
+
+      const pipeline = await db
+        .selectFrom('pipelines')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!pipeline) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Pipeline not found' } });
+        return;
+      }
+
+      await Promise.all(
+        parsed.ids.map((stageId, idx) =>
+          db
+            .updateTable('pipeline_stages')
+            .set({ position: idx, updated_at: new Date() })
+            .where('id', '=', stageId)
+            .where('pipeline_id', '=', req.params['id']!)
+            .execute(),
+        ),
+      );
+
+      res.json({ data: { reordered: parsed.ids.length }, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  return router;
+}
+
+// ── Stage fields router ────────────────────────────────────────────────────────
+
+export function createStageFieldsRouter(db: Kysely<Database>): ExpressRouter {
+  const router = Router({ mergeParams: true });
+
+  // GET /:stageId/fields
+  router.get('/:stageId/fields', async (req, res, next) => {
+    try {
+      const fields = await db
+        .selectFrom('stage_fields')
+        .where('stage_id', '=', req.params['stageId']!)
+        .selectAll()
+        .orderBy('position', 'asc')
+        .execute();
+
+      res.json({ data: fields, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // POST /:stageId/fields
+  router.post('/:stageId/fields', async (req, res, next) => {
+    try {
+      const parsed = createFieldSchema.parse(req.body);
+
+      const stage = await db
+        .selectFrom('pipeline_stages')
+        .where('id', '=', req.params['stageId']!)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!stage) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Stage not found' } });
+        return;
+      }
+
+      const field = await db
+        .insertInto('stage_fields')
+        .values({
+          stage_id: req.params['stageId']!,
+          name: parsed.name,
+          field_type: parsed.field_type,
+          is_required: parsed.is_required,
+          options: parsed.options ? (JSON.stringify(parsed.options) as never) : null,
+          position: parsed.position,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      res.status(201).json({ data: field, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // PATCH /:stageId/fields/:fieldId
+  router.patch('/:stageId/fields/:fieldId', async (req, res, next) => {
+    try {
+      const parsed = updateFieldSchema.parse(req.body);
+
+      const existing = await db
+        .selectFrom('stage_fields')
+        .where('id', '=', req.params['fieldId']!)
+        .where('stage_id', '=', req.params['stageId']!)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!existing) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Field not found' } });
+        return;
+      }
+
+      const updateValues: Record<string, unknown> = { updated_at: new Date() };
+      if (parsed.name !== undefined) updateValues['name'] = parsed.name;
+      if (parsed.field_type !== undefined) updateValues['field_type'] = parsed.field_type;
+      if (parsed.is_required !== undefined) updateValues['is_required'] = parsed.is_required;
+      if (parsed.position !== undefined) updateValues['position'] = parsed.position;
+      if (parsed.options !== undefined) updateValues['options'] = JSON.stringify(parsed.options) as never;
+
+      const field = await db
+        .updateTable('stage_fields')
+        .set(updateValues as never)
+        .where('id', '=', req.params['fieldId']!)
+        .where('stage_id', '=', req.params['stageId']!)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      res.json({ data: field, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // DELETE /:stageId/fields/:fieldId
+  router.delete('/:stageId/fields/:fieldId', async (req, res, next) => {
+    try {
+      const existing = await db
+        .selectFrom('stage_fields')
+        .where('id', '=', req.params['fieldId']!)
+        .where('stage_id', '=', req.params['stageId']!)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!existing) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Field not found' } });
+        return;
+      }
+
+      await db
+        .deleteFrom('stage_fields')
+        .where('id', '=', req.params['fieldId']!)
+        .execute();
+
+      res.json({ data: { id: req.params['fieldId'] }, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // POST /:stageId/fields/reorder
+  router.post('/:stageId/fields/reorder', async (req, res, next) => {
+    try {
+      const parsed = reorderSchema.parse(req.body);
+
+      const stage = await db
+        .selectFrom('pipeline_stages')
+        .where('id', '=', req.params['stageId']!)
+        .select('id')
+        .executeTakeFirst();
+
+      if (!stage) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Stage not found' } });
+        return;
+      }
+
+      await Promise.all(
+        parsed.ids.map((fieldId, idx) =>
+          db
+            .updateTable('stage_fields')
+            .set({ position: idx, updated_at: new Date() })
+            .where('id', '=', fieldId)
+            .where('stage_id', '=', req.params['stageId']!)
+            .execute(),
+        ),
+      );
+
+      res.json({ data: { reordered: parsed.ids.length }, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  return router;
+}
