@@ -21,7 +21,9 @@ function LoginForm() {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
-      const from = searchParams.get('from') ?? '/pipeline';
+      const raw = searchParams.get('from') ?? '';
+      // Prevent open redirect — only allow same-origin relative paths
+      const from = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/pipeline';
       router.push(from);
     } catch {
       setError('Invalid email or password');
@@ -120,7 +122,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <LoginForm />
     </Suspense>
   );
