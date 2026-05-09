@@ -109,9 +109,9 @@ export async function up(db: Kysely<unknown>): Promise<void> {
       stage_id = ps.id
     FROM pipelines p
     JOIN pipeline_stages ps ON ps.pipeline_id = p.id
-      AND LOWER(ps.name) = LOWER(d.stage::text)
     WHERE p.workspace_id = d.workspace_id
       AND p.is_default = true
+      AND LOWER(ps.name) = LOWER(d.stage::text)
   `.execute(db);
 
   // 4. Drop old stage column
