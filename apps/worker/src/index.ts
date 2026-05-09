@@ -1,8 +1,12 @@
-import cron from 'node-cron';
+import { readConfig } from '@vantage/config';
+import { createDb } from '@vantage/db';
 import { logger } from './lib/logger';
 import { runWebsitePing } from './jobs/website-ping';
 import { runAlertEval } from './jobs/alert-eval';
-import { runUsageSnapshot } from './jobs/usage-snapshot';
+import { runDbHealth } from './jobs/db-health';
+
+const config = readConfig();
+const db = createDb(process.env['DATABASE_URL']!);
 
 logger.info('Worker starting');
 
@@ -17,6 +21,9 @@ setInterval(async () => {
     try {
       await runWebsitePing();
       await runAlertEval();
+      if (config.features.infra) {
+        await runDbHealth(db);
+      }
     } catch (err) {
       logger.error({ err }, 'job error');
     } finally {
@@ -27,16 +34,7 @@ setInterval(async () => {
   inflightJob = null;
 }, 60_000);
 
-// Usage snapshot: daily at midnight UTC
-cron.schedule('0 0 * * *', async () => {
-  try {
-    await runUsageSnapshot();
-  } catch (err) {
-    logger.error({ err }, 'usage snapshot error');
-  }
-}, { timezone: 'UTC' });
-
-// Run website ping immediately on start
+// Run immediately on start
 runWebsitePing().catch((err: unknown) => logger.error({ err }, 'initial website ping error'));
 
 process.on('SIGTERM', async () => {
