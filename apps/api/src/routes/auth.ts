@@ -9,7 +9,8 @@ import { z } from 'zod';
 import { logger } from '../lib/logger';
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  // Accept any x@y — self-hosted setups often use local domains without TLDs
+  email: z.string().min(3).includes('@'),
   password: z.string().min(1),
 });
 
