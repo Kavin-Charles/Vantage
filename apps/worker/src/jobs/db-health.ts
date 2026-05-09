@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database, InfraDatabaseUpdate } from '@vantage/db';
 import { logger } from '../lib/logger';
 
 async function checkPostgres(
@@ -20,6 +20,8 @@ async function checkPostgres(
   const start = Date.now();
   const client = new Client({
     host, port, user: dbUser, password: dbPassword, database: databaseName,
+    // rejectUnauthorized: false — accepts self-signed certs on private networks.
+    // For production use, pass a CA cert via the infra_databases configuration.
     ssl: useSsl ? { rejectUnauthorized: false } : false,
     connectionTimeoutMillis: 5000,
   });
@@ -48,6 +50,10 @@ async function checkPostgres(
   }
 }
 
+import type { RowDataPacket } from 'mysql2';
+
+interface MysqlStatusRow extends RowDataPacket { Variable_name: string; Value: string }
+
 async function checkRedis(
   host: string,
   port: number,
@@ -71,15 +77,18 @@ async function checkRedis(
       return match ? match[1] : undefined;
     };
     await client.disconnect();
+    const usedMemory = get('used_memory');
+    const connectedClients = get('connected_clients');
+    const uptimeInSeconds = get('uptime_in_seconds');
     return {
       ok: true,
       latency_ms,
-      memory_used_mb: get('used_memory') ? parseInt(get('used_memory')!, 10) / 1e6 : undefined,
-      connected_clients: get('connected_clients') ? parseInt(get('connected_clients')!, 10) : undefined,
-      uptime_seconds: get('uptime_in_seconds') ? parseInt(get('uptime_in_seconds')!, 10) : undefined,
+      memory_used_mb: usedMemory ? parseInt(usedMemory, 10) / 1e6 : undefined,
+      connected_clients: connectedClients ? parseInt(connectedClients, 10) : undefined,
+      uptime_seconds: uptimeInSeconds ? parseInt(uptimeInSeconds, 10) : undefined,
     };
   } catch {
-    try { client.disconnect(); } catch { /* ignore */ }
+    try { await client.disconnect(); } catch { /* ignore */ }
     return { ok: false, latency_ms: Date.now() - start };
   }
 }
@@ -98,11 +107,11 @@ async function checkMysql(
     conn = await mysql.createConnection({
       host, port, user: dbUser, password: dbPassword, database: databaseName, connectTimeout: 5000,
     });
-    const [rows] = await conn.query<any[]>(
+    const [rows] = await conn.query<MysqlStatusRow[]>(
       'SHOW GLOBAL STATUS WHERE Variable_name IN ("Connections","Uptime")'
     );
     const latency_ms = Date.now() - start;
-    const map = new Map((rows as { Variable_name: string; Value: string }[]).map(r => [r.Variable_name, r.Value]));
+    const map = new Map(rows.map(r => [r.Variable_name, r.Value]));
     await conn.end();
     return {
       ok: true,
@@ -132,11 +141,17 @@ async function checkMongo(
     const status = await client.db('admin').command({ serverStatus: 1 });
     const latency_ms = Date.now() - start;
     await client.close();
+    const connectionCount = typeof status['connections']?.current === 'number'
+      ? status['connections'].current as number
+      : undefined;
+    const uptimeSeconds = typeof status['uptime'] === 'number'
+      ? status['uptime'] as number
+      : undefined;
     return {
       ok: true,
       latency_ms,
-      connection_count: status.connections?.current as number | undefined,
-      uptime_seconds: status.uptime as number | undefined,
+      connection_count: connectionCount,
+      uptime_seconds: uptimeSeconds,
     };
   } catch {
     try { await client.close(); } catch { /* ignore */ }
@@ -205,20 +220,25 @@ export async function runDbHealth(db: Kysely<Database>): Promise<void> {
           result = await tcpCheck(infraDb.host, infraDb.port);
       }
 
-      const update: Record<string, unknown> = {
-        status: result.ok ? 'healthy' : 'offline',
-        last_checked_at: new Date().toISOString(),
-      };
-      if (result['connection_count'] !== undefined) update['connection_count'] = result['connection_count'];
-      if (result['storage_gb'] !== undefined) update['storage_gb'] = result['storage_gb'];
-      if (result['replication_lag_s'] !== undefined) update['replication_lag_s'] = result['replication_lag_s'];
-      if (result['memory_used_mb'] !== undefined) update['memory_used_mb'] = result['memory_used_mb'];
-      if (result['connected_clients'] !== undefined) update['connected_clients'] = result['connected_clients'];
-      if (result['uptime_seconds'] !== undefined) update['uptime_seconds'] = result['uptime_seconds'];
+      const metrics: Pick<
+        InfraDatabaseUpdate,
+        'connection_count' | 'storage_gb' | 'replication_lag_s' | 'memory_used_mb' | 'connected_clients' | 'uptime_seconds'
+      > = {};
+
+      if (result['connection_count'] !== undefined) metrics.connection_count = result['connection_count'] as number;
+      if (result['storage_gb'] !== undefined) metrics.storage_gb = result['storage_gb'] as number;
+      if (result['replication_lag_s'] !== undefined) metrics.replication_lag_s = result['replication_lag_s'] as number;
+      if (result['memory_used_mb'] !== undefined) metrics.memory_used_mb = result['memory_used_mb'] as number;
+      if (result['connected_clients'] !== undefined) metrics.connected_clients = result['connected_clients'] as number;
+      if (result['uptime_seconds'] !== undefined) metrics.uptime_seconds = result['uptime_seconds'] as number;
 
       await db
         .updateTable('infra_databases')
-        .set(update as never)
+        .set({
+          status: result.ok ? 'healthy' : 'offline',
+          last_checked_at: new Date().toISOString(),
+          ...metrics,
+        })
         .where('id', '=', infraDb.id)
         .execute();
 
