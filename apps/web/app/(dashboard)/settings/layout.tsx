@@ -1,17 +1,39 @@
 'use client';
 
+import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { Topbar } from '@/components/Topbar';
+import { useAuth } from '@/lib/AuthContext';
 
-const TABS = [
+interface Tab {
+  href: string;
+  label: string;
+  adminOnly?: boolean;
+}
+
+const ALL_TABS: Tab[] = [
   { href: '/settings/profile', label: 'Profile' },
   { href: '/settings/team', label: 'Team' },
-  { href: '/settings/pipelines', label: 'Pipelines' },
+  { href: '/settings/pipelines', label: 'Pipelines', adminOnly: true },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
+
+  const isAdmin = user?.role === 'admin';
+
+  // Filter tabs based on admin status
+  const TABS = ALL_TABS.filter(t => !t.adminOnly || isAdmin);
+
+  // Redirect non-admins away from /settings/pipelines
+  useEffect(() => {
+    if (!isLoading && !isAdmin && pathname.startsWith('/settings/pipelines')) {
+      router.push('/settings/profile');
+    }
+  }, [isAdmin, isLoading, pathname, router]);
 
   return (
     <>
