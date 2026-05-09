@@ -7,7 +7,6 @@ import { Topbar } from '@/components/Topbar';
 const TABS = [
   { href: '/settings/profile', label: 'Profile' },
   { href: '/settings/team', label: 'Team' },
-  { href: '/settings/billing', label: 'Billing' },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
