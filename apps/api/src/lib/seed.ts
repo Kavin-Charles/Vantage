@@ -4,6 +4,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { VantageConfig } from '@vantage/config';
 import { logger } from './logger';
+import { seedDefaultPipeline } from './seed-pipeline';
 
 export async function seedOnFirstBoot(
   db: Kysely<Database>,
@@ -24,7 +25,8 @@ export async function seedOnFirstBoot(
     logger.info({ workspaceId: workspace.id }, '[Vantage] Workspace seeded');
   }
 
-  // Default pipeline will be seeded by seed-pipeline.ts (called from index.ts after this)
+  // Default pipeline
+  await seedDefaultPipeline(db, workspace.id);
 
   // Admin user
   const userCount = await db
