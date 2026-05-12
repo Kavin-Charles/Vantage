@@ -24,6 +24,7 @@ import { createWebsitesRouter } from './routes/websites';
 import { createAlertThresholdsRouter } from './routes/alert-thresholds';
 import { createItemGroupsRouter } from './routes/item-groups';
 import { createItemsRouter } from './routes/items';
+import { createAnalyticsRouter } from './routes/analytics';
 import { seedOnFirstBoot } from './lib/seed';
 import { logger } from './lib/logger';
 
@@ -57,6 +58,7 @@ app.use('/api/activity', requireAuth, createActivityRouter(db));
 app.use('/api/alerts', requireAuth, createAlertsRouter(db));
 app.use('/api/item-groups', requireAuth, createItemGroupsRouter(db));
 app.use('/api/items', requireAuth, createItemsRouter(db));
+app.use('/api/analytics', requireAuth, createAnalyticsRouter(db));
 
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
