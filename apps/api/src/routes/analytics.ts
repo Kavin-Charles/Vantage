@@ -27,25 +27,37 @@ export function createAnalyticsRouter(db: Kysely<Database>): ExpressRouter {
       const { period } = periodSchema.parse(req.query);
       const periodStart = getPeriodStart(period);
 
-      // KPI aggregation: won/closed/revenue/avg within period
-      const kpi = await db
+      // Query 1: Won deals in period (for revenue KPIs)
+      const wonRows = await db
         .selectFrom('deals as d')
         .innerJoin('pipeline_stages as ps', 'ps.id', 'd.stage_id')
         .where('d.workspace_id', '=', workspace.id)
         .where('d.deleted_at', 'is', null)
-        .where(sql<boolean>`d.updated_at >= ${periodStart.toISOString()}`)
+        .where('ps.is_won', '=', true)
+        .where(sql<boolean>`d.close_date IS NOT NULL AND d.close_date >= ${periodStart.toISOString()}`)
         .select([
-          sql<string>`COUNT(*) FILTER (WHERE ps.is_won = true)`.as('deals_won'),
-          sql<string>`COUNT(*) FILTER (WHERE ps.is_won = true OR ps.is_lost = true)`.as('total_closed'),
-          sql<string>`COALESCE(SUM(d.value) FILTER (WHERE ps.is_won = true), 0)`.as('total_revenue'),
-          sql<string>`COALESCE(AVG(d.value) FILTER (WHERE ps.is_won = true), 0)`.as('avg_deal_size'),
+          sql<string>`COUNT(*)`.as('deals_won'),
+          sql<string>`COALESCE(SUM(d.value), 0)`.as('total_revenue'),
+          sql<string>`COALESCE(AVG(d.value), 0)`.as('avg_deal_size'),
         ])
         .executeTakeFirstOrThrow();
 
-      const dealsWon = Number(kpi.deals_won);
-      const totalClosed = Number(kpi.total_closed);
-      const totalRevenue = Number(kpi.total_revenue);
-      const avgDealSize = Number(kpi.avg_deal_size);
+      // Query 2: Lost deals in period (for win rate denominator)
+      const lostCount = await db
+        .selectFrom('deals as d')
+        .innerJoin('pipeline_stages as ps', 'ps.id', 'd.stage_id')
+        .where('d.workspace_id', '=', workspace.id)
+        .where('d.deleted_at', 'is', null)
+        .where('ps.is_lost', '=', true)
+        .where(sql<boolean>`d.close_date IS NOT NULL AND d.close_date >= ${periodStart.toISOString()}`)
+        .select(sql<string>`COUNT(*)`.as('lost_count'))
+        .executeTakeFirstOrThrow();
+
+      const dealsWon = Number(wonRows.deals_won);
+      const dealsLost = Number(lostCount.lost_count);
+      const totalClosed = dealsWon + dealsLost;
+      const totalRevenue = Number(wonRows.total_revenue);
+      const avgDealSize = Number(wonRows.avg_deal_size);
       const winRate = totalClosed > 0 ? dealsWon / totalClosed : 0;
 
       // Time series: bucket won deals by week (30d/90d) or month (12m)
@@ -69,12 +81,8 @@ export function createAnalyticsRouter(db: Kysely<Database>): ExpressRouter {
         .orderBy(bucketExpr)
         .execute();
 
-      const dateFormatOpts: Intl.DateTimeFormatOptions = period === '12m'
-        ? { month: 'short', year: '2-digit' }
-        : { month: 'short', day: 'numeric' };
-
       const series = seriesRows.map(row => ({
-        label: new Date(row.bucket).toLocaleDateString('en-US', dateFormatOpts),
+        label: new Date(row.bucket).toISOString(),
         revenue: Number(row.revenue),
         count: Number(row.count),
       }));
@@ -146,7 +154,10 @@ export function createAnalyticsRouter(db: Kysely<Database>): ExpressRouter {
           sql<string>`COUNT(*)`.as('total_closed'),
         ])
         .groupBy(['d.owner_id', 'u.name'])
-        .orderBy(sql`deals_won desc`)
+        .orderBy(
+          sql<string>`COUNT(*) FILTER (WHERE ps.is_won = true)`,
+          'desc'
+        )
         .execute();
 
       const reps = repRows.map(r => ({
