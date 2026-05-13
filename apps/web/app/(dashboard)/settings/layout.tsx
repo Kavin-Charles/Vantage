@@ -16,6 +16,7 @@ const ALL_TABS: Tab[] = [
   { href: '/settings/profile', label: 'Profile' },
   { href: '/settings/team', label: 'Team' },
   { href: '/settings/pipelines', label: 'Pipelines', adminOnly: true },
+  { href: '/settings/ssh', label: 'SSH Keys', adminOnly: true },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
@@ -28,9 +29,9 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   // Filter tabs based on admin status
   const TABS = ALL_TABS.filter(t => !t.adminOnly || isAdmin);
 
-  // Redirect non-admins away from /settings/pipelines
+  // Redirect non-admins away from admin-only settings pages
   useEffect(() => {
-    if (!isLoading && !isAdmin && pathname.startsWith('/settings/pipelines')) {
+    if (!isLoading && !isAdmin && (pathname.startsWith('/settings/pipelines') || pathname.startsWith('/settings/ssh'))) {
       router.push('/settings/profile');
     }
   }, [isAdmin, isLoading, pathname, router]);
