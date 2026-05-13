@@ -3,15 +3,7 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
-
-function csvEscape(v: unknown): string {
-  const s = v == null ? '' : String(v);
-  return s.includes(',') || s.includes('"') || s.includes('\n')
-    ? `"${s.replace(/"/g, '""')}"` : s;
-}
-function toCSV(headers: string[], rows: Record<string, unknown>[]): string {
-  return [headers.join(','), ...rows.map(r => headers.map(h => csvEscape(r[h])).join(','))].join('\n');
-}
+import { toCSV } from '../lib/csv';
 const DEAL_HEADERS = ['name', 'value', 'probability', 'close_date'];
 
 const importDealSchema = z.object({
@@ -254,8 +246,10 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
       if (parsed.data.stage_id) {
         const targetStage = await db
           .selectFrom('pipeline_stages')
-          .where('id', '=', parsed.data.stage_id)
-          .selectAll()
+          .innerJoin('pipelines', 'pipelines.id', 'pipeline_stages.pipeline_id')
+          .where('pipeline_stages.id', '=', parsed.data.stage_id)
+          .where('pipelines.workspace_id', '=', workspace.id)
+          .selectAll('pipeline_stages')
           .executeTakeFirst();
 
         if (targetStage && (targetStage.is_won || targetStage.is_lost)) {

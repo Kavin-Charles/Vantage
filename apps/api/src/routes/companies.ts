@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
+import { csvEscape, toCSV } from '../lib/csv';
 
 const createCompanySchema = z.object({
   name: z.string().min(1),
@@ -14,14 +15,6 @@ const createCompanySchema = z.object({
 
 const updateCompanySchema = createCompanySchema.partial();
 
-function csvEscape(v: unknown): string {
-  const s = v == null ? '' : String(v);
-  return s.includes(',') || s.includes('"') || s.includes('\n')
-    ? `"${s.replace(/"/g, '""')}"` : s;
-}
-function toCSV(headers: string[], rows: Record<string, unknown>[]): string {
-  return [headers.join(','), ...rows.map(r => headers.map(h => csvEscape(r[h])).join(','))].join('\n');
-}
 
 const COMPANY_HEADERS = ['name', 'industry', 'location', 'employee_count', 'website'];
 

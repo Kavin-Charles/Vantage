@@ -68,7 +68,7 @@ function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigge
     const s = stages.find(st => st.id === d.stage_id);
     return s && !s.is_won && !s.is_lost;
   });
-  const totalValue = activeDeals.reduce((s, d) => s + d.value, 0);
+  const totalValue = activeDeals.reduce((s, d) => s + Number(d.value), 0);
 
   return (
     <>
@@ -94,7 +94,7 @@ function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigge
                 <button onClick={() => { setDefaultStageId(stage.id); setModal('create'); }}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, lineHeight: 1 }}>+</button>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>{fmtValue(col.reduce((s, d) => s + d.value, 0))}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>{fmtValue(col.reduce((s, d) => s + Number(d.value), 0))}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 60 }}>
                 {col.map(deal => (
                   <div key={deal.id} draggable onDragStart={() => setDragId(deal.id)} onClick={() => setModal(deal)}
@@ -108,7 +108,7 @@ function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigge
                     </div>
                     {deal.close_date && (
                       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
-                        Close {new Date(deal.close_date).toLocaleDateString()}
+                        Close {new Date(deal.close_date + 'T00:00:00').toLocaleDateString()}
                       </div>
                     )}
                   </div>

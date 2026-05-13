@@ -54,6 +54,12 @@ export function CsvImportExport({
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const MAX_CSV_BYTES = 5 * 1024 * 1024; // 5 MB
+    if (file.size > MAX_CSV_BYTES) {
+      alert('File too large. Maximum CSV size is 5 MB.');
+      if (fileRef.current) fileRef.current.value = '';
+      return;
+    }
     setImporting(true);
     try {
       const text = await file.text();

@@ -4,6 +4,7 @@ import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
+import { csvEscape, toCSV } from '../lib/csv';
 
 const createContactSchema = z.object({
   name: z.string().min(1),
@@ -22,19 +23,6 @@ const listQuerySchema = z.object({
   owner_id: z.string().uuid().optional(),
 });
 
-// ── CSV helpers ─────────────────────────────────────────────────────────────────
-
-function csvEscape(v: unknown): string {
-  const s = v == null ? '' : String(v);
-  return s.includes(',') || s.includes('"') || s.includes('\n')
-    ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
-function toCSV(headers: string[], rows: Record<string, unknown>[]): string {
-  const lines = [headers.join(',')];
-  for (const row of rows) lines.push(headers.map(h => csvEscape(row[h])).join(','));
-  return lines.join('\n');
-}
 
 const CONTACT_HEADERS = ['name', 'email', 'phone', 'status'];
 
