@@ -193,6 +193,26 @@ export interface AlertThresholdTable {
   updated_at: Generated<string>;
 }
 
+export interface WorkspaceSshKeypairTable {
+  id: Generated<string>;
+  workspace_id: string;
+  public_key: string;
+  encrypted_private_key: string;
+  iv: string;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
+export interface SshCommandLogTable {
+  id: Generated<string>;
+  workspace_id: string;
+  server_id: string;
+  user_id: string;
+  command: string;
+  exit_code: number | null;
+  created_at: Generated<string>;
+}
+
 export interface PipelineTable {
   id: Generated<string>;
   workspace_id: string;
@@ -310,6 +330,8 @@ export interface Database {
   websites: WebsiteTable;
   metrics_snapshots: MetricsSnapshotTable;
   alert_thresholds: AlertThresholdTable;
+  workspace_ssh_keypairs: WorkspaceSshKeypairTable;
+  ssh_command_log: SshCommandLogTable;
   pipelines: PipelineTable;
   pipeline_stages: PipelineStageTable;
   stage_fields: StageFieldTable;
@@ -401,3 +423,8 @@ export type ItemFieldUpdate = Updateable<ItemFieldTable>;
 export type ItemFieldValue = Selectable<ItemFieldValueTable>;
 export type NewItemFieldValue = Insertable<ItemFieldValueTable>;
 export type ItemFieldValueUpdate = Updateable<ItemFieldValueTable>;
+
+export type WorkspaceSshKeypair = Selectable<WorkspaceSshKeypairTable>;
+export type NewWorkspaceSshKeypair = Insertable<WorkspaceSshKeypairTable>;
+export type SshCommandLog = Selectable<SshCommandLogTable>;
+export type NewSshCommandLog = Insertable<SshCommandLogTable>;
