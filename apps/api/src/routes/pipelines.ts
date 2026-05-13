@@ -194,6 +194,53 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
+  // GET /:id — get single pipeline with stages + fields
+  router.get('/:id', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+
+      const pipeline = await db
+        .selectFrom('pipelines')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .selectAll()
+        .executeTakeFirst();
+
+      if (!pipeline) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Pipeline not found' } });
+        return;
+      }
+
+      const stages = await db
+        .selectFrom('pipeline_stages')
+        .where('pipeline_id', '=', req.params['id']!)
+        .selectAll()
+        .orderBy('position', 'asc')
+        .execute();
+
+      const fields = stages.length > 0
+        ? await db
+            .selectFrom('stage_fields')
+            .where('stage_id', 'in', stages.map(s => s.id))
+            .selectAll()
+            .orderBy('position', 'asc')
+            .execute()
+        : [];
+
+      const fieldsByStage = new Map<string, typeof fields>();
+      for (const f of fields) {
+        const arr = fieldsByStage.get(f.stage_id) ?? [];
+        arr.push(f);
+        fieldsByStage.set(f.stage_id, arr);
+      }
+
+      const stagesWithFields = stages.map(s => ({ ...s, fields: fieldsByStage.get(s.id) ?? [] }));
+      res.json({ data: { ...pipeline, stages: stagesWithFields }, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // GET /:id/stages — list stages with fields attached
   router.get('/:id/stages', async (req, res, next) => {
     try {
