@@ -4,6 +4,27 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
+function csvEscape(v: unknown): string {
+  const s = v == null ? '' : String(v);
+  return s.includes(',') || s.includes('"') || s.includes('\n')
+    ? `"${s.replace(/"/g, '""')}"` : s;
+}
+function toCSV(headers: string[], rows: Record<string, unknown>[]): string {
+  return [headers.join(','), ...rows.map(r => headers.map(h => csvEscape(r[h])).join(','))].join('\n');
+}
+const DEAL_HEADERS = ['name', 'value', 'probability', 'close_date'];
+
+const importDealSchema = z.object({
+  pipeline_id: z.string().uuid(),
+  stage_id: z.string().uuid(),
+  rows: z.array(z.object({
+    name: z.string().min(1),
+    value: z.coerce.number().min(0).default(0),
+    probability: z.coerce.number().int().min(0).max(100).default(0),
+    close_date: z.string().optional(),
+  })).min(1),
+});
+
 const createDealSchema = z.object({
   name: z.string().min(1),
   pipeline_id: z.string().uuid(),
@@ -57,6 +78,69 @@ async function getDealWithFields(db: Kysely<Database>, dealId: string, workspace
 
 export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
   const router = Router();
+
+  // GET /export?pipeline_id=<id>
+  router.get('/export', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const pipeline_id = req.query['pipeline_id'] as string | undefined;
+      if (!pipeline_id) {
+        res.status(400).json({ data: null, error: { code: 'PIPELINE_REQUIRED', message: 'pipeline_id required' } });
+        return;
+      }
+      const deals = await db
+        .selectFrom('deals')
+        .where('workspace_id', '=', workspace.id)
+        .where('pipeline_id', '=', pipeline_id)
+        .where('deleted_at', 'is', null)
+        .select(['name', 'value', 'probability', 'close_date'])
+        .orderBy('created_at', 'desc')
+        .execute();
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="items.csv"');
+      res.send(toCSV(DEAL_HEADERS, deals));
+    } catch (err) { next(err); }
+  });
+
+  // POST /import
+  router.post('/import', async (req, res, next) => {
+    try {
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      const { pipeline_id, stage_id, rows } = importDealSchema.parse(req.body);
+
+      // Verify pipeline belongs to workspace
+      const pipeline = await db.selectFrom('pipelines')
+        .where('id', '=', pipeline_id).where('workspace_id', '=', workspace.id)
+        .select('id').executeTakeFirst();
+      if (!pipeline) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Pipeline not found' } });
+        return;
+      }
+
+      let created = 0;
+      const errors: string[] = [];
+      for (const row of rows) {
+        try {
+          await db.insertInto('deals').values({
+            workspace_id: workspace.id,
+            owner_id: user.id,
+            pipeline_id,
+            stage_id,
+            name: row.name,
+            value: row.value,
+            probability: row.probability,
+            close_date: row.close_date ? new Date(row.close_date) : null,
+            contact_id: null,
+            company_id: null,
+          }).execute();
+          created++;
+        } catch (e) {
+          errors.push(`${row.name}: ${(e as Error).message}`);
+        }
+      }
+      res.json({ data: { created, errors }, error: null });
+    } catch (err) { next(err); }
+  });
 
   // GET /api/deals?pipeline_id=<id>
   router.get('/', async (req, res, next) => {

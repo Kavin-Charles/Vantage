@@ -9,6 +9,7 @@ import { DealForm } from '@/components/deals/DealForm';
 import { PipelineSwitcher } from './PipelineSwitcher';
 import { GroupTabs } from './GroupTabs';
 import { ItemModal } from './ItemModal';
+import { CsvImportExport } from '@/components/CsvImportExport';
 import { listDeals, updateDeal } from '@/lib/deals';
 import { getPipeline } from '@/lib/pipelines';
 import { useApiToken } from '@/lib/useApiToken';
@@ -226,6 +227,7 @@ function ItemsKanban({ groupId, pipelineId, addTrigger }: { groupId: string; pip
 
 export default function PipelinePage() {
   const getToken = useApiToken();
+  const qc = useQueryClient();
   const [pipelineId, setPipelineId] = useState<string | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [dealsAddTrigger, setDealsAddTrigger] = useState(0);
@@ -245,8 +247,18 @@ export default function PipelinePage() {
       <Topbar
         left={<PipelineSwitcher value={pipelineId} onChange={id => { setPipelineId(id); setActiveGroupId(null); }} />}
         action={
-          activeGroupId === null && stages.length > 0 ? (
-            <Button variant="primary" onClick={() => setDealsAddTrigger(n => n + 1)}>+ Add item</Button>
+          pipelineId && activeGroupId === null && stages.length > 0 ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <CsvImportExport
+                resource="deals"
+                filename="items.csv"
+                exportParams={{ pipeline_id: pipelineId }}
+                importExtra={{ pipeline_id: pipelineId, stage_id: stages[0]?.id ?? '' }}
+                templateHeaders={['name', 'value', 'probability', 'close_date']}
+                onImported={() => void qc.invalidateQueries({ queryKey: ['deals', pipelineId] })}
+              />
+              <Button variant="primary" onClick={() => setDealsAddTrigger(n => n + 1)}>+ Add item</Button>
+            </div>
           ) : activeGroupId !== null ? (
             <Button variant="primary" onClick={() => setItemsAddTrigger(n => n + 1)}>+ Add item</Button>
           ) : null

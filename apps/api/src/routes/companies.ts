@@ -14,8 +14,65 @@ const createCompanySchema = z.object({
 
 const updateCompanySchema = createCompanySchema.partial();
 
+function csvEscape(v: unknown): string {
+  const s = v == null ? '' : String(v);
+  return s.includes(',') || s.includes('"') || s.includes('\n')
+    ? `"${s.replace(/"/g, '""')}"` : s;
+}
+function toCSV(headers: string[], rows: Record<string, unknown>[]): string {
+  return [headers.join(','), ...rows.map(r => headers.map(h => csvEscape(r[h])).join(','))].join('\n');
+}
+
+const COMPANY_HEADERS = ['name', 'industry', 'location', 'employee_count', 'website'];
+
+const importCompanySchema = z.object({
+  rows: z.array(z.object({
+    name: z.string().min(1),
+    industry: z.string().optional(),
+    location: z.string().optional(),
+    employee_count: z.coerce.number().int().positive().optional(),
+    website: z.string().optional(),
+  })).min(1),
+});
+
 export function createCompaniesRouter(db: Kysely<Database>): ExpressRouter {
   const router = Router();
+
+  router.get('/export', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const companies = await db
+        .selectFrom('companies')
+        .where('workspace_id', '=', workspace.id)
+        .where('deleted_at', 'is', null)
+        .select(['name', 'industry', 'location', 'employee_count', 'website'])
+        .orderBy('created_at', 'desc')
+        .execute();
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="companies.csv"');
+      res.send(toCSV(COMPANY_HEADERS, companies));
+    } catch (err) { next(err); }
+  });
+
+  router.post('/import', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const { rows } = importCompanySchema.parse(req.body);
+      let created = 0;
+      const errors: string[] = [];
+      for (const row of rows) {
+        try {
+          await db.insertInto('companies')
+            .values({ ...row, workspace_id: workspace.id })
+            .execute();
+          created++;
+        } catch (e) {
+          errors.push(`${row.name}: ${(e as Error).message}`);
+        }
+      }
+      res.json({ data: { created, errors }, error: null });
+    } catch (err) { next(err); }
+  });
 
   router.get('/', async (req, res, next) => {
     try {

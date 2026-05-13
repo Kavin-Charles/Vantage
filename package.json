@@ -18,6 +18,12 @@
   },
   "packageManager": "pnpm@10.33.2",
   "pnpm": {
-    "onlyBuiltDependencies": ["@clerk/shared", "esbuild", "sharp", "unrs-resolver"]
+    "onlyBuiltDependencies": [
+      "@clerk/shared",
+      "bcrypt",
+      "esbuild",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

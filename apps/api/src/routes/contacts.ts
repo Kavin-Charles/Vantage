@@ -22,8 +22,74 @@ const listQuerySchema = z.object({
   owner_id: z.string().uuid().optional(),
 });
 
+// ── CSV helpers ─────────────────────────────────────────────────────────────────
+
+function csvEscape(v: unknown): string {
+  const s = v == null ? '' : String(v);
+  return s.includes(',') || s.includes('"') || s.includes('\n')
+    ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function toCSV(headers: string[], rows: Record<string, unknown>[]): string {
+  const lines = [headers.join(',')];
+  for (const row of rows) lines.push(headers.map(h => csvEscape(row[h])).join(','));
+  return lines.join('\n');
+}
+
+const CONTACT_HEADERS = ['name', 'email', 'phone', 'status'];
+
+const importContactSchema = z.object({
+  rows: z.array(z.object({
+    name: z.string().min(1),
+    email: z.string().email(),
+    phone: z.string().optional(),
+    status: z.enum(['prospect', 'customer', 'cold', 'churned']).default('prospect'),
+  })).min(1),
+});
+
 export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
   const router = Router();
+
+  // GET /export — CSV download
+  router.get('/export', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const contacts = await db
+        .selectFrom('contacts')
+        .where('workspace_id', '=', workspace.id)
+        .where('deleted_at', 'is', null)
+        .select(['name', 'email', 'phone', 'status'])
+        .orderBy('created_at', 'desc')
+        .execute();
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="contacts.csv"');
+      res.send(toCSV(CONTACT_HEADERS, contacts));
+    } catch (err) { next(err); }
+  });
+
+  // POST /import — bulk create from parsed CSV rows
+  router.post('/import', async (req, res, next) => {
+    try {
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      const { rows } = importContactSchema.parse(req.body);
+      let created = 0;
+      const errors: string[] = [];
+      for (const row of rows) {
+        try {
+          await db.insertInto('contacts')
+            .values({ ...row, workspace_id: workspace.id, owner_id: user.id })
+            .execute();
+          created++;
+        } catch (e) {
+          errors.push(`${row.email}: ${(e as Error).message}`);
+        }
+      }
+      await db.updateTable('workspaces')
+        .set({ contact_count: sql`contact_count + ${created}` })
+        .where('id', '=', workspace.id).execute();
+      res.json({ data: { created, errors }, error: null });
+    } catch (err) { next(err); }
+  });
 
   router.get('/', async (req, res, next) => {
     try {
