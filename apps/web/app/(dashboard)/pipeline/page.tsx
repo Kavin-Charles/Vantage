@@ -132,6 +132,7 @@ function DealsKanban({ pipelineId }: { pipelineId: string }) {
 // ── Items kanban ────────────────────────────────────────────────────────────────
 
 function ItemsKanban({ groupId, pipelineId }: { groupId: string; pipelineId: string }) {
+  const getToken = useApiToken();
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | Item | null>(null);
   const [defaultStageId, setDefaultStageId] = useState<string | null>(null);
@@ -139,16 +140,16 @@ function ItemsKanban({ groupId, pipelineId }: { groupId: string; pipelineId: str
 
   const { data: groupData } = useQuery({
     queryKey: ['item-group', groupId],
-    queryFn: () => getItemGroup(groupId),
+    queryFn: async () => getItemGroup(await getToken(), groupId),
   });
 
   const { data: itemsData } = useQuery({
     queryKey: ['items', groupId],
-    queryFn: () => listItems(groupId),
+    queryFn: async () => listItems(await getToken(), groupId),
   });
 
   const stageMut = useMutation({
-    mutationFn: ({ id, stage_id }: { id: string; stage_id: string }) => updateItem(id, { stage_id }),
+    mutationFn: async ({ id, stage_id }: { id: string; stage_id: string }) => updateItem(await getToken(), id, { stage_id }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['items', groupId] }),
   });
 

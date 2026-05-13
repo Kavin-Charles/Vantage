@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useApiToken } from '@/lib/useApiToken';
 import { listItemGroups } from '@/lib/item-groups';
 import type { ItemGroup } from '@vantage/types';
 
@@ -24,9 +25,10 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
 });
 
 export function GroupTabs({ pipelineId, activeGroupId, onChange }: Props) {
+  const getToken = useApiToken();
   const { data } = useQuery({
     queryKey: ['item-groups', pipelineId],
-    queryFn: () => listItemGroups(pipelineId!),
+    queryFn: async () => listItemGroups(await getToken(), pipelineId!),
     enabled: !!pipelineId,
   });
 

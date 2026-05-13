@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { FormField, Input, Select } from '@/components/ui/FormField';
+import { useApiToken } from '@/lib/useApiToken';
 import { createItem, updateItem, convertItem, listItemGroups } from '@/lib/item-groups';
 import type { Item, ItemGroupWithStages, GroupStage, ItemField } from '@vantage/types';
 
@@ -37,6 +38,7 @@ function FieldInput({ field, value, onChange }: { field: ItemField; value: strin
 }
 
 export function ItemModal({ item, group, pipelineId, defaultStageId, onDone }: Props) {
+  const getToken = useApiToken();
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [converting, setConverting] = useState(false);
@@ -51,7 +53,7 @@ export function ItemModal({ item, group, pipelineId, defaultStageId, onDone }: P
 
   const { data: groupsData } = useQuery({
     queryKey: ['item-groups', pipelineId],
-    queryFn: () => listItemGroups(pipelineId),
+    queryFn: async () => listItemGroups(await getToken(), pipelineId),
     enabled: !!item, // only need this for convert, when editing existing
   });
   const otherGroups = (groupsData?.data ?? []).filter(g => g.id !== group.id);
@@ -65,15 +67,16 @@ export function ItemModal({ item, group, pipelineId, defaultStageId, onDone }: P
     e.preventDefault();
     setLoading(true);
     try {
+      const token = await getToken();
       if (item) {
-        await updateItem(item.id, {
+        await updateItem(token, item.id, {
           title: form.title,
           stage_id: form.stage_id,
           value: form.value ? parseFloat(form.value) : null,
           field_values: fieldValues,
         });
       } else {
-        await createItem({
+        await createItem(token, {
           group_id: group.id,
           stage_id: form.stage_id,
           title: form.title,
@@ -90,7 +93,7 @@ export function ItemModal({ item, group, pipelineId, defaultStageId, onDone }: P
     if (!item || !targetGroupId) return;
     setConverting(true);
     try {
-      await convertItem(item.id, targetGroupId);
+      await convertItem(await getToken(), item.id, targetGroupId);
       void qc.invalidateQueries({ queryKey: ['items'] });
       onDone();
     } finally {

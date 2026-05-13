@@ -415,6 +415,7 @@ function AddItemFieldForm({
   groupId: string;
   onAdded: () => void;
 }) {
+  const getToken = useApiToken();
   const [label, setLabel] = useState('');
   const [fieldType, setFieldType] = useState<string>('text');
   const [required, setRequired] = useState(false);
@@ -425,7 +426,7 @@ function AddItemFieldForm({
     if (!label.trim()) return;
     setLoading(true);
     try {
-      await createItemField(groupId, { label: label.trim(), field_type: fieldType, required });
+      await createItemField(await getToken(), groupId, { label: label.trim(), field_type: fieldType, required });
       setLabel('');
       setRequired(false);
       onAdded();
@@ -481,13 +482,14 @@ function GroupStageRow({
   onDelete: () => void;
   onChanged: () => void;
 }) {
+  const getToken = useApiToken();
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState(stage.name);
   const qc = useQueryClient();
 
   async function saveName() {
     if (name.trim() && name.trim() !== stage.name) {
-      await updateGroupStage(groupId, stage.id, { name: name.trim() });
+      await updateGroupStage(await getToken(), groupId, stage.id, { name: name.trim() });
       onChanged();
     }
     setEditingName(false);
@@ -542,7 +544,7 @@ function GroupStageRow({
           key={f.id}
           field={f}
           groupId={groupId}
-          onDelete={() => void deleteItemField(groupId, f.id).then(onChanged)}
+          onDelete={() => void getToken().then(t => deleteItemField(t, groupId, f.id)).then(onChanged)}
         />
       ))}
     </div>
@@ -550,6 +552,7 @@ function GroupStageRow({
 }
 
 function GroupEditor({ group }: { group: ItemGroupWithStages }) {
+  const getToken = useApiToken();
   const qc = useQueryClient();
   const [newStageName, setNewStageName] = useState('');
   const [addingStage, setAddingStage] = useState(false);
@@ -557,18 +560,18 @@ function GroupEditor({ group }: { group: ItemGroupWithStages }) {
 
   const { data, refetch } = useQuery({
     queryKey: ['item-group', group.id],
-    queryFn: () => getItemGroup(group.id),
+    queryFn: async () => getItemGroup(await getToken(), group.id),
   });
 
   const groupData = data?.data ?? group;
 
   const addStageMut = useMutation({
-    mutationFn: (name: string) => createGroupStage(group.id, { name }),
+    mutationFn: async (name: string) => createGroupStage(await getToken(), group.id, { name }),
     onSuccess: () => { void refetch(); setNewStageName(''); setAddingStage(false); },
   });
 
   const deleteStageMut = useMutation({
-    mutationFn: (stageId: string) => deleteGroupStage(group.id, stageId),
+    mutationFn: async (stageId: string) => deleteGroupStage(await getToken(), group.id, stageId),
     onSuccess: () => refetch(),
   });
 
@@ -615,7 +618,7 @@ function GroupEditor({ group }: { group: ItemGroupWithStages }) {
             key={f.id}
             field={f}
             groupId={group.id}
-            onDelete={() => void deleteItemField(group.id, f.id).then(() => refetch())}
+            onDelete={() => void getToken().then(t => deleteItemField(t, group.id, f.id)).then(() => refetch())}
           />
         ))}
 
@@ -654,6 +657,7 @@ function GroupEditor({ group }: { group: ItemGroupWithStages }) {
 // ── ItemGroupsSection ──────────────────────────────────────────────────────
 
 function ItemGroupsSection({ pipelineId }: { pipelineId: string }) {
+  const getToken = useApiToken();
   const qc = useQueryClient();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [creatingName, setCreatingName] = useState('');
@@ -662,13 +666,13 @@ function ItemGroupsSection({ pipelineId }: { pipelineId: string }) {
 
   const { data, refetch } = useQuery({
     queryKey: ['item-groups', pipelineId],
-    queryFn: () => listItemGroups(pipelineId),
+    queryFn: async () => listItemGroups(await getToken(), pipelineId),
   });
 
   const groups: (ItemGroup & { stages: GroupStage[]; fields: ItemField[] })[] = data?.data ?? [];
 
   const createMut = useMutation({
-    mutationFn: (name: string) => createItemGroup({ pipeline_id: pipelineId, name }),
+    mutationFn: async (name: string) => createItemGroup(await getToken(), { pipeline_id: pipelineId, name }),
     onSuccess: () => {
       void refetch();
       setCreatingName('');
@@ -677,7 +681,7 @@ function ItemGroupsSection({ pipelineId }: { pipelineId: string }) {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => deleteItemGroup(id),
+    mutationFn: async (id: string) => deleteItemGroup(await getToken(), id),
     onSuccess: () => {
       void refetch();
       void qc.invalidateQueries({ queryKey: ['item-groups', pipelineId] });
