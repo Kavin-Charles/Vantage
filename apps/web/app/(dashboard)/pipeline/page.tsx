@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/components/Topbar';
 import { Button } from '@/components/ui/Button';
@@ -28,12 +28,16 @@ function stageColor(stage: PipelineStage | GroupStage): string {
 
 // ── Deals kanban ────────────────────────────────────────────────────────────────
 
-function DealsKanban({ pipelineId }: { pipelineId: string }) {
+function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigger?: number }) {
   const qc = useQueryClient();
   const getToken = useApiToken();
   const [modal, setModal] = useState<'create' | Deal | null>(null);
   const [defaultStageId, setDefaultStageId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (addTrigger && addTrigger > 0) setModal('create');
+  }, [addTrigger]);
 
   const { data: pipelineData } = useQuery({
     queryKey: ['pipeline', pipelineId],
@@ -216,10 +220,10 @@ function ItemsKanban({ groupId, pipelineId }: { groupId: string; pipelineId: str
 // ── Page ────────────────────────────────────────────────────────────────────────
 
 export default function PipelinePage() {
-  const qc = useQueryClient();
   const getToken = useApiToken();
   const [pipelineId, setPipelineId] = useState<string | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [dealsAddTrigger, setDealsAddTrigger] = useState(0);
 
   const { data: pipelineData } = useQuery({
     queryKey: ['pipeline', pipelineId],
@@ -236,7 +240,7 @@ export default function PipelinePage() {
         left={<PipelineSwitcher value={pipelineId} onChange={id => { setPipelineId(id); setActiveGroupId(null); }} />}
         action={
           activeGroupId === null && stages.length > 0 ? (
-            <Button variant="primary" onClick={() => { /* handled inside DealsKanban */ }}>+ Add Deal</Button>
+            <Button variant="primary" onClick={() => setDealsAddTrigger(n => n + 1)}>+ Add Deal</Button>
           ) : null
         }
       />
@@ -245,7 +249,7 @@ export default function PipelinePage() {
           <>
             <GroupTabs pipelineId={pipelineId} activeGroupId={activeGroupId} onChange={setActiveGroupId} />
             {activeGroupId === null
-              ? <DealsKanban pipelineId={pipelineId} />
+              ? <DealsKanban pipelineId={pipelineId} addTrigger={dealsAddTrigger} />
               : <ItemsKanban groupId={activeGroupId} pipelineId={pipelineId} />
             }
           </>
