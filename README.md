@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="Vantage" width="120" />
+</p>
+
 # Vantage
 
 **CRM and infrastructure monitoring in one place — built for technical teams.**
