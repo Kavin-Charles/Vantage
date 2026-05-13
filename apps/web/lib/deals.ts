@@ -18,6 +18,7 @@ export async function createDeal(body: {
   close_date?: string;
   contact_id?: string;
   company_id?: string;
+  field_values?: Record<string, string>;
 }) {
   return apiFetch<{ data: Deal }>('/api/deals', {
     method: 'POST',

@@ -119,7 +119,7 @@ function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigge
       </div>
 
       {modal && (
-        <Modal title={modal === 'create' ? 'Add deal' : 'Edit deal'} onClose={() => setModal(null)}>
+        <Modal title={modal === 'create' ? 'Add item' : 'Edit item'} onClose={() => setModal(null)}>
           <DealForm
             deal={modal === 'create' ? undefined : (modal as Deal)}
             pipelineId={pipelineId}

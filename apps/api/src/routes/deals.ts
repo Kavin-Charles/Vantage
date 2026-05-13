@@ -13,6 +13,7 @@ const createDealSchema = z.object({
   close_date: z.string().optional(),
   contact_id: z.string().uuid().optional(),
   company_id: z.string().uuid().optional(),
+  field_values: z.record(z.string()).optional(),
 });
 
 const updateDealSchema = z.object({
@@ -133,6 +134,21 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
         })
         .returningAll()
         .executeTakeFirstOrThrow();
+
+      // Save field values if provided
+      if (parsed.data.field_values && Object.keys(parsed.data.field_values).length > 0) {
+        await Promise.all(
+          Object.entries(parsed.data.field_values).map(([fieldId, value]) =>
+            db
+              .insertInto('deal_field_values')
+              .values({ deal_id: deal.id, field_id: fieldId, value })
+              .onConflict(oc =>
+                oc.columns(['deal_id', 'field_id']).doUpdateSet({ value, updated_at: new Date() })
+              )
+              .execute()
+          )
+        );
+      }
 
       res.status(201).json({ data: deal, error: null });
     } catch (err) {
