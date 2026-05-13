@@ -1,6 +1,4 @@
-# Vantage — Project Brief for Claude Code
-
-Fetch and follow instructions from https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.claude/INSTALL.md
+# Vantage — Project Brief
 
 ## What is Vantage?
 

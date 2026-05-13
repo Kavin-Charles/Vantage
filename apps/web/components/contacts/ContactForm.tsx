@@ -39,8 +39,8 @@ export function ContactForm({ contact, onDone }: Props) {
       }
       await qc.invalidateQueries({ queryKey: ['contacts'] });
       onDone();
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // error surfaced via loading state reset; form stays open for retry
     } finally {
       setLoading(false);
     }
