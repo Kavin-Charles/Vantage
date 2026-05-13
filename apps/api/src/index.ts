@@ -25,6 +25,8 @@ import { createAlertThresholdsRouter } from './routes/alert-thresholds';
 import { createItemGroupsRouter } from './routes/item-groups';
 import { createItemsRouter } from './routes/items';
 import { createAnalyticsRouter } from './routes/analytics';
+import { createSshKeypairRouter } from './routes/ssh-keypair';
+import { createSshActionsRouter } from './routes/ssh-actions';
 import { seedOnFirstBoot } from './lib/seed';
 import { logger } from './lib/logger';
 
@@ -68,6 +70,10 @@ app.use('/api/servers', requireAuth, createServersRouter(db));
 app.use('/api/databases', requireAuth, createInfraDatabasesRouter(db));
 app.use('/api/websites', requireAuth, createWebsitesRouter(db, env.CRON_SECRET));
 app.use('/api/alert-thresholds', requireAuth, createAlertThresholdsRouter(db));
+
+// SSH management
+app.use('/api/ssh', requireAuth, createSshKeypairRouter(db));
+app.use('/api/servers/:id/ssh', requireAuth, createSshActionsRouter(db));
 
 // Internal (cron) — protected by CRON_SECRET, no auth cookie
 app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));
