@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useRef } from 'react';
+import { use, useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Topbar } from '@/components/Topbar';
@@ -8,8 +8,8 @@ import { Badge, statusColor } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useApiToken } from '@/lib/useApiToken';
 import { getServer } from '@/lib/servers';
-import { openSshStream, getSshHistory } from '@/lib/ssh';
-import type { Server, MetricsSnapshot, SshCommandLog } from '@vantage/types';
+import { openSshStream, getSshHistory, listFiles, readFile } from '@/lib/ssh';
+import type { Server, MetricsSnapshot, SshCommandLog, SshFileEntry } from '@vantage/types';
 
 function Sparkline({ data, color = '#2d6a4f' }: { data: number[]; color?: string }) {
   if (data.length < 2) return <span style={{ color: 'var(--text3)', fontSize: 11 }}>no data</span>;
@@ -187,9 +187,299 @@ function TerminalTab({ serverId }: { serverId: string }) {
   );
 }
 
-function ServicesTab({ serverId }: { serverId: string }) { return <div style={{ color: 'var(--text3)', fontSize: 13 }}>Services tab — coming in next step</div>; }
-function LogsTab({ serverId }: { serverId: string }) { return <div style={{ color: 'var(--text3)', fontSize: 13 }}>Logs tab — coming in next step</div>; }
-function FilesTab({ serverId }: { serverId: string }) { return <div style={{ color: 'var(--text3)', fontSize: 13 }}>Files tab — coming in next step</div>; }
+function ServicesTab({ serverId }: { serverId: string }) {
+  const getToken = useApiToken();
+  const [lines, setLines] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [actionOutput, setActionOutput] = useState<{ name: string; lines: string[]; exitCode: number | null } | null>(null);
+  const [actioning, setActioning] = useState<string | null>(null);
+
+  function fetchServices() {
+    setLoading(true);
+    setLines([]);
+    getToken().then(token => {
+      openSshStream(
+        `/api/servers/${serverId}/ssh/services`,
+        {},
+        token,
+        (event) => {
+          if (event.type === 'stdout') setLines(prev => [...prev, event.line]);
+          if (event.type === 'exit' || event.type === 'error') setLoading(false);
+        },
+      );
+    });
+  }
+
+  function doAction(serviceName: string, action: 'start' | 'stop' | 'restart' | 'status') {
+    setActioning(serviceName);
+    setActionOutput({ name: serviceName, lines: [], exitCode: null });
+    getToken().then(token => {
+      openSshStream(
+        `/api/servers/${serverId}/ssh/service/${encodeURIComponent(serviceName)}`,
+        { action },
+        token,
+        (event) => {
+          if (event.type === 'stdout' || event.type === 'stderr') {
+            setActionOutput(prev => prev ? { ...prev, lines: [...prev.lines, event.line] } : null);
+          }
+          if (event.type === 'exit') {
+            setActionOutput(prev => prev ? { ...prev, exitCode: event.code } : null);
+            setActioning(null);
+            fetchServices();
+          }
+          if (event.type === 'error') {
+            setActionOutput(prev => prev ? { ...prev, lines: [...prev.lines, event.message], exitCode: 1 } : null);
+            setActioning(null);
+          }
+        },
+      );
+    });
+  }
+
+  const services = lines.map(line => {
+    const parts = line.trim().split(/\s+/);
+    return {
+      name: parts[0] ?? '',
+      load: parts[1] ?? '',
+      active: parts[2] ?? '',
+      sub: parts[3] ?? '',
+      description: parts.slice(4).join(' '),
+    };
+  }).filter(s => s.name.endsWith('.service'));
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <Button onClick={fetchServices} disabled={loading}>{loading ? 'Loading…' : 'Refresh services'}</Button>
+      </div>
+
+      {actionOutput && (
+        <pre style={{ background: '#1a1814', color: '#f0ede6', borderRadius: 8, padding: 12, fontSize: 12, fontFamily: 'monospace', marginBottom: 16, maxHeight: 150, overflow: 'auto' }}>
+          {actionOutput.lines.join('\n')}
+          {actionOutput.exitCode !== null && `\n[exit ${actionOutput.exitCode}]`}
+        </pre>
+      )}
+
+      {services.length > 0 && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr>
+                {['Service', 'Active', 'Status', 'Actions'].map(h => (
+                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {services.map((svc, i) => (
+                <tr key={svc.name} style={{ borderBottom: i < services.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: 12 }}>{svc.name}</td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <span style={{ color: svc.active === 'active' ? 'var(--green)' : 'var(--red)', fontWeight: 500 }}>{svc.active}</span>
+                  </td>
+                  <td style={{ padding: '10px 16px', color: 'var(--text3)' }}>{svc.sub}</td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {(['start', 'stop', 'restart', 'status'] as const).map(a => (
+                        <button key={a} disabled={actioning === svc.name}
+                          onClick={() => doAction(svc.name, a)}
+                          style={{ padding: '3px 10px', fontSize: 11, border: '1px solid var(--border)', borderRadius: 4, background: 'var(--bg)', cursor: 'pointer', color: 'var(--text)' }}>
+                          {a}
+                        </button>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LogsTab({ serverId }: { serverId: string }) {
+  const getToken = useApiToken();
+  const [source, setSource] = useState<'journalctl' | 'file'>('journalctl');
+  const [service, setService] = useState('');
+  const [filePath, setFilePath] = useState('');
+  const [lines, setLines] = useState(200);
+  const [output, setOutput] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const outputRef = useRef<HTMLPreElement>(null);
+  const ctrlRef = useRef<ReturnType<typeof openSshStream> | null>(null);
+  const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function fetchLogs() {
+    ctrlRef.current?.abort();
+    setLoading(true);
+    setOutput([]);
+    const body = source === 'journalctl'
+      ? { source: 'journalctl', service: service || undefined, lines }
+      : { source: 'file', path: filePath, lines };
+    getToken().then(token => {
+      ctrlRef.current = openSshStream(
+        `/api/servers/${serverId}/ssh/logs`,
+        body,
+        token,
+        (event) => {
+          if (event.type === 'stdout') {
+            setOutput(prev => [...prev, event.line]);
+            setTimeout(() => outputRef.current?.scrollTo(0, outputRef.current.scrollHeight), 0);
+          }
+          if (event.type === 'exit' || event.type === 'error') setLoading(false);
+        },
+      );
+    });
+  }
+
+  useEffect(() => {
+    if (autoRefresh) {
+      autoRefreshRef.current = setInterval(fetchLogs, 10_000);
+    } else {
+      if (autoRefreshRef.current) clearInterval(autoRefreshRef.current);
+    }
+    return () => { if (autoRefreshRef.current) clearInterval(autoRefreshRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRefresh, source, service, filePath, lines]);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' }}>
+        <select value={source} onChange={e => setSource(e.target.value as 'journalctl' | 'file')}
+          style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--bg)' }}>
+          <option value="journalctl">journalctl</option>
+          <option value="file">File path</option>
+        </select>
+        {source === 'journalctl' ? (
+          <input value={service} onChange={e => setService(e.target.value)} placeholder="Service (optional)"
+            style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--bg)', width: 180 }} />
+        ) : (
+          <input value={filePath} onChange={e => setFilePath(e.target.value)} placeholder="/var/log/app.log"
+            style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--bg)', width: 240 }} />
+        )}
+        <select value={lines} onChange={e => setLines(Number(e.target.value))}
+          style={{ padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--bg)' }}>
+          {[50, 200, 500, 1000].map(n => <option key={n} value={n}>{n} lines</option>)}
+        </select>
+        <Button onClick={fetchLogs} disabled={loading}>{loading ? 'Loading…' : 'Fetch'}</Button>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text2)', cursor: 'pointer' }}>
+          <input type="checkbox" checked={autoRefresh} onChange={e => setAutoRefresh(e.target.checked)} />
+          Auto-refresh (10s)
+        </label>
+      </div>
+      <pre ref={outputRef}
+        style={{ background: '#1a1814', color: '#f0ede6', borderRadius: 8, padding: 16, fontSize: 12, fontFamily: 'monospace', minHeight: 200, maxHeight: 500, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', margin: 0 }}>
+        {output.join('\n')}
+      </pre>
+    </div>
+  );
+}
+
+function FilesTab({ serverId }: { serverId: string }) {
+  const getToken = useApiToken();
+  const [path, setPath] = useState('/');
+  const [entries, setEntries] = useState<SshFileEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fileModal, setFileModal] = useState<{ path: string; content: string } | null>(null);
+
+  async function navigate(newPath: string) {
+    setPath(newPath);
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const result = await listFiles(token, serverId, newPath);
+      setEntries(result.data);
+    } catch {
+      setEntries([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function openFile(filePath: string) {
+    try {
+      const token = await getToken();
+      const result = await readFile(token, serverId, filePath);
+      setFileModal({ path: filePath, content: result.data.content });
+    } catch (err) {
+      alert((err as Error).message);
+    }
+  }
+
+  const breadcrumbs = path.split('/').filter(Boolean);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 12, fontSize: 13, fontFamily: 'monospace' }}>
+        <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue)', padding: 0 }}>/</button>
+        {breadcrumbs.map((part, i) => {
+          const targetPath = '/' + breadcrumbs.slice(0, i + 1).join('/');
+          return (
+            <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ color: 'var(--text3)' }}>/</span>
+              <button onClick={() => navigate(targetPath)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue)', padding: 0 }}>{part}</button>
+            </span>
+          );
+        })}
+        <Button onClick={() => void navigate(path)} style={{ marginLeft: 8 }} disabled={loading}>
+          {loading ? 'Loading…' : 'Go'}
+        </Button>
+      </div>
+
+      {entries.length > 0 && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr>
+                {['Name', 'Size', 'Modified'].map(h => (
+                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry, i) => (
+                <tr key={entry.name} style={{ borderBottom: i < entries.length - 1 ? '1px solid var(--border)' : 'none', cursor: entry.type === 'dir' || entry.type === 'file' ? 'pointer' : 'default' }}
+                  onClick={() => {
+                    if (entry.type === 'dir') void navigate(path.replace(/\/$/, '') + '/' + entry.name);
+                    else if (entry.type === 'file') void openFile(path.replace(/\/$/, '') + '/' + entry.name);
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                  <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: 12 }}>
+                    <span style={{ marginRight: 6 }}>{entry.type === 'dir' ? '📁' : '📄'}</span>
+                    {entry.name}
+                  </td>
+                  <td style={{ padding: '10px 16px', color: 'var(--text3)' }}>{entry.type === 'dir' ? '—' : `${(entry.size / 1024).toFixed(1)} KB`}</td>
+                  <td style={{ padding: '10px 16px', color: 'var(--text3)' }}>{entry.modified}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {fileModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setFileModal(null)}>
+          <div style={{ background: 'var(--surface)', borderRadius: 12, width: '80vw', maxHeight: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'monospace', fontSize: 13 }}>{fileModal.path}</span>
+              <Button onClick={() => setFileModal(null)}>Close</Button>
+            </div>
+            <pre style={{ padding: 16, overflow: 'auto', fontSize: 12, fontFamily: 'monospace', margin: 0, flex: 1, background: '#1a1814', color: '#f0ede6' }}>
+              {fileModal.content}
+            </pre>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ServerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
