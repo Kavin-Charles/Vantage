@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApiToken } from '@/lib/useApiToken';
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/FormField';
 import {
@@ -54,7 +55,7 @@ function StageFieldRow({
         fontSize: 13,
       }}
     >
-      <span style={{ flex: 1, color: 'var(--text)' }}>{field.label}</span>
+      <span style={{ flex: 1, color: 'var(--text)' }}>{field.name}</span>
       <span
         style={{
           fontSize: 11,
@@ -67,7 +68,7 @@ function StageFieldRow({
       >
         {field.field_type}
       </span>
-      {field.required && (
+      {field.is_required && (
         <span style={{ fontSize: 11, color: '#ef4444' }}>required</span>
       )}
       <button
@@ -95,6 +96,7 @@ function AddFieldForm({
   stageId: string;
   onAdded: () => void;
 }) {
+  const getToken = useApiToken();
   const [label, setLabel] = useState('');
   const [fieldType, setFieldType] = useState<string>('text');
   const [required, setRequired] = useState(false);
@@ -105,7 +107,7 @@ function AddFieldForm({
     if (!label.trim()) return;
     setLoading(true);
     try {
-      await createField(stageId, { label: label.trim(), field_type: fieldType, required });
+      await createField(await getToken(), stageId, { name: label.trim(), field_type: fieldType, is_required: required });
       setLabel('');
       setRequired(false);
       onAdded();
@@ -161,6 +163,7 @@ function StageSection({
   onDelete: () => void;
   onChanged: () => void;
 }) {
+  const getToken = useApiToken();
   const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState(stage.name);
   const [showAddField, setShowAddField] = useState(false);
@@ -168,14 +171,14 @@ function StageSection({
 
   async function saveName() {
     if (name.trim() && name.trim() !== stage.name) {
-      await updateStage(pipelineId, stage.id, { name: name.trim() });
+      await updateStage(await getToken(), pipelineId, stage.id, { name: name.trim() });
       onChanged();
     }
     setEditingName(false);
   }
 
   async function removeField(fieldId: string, sid: string) {
-    await deleteField(sid, fieldId);
+    await deleteField(await getToken(), sid, fieldId);
     onChanged();
   }
 
@@ -289,24 +292,25 @@ function StageSection({
 }
 
 function PipelineEditor({ pipeline }: { pipeline: Pipeline }) {
+  const getToken = useApiToken();
   const qc = useQueryClient();
   const [newStageName, setNewStageName] = useState('');
   const [addingStage, setAddingStage] = useState(false);
 
   const { data, refetch } = useQuery({
     queryKey: ['pipeline', pipeline.id],
-    queryFn: () => getPipeline(pipeline.id),
+    queryFn: async () => getPipeline(await getToken(), pipeline.id),
   });
 
   const pw: PipelineWithStages | undefined = data?.data;
 
   const addStageMut = useMutation({
-    mutationFn: (name: string) => createStage(pipeline.id, { name }),
+    mutationFn: async (name: string) => createStage(await getToken(), pipeline.id, { name }),
     onSuccess: () => { void refetch(); setNewStageName(''); setAddingStage(false); },
   });
 
   const deleteStageMut = useMutation({
-    mutationFn: (stageId: string) => deleteStage(pipeline.id, stageId),
+    mutationFn: async (stageId: string) => deleteStage(await getToken(), pipeline.id, stageId),
     onSuccess: () => refetch(),
   });
 
@@ -793,6 +797,7 @@ function ItemGroupsSection({ pipelineId }: { pipelineId: string }) {
 // ── Main page ──────────────────────────────────────────────────────────────
 
 export default function PipelinesSettingsPage() {
+  const getToken = useApiToken();
   const qc = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
@@ -801,7 +806,7 @@ export default function PipelinesSettingsPage() {
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['pipelines'],
-    queryFn: listPipelines,
+    queryFn: async () => listPipelines(await getToken()),
   });
 
   const pipelines: Pipeline[] = data?.data ?? [];
@@ -814,7 +819,7 @@ export default function PipelinesSettingsPage() {
   }, [pipelines, selected]);
 
   const createMut = useMutation({
-    mutationFn: (name: string) => createPipeline({ name }),
+    mutationFn: async (name: string) => createPipeline(await getToken(), { name }),
     onSuccess: (res) => {
       void refetch();
       setSelected(res.data.id);
@@ -824,7 +829,7 @@ export default function PipelinesSettingsPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => deletePipeline(id),
+    mutationFn: async (id: string) => deletePipeline(await getToken(), id),
     onSuccess: () => {
       void refetch();
       void qc.invalidateQueries({ queryKey: ['pipeline'] });
