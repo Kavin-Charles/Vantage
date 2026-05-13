@@ -10,6 +10,28 @@ Most dev-led companies run their sales process out of a spreadsheet and their in
 
 It's self-hosted, config-file driven, and has no external service dependencies beyond a Postgres database and Redis.
 
+<p align="center">
+  <img src="screenshots/pipeline.png" alt="Pipeline kanban" width="49%" />
+  <img src="screenshots/servers.png" alt="Server monitoring" width="49%" />
+</p>
+<p align="center">
+  <img src="screenshots/analytics.png" alt="Analytics" width="49%" />
+  <img src="screenshots/alerts.png" alt="Alerts" width="49%" />
+</p>
+
+<details>
+<summary>More screenshots</summary>
+<br>
+
+![Contacts](screenshots/contacts.png)
+![Companies](screenshots/companies.png)
+![Activity](screenshots/activity.png)
+![Databases](screenshots/databases.png)
+![Websites](screenshots/websites.png)
+![Tasks](screenshots/tasks.png)
+
+</details>
+
 ---
 
 ## Features
