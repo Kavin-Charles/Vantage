@@ -110,10 +110,10 @@ export interface PipelineStage {
 export interface StageField {
   id: string;
   stage_id: string;
-  label: string;
+  name: string;
   field_type: FieldType;
   options: string[] | null;
-  required: boolean;
+  is_required: boolean;
   position: number;
   created_at: string;
   updated_at: string;
