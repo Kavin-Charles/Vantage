@@ -11,6 +11,7 @@ export const apiEnvSchema = z.object({
   DATABASE_URL: z.string(),
   JWT_SECRET: z.string(),
   CRON_SECRET: z.string(),
+  SSH_ENCRYPTION_KEY: z.string().min(64, 'SSH_ENCRYPTION_KEY must be a 64-char hex string (32 bytes)'),
   PORT: z.coerce.number().default(3001),
 });
 
