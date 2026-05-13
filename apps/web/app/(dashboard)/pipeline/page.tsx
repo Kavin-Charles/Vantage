@@ -11,6 +11,7 @@ import { GroupTabs } from './GroupTabs';
 import { ItemModal } from './ItemModal';
 import { listDeals, updateDeal } from '@/lib/deals';
 import { getPipeline } from '@/lib/pipelines';
+import { useApiToken } from '@/lib/useApiToken';
 import { getItemGroup, listItems, updateItem } from '@/lib/item-groups';
 import type { Deal, PipelineStage, Item, GroupStage, ItemGroupWithStages } from '@vantage/types';
 
@@ -29,13 +30,14 @@ function stageColor(stage: PipelineStage | GroupStage): string {
 
 function DealsKanban({ pipelineId }: { pipelineId: string }) {
   const qc = useQueryClient();
+  const getToken = useApiToken();
   const [modal, setModal] = useState<'create' | Deal | null>(null);
   const [defaultStageId, setDefaultStageId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
 
   const { data: pipelineData } = useQuery({
     queryKey: ['pipeline', pipelineId],
-    queryFn: () => getPipeline(pipelineId),
+    queryFn: async () => getPipeline(await getToken(), pipelineId),
   });
 
   const { data: dealsData } = useQuery({
@@ -214,12 +216,13 @@ function ItemsKanban({ groupId, pipelineId }: { groupId: string; pipelineId: str
 
 export default function PipelinePage() {
   const qc = useQueryClient();
+  const getToken = useApiToken();
   const [pipelineId, setPipelineId] = useState<string | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
 
   const { data: pipelineData } = useQuery({
     queryKey: ['pipeline', pipelineId],
-    queryFn: () => getPipeline(pipelineId!),
+    queryFn: async () => getPipeline(await getToken(), pipelineId!),
     enabled: !!pipelineId,
   });
 

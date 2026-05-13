@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { listPipelines } from '@/lib/pipelines';
+import { useApiToken } from '@/lib/useApiToken';
 import type { Pipeline } from '@vantage/types';
 
 interface Props {
@@ -10,9 +11,10 @@ interface Props {
 }
 
 export function PipelineSwitcher({ value, onChange }: Props) {
+  const getToken = useApiToken();
   const { data, isLoading } = useQuery({
     queryKey: ['pipelines'],
-    queryFn: listPipelines,
+    queryFn: async () => listPipelines(await getToken()),
   });
 
   const pipelines: Pipeline[] = data?.data ?? [];
