@@ -82,7 +82,7 @@ packages/
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/your-org/vantage.git
+git clone https://github.com/Kavin-Charles/vantage.git
 cd vantage
 pnpm install
 ```
