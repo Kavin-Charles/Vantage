@@ -79,9 +79,14 @@ export function runCommand(
   command: string,
 ): Promise<number> {
   return new Promise((resolve, reject) => {
+    let done = false;
+
     const sessionTimeout = setTimeout(() => {
-      sseWrite(res, { type: 'error', message: 'Session timeout (5 minutes)' });
-      resolve(1);
+      if (!done) {
+        done = true;
+        sseWrite(res, { type: 'error', message: 'Session timeout (5 minutes)' });
+        resolve(1);
+      }
     }, 5 * 60_000);
 
     conn.exec(command, (err, stream) => {
@@ -92,23 +97,29 @@ export function runCommand(
       }
 
       stream.stdout.on('data', (chunk: Buffer) => {
+        if (done) return;
         for (const line of chunk.toString('utf8').split('\n')) {
           if (line) sseWrite(res, { type: 'stdout', line });
         }
       });
 
       stream.stderr.on('data', (chunk: Buffer) => {
+        if (done) return;
         for (const line of chunk.toString('utf8').split('\n')) {
           if (line) sseWrite(res, { type: 'stderr', line });
         }
       });
 
       stream.on('close', (code: number) => {
+        if (done) return;
+        done = true;
         clearTimeout(sessionTimeout);
         resolve(code ?? 0);
       });
 
       stream.on('error', (err: Error) => {
+        if (done) return;
+        done = true;
         clearTimeout(sessionTimeout);
         reject(err);
       });

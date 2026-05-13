@@ -186,15 +186,21 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
 
       let command: string;
       if (body.source === 'journalctl') {
+        // Sanitise service name — same allow-list as /service/:name
+        if (body.service && !/^[\w@.-]+$/.test(body.service)) {
+          res.status(400).json({ data: null, error: { code: 'INVALID_SERVICE_NAME', message: 'Invalid service name' } });
+          return;
+        }
         command = body.service
           ? `journalctl -u ${body.service} -n ${body.lines} --no-pager`
           : `journalctl -n ${body.lines} --no-pager`;
       } else {
-        if (/[;&|`$<>]/.test(body.path)) {
+        if (!/^[\w./ -]+$/.test(body.path) || body.path.includes('..')) {
           res.status(400).json({ data: null, error: { code: 'INVALID_PATH', message: 'Invalid path' } });
           return;
         }
-        command = `tail -n ${body.lines} ${body.path}`;
+        const safePath = body.path.replace(/'/g, "'\\''");
+        command = `tail -n ${body.lines} '${safePath}'`;
       }
 
       sseStart(res);
@@ -217,7 +223,7 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { path } = z.object({ path: z.string().min(1).default('/') }).parse(req.body);
-      if (/[;&|`$<>]/.test(path)) {
+      if (!/^[\w./ -]+$/.test(path) || path.includes('..')) {
         res.status(400).json({ data: null, error: { code: 'INVALID_PATH', message: 'Invalid path' } });
         return;
       }
@@ -228,7 +234,8 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
       if (!privateKey) return;
 
       const lines: string[] = [];
-      const command = `ls -la --time-style=+%Y-%m-%dT%H:%M:%S ${path} 2>&1`;
+      const safePathQ = path.replace(/'/g, "'\\''");
+      const command = `ls -la --time-style=+%Y-%m-%dT%H:%M:%S '${safePathQ}' 2>&1`;
 
       try {
         await withSshSession({ host: server.ip_address!, username: 'root', privateKey }, async (conn) => {
@@ -281,7 +288,7 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
         res.status(400).json({ data: null, error: { code: 'MISSING_PATH', message: 'path query param required' } });
         return;
       }
-      if (/[;&|`$<>]/.test(filePath)) {
+      if (!/^[\w./ -]+$/.test(filePath) || filePath.includes('..')) {
         res.status(400).json({ data: null, error: { code: 'INVALID_PATH', message: 'Invalid path' } });
         return;
       }
@@ -299,7 +306,8 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
       try {
         await withSshSession({ host: server.ip_address!, username: 'root', privateKey }, async (conn) => {
           return new Promise<void>((resolve, reject) => {
-            conn.exec(`cat ${filePath}`, (err, stream) => {
+            const safeFilePathQ = filePath.replace(/'/g, "'\\''");
+            conn.exec(`cat '${safeFilePathQ}'`, (err, stream) => {
               if (err) { reject(err); return; }
               stream.stdout.on('data', (chunk: Buffer) => {
                 totalBytes += chunk.length;
