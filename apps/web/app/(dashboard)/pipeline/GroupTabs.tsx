@@ -39,7 +39,7 @@ export function GroupTabs({ pipelineId, activeGroupId, onChange }: Props) {
   return (
     <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
       <button style={tabStyle(activeGroupId === null)} onClick={() => onChange(null)}>
-        Deals
+        Items
       </button>
       {groups.map(g => (
         <button key={g.id} style={tabStyle(activeGroupId === g.id)} onClick={() => onChange(g.id)}>

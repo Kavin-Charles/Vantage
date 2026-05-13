@@ -73,7 +73,7 @@ function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigge
     <>
       {deals.length > 0 && (
         <div style={{ marginBottom: 20, fontSize: 13, color: 'var(--text2)' }}>
-          {deals.length} deals · <strong style={{ color: 'var(--text)' }}>{fmtValue(totalValue)}</strong> in pipeline
+          {deals.length} items · <strong style={{ color: 'var(--text)' }}>{fmtValue(totalValue)}</strong> in pipeline
         </div>
       )}
 
@@ -246,7 +246,7 @@ export default function PipelinePage() {
         left={<PipelineSwitcher value={pipelineId} onChange={id => { setPipelineId(id); setActiveGroupId(null); }} />}
         action={
           activeGroupId === null && stages.length > 0 ? (
-            <Button variant="primary" onClick={() => setDealsAddTrigger(n => n + 1)}>+ Add Deal</Button>
+            <Button variant="primary" onClick={() => setDealsAddTrigger(n => n + 1)}>+ Add item</Button>
           ) : activeGroupId !== null ? (
             <Button variant="primary" onClick={() => setItemsAddTrigger(n => n + 1)}>+ Add item</Button>
           ) : null
