@@ -81,6 +81,7 @@ export function ItemModal({ item, group, pipelineId, defaultStageId, onDone }: P
           stage_id: form.stage_id,
           title: form.title,
           value: form.value ? parseFloat(form.value) : undefined,
+          field_values: Object.keys(fieldValues).length > 0 ? fieldValues : undefined,
         });
       }
       onDone();

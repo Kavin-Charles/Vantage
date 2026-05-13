@@ -135,16 +135,21 @@ function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigge
 
 // ── Items kanban ────────────────────────────────────────────────────────────────
 
-function ItemsKanban({ groupId, pipelineId }: { groupId: string; pipelineId: string }) {
+function ItemsKanban({ groupId, pipelineId, addTrigger }: { groupId: string; pipelineId: string; addTrigger?: number }) {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | Item | null>(null);
   const [defaultStageId, setDefaultStageId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (addTrigger && addTrigger > 0) { setDefaultStageId(null); setModal('create'); }
+  }, [addTrigger]);
+
   const { data: groupData } = useQuery({
     queryKey: ['item-group', groupId],
     queryFn: async () => getItemGroup(await getToken(), groupId),
+    refetchOnMount: true,
   });
 
   const { data: itemsData } = useQuery({
@@ -224,6 +229,7 @@ export default function PipelinePage() {
   const [pipelineId, setPipelineId] = useState<string | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [dealsAddTrigger, setDealsAddTrigger] = useState(0);
+  const [itemsAddTrigger, setItemsAddTrigger] = useState(0);
 
   const { data: pipelineData } = useQuery({
     queryKey: ['pipeline', pipelineId],
@@ -241,6 +247,8 @@ export default function PipelinePage() {
         action={
           activeGroupId === null && stages.length > 0 ? (
             <Button variant="primary" onClick={() => setDealsAddTrigger(n => n + 1)}>+ Add Deal</Button>
+          ) : activeGroupId !== null ? (
+            <Button variant="primary" onClick={() => setItemsAddTrigger(n => n + 1)}>+ Add item</Button>
           ) : null
         }
       />
@@ -250,7 +258,7 @@ export default function PipelinePage() {
             <GroupTabs pipelineId={pipelineId} activeGroupId={activeGroupId} onChange={setActiveGroupId} />
             {activeGroupId === null
               ? <DealsKanban pipelineId={pipelineId} addTrigger={dealsAddTrigger} />
-              : <ItemsKanban groupId={activeGroupId} pipelineId={pipelineId} />
+              : <ItemsKanban groupId={activeGroupId} pipelineId={pipelineId} addTrigger={itemsAddTrigger} />
             }
           </>
         )}

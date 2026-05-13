@@ -12,6 +12,7 @@ const createItemSchema = z.object({
   value: z.number().min(0).optional(),
   contact_id: z.string().uuid().optional(),
   company_id: z.string().uuid().optional(),
+  field_values: z.record(z.string()).optional(),
 });
 
 const updateItemSchema = z.object({
@@ -130,6 +131,19 @@ export function createItemsRouter(db: Kysely<Database>): ExpressRouter {
         })
         .returningAll()
         .executeTakeFirstOrThrow();
+
+      // Save field values if provided
+      if (parsed.field_values) {
+        for (const [fieldId, value] of Object.entries(parsed.field_values)) {
+          await db
+            .insertInto('item_field_values')
+            .values({ item_id: item.id, field_id: fieldId, value })
+            .onConflict(oc =>
+              oc.columns(['item_id', 'field_id']).doUpdateSet({ value, updated_at: new Date() }),
+            )
+            .execute();
+        }
+      }
 
       res.status(201).json({ data: item, error: null });
     } catch (err) {

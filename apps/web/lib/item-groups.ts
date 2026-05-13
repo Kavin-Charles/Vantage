@@ -102,6 +102,7 @@ export async function createItem(token: string, body: {
   value?: number;
   contact_id?: string;
   company_id?: string;
+  field_values?: Record<string, string>;
 }) {
   return apiFetch<{ data: Item }>('/api/items', { method: 'POST', body: JSON.stringify(body), token });
 }
