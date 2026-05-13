@@ -336,3 +336,45 @@ export interface PaginatedResponse<T> {
   page: number;
   per_page: number;
 }
+
+export interface WorkspaceSshKeypair {
+  id: string;
+  workspace_id: string;
+  public_key: string;
+  // encrypted_private_key and iv are never sent to clients
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SshCommandLog {
+  id: string;
+  workspace_id: string;
+  server_id: string;
+  user_id: string;
+  command: string;
+  exit_code: number | null;
+  created_at: string;
+}
+
+export interface SshServiceEntry {
+  name: string;
+  load: string;
+  active: string;
+  sub: string;
+  description: string;
+}
+
+export interface SshFileEntry {
+  name: string;
+  type: 'file' | 'dir' | 'link' | 'other';
+  size: number;
+  modified: string;
+}
+
+// SSE event shapes sent by SSH routes
+export type SshStreamEvent =
+  | { type: 'stdout'; line: string }
+  | { type: 'stderr'; line: string }
+  | { type: 'exit'; code: number }
+  | { type: 'error'; message: string }
+  | { type: 'service'; entry: SshServiceEntry };
