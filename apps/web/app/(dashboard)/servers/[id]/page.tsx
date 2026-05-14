@@ -386,6 +386,10 @@ function LogsTab({ serverId }: { serverId: string }) {
   const filePathRef = useRef(filePath);
   const linesRef = useRef(lines);
 
+  useEffect(() => {
+    return () => { ctrlRef.current?.abort(); };
+  }, []);
+
   useEffect(() => { sourceRef.current = source; }, [source]);
   useEffect(() => { serviceRef.current = service; }, [service]);
   useEffect(() => { filePathRef.current = filePath; }, [filePath]);
