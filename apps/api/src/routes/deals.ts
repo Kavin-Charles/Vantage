@@ -4,6 +4,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { toCSV } from '../lib/csv';
+import { queueWebhook } from '../lib/queue-webhook';
 const DEAL_HEADERS = ['name', 'value', 'probability', 'close_date'];
 
 const importDealSchema = z.object({
@@ -242,9 +243,19 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
         return;
       }
 
+      // Read current deal to detect stage change for webhooks
+      const currentDeal = await db
+        .selectFrom('deals')
+        .select(['stage_id', 'name', 'value', 'owner_id'])
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .where('deleted_at', 'is', null)
+        .executeTakeFirst();
+
       // If moving to a new stage, check required fields on won/lost stages
+      let targetStage: { id: string; name: string; color: string; position: number; is_won: boolean; is_lost: boolean; pipeline_id: string } | undefined;
       if (parsed.data.stage_id) {
-        const targetStage = await db
+        targetStage = await db
           .selectFrom('pipeline_stages')
           .innerJoin('pipelines', 'pipelines.id', 'pipeline_stages.pipeline_id')
           .where('pipeline_stages.id', '=', parsed.data.stage_id)
@@ -303,6 +314,25 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
           .where('id', '=', req.params['id']!)
           .where('workspace_id', '=', workspace.id)
           .execute();
+      }
+
+      // Fire webhook if stage changed
+      if (
+        parsed.data.stage_id &&
+        currentDeal &&
+        parsed.data.stage_id !== currentDeal.stage_id
+      ) {
+        void queueWebhook(db, workspace.id, 'deal.stage_changed', {
+          deal_id: req.params['id']!,
+          deal_name: currentDeal.name,
+          old_stage_id: currentDeal.stage_id,
+          new_stage_id: parsed.data.stage_id,
+          new_stage_name: targetStage?.name ?? null,
+          value: currentDeal.value,
+          owner_id: currentDeal.owner_id,
+          workspace_id: workspace.id,
+          timestamp: new Date().toISOString(),
+        });
       }
 
       // Upsert field values
