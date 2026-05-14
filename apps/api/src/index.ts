@@ -28,6 +28,7 @@ import { createAnalyticsRouter } from './routes/analytics';
 import { createSshKeypairRouter } from './routes/ssh-keypair';
 import { createSshActionsRouter } from './routes/ssh-actions';
 import { createWebhooksRouter } from './routes/webhooks';
+import { createApiKeysRouter } from './routes/api-keys';
 import { seedOnFirstBoot } from './lib/seed';
 import { logger } from './lib/logger';
 
@@ -63,6 +64,7 @@ app.use('/api/item-groups', requireAuth, createItemGroupsRouter(db));
 app.use('/api/items', requireAuth, createItemsRouter(db));
 app.use('/api/analytics', requireAuth, createAnalyticsRouter(db));
 app.use('/api/webhooks', requireAuth, createWebhooksRouter(db));
+app.use('/api/api-keys', requireAuth, createApiKeysRouter(db));
 
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
