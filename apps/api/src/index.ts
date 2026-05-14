@@ -27,6 +27,7 @@ import { createItemsRouter } from './routes/items';
 import { createAnalyticsRouter } from './routes/analytics';
 import { createSshKeypairRouter } from './routes/ssh-keypair';
 import { createSshActionsRouter } from './routes/ssh-actions';
+import { createWebhooksRouter } from './routes/webhooks';
 import { seedOnFirstBoot } from './lib/seed';
 import { logger } from './lib/logger';
 
@@ -61,6 +62,7 @@ app.use('/api/alerts', requireAuth, createAlertsRouter(db));
 app.use('/api/item-groups', requireAuth, createItemGroupsRouter(db));
 app.use('/api/items', requireAuth, createItemsRouter(db));
 app.use('/api/analytics', requireAuth, createAnalyticsRouter(db));
+app.use('/api/webhooks', requireAuth, createWebhooksRouter(db));
 
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
