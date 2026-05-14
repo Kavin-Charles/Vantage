@@ -454,3 +454,10 @@ export type WorkspaceSshKeypair = Selectable<WorkspaceSshKeypairTable>;
 export type NewWorkspaceSshKeypair = Insertable<WorkspaceSshKeypairTable>;
 export type SshCommandLog = Selectable<SshCommandLogTable>;
 export type NewSshCommandLog = Insertable<SshCommandLogTable>;
+
+export type WebhookSubscription = Selectable<WebhookSubscriptionTable>;
+export type NewWebhookSubscription = Insertable<WebhookSubscriptionTable>;
+export type WebhookSubscriptionUpdate = Updateable<WebhookSubscriptionTable>;
+export type WebhookDelivery = Selectable<WebhookDeliveryTable>;
+export type NewWebhookDelivery = Insertable<WebhookDeliveryTable>;
+export type WebhookDeliveryUpdate = Updateable<WebhookDeliveryTable>;

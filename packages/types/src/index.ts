@@ -393,6 +393,7 @@ export interface WebhookDelivery {
   id: string;
   subscription_id: string;
   event: string;
+  payload: unknown;
   status: string;
   attempts: number;
   last_error: string | null;
