@@ -256,6 +256,7 @@ export interface Server {
   load_avg_1m: number | null;
   net_in_bytes: number | null;
   net_out_bytes: number | null;
+  ssh_port: number;
   status: ServerStatus;
   last_ping_at: string | null;
   created_at: string;
@@ -341,6 +342,7 @@ export interface WorkspaceSshKeypair {
   id: string;
   workspace_id: string;
   public_key: string;
+  ssh_user: string;
   // encrypted_private_key and iv are never sent to clients
   created_at: string;
   updated_at: string;
