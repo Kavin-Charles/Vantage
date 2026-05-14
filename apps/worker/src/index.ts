@@ -4,6 +4,7 @@ import { logger } from './lib/logger';
 import { runWebsitePing } from './jobs/website-ping';
 import { runAlertEval } from './jobs/alert-eval';
 import { runDbHealth } from './jobs/db-health';
+import { runServerStaleness } from './jobs/server-staleness';
 
 const config = readConfig();
 const db = createDb(process.env['DATABASE_URL']!);
@@ -23,6 +24,7 @@ setInterval(async () => {
       await runAlertEval();
       if (config.features.infra) {
         await runDbHealth(db);
+        await runServerStaleness(db);
       }
     } catch (err) {
       logger.error({ err }, 'job error');
