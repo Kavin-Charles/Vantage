@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
+import { queueWebhook } from '../lib/queue-webhook';
 
 const createItemSchema = z.object({
   group_id: z.string().uuid(),
@@ -274,7 +275,7 @@ export function createItemsRouter(db: Kysely<Database>): ExpressRouter {
         .where('id', '=', parsed.target_group_id)
         .where('workspace_id', '=', auth.workspace.id)
         .where('pipeline_id', '=', sourceGroup.pipeline_id)
-        .select('id')
+        .select(['id', 'name'])
         .executeTakeFirst();
       if (!targetGroup) {
         res.status(400).json({ data: null, error: { code: 'INVALID_GROUP', message: 'Target group not in same pipeline' } });
@@ -310,6 +311,16 @@ export function createItemsRouter(db: Kysely<Database>): ExpressRouter {
         .executeTakeFirstOrThrow();
 
       res.status(201).json({ data: newItem, error: null });
+
+      void queueWebhook(db, auth.workspace.id, 'item.moved', {
+        item_id: newItem.id,
+        item_name: source.title,
+        old_group_id: source.group_id,
+        new_group_id: parsed.target_group_id,
+        new_group_name: targetGroup.name,
+        workspace_id: auth.workspace.id,
+        timestamp: new Date().toISOString(),
+      });
     } catch (err) {
       next(err);
     }
