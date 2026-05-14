@@ -318,6 +318,28 @@ export interface ItemFieldValueTable {
   updated_at: Generated<Date>;
 }
 
+export interface WebhookSubscriptionTable {
+  id: Generated<string>;
+  workspace_id: string;
+  target_url: string;
+  event: string;
+  secret: string;
+  created_at: Generated<string>;
+}
+
+export interface WebhookDeliveryTable {
+  id: Generated<string>;
+  subscription_id: string;
+  event: string;
+  payload: unknown;
+  status: Generated<string>;
+  attempts: Generated<number>;
+  next_attempt_at: Generated<string>;
+  last_error: string | null;
+  created_at: Generated<string>;
+  delivered_at: string | null;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -343,6 +365,8 @@ export interface Database {
   items: ItemTable;
   item_fields: ItemFieldTable;
   item_field_values: ItemFieldValueTable;
+  webhook_subscriptions: WebhookSubscriptionTable;
+  webhook_deliveries: WebhookDeliveryTable;
 }
 
 // Convenience types

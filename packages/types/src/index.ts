@@ -380,3 +380,22 @@ export type SshStreamEvent =
   | { type: 'exit'; code: number }
   | { type: 'error'; message: string }
   | { type: 'service'; entry: SshServiceEntry };
+
+export interface WebhookSubscription {
+  id: string;
+  workspace_id: string;
+  target_url: string;
+  event: string;
+  created_at: string;
+}
+
+export interface WebhookDelivery {
+  id: string;
+  subscription_id: string;
+  event: string;
+  status: string;
+  attempts: number;
+  last_error: string | null;
+  created_at: string;
+  delivered_at: string | null;
+}
