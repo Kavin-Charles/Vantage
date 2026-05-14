@@ -271,13 +271,55 @@ export interface InfraDatabase {
   version: string | null;
   host: string | null;
   port: number | null;
+  db_user: string | null;
+  database_name: string | null;
+  use_ssl: boolean;
+  has_password?: boolean;
   storage_gb: number | null;
   connection_count: number | null;
   replication_lag_s: number | null;
+  memory_used_mb: number | null;
+  connected_clients: number | null;
+  uptime_seconds: number | null;
   status: InfraDatabaseStatus;
   last_checked_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface InfraDatabaseColumn {
+  name: string;
+  data_type: string;
+  nullable: boolean;
+  primary_key: boolean;
+}
+
+export interface InfraDatabaseTable {
+  schema: string;
+  name: string;
+  columns: InfraDatabaseColumn[];
+  primary_key: string[];
+}
+
+export interface InfraDatabaseRows {
+  columns: InfraDatabaseColumn[];
+  rows: Record<string, unknown>[];
+  primary_key: string[];
+  page: number;
+  limit: number;
+}
+
+export interface InfraDatabaseSqlResult {
+  columns: string[];
+  rows: Record<string, unknown>[];
+  row_count: number;
+  kind: 'select' | 'dml';
+}
+
+export interface InfraDatabaseConnectionTestResult {
+  ok: boolean;
+  latency_ms: number;
+  message: string;
 }
 
 export interface Website {

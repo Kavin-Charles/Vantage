@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { Topbar } from '@/components/Topbar';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -27,6 +28,7 @@ const td: React.CSSProperties = { padding: '12px 16px', fontSize: 13, color: 'va
 export default function DatabasesPage() {
   const getToken = useApiToken();
   const qc = useQueryClient();
+  const router = useRouter();
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({ name: '', engine: 'postgres', host: '', port: '' });
 
@@ -77,6 +79,8 @@ export default function DatabasesPage() {
                 <tr><td colSpan={7} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>No databases configured.</td></tr>
               ) : dbs.map(db => (
                 <tr key={db.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => router.push(`/databases/${db.id}`)}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}
                 >
@@ -86,7 +90,7 @@ export default function DatabasesPage() {
                   <td style={{ ...td, color: 'var(--text2)' }}>{db.port ?? '—'}</td>
                   <td style={td}><Badge label={db.status} color={statusColor[db.status] ?? 'gray'} /></td>
                   <td style={{ ...td, color: 'var(--text2)' }}>{db.last_checked_at ? new Date(db.last_checked_at).toLocaleString() : 'never'}</td>
-                  <td style={{ ...td, textAlign: 'right' }}>
+                  <td style={{ ...td, textAlign: 'right' }} onClick={e => e.stopPropagation()}>
                     <Button onClick={() => { if (confirm('Remove this database?')) deleteMut.mutate(db.id); }}>Remove</Button>
                   </td>
                 </tr>
