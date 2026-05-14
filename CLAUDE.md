@@ -392,6 +392,15 @@ CRON_SECRET=            # Protects cron endpoints
 
 ---
 
+## Git Workflow — NON-NEGOTIABLE
+
+- **Never commit directly to `main`.** `main` is protected — a Claude Code hook will block any `git commit` attempt when on `main`.
+- All work goes on a feature branch: `git checkout -b feat/your-feature` (or `fix/`, `chore/`, `refactor/` prefix as appropriate).
+- Branch → commit → merge to main (locally or via PR). That's the only flow.
+- Branch names: lowercase, hyphen-separated, prefixed by type. Examples: `feat/contact-import`, `fix/auth-redirect`, `chore/update-deps`.
+
+---
+
 ## What NOT to Build (yet)
 
 - Full VM management (start/stop/provision) — out of scope for v1
