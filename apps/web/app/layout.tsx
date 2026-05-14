@@ -18,8 +18,8 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: 'Vantage — CRM & Cloud Control',
-  description: 'Close deals. Control your stack. One tab.',
+  title: 'Vantage — Build, sell, and ship in one place',
+  description: 'Build, sell, and ship — one place. CRM, infra monitoring, and team tools for developer-led teams.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
