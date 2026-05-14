@@ -141,6 +141,7 @@ function TerminalTab({ serverId }: { serverId: string }) {
   const [history, setHistory] = useState<SshCommandLog[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const outputRef = useRef<HTMLPreElement>(null);
+  const streamRef = useRef<AbortController | null>(null);
 
   async function fetchHistory() {
     const token = await getToken();
@@ -148,14 +149,19 @@ function TerminalTab({ serverId }: { serverId: string }) {
     setHistory(result.data);
   }
 
+  useEffect(() => {
+    return () => { streamRef.current?.abort(); };
+  }, []);
+
   async function runCmd() {
     if (!command.trim() || running) return;
+    streamRef.current?.abort(); // cancel any prior stream
     setRunning(true);
     setOutput([]);
     setExitCode(null);
     const token = await getToken();
 
-    openSshStream(
+    streamRef.current = openSshStream(
       `/api/servers/${serverId}/ssh/exec`,
       { command },
       token,
@@ -246,12 +252,22 @@ function ServicesTab({ serverId }: { serverId: string }) {
   const [loading, setLoading] = useState(false);
   const [actionOutput, setActionOutput] = useState<{ name: string; lines: string[]; exitCode: number | null } | null>(null);
   const [actioning, setActioning] = useState<string | null>(null);
+  const fetchStreamRef = useRef<AbortController | null>(null);
+  const actionStreamRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      fetchStreamRef.current?.abort();
+      actionStreamRef.current?.abort();
+    };
+  }, []);
 
   function fetchServices() {
+    fetchStreamRef.current?.abort();
     setLoading(true);
     setLines([]);
     getToken().then(token => {
-      openSshStream(
+      fetchStreamRef.current = openSshStream(
         `/api/servers/${serverId}/ssh/services`,
         {},
         token,
@@ -264,10 +280,11 @@ function ServicesTab({ serverId }: { serverId: string }) {
   }
 
   function doAction(serviceName: string, action: 'start' | 'stop' | 'restart' | 'status') {
+    actionStreamRef.current?.abort();
     setActioning(serviceName);
     setActionOutput({ name: serviceName, lines: [], exitCode: null });
     getToken().then(token => {
-      openSshStream(
+      actionStreamRef.current = openSshStream(
         `/api/servers/${serverId}/ssh/service/${encodeURIComponent(serviceName)}`,
         { action },
         token,
@@ -364,14 +381,23 @@ function LogsTab({ serverId }: { serverId: string }) {
   const outputRef = useRef<HTMLPreElement>(null);
   const ctrlRef = useRef<ReturnType<typeof openSshStream> | null>(null);
   const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sourceRef = useRef(source);
+  const serviceRef = useRef(service);
+  const filePathRef = useRef(filePath);
+  const linesRef = useRef(lines);
+
+  useEffect(() => { sourceRef.current = source; }, [source]);
+  useEffect(() => { serviceRef.current = service; }, [service]);
+  useEffect(() => { filePathRef.current = filePath; }, [filePath]);
+  useEffect(() => { linesRef.current = lines; }, [lines]);
 
   function fetchLogs() {
     ctrlRef.current?.abort();
     setLoading(true);
     setOutput([]);
-    const body = source === 'journalctl'
-      ? { source: 'journalctl', service: service || undefined, lines }
-      : { source: 'file', path: filePath, lines };
+    const body = sourceRef.current === 'journalctl'
+      ? { source: 'journalctl', service: serviceRef.current || undefined, lines: linesRef.current }
+      : { source: 'file', path: filePathRef.current, lines: linesRef.current };
     getToken().then(token => {
       ctrlRef.current = openSshStream(
         `/api/servers/${serverId}/ssh/logs`,
@@ -395,8 +421,7 @@ function LogsTab({ serverId }: { serverId: string }) {
       if (autoRefreshRef.current) clearInterval(autoRefreshRef.current);
     }
     return () => { if (autoRefreshRef.current) clearInterval(autoRefreshRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRefresh, source, service, filePath, lines]);
+  }, [autoRefresh]);
 
   return (
     <div>
