@@ -2,9 +2,17 @@
   "name": "vantage-agent",
   "version": "1.0.0",
   "description": "Vantage infrastructure monitoring agent",
+  "license": "MIT",
   "main": "dist/index.js",
   "bin": {
     "vantage-agent": "dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc",
