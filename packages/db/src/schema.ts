@@ -124,6 +124,7 @@ export interface ServerTable {
   load_avg_1m: number | null;
   net_in_bytes: number | null;
   net_out_bytes: number | null;
+  ssh_port: Generated<number>;
   status: Generated<ServerStatus>;
   last_ping_at: string | null;
   created_at: Generated<string>;
@@ -199,6 +200,7 @@ export interface WorkspaceSshKeypairTable {
   public_key: string;
   encrypted_private_key: string;
   iv: string;
+  ssh_user: Generated<string>;
   created_at: Generated<string>;
   updated_at: Generated<string>;
 }

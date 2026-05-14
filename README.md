@@ -4,9 +4,9 @@
 
 # Vantage
 
-**CRM and infrastructure monitoring in one place — built for technical teams.**
+**Build, sell, and ship — one place.**
 
-Most dev-led companies run their sales process out of a spreadsheet and their infra monitoring out of four different dashboards. Vantage puts both in one tab: a full CRM with a customizable pipeline on the left, your servers, databases, and websites on the right.
+Dev-led teams run their sales out of spreadsheets and their infra across four dashboards. Vantage replaces all of it: CRM with a customizable pipeline, server and database monitoring, website uptime, team tasks, and billing — one product, nothing missing.
 
 It's self-hosted, config-file driven, and has no external service dependencies beyond a Postgres database and Redis.
 

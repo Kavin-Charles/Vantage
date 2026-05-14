@@ -5,6 +5,7 @@ import type { SshStreamEvent } from '@vantage/types';
 
 export interface SshSessionConfig {
   host: string;
+  port?: number; // defaults to 22 if not provided
   username: string;
   privateKey: string; // PEM string, decrypted
 }
@@ -59,7 +60,7 @@ export function withSshSession(
 
     const connectConfig: ConnectConfig = {
       host: config.host,
-      port: 22,
+      port: config.port ?? 22,
       username: config.username,
       privateKey: config.privateKey,
       readyTimeout: 30_000,

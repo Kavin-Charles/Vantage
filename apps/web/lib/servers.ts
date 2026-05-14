@@ -13,8 +13,15 @@ export async function getServer(token: string, id: string) {
   return apiFetch<{ data: Server & { snapshots: MetricsSnapshot[] }; error: null }>(`/api/servers/${id}`, { token });
 }
 
-export async function updateServer(token: string, id: string, body: Partial<{ name: string; region: string }>) {
+export async function updateServer(token: string, id: string, body: Partial<{ name: string; region: string; ip_address: string; ssh_port: number }>) {
   return apiFetch<{ data: Server; error: null }>(`/api/servers/${id}`, { method: 'PATCH', body: JSON.stringify(body), token });
+}
+
+export async function regenToken(token: string, id: string) {
+  return apiFetch<{ data: { agent_token: string }; error: null }>(`/api/servers/${id}/token-regen`, {
+    method: 'POST',
+    token,
+  });
 }
 
 export async function deleteServer(token: string, id: string) {

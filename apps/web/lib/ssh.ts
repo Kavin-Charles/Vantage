@@ -14,6 +14,14 @@ export async function regenerateSshKeypair(token: string) {
   });
 }
 
+export async function updateSshUser(token: string, sshUser: string) {
+  return apiFetch<{ data: WorkspaceSshKeypair; error: null }>('/api/ssh/keypair', {
+    method: 'PATCH',
+    body: JSON.stringify({ ssh_user: sshUser }),
+    token,
+  });
+}
+
 // ── SSH command history ───────────────────────────────────────────────────────
 
 export async function getSshHistory(token: string, serverId: string, page = 1) {

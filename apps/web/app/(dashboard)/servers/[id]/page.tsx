@@ -1,13 +1,13 @@
 'use client';
 
 import { use, useState, useRef, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Topbar } from '@/components/Topbar';
 import { Badge, statusColor } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useApiToken } from '@/lib/useApiToken';
-import { getServer } from '@/lib/servers';
+import { getServer, updateServer, regenToken } from '@/lib/servers';
 import { openSshStream, getSshHistory, listFiles, readFile } from '@/lib/ssh';
 import type { Server, MetricsSnapshot, SshCommandLog, SshFileEntry } from '@vantage/types';
 
@@ -49,6 +49,20 @@ function OverviewTab({ server, snapshots }: {
   server: Server & { snapshots: MetricsSnapshot[] };
   snapshots: MetricsSnapshot[];
 }) {
+  const getToken = useApiToken();
+  const qc = useQueryClient();
+  const [regenConfirming, setRegenConfirming] = useState(false);
+  const [newToken, setNewToken] = useState<string | null>(null);
+
+  const regenMut = useMutation({
+    mutationFn: async () => regenToken(await getToken(), server.id),
+    onSuccess: (res) => {
+      setNewToken(res.data.agent_token);
+      setRegenConfirming(false);
+      void qc.invalidateQueries({ queryKey: ['server', server.id] });
+    },
+  });
+
   return (
     <>
       {/* Metric sparklines */}
@@ -65,6 +79,7 @@ function OverviewTab({ server, snapshots }: {
         {[
           ['Uptime', server.uptime_seconds !== null ? `${Math.floor(server.uptime_seconds / 86400)}d ${Math.floor((server.uptime_seconds % 86400) / 3600)}h` : '—'],
           ['IP', server.ip_address ?? '—'],
+          ['SSH Port', String(server.ssh_port ?? 22)],
           ['Last ping', server.last_ping_at ? new Date(server.last_ping_at).toLocaleString() : 'never'],
           ['Net in (interval)', server.net_in_bytes !== null ? `${(server.net_in_bytes / 1024).toFixed(1)} KB` : '—'],
           ['Net out (interval)', server.net_out_bytes !== null ? `${(server.net_out_bytes / 1024).toFixed(1)} KB` : '—'],
@@ -74,7 +89,45 @@ function OverviewTab({ server, snapshots }: {
             <span style={{ fontSize: 13, color: 'var(--text)' }}>{value}</span>
           </div>
         ))}
+
+        {/* Agent Token */}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Agent Token</div>
+          {!regenConfirming ? (
+            <Button onClick={() => setRegenConfirming(true)}>Regenerate token</Button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 13, color: 'var(--text2)' }}>This will invalidate the current token. Continue?</span>
+              <Button onClick={() => setRegenConfirming(false)}>Cancel</Button>
+              <Button variant="primary" onClick={() => regenMut.mutate()} disabled={regenMut.isPending}>
+                {regenMut.isPending ? 'Regenerating…' : 'Regenerate'}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* New token reveal modal */}
+      {newToken && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setNewToken(null)}>
+          <div style={{ background: 'var(--surface)', borderRadius: 12, width: 520, maxWidth: '90vw', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 16, fontWeight: 600 }}>New Agent Token</div>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text2)' }}>Copy this token now — it won&apos;t be shown again.</p>
+            <div style={{ fontFamily: 'monospace', fontSize: 12, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 6, padding: '10px 12px', wordBreak: 'break-all', userSelect: 'all' }}>
+              {newToken}
+            </div>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text2)' }}>Update the agent on your server:</p>
+            <pre style={{ margin: 0, fontFamily: 'monospace', fontSize: 12, background: '#1a1814', color: '#f0ede6', borderRadius: 6, padding: '10px 12px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+              {`VANTAGE_TOKEN=${newToken} vantage-agent`}
+            </pre>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button variant="primary" onClick={() => setNewToken(null)}>Done</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -88,6 +141,7 @@ function TerminalTab({ serverId }: { serverId: string }) {
   const [history, setHistory] = useState<SshCommandLog[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const outputRef = useRef<HTMLPreElement>(null);
+  const streamRef = useRef<AbortController | null>(null);
 
   async function fetchHistory() {
     const token = await getToken();
@@ -95,14 +149,19 @@ function TerminalTab({ serverId }: { serverId: string }) {
     setHistory(result.data);
   }
 
+  useEffect(() => {
+    return () => { streamRef.current?.abort(); };
+  }, []);
+
   async function runCmd() {
     if (!command.trim() || running) return;
+    streamRef.current?.abort(); // cancel any prior stream
     setRunning(true);
     setOutput([]);
     setExitCode(null);
     const token = await getToken();
 
-    openSshStream(
+    streamRef.current = openSshStream(
       `/api/servers/${serverId}/ssh/exec`,
       { command },
       token,
@@ -193,12 +252,22 @@ function ServicesTab({ serverId }: { serverId: string }) {
   const [loading, setLoading] = useState(false);
   const [actionOutput, setActionOutput] = useState<{ name: string; lines: string[]; exitCode: number | null } | null>(null);
   const [actioning, setActioning] = useState<string | null>(null);
+  const fetchStreamRef = useRef<AbortController | null>(null);
+  const actionStreamRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      fetchStreamRef.current?.abort();
+      actionStreamRef.current?.abort();
+    };
+  }, []);
 
   function fetchServices() {
+    fetchStreamRef.current?.abort();
     setLoading(true);
     setLines([]);
     getToken().then(token => {
-      openSshStream(
+      fetchStreamRef.current = openSshStream(
         `/api/servers/${serverId}/ssh/services`,
         {},
         token,
@@ -211,10 +280,11 @@ function ServicesTab({ serverId }: { serverId: string }) {
   }
 
   function doAction(serviceName: string, action: 'start' | 'stop' | 'restart' | 'status') {
+    actionStreamRef.current?.abort();
     setActioning(serviceName);
     setActionOutput({ name: serviceName, lines: [], exitCode: null });
     getToken().then(token => {
-      openSshStream(
+      actionStreamRef.current = openSshStream(
         `/api/servers/${serverId}/ssh/service/${encodeURIComponent(serviceName)}`,
         { action },
         token,
@@ -311,14 +381,27 @@ function LogsTab({ serverId }: { serverId: string }) {
   const outputRef = useRef<HTMLPreElement>(null);
   const ctrlRef = useRef<ReturnType<typeof openSshStream> | null>(null);
   const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sourceRef = useRef(source);
+  const serviceRef = useRef(service);
+  const filePathRef = useRef(filePath);
+  const linesRef = useRef(lines);
+
+  useEffect(() => {
+    return () => { ctrlRef.current?.abort(); };
+  }, []);
+
+  useEffect(() => { sourceRef.current = source; }, [source]);
+  useEffect(() => { serviceRef.current = service; }, [service]);
+  useEffect(() => { filePathRef.current = filePath; }, [filePath]);
+  useEffect(() => { linesRef.current = lines; }, [lines]);
 
   function fetchLogs() {
     ctrlRef.current?.abort();
     setLoading(true);
     setOutput([]);
-    const body = source === 'journalctl'
-      ? { source: 'journalctl', service: service || undefined, lines }
-      : { source: 'file', path: filePath, lines };
+    const body = sourceRef.current === 'journalctl'
+      ? { source: 'journalctl', service: serviceRef.current || undefined, lines: linesRef.current }
+      : { source: 'file', path: filePathRef.current, lines: linesRef.current };
     getToken().then(token => {
       ctrlRef.current = openSshStream(
         `/api/servers/${serverId}/ssh/logs`,
@@ -342,8 +425,7 @@ function LogsTab({ serverId }: { serverId: string }) {
       if (autoRefreshRef.current) clearInterval(autoRefreshRef.current);
     }
     return () => { if (autoRefreshRef.current) clearInterval(autoRefreshRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRefresh, source, service, filePath, lines]);
+  }, [autoRefresh]);
 
   return (
     <div>
@@ -485,7 +567,33 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
   const getToken = useApiToken();
   const router = useRouter();
+  const qc = useQueryClient();
   const [tab, setTab] = useState<'overview' | 'terminal' | 'services' | 'logs' | 'files'>('overview');
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', region: '', ip_address: '', ssh_port: 22 });
+
+  const editMut = useMutation({
+    mutationFn: async () => updateServer(await getToken(), id, {
+      name: editForm.name || undefined,
+      region: editForm.region || undefined,
+      ip_address: editForm.ip_address || undefined,
+      ssh_port: editForm.ssh_port,
+    }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['server', id] });
+      setEditOpen(false);
+    },
+  });
+
+  function openEdit(srv: Server) {
+    setEditForm({
+      name: srv.name,
+      region: srv.region ?? '',
+      ip_address: srv.ip_address ?? '',
+      ssh_port: srv.ssh_port ?? 22,
+    });
+    setEditOpen(true);
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['server', id],
@@ -501,7 +609,12 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
 
   return (
     <>
-      <Topbar action={<Button onClick={() => router.push('/servers')}>← Servers</Button>} />
+      <Topbar action={
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button onClick={() => router.push('/servers')}>← Servers</Button>
+          <Button onClick={() => openEdit(server)}>Edit</Button>
+        </div>
+      } />
       <div style={{ padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>{server.name}</h2>
@@ -539,6 +652,63 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
         {tab === 'logs' && <LogsTab serverId={id} />}
         {tab === 'files' && <FilesTab serverId={id} />}
       </div>
+
+      {/* Edit modal */}
+      {editOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setEditOpen(false)}>
+          <div style={{ background: 'var(--surface)', borderRadius: 12, width: 440, maxWidth: '90vw', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 16, fontWeight: 600 }}>Edit {server.name}</div>
+            <form onSubmit={e => { e.preventDefault(); editMut.mutate(); }} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)' }}>Name *</label>
+                <input
+                  required
+                  value={editForm.name}
+                  onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                  style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--bg)', color: 'var(--text)' }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)' }}>Region</label>
+                <input
+                  value={editForm.region}
+                  onChange={e => setEditForm(f => ({ ...f, region: e.target.value }))}
+                  placeholder="us-east-1"
+                  style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--bg)', color: 'var(--text)' }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)' }}>IP Address</label>
+                <input
+                  value={editForm.ip_address}
+                  onChange={e => setEditForm(f => ({ ...f, ip_address: e.target.value }))}
+                  placeholder="1.2.3.4"
+                  style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--bg)', color: 'var(--text)' }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)' }}>SSH Port</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={65535}
+                  value={String(editForm.ssh_port)}
+                  onChange={e => setEditForm(f => ({ ...f, ssh_port: parseInt(e.target.value, 10) || 22 }))}
+                  style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--bg)', color: 'var(--text)' }}
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+                <Button type="button" onClick={() => setEditOpen(false)}>Cancel</Button>
+                <Button type="submit" variant="primary" disabled={editMut.isPending}>
+                  {editMut.isPending ? 'Saving…' : 'Save'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

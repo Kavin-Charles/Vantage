@@ -18,7 +18,7 @@ async function resolveServer(
     .selectFrom('servers')
     .where('id', '=', req.params['id']!)
     .where('workspace_id', '=', workspaceId)
-    .select(['id', 'workspace_id', 'name', 'ip_address'])
+    .select(['id', 'workspace_id', 'name', 'ip_address', 'ssh_port'])
     .executeTakeFirst();
 
   if (!server) {
@@ -37,11 +37,11 @@ async function resolvePrivateKey(
   db: Kysely<Database>,
   res: Response,
   workspaceId: string,
-): Promise<string | null> {
+): Promise<{ privateKey: string; sshUser: string } | null> {
   const keypair = await db
     .selectFrom('workspace_ssh_keypairs')
     .where('workspace_id', '=', workspaceId)
-    .select(['encrypted_private_key', 'iv'])
+    .select(['encrypted_private_key', 'iv', 'ssh_user'])
     .executeTakeFirst();
 
   if (!keypair) {
@@ -52,7 +52,8 @@ async function resolvePrivateKey(
     return null;
   }
 
-  return decryptPrivateKey(keypair.encrypted_private_key, keypair.iv);
+  const decryptedKey = decryptPrivateKey(keypair.encrypted_private_key, keypair.iv);
+  return { privateKey: decryptedKey, sshUser: keypair.ssh_user };
 }
 
 export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
@@ -66,14 +67,14 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
 
       const server = await resolveServer(db, req, res, workspace.id);
       if (!server) return;
-      const privateKey = await resolvePrivateKey(db, res, workspace.id);
-      if (!privateKey) return;
+      const creds = await resolvePrivateKey(db, res, workspace.id);
+      if (!creds) return;
 
       sseStart(res);
 
       let exitCode: number | null = null;
       try {
-        await withSshSession({ host: server.ip_address!, username: 'root', privateKey }, async (conn) => {
+        await withSshSession({ host: server.ip_address!, port: server.ssh_port, username: creds.sshUser, privateKey: creds.privateKey }, async (conn) => {
           exitCode = await runCommand(conn, res, command);
           sseWrite(res, { type: 'exit', code: exitCode });
         });
@@ -100,13 +101,13 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const server = await resolveServer(db, req, res, workspace.id);
       if (!server) return;
-      const privateKey = await resolvePrivateKey(db, res, workspace.id);
-      if (!privateKey) return;
+      const creds = await resolvePrivateKey(db, res, workspace.id);
+      if (!creds) return;
 
       sseStart(res);
 
       try {
-        await withSshSession({ host: server.ip_address!, username: 'root', privateKey }, async (conn) => {
+        await withSshSession({ host: server.ip_address!, port: server.ssh_port, username: creds.sshUser, privateKey: creds.privateKey }, async (conn) => {
           await runCommand(conn, res, 'systemctl list-units --type=service --no-pager --no-legend');
           sseWrite(res, { type: 'exit', code: 0 });
         });
@@ -133,15 +134,15 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
 
       const server = await resolveServer(db, req, res, workspace.id);
       if (!server) return;
-      const privateKey = await resolvePrivateKey(db, res, workspace.id);
-      if (!privateKey) return;
+      const creds = await resolvePrivateKey(db, res, workspace.id);
+      if (!creds) return;
 
       sseStart(res);
 
       const command = `systemctl ${action} ${serviceName}`;
       let exitCode: number | null = null;
       try {
-        await withSshSession({ host: server.ip_address!, username: 'root', privateKey }, async (conn) => {
+        await withSshSession({ host: server.ip_address!, port: server.ssh_port, username: creds.sshUser, privateKey: creds.privateKey }, async (conn) => {
           exitCode = await runCommand(conn, res, command);
           sseWrite(res, { type: 'exit', code: exitCode });
         });
@@ -181,8 +182,8 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
 
       const server = await resolveServer(db, req, res, workspace.id);
       if (!server) return;
-      const privateKey = await resolvePrivateKey(db, res, workspace.id);
-      if (!privateKey) return;
+      const creds = await resolvePrivateKey(db, res, workspace.id);
+      if (!creds) return;
 
       let command: string;
       if (body.source === 'journalctl') {
@@ -206,7 +207,7 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
       sseStart(res);
 
       try {
-        await withSshSession({ host: server.ip_address!, username: 'root', privateKey }, async (conn) => {
+        await withSshSession({ host: server.ip_address!, port: server.ssh_port, username: creds.sshUser, privateKey: creds.privateKey }, async (conn) => {
           await runCommand(conn, res, command);
           sseWrite(res, { type: 'exit', code: 0 });
         });
@@ -230,15 +231,15 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
 
       const server = await resolveServer(db, req, res, workspace.id);
       if (!server) return;
-      const privateKey = await resolvePrivateKey(db, res, workspace.id);
-      if (!privateKey) return;
+      const creds = await resolvePrivateKey(db, res, workspace.id);
+      if (!creds) return;
 
       const lines: string[] = [];
       const safePathQ = path.replace(/'/g, "'\\''");
       const command = `ls -la --time-style=+%Y-%m-%dT%H:%M:%S '${safePathQ}' 2>&1`;
 
       try {
-        await withSshSession({ host: server.ip_address!, username: 'root', privateKey }, async (conn) => {
+        await withSshSession({ host: server.ip_address!, port: server.ssh_port, username: creds.sshUser, privateKey: creds.privateKey }, async (conn) => {
           return new Promise<void>((resolve, reject) => {
             conn.exec(command, (err, stream) => {
               if (err) { reject(err); return; }
@@ -295,8 +296,8 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
 
       const server = await resolveServer(db, req, res, workspace.id);
       if (!server) return;
-      const privateKey = await resolvePrivateKey(db, res, workspace.id);
-      if (!privateKey) return;
+      const creds = await resolvePrivateKey(db, res, workspace.id);
+      if (!creds) return;
 
       const MAX_BYTES = 1024 * 1024; // 1 MB
       const chunks: Buffer[] = [];
@@ -304,7 +305,7 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
       let tooLarge = false;
 
       try {
-        await withSshSession({ host: server.ip_address!, username: 'root', privateKey }, async (conn) => {
+        await withSshSession({ host: server.ip_address!, port: server.ssh_port, username: creds.sshUser, privateKey: creds.privateKey }, async (conn) => {
           return new Promise<void>((resolve, reject) => {
             const safeFilePathQ = filePath.replace(/'/g, "'\\''");
             conn.exec(`cat '${safeFilePathQ}'`, (err, stream) => {

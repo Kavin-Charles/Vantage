@@ -11,7 +11,9 @@ const createServerSchema = z.object({
   ip_address: z.string().optional(),
 });
 
-const updateServerSchema = createServerSchema.partial();
+const updateServerSchema = createServerSchema.partial().extend({
+  ssh_port: z.number().int().min(1).max(65535).optional(),
+});
 
 function deriveStatus(lastPingAt: string | null): 'online' | 'degraded' | 'offline' {
   if (!lastPingAt) return 'offline';
@@ -31,7 +33,7 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
       const servers = await db
         .selectFrom('servers')
         .where('workspace_id', '=', workspace.id)
-        .select(['id', 'workspace_id', 'name', 'region', 'ip_address', 'cpu_pct', 'mem_pct', 'disk_pct', 'uptime_seconds', 'load_avg_1m', 'net_in_bytes', 'net_out_bytes', 'status', 'last_ping_at', 'created_at', 'updated_at'])
+        .select(['id', 'workspace_id', 'name', 'region', 'ip_address', 'cpu_pct', 'mem_pct', 'disk_pct', 'uptime_seconds', 'load_avg_1m', 'net_in_bytes', 'net_out_bytes', 'ssh_port', 'status', 'last_ping_at', 'created_at', 'updated_at'])
         .orderBy('created_at', 'desc')
         .execute();
 
@@ -48,7 +50,7 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
         .selectFrom('servers')
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
-        .select(['id', 'workspace_id', 'name', 'region', 'ip_address', 'cpu_pct', 'mem_pct', 'disk_pct', 'uptime_seconds', 'load_avg_1m', 'net_in_bytes', 'net_out_bytes', 'status', 'last_ping_at', 'created_at', 'updated_at'])
+        .select(['id', 'workspace_id', 'name', 'region', 'ip_address', 'cpu_pct', 'mem_pct', 'disk_pct', 'uptime_seconds', 'load_avg_1m', 'net_in_bytes', 'net_out_bytes', 'ssh_port', 'status', 'last_ping_at', 'created_at', 'updated_at'])
         .executeTakeFirst();
 
       if (!server) {
@@ -135,6 +137,31 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
         return;
       }
       res.json({ data: { ok: true }, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // Regenerate agent token — new token returned once, same one-time reveal as POST /
+  router.post('/:id/token-regen', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+
+      const rawToken = randomBytes(32).toString('hex');
+      const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+
+      const updated = await db
+        .updateTable('servers')
+        .set({ agent_token_hash: tokenHash, updated_at: new Date().toISOString() })
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .returning(['id', 'name'])
+        .executeTakeFirst();
+
+      if (!updated) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Server not found' } });
+        return;
+      }
+
+      res.json({ data: { agent_token: rawToken }, error: null });
     } catch (err) { next(err); }
   });
 

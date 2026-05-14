@@ -74,6 +74,50 @@ export function createAgentRouter(db: Kysely<Database>): ExpressRouter {
           .execute();
       }
 
+      // Threshold alert evaluation
+      const thresholds = await db
+        .selectFrom('alert_thresholds')
+        .select(['cpu_pct', 'mem_pct', 'disk_pct'])
+        .where('workspace_id', '=', server.workspace_id)
+        .executeTakeFirst()
+        ?? { cpu_pct: 85, mem_pct: 90, disk_pct: 80 };
+
+      const metricsToCheck = [
+        { prefix: 'CPU usage', value: payload.cpu_pct, threshold: thresholds.cpu_pct },
+        { prefix: 'Memory usage', value: payload.mem_pct, threshold: thresholds.mem_pct },
+        { prefix: 'Disk usage', value: payload.disk_pct, threshold: thresholds.disk_pct },
+      ];
+
+      for (const metric of metricsToCheck) {
+        const existingAlert = await db
+          .selectFrom('alerts')
+          .select(['id'])
+          .where('workspace_id', '=', server.workspace_id)
+          .where('resource_type', '=', 'server')
+          .where('resource_id', '=', server.id)
+          .where('resolved', '=', false)
+          .where('message', 'like', `${metric.prefix}%`)
+          .executeTakeFirst();
+
+        if (metric.value > metric.threshold) {
+          if (!existingAlert) {
+            const severity: 'critical' | 'warning' = metric.value >= 95 ? 'critical' : 'warning';
+            await db.insertInto('alerts').values({
+              workspace_id: server.workspace_id,
+              resource_type: 'server',
+              resource_id: server.id,
+              severity,
+              message: `${metric.prefix} at ${Math.round(metric.value)}% on "${server.name}" (threshold: ${metric.threshold}%)`,
+            }).execute();
+          }
+        } else if (existingAlert) {
+          await db.updateTable('alerts')
+            .set({ resolved: true, resolved_at: new Date() })
+            .where('id', '=', existingAlert.id)
+            .execute();
+        }
+      }
+
       res.json({ data: { ok: true }, error: null });
     } catch (err) {
       next(err);

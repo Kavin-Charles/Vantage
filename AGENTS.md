@@ -6,7 +6,7 @@ Vantage is an all-in-one platform for developer-led teams. It brings together ev
 
 **Tagline:** Build, sell, and ship — one place.
 
-**Target user:** Technical founders, small dev agencies, dev-led SaaS teams (2–20 people) who build their own products and run their own infrastructure.
+**Target user:** Technical founders, small dev agencies, dev-led SaaS teams (2–20 people) who run their own infrastructure and do their own sales.
 
 ---
 
@@ -394,7 +394,7 @@ CRON_SECRET=            # Protects cron endpoints
 
 ## Git Workflow — NON-NEGOTIABLE
 
-- **Never commit directly to `main`.** `main` is protected — a Claude Code hook will block any `git commit` attempt when on `main`.
+- **Never commit directly to `main`.** `main` is protected — a Codex hook will block any `git commit` attempt when on `main`.
 - All work goes on a feature branch: `git checkout -b feat/your-feature` (or `fix/`, `chore/`, `refactor/` prefix as appropriate).
 - Branch → commit → merge to main (locally or via PR). That's the only flow.
 - Branch names: lowercase, hyphen-separated, prefixed by type. Examples: `feat/contact-import`, `fix/auth-redirect`, `chore/update-deps`.
@@ -415,4 +415,4 @@ CRON_SECRET=            # Protects cron endpoints
 ## File Reference
 
 - `vantage-full.html` — Complete UI reference. All pages, all components. Match this exactly.
-- `CLAUDE.md` — This file. Read it at the start of every session.
+- `AGENTS.md` — This file. Read it at the start of every session.
