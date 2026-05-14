@@ -340,6 +340,17 @@ export interface WebhookDeliveryTable {
   delivered_at: string | null;
 }
 
+export interface ApiKeyTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  key_hash: string;
+  prefix: string;
+  scope: string;
+  last_used_at: string | null;
+  created_at: Generated<string>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -367,6 +378,7 @@ export interface Database {
   item_field_values: ItemFieldValueTable;
   webhook_subscriptions: WebhookSubscriptionTable;
   webhook_deliveries: WebhookDeliveryTable;
+  api_keys: ApiKeyTable;
 }
 
 // Convenience types
@@ -461,3 +473,7 @@ export type WebhookSubscriptionUpdate = Updateable<WebhookSubscriptionTable>;
 export type WebhookDelivery = Selectable<WebhookDeliveryTable>;
 export type NewWebhookDelivery = Insertable<WebhookDeliveryTable>;
 export type WebhookDeliveryUpdate = Updateable<WebhookDeliveryTable>;
+
+export type ApiKey = Selectable<ApiKeyTable>;
+export type NewApiKey = Insertable<ApiKeyTable>;
+export type ApiKeyUpdate = Updateable<ApiKeyTable>;

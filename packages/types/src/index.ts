@@ -400,3 +400,14 @@ export interface WebhookDelivery {
   created_at: string;
   delivered_at: string | null;
 }
+
+export interface ApiKey {
+  id: string;
+  workspace_id: string;
+  name: string;
+  prefix: string;
+  scope: string;
+  last_used_at: string | null;
+  created_at: string;
+  // key_hash never returned to client
+}
