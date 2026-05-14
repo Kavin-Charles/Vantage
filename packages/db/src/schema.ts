@@ -347,8 +347,8 @@ export interface ApiKeyTable {
   key_hash: string;
   prefix: string;
   scope: string;
-  last_used_at: string | null;
-  created_at: Generated<string>;
+  last_used_at: Date | null;
+  created_at: Generated<Date>;
 }
 
 export interface Database {
