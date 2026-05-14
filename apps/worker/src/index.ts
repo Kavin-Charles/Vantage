@@ -5,6 +5,7 @@ import { runWebsitePing } from './jobs/website-ping';
 import { runAlertEval } from './jobs/alert-eval';
 import { runDbHealth } from './jobs/db-health';
 import { runServerStaleness } from './jobs/server-staleness';
+import { runWebhookDelivery } from './jobs/webhook-delivery';
 
 const config = readConfig();
 const db = createDb(process.env['DATABASE_URL']!);
@@ -22,6 +23,7 @@ setInterval(async () => {
     try {
       await runWebsitePing();
       await runAlertEval();
+      await runWebhookDelivery(db);
       if (config.features.infra) {
         await runDbHealth(db);
         await runServerStaleness(db);
