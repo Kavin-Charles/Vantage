@@ -9,6 +9,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Badge, statusColor } from '@/components/ui/Badge';
 import { FormField, Input } from '@/components/ui/FormField';
 import { useApiToken } from '@/lib/useApiToken';
+import { AgentInstallInstructions } from '@/components/ui/AgentInstallInstructions';
 import { listServers, createServer, deleteServer } from '@/lib/servers';
 import type { Server } from '@vantage/types';
 
@@ -133,13 +134,7 @@ export default function ServersPage() {
           <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 12, fontFamily: 'monospace', fontSize: 12, wordBreak: 'break-all', marginBottom: 16 }}>
             {modal.token}
           </div>
-          <p style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>Install the agent on your server:</p>
-          <pre style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, padding: 12, fontSize: 12, overflow: 'auto' }}>
-{`npm install -g vantage-agent
-VANTAGE_TOKEN=${modal.token} \\
-VANTAGE_API_URL=${process.env['NEXT_PUBLIC_API_URL'] ?? 'https://api.vantage.app'} \\
-vantage-agent`}
-          </pre>
+          <AgentInstallInstructions token={modal.token} />
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
             <Button variant="primary" onClick={() => setModal(null)}>Done</Button>
           </div>

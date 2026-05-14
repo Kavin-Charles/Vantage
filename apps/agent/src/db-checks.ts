@@ -44,9 +44,7 @@ export async function checkDatabases(): Promise<DbCheck[]> {
   for (const [portStr, type] of Object.entries(KNOWN_PORTS)) {
     const port = parseInt(portStr, 10);
     const result = await checkPort(port);
-    if (result.ok) {
-      results.push({ type, port, ...result });
-    }
+    results.push({ type, port, ...result });
   }
   return results;
 }
