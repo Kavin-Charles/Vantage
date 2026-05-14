@@ -30,7 +30,16 @@ export default function DatabasesPage() {
   const qc = useQueryClient();
   const router = useRouter();
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ name: '', engine: 'postgres', host: '', port: '' });
+  const [form, setForm] = useState({
+    name: '',
+    engine: 'postgres',
+    host: '',
+    port: '',
+    database_name: '',
+    db_user: '',
+    db_password: '',
+    use_ssl: false,
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['infra-databases'],
@@ -43,8 +52,25 @@ export default function DatabasesPage() {
       engine: form.engine,
       host: form.host || undefined,
       port: form.port ? parseInt(form.port) : undefined,
+      database_name: form.database_name || undefined,
+      db_user: form.db_user || undefined,
+      db_password: form.db_password || undefined,
+      use_ssl: form.use_ssl,
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['infra-databases'] }); setModal(false); setForm({ name: '', engine: 'postgres', host: '', port: '' }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['infra-databases'] });
+      setModal(false);
+      setForm({
+        name: '',
+        engine: 'postgres',
+        host: '',
+        port: '',
+        database_name: '',
+        db_user: '',
+        db_password: '',
+        use_ssl: false,
+      });
+    },
   });
 
   const deleteMut = useMutation({
@@ -117,6 +143,19 @@ export default function DatabasesPage() {
             <FormField label="Port">
               <Input type="number" value={form.port} onChange={e => setForm(f => ({ ...f, port: e.target.value }))} placeholder="5432" />
             </FormField>
+            <FormField label="Database name">
+              <Input value={form.database_name} onChange={e => setForm(f => ({ ...f, database_name: e.target.value }))} placeholder="defaultdb" />
+            </FormField>
+            <FormField label="User">
+              <Input value={form.db_user} onChange={e => setForm(f => ({ ...f, db_user: e.target.value }))} placeholder="avnadmin" />
+            </FormField>
+            <FormField label="Password">
+              <Input type="password" value={form.db_password} onChange={e => setForm(f => ({ ...f, db_password: e.target.value }))} placeholder="Database password" />
+            </FormField>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>
+              <input type="checkbox" checked={form.use_ssl} onChange={e => setForm(f => ({ ...f, use_ssl: e.target.checked }))} />
+              Use SSL
+            </label>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
               <Button type="button" onClick={() => setModal(false)}>Cancel</Button>
               <Button type="submit" variant="primary" disabled={createMut.isPending}>{createMut.isPending ? 'Saving…' : 'Add database'}</Button>
