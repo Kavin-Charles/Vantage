@@ -4,6 +4,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { toCSV } from '../lib/csv';
+import { logger } from '../lib/logger';
 import { queueWebhook } from '../lib/queue-webhook';
 const DEAL_HEADERS = ['name', 'value', 'probability', 'close_date'];
 
@@ -322,17 +323,17 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
         currentDeal &&
         parsed.data.stage_id !== currentDeal.stage_id
       ) {
-        void queueWebhook(db, workspace.id, 'deal.stage_changed', {
+        queueWebhook(db, workspace.id, 'deal.stage_changed', {
           deal_id: req.params['id']!,
-          deal_name: currentDeal.name,
+          deal_name: parsed.data.name ?? currentDeal.name,
           old_stage_id: currentDeal.stage_id,
           new_stage_id: parsed.data.stage_id,
           new_stage_name: targetStage?.name ?? null,
-          value: currentDeal.value,
+          value: parsed.data.value ?? currentDeal.value,
           owner_id: currentDeal.owner_id,
           workspace_id: workspace.id,
           timestamp: new Date().toISOString(),
-        });
+        }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
       }
 
       // Upsert field values

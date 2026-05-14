@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
 import { queueWebhook } from '../lib/queue-webhook';
 
 const createItemSchema = z.object({
@@ -312,7 +313,7 @@ export function createItemsRouter(db: Kysely<Database>): ExpressRouter {
 
       res.status(201).json({ data: newItem, error: null });
 
-      void queueWebhook(db, auth.workspace.id, 'item.moved', {
+      queueWebhook(db, auth.workspace.id, 'item.moved', {
         item_id: newItem.id,
         item_name: source.title,
         old_group_id: source.group_id,
@@ -320,7 +321,7 @@ export function createItemsRouter(db: Kysely<Database>): ExpressRouter {
         new_group_name: targetGroup.name,
         workspace_id: auth.workspace.id,
         timestamp: new Date().toISOString(),
-      });
+      }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
     } catch (err) {
       next(err);
     }

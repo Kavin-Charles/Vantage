@@ -7,8 +7,24 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 
 const ALLOWED_EVENTS = ['deal.stage_changed', 'item.moved'] as const;
 
+// Block private / loopback / link-local ranges to prevent SSRF
+const PRIVATE_HOSTNAME_RE =
+  /^(localhost|0\.0\.0\.0|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|169\.254\.\d+\.\d+|::1|fc[0-9a-f]{2}:|fd[0-9a-f]{2}:)/i;
+
+function isSafeWebhookUrl(raw: string): boolean {
+  try {
+    const { hostname } = new URL(raw);
+    return !PRIVATE_HOSTNAME_RE.test(hostname);
+  } catch {
+    return false;
+  }
+}
+
 const createSchema = z.object({
-  target_url: z.string().url(),
+  target_url: z
+    .string()
+    .url()
+    .refine(isSafeWebhookUrl, { message: 'target_url must be a publicly reachable URL' }),
   event: z.enum(ALLOWED_EVENTS),
 });
 
