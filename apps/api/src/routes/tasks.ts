@@ -4,6 +4,13 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  per_page: z.coerce.number().int().min(1).max(100).default(25),
+  status: z.enum(['todo', 'done']).optional(),
+  assignee_id: z.string().uuid().optional(),
+});
+
 const createTaskSchema = z.object({
   title: z.string().min(1),
   due_date: z.string().optional(),
@@ -25,21 +32,40 @@ export function createTasksRouter(db: Kysely<Database>): ExpressRouter {
   router.get('/', async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
-      const status = req.query['status'] as string | undefined;
-      const assignee_id = (req.query['assignee_id'] as string) ?? user.id;
+
+      const parsed = listQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
+        return;
+      }
+      const { page, per_page, status, assignee_id } = parsed.data;
+      const effectiveAssignee = assignee_id ?? user.id;
 
       let query = db
         .selectFrom('tasks')
         .where('workspace_id', '=', workspace.id)
         .selectAll()
         .orderBy('due_date', 'asc')
-        .orderBy('created_at', 'desc');
+        .orderBy('created_at', 'desc')
+        .limit(per_page)
+        .offset((page - 1) * per_page);
 
-      if (status) query = query.where('status', '=', status as never);
-      if (assignee_id) query = query.where('assignee_id', '=', assignee_id);
+      if (status) query = query.where('status', '=', status);
+      if (effectiveAssignee) query = query.where('assignee_id', '=', effectiveAssignee);
 
       const tasks = await query.execute();
-      res.json({ data: tasks, error: null });
+
+      let countQuery = db
+        .selectFrom('tasks')
+        .where('workspace_id', '=', workspace.id)
+        .select(db.fn.countAll<number>().as('count'));
+
+      if (status) countQuery = countQuery.where('status', '=', status);
+      if (effectiveAssignee) countQuery = countQuery.where('assignee_id', '=', effectiveAssignee);
+
+      const { count } = await countQuery.executeTakeFirstOrThrow();
+
+      res.json({ data: tasks, total: Number(count), page, per_page, error: null });
     } catch (err) {
       next(err);
     }
