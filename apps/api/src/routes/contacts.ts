@@ -59,22 +59,56 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
   router.post('/import', async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
-      const { rows } = importContactSchema.parse(req.body);
-      let created = 0;
+
+      const outerParsed = z.object({ rows: z.array(z.unknown()).min(1) }).safeParse(req.body);
+      if (!outerParsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: outerParsed.error.message } });
+        return;
+      }
+
+      const rowSchema = z.object({
+        name: z.string().min(1),
+        email: z.string().email(),
+        phone: z.string().optional(),
+        status: z.enum(['prospect', 'customer', 'cold', 'churned']).default('prospect'),
+      });
+
+      type ValidRow = { name: string; email: string; phone?: string; status: 'prospect' | 'customer' | 'cold' | 'churned' };
+      const validRows: ValidRow[] = [];
       const errors: string[] = [];
-      for (const row of rows) {
-        try {
-          await db.insertInto('contacts')
-            .values({ ...row, workspace_id: workspace.id, owner_id: user.id })
-            .execute();
-          created++;
-        } catch (e) {
-          errors.push(`${row.email}: ${(e as Error).message}`);
+
+      for (const raw of outerParsed.data.rows) {
+        const parsed = rowSchema.safeParse(raw);
+        if (parsed.success) {
+          validRows.push(parsed.data);
+        } else {
+          const email = (raw as { email?: string }).email ?? '(unknown)';
+          errors.push(`${email}: ${parsed.error.issues[0]?.message ?? 'invalid'}`);
         }
       }
-      await db.updateTable('workspaces')
-        .set({ contact_count: sql`contact_count + ${created}` })
-        .where('id', '=', workspace.id).execute();
+
+      let created = 0;
+      if (validRows.length > 0) {
+        const result = await db
+          .insertInto('contacts')
+          .values(validRows.map(row => ({
+            name: row.name,
+            email: row.email,
+            phone: row.phone ?? null,
+            status: row.status,
+            workspace_id: workspace.id,
+            owner_id: user.id,
+          })))
+          .execute();
+        created = result.numInsertedOrUpdatedRows ? Number(result.numInsertedOrUpdatedRows) : validRows.length;
+
+        if (created > 0) {
+          await db.updateTable('workspaces')
+            .set({ contact_count: sql`contact_count + ${created}` })
+            .where('id', '=', workspace.id).execute();
+        }
+      }
+
       res.json({ data: { created, errors }, error: null });
     } catch (err) { next(err); }
   });
