@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 
 function LoginForm() {
@@ -94,6 +95,11 @@ function LoginForm() {
                 color: 'var(--text)', fontSize: 14, boxSizing: 'border-box',
               }}
             />
+          </div>
+          <div style={{ textAlign: 'right', marginTop: -6 }}>
+            <Link href="/forgot-password" style={{ fontSize: 12, color: 'var(--text3)', textDecoration: 'none' }}>
+              Forgot password?
+            </Link>
           </div>
 
           {error && (
