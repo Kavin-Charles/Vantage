@@ -22,6 +22,7 @@ const listQuerySchema = z.object({
   per_page: z.coerce.number().max(100).default(25),
   status: z.enum(['prospect', 'customer', 'cold', 'churned']).optional(),
   owner_id: z.string().uuid().optional(),
+  q: z.string().optional(),
 });
 
 
@@ -117,7 +118,7 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
   router.get('/', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      const { page, per_page, status, owner_id } = listQuerySchema.parse(req.query);
+      const { page, per_page, status, owner_id, q } = listQuerySchema.parse(req.query);
 
       let query = db
         .selectFrom('contacts')
@@ -131,6 +132,16 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
       if (status) query = query.where('status', '=', status);
       if (owner_id) query = query.where('owner_id', '=', owner_id);
 
+      if (q) {
+        const pattern = `%${q}%`;
+        query = query.where(eb =>
+          eb.or([
+            eb('name', 'ilike', pattern),
+            eb('email', 'ilike', pattern),
+          ]),
+        );
+      }
+
       const contacts = await query.execute();
 
       let countQuery = db
@@ -141,6 +152,16 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
 
       if (status) countQuery = countQuery.where('status', '=', status);
       if (owner_id) countQuery = countQuery.where('owner_id', '=', owner_id);
+
+      if (q) {
+        const pattern = `%${q}%`;
+        countQuery = countQuery.where(eb =>
+          eb.or([
+            eb('name', 'ilike', pattern),
+            eb('email', 'ilike', pattern),
+          ]),
+        );
+      }
 
       const { count } = await countQuery.executeTakeFirstOrThrow();
 

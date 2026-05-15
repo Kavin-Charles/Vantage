@@ -175,6 +175,7 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
       const pipeline_id = req.query['pipeline_id'] as string | undefined;
       const stage_id = req.query['stage_id'] as string | undefined;
       const owner_id = req.query['owner_id'] as string | undefined;
+      const q = req.query['q'] as string | undefined;
       const page = Number(req.query['page'] ?? 1);
       const per_page = Math.min(Number(req.query['per_page'] ?? 50), 100);
 
@@ -195,6 +196,7 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
 
       if (stage_id) query = query.where('stage_id', '=', stage_id);
       if (owner_id) query = query.where('owner_id', '=', owner_id);
+      if (q) query = query.where('name', 'ilike', `%${q}%`);
 
       const deals = await query.execute();
       res.json({ data: deals, error: null });
