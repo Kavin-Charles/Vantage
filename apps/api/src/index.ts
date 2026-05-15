@@ -84,7 +84,7 @@ app.use('/api/servers/:id/ssh', requireAuth, createSshActionsRouter(db));
 app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));
 
 // Agent — protected by agent token, not cookie auth
-app.use('/api/agent', createAgentRouter(db));
+app.use('/api/agent', createAgentRouter(db, config.smtp));
 
 // Public API v1 — API key auth (no requireAuth cookie)
 app.use('/v1', createV1Router(db));

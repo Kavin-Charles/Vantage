@@ -2,7 +2,9 @@ import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
+import type { SmtpConfig } from '@vantage/config';
 import { createRequireAgentToken, type AgentRequest } from '../middleware/agentAuth';
+import { sendAlertEmail } from '../lib/send-alert-email';
 
 const dbCheckSchema = z.object({
   type: z.string(),
@@ -22,7 +24,7 @@ const pingSchema = z.object({
   db_checks: z.array(dbCheckSchema).default([]),
 });
 
-export function createAgentRouter(db: Kysely<Database>): ExpressRouter {
+export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null): ExpressRouter {
   const router = Router();
   const requireAgentToken = createRequireAgentToken(db);
 
@@ -109,6 +111,25 @@ export function createAgentRouter(db: Kysely<Database>): ExpressRouter {
               severity,
               message: `${metric.prefix} at ${Math.round(metric.value)}% on "${server.name}" (threshold: ${metric.threshold}%)`,
             }).execute();
+
+            // Fire-and-forget email to workspace admins
+            void (async () => {
+              try {
+                const admins = await db
+                  .selectFrom('users')
+                  .where('workspace_id', '=', server.workspace_id)
+                  .where('role', '=', 'admin')
+                  .select('email')
+                  .execute();
+                await sendAlertEmail(smtp, admins.map(a => a.email), {
+                  severity,
+                  message: `${metric.prefix} at ${Math.round(metric.value)}% on "${server.name}" (threshold: ${metric.threshold}%)`,
+                  resource_type: 'server',
+                });
+              } catch {
+                // swallowed
+              }
+            })();
           }
         } else if (existingAlert) {
           await db.updateTable('alerts')
