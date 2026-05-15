@@ -351,6 +351,19 @@ export interface ApiKeyTable {
   created_at: Generated<Date>;
 }
 
+export interface NotificationTable {
+  id: Generated<string>;
+  workspace_id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  resource_type: string | null;
+  resource_id: string | null;
+  read: Generated<boolean>;
+  created_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -379,6 +392,7 @@ export interface Database {
   webhook_subscriptions: WebhookSubscriptionTable;
   webhook_deliveries: WebhookDeliveryTable;
   api_keys: ApiKeyTable;
+  notifications: NotificationTable;
 }
 
 // Convenience types
@@ -477,3 +491,7 @@ export type WebhookDeliveryUpdate = Updateable<WebhookDeliveryTable>;
 export type ApiKey = Selectable<ApiKeyTable>;
 export type NewApiKey = Insertable<ApiKeyTable>;
 export type ApiKeyUpdate = Updateable<ApiKeyTable>;
+
+export type Notification = Selectable<NotificationTable>;
+export type NewNotification = Insertable<NotificationTable>;
+export type NotificationUpdate = Updateable<NotificationTable>;
