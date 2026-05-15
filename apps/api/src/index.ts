@@ -29,6 +29,7 @@ import { createSshKeypairRouter } from './routes/ssh-keypair';
 import { createSshActionsRouter } from './routes/ssh-actions';
 import { createWebhooksRouter } from './routes/webhooks';
 import { createApiKeysRouter } from './routes/api-keys';
+import { createV1Router } from './routes/v1/index';
 import { seedOnFirstBoot } from './lib/seed';
 import { logger } from './lib/logger';
 
@@ -84,6 +85,9 @@ app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));
 
 // Agent — protected by agent token, not cookie auth
 app.use('/api/agent', createAgentRouter(db));
+
+// Public API v1 — API key auth (no requireAuth cookie)
+app.use('/v1', createV1Router(db));
 
 app.use(errorHandler);
 
