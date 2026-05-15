@@ -4,6 +4,11 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { ApiKeyRequest } from '../../middleware/api-key-auth';
 
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  per_page: z.coerce.number().int().min(1).max(100).default(25),
+});
+
 const alertListSchema = z.object({
   resolved: z.coerce.boolean().optional(),
   severity: z.enum(['critical', 'warning', 'info']).optional(),
@@ -18,13 +23,29 @@ export function createV1InfraRouter(db: Kysely<Database>): ExpressRouter {
   router.get('/servers', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as ApiKeyRequest;
+      const parsed = listQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
+        return;
+      }
+      const { page, per_page } = parsed.data;
+
       const servers = await db
         .selectFrom('servers')
         .where('workspace_id', '=', workspace.id)
         .selectAll()
         .orderBy('created_at', 'asc')
+        .limit(per_page)
+        .offset((page - 1) * per_page)
         .execute();
-      res.json({ data: servers, error: null });
+
+      const { count } = await db
+        .selectFrom('servers')
+        .where('workspace_id', '=', workspace.id)
+        .select(db.fn.countAll<number>().as('count'))
+        .executeTakeFirstOrThrow();
+
+      res.json({ data: servers, total: Number(count), page, per_page, error: null });
     } catch (err) {
       next(err);
     }
@@ -94,13 +115,29 @@ export function createV1InfraRouter(db: Kysely<Database>): ExpressRouter {
   router.get('/websites', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as ApiKeyRequest;
+      const parsed = listQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
+        return;
+      }
+      const { page, per_page } = parsed.data;
+
       const websites = await db
         .selectFrom('websites')
         .where('workspace_id', '=', workspace.id)
         .selectAll()
         .orderBy('created_at', 'asc')
+        .limit(per_page)
+        .offset((page - 1) * per_page)
         .execute();
-      res.json({ data: websites, error: null });
+
+      const { count } = await db
+        .selectFrom('websites')
+        .where('workspace_id', '=', workspace.id)
+        .select(db.fn.countAll<number>().as('count'))
+        .executeTakeFirstOrThrow();
+
+      res.json({ data: websites, total: Number(count), page, per_page, error: null });
     } catch (err) {
       next(err);
     }
