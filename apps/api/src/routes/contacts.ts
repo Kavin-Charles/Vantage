@@ -5,6 +5,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { csvEscape, toCSV } from '../lib/csv';
+import { logActivity } from '../lib/log-activity';
 
 const createContactSchema = z.object({
   name: z.string().min(1),
@@ -188,6 +189,14 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
         .where('id', '=', workspace.id)
         .execute();
 
+      void logActivity(db, {
+        workspace_id: workspace.id,
+        user_id: user.id,
+        type: 'note',
+        body: `Created contact ${contact.name}`,
+        contact_id: contact.id,
+      });
+
       res.status(201).json({ data: contact, error: null });
     } catch (err) {
       next(err);
@@ -196,7 +205,7 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
 
   router.patch('/:id', async (req, res, next) => {
     try {
-      const { workspace } = req as unknown as AuthenticatedRequest;
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
       const body = updateContactSchema.parse(req.body);
 
       const contact = await db
@@ -212,6 +221,15 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Contact not found' } });
         return;
       }
+
+      void logActivity(db, {
+        workspace_id: workspace.id,
+        user_id: user.id,
+        type: 'note',
+        body: `Updated contact ${contact.name}`,
+        contact_id: contact.id,
+      });
+
       res.json({ data: contact, error: null });
     } catch (err) {
       next(err);
