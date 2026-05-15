@@ -100,7 +100,19 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
   router.post('/import', async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
-      const { pipeline_id, stage_id, rows } = importDealSchema.parse(req.body);
+
+      const outerParsed = z.object({
+        pipeline_id: z.string().min(1),
+        stage_id: z.string().min(1),
+        rows: z.array(z.unknown()).min(1),
+      }).safeParse(req.body);
+
+      if (!outerParsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: outerParsed.error.message } });
+        return;
+      }
+
+      const { pipeline_id, stage_id } = outerParsed.data;
 
       // Verify pipeline belongs to workspace
       const pipeline = await db.selectFrom('pipelines')
@@ -111,11 +123,31 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
         return;
       }
 
-      let created = 0;
+      const rowSchema = z.object({
+        name: z.string().min(1),
+        value: z.coerce.number().min(0).default(0),
+        probability: z.coerce.number().int().min(0).max(100).default(0),
+        close_date: z.string().optional(),
+      });
+
+      type ValidRow = { name: string; value: number; probability: number; close_date?: string };
+      const validRows: ValidRow[] = [];
       const errors: string[] = [];
-      for (const row of rows) {
-        try {
-          await db.insertInto('deals').values({
+
+      for (const raw of outerParsed.data.rows) {
+        const parsed = rowSchema.safeParse(raw);
+        if (parsed.success) {
+          validRows.push(parsed.data);
+        } else {
+          const name = (raw as { name?: string }).name ?? '(unknown)';
+          errors.push(`${name}: ${parsed.error.issues[0]?.message ?? 'invalid'}`);
+        }
+      }
+
+      let created = 0;
+      if (validRows.length > 0) {
+        const result = await db.insertInto('deals').values(
+          validRows.map(row => ({
             workspace_id: workspace.id,
             owner_id: user.id,
             pipeline_id,
@@ -126,12 +158,11 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
             close_date: row.close_date ? new Date(row.close_date) : null,
             contact_id: null,
             company_id: null,
-          }).execute();
-          created++;
-        } catch (e) {
-          errors.push(`${row.name}: ${(e as Error).message}`);
-        }
+          })),
+        ).execute();
+        created = result.numInsertedOrUpdatedRows ? Number(result.numInsertedOrUpdatedRows) : validRows.length;
       }
+
       res.json({ data: { created, errors }, error: null });
     } catch (err) { next(err); }
   });
