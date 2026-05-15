@@ -6,6 +6,7 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 import { toCSV } from '../lib/csv';
 import { logger } from '../lib/logger';
 import { queueWebhook } from '../lib/queue-webhook';
+import { logActivity } from '../lib/log-activity';
 const DEAL_HEADERS = ['name', 'value', 'probability', 'close_date'];
 
 const importDealSchema = z.object({
@@ -365,6 +366,21 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
           workspace_id: workspace.id,
           timestamp: new Date().toISOString(),
         }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+
+        void logActivity(db, {
+          workspace_id: workspace.id,
+          user_id: currentDeal.owner_id,
+          type: 'deal_change',
+          body: targetStage
+            ? `Deal moved to ${targetStage.name}`
+            : 'Deal stage changed',
+          deal_id: req.params['id']!,
+          meta: {
+            old_stage_id: currentDeal.stage_id,
+            new_stage_id: parsed.data.stage_id,
+            new_stage_name: targetStage?.name ?? null,
+          },
+        });
       }
 
       // Upsert field values
