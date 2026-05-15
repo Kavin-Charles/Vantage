@@ -168,21 +168,31 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
     } catch (err) { next(err); }
   });
 
+const dealsListQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  per_page: z.coerce.number().int().min(1).max(100).default(50),
+  stage_id: z.string().uuid().optional(),
+  owner_id: z.string().uuid().optional(),
+  q: z.string().optional(),
+});
+
   // GET /api/deals?pipeline_id=<id>
   router.get('/', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const pipeline_id = req.query['pipeline_id'] as string | undefined;
-      const stage_id = req.query['stage_id'] as string | undefined;
-      const owner_id = req.query['owner_id'] as string | undefined;
-      const q = req.query['q'] as string | undefined;
-      const page = Number(req.query['page'] ?? 1);
-      const per_page = Math.min(Number(req.query['per_page'] ?? 50), 100);
 
       if (!pipeline_id) {
         res.status(400).json({ data: null, error: { code: 'PIPELINE_REQUIRED', message: 'pipeline_id is required' } });
         return;
       }
+
+      const parsed = dealsListQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
+        return;
+      }
+      const { page, per_page, stage_id, owner_id, q } = parsed.data;
 
       let query = db
         .selectFrom('deals')
@@ -199,7 +209,21 @@ export function createDealsRouter(db: Kysely<Database>): ExpressRouter {
       if (q) query = query.where('name', 'ilike', `%${q}%`);
 
       const deals = await query.execute();
-      res.json({ data: deals, error: null });
+
+      let countQuery = db
+        .selectFrom('deals')
+        .where('workspace_id', '=', workspace.id)
+        .where('pipeline_id', '=', pipeline_id)
+        .where('deleted_at', 'is', null)
+        .select(db.fn.countAll<number>().as('count'));
+
+      if (stage_id) countQuery = countQuery.where('stage_id', '=', stage_id);
+      if (owner_id) countQuery = countQuery.where('owner_id', '=', owner_id);
+      if (q) countQuery = countQuery.where('name', 'ilike', `%${q}%`);
+
+      const { count } = await countQuery.executeTakeFirstOrThrow();
+
+      res.json({ data: deals, total: Number(count), page, per_page, error: null });
     } catch (err) {
       next(err);
     }
