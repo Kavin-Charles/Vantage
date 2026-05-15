@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { NotificationBell } from './NotificationBell';
 
 const pageTitles: Record<string, string> = {
   '/pipeline': 'Pipeline',
@@ -66,6 +67,7 @@ export function Topbar({ action, left }: { action?: React.ReactNode; left?: Reac
           />
         </div>
 
+        <NotificationBell />
         {action}
       </div>
     </div>

@@ -112,22 +112,39 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
               message: `${metric.prefix} at ${Math.round(metric.value)}% on "${server.name}" (threshold: ${metric.threshold}%)`,
             }).execute();
 
-            // Fire-and-forget email to workspace admins
+            // Fire-and-forget notifications + email to workspace admins
             void (async () => {
               try {
                 const admins = await db
                   .selectFrom('users')
                   .where('workspace_id', '=', server.workspace_id)
                   .where('role', '=', 'admin')
-                  .select('email')
+                  .select(['id', 'email'])
                   .execute();
-                await sendAlertEmail(smtp, admins.map(a => a.email), {
-                  severity,
-                  message: `${metric.prefix} at ${Math.round(metric.value)}% on "${server.name}" (threshold: ${metric.threshold}%)`,
-                  resource_type: 'server',
-                });
+
+                if (admins.length > 0) {
+                  // In-app notifications
+                  await db.insertInto('notifications').values(
+                    admins.map(admin => ({
+                      workspace_id: server.workspace_id,
+                      user_id: admin.id,
+                      type: 'alert',
+                      title: `${severity === 'critical' ? '🔴' : '🟡'} ${metric.prefix} alert on "${server.name}"`,
+                      body: `${metric.prefix} at ${Math.round(metric.value)}% (threshold: ${metric.threshold}%)`,
+                      resource_type: 'server',
+                      resource_id: server.id,
+                    })),
+                  ).execute();
+
+                  // Email notification
+                  await sendAlertEmail(smtp, admins.map(a => a.email), {
+                    severity,
+                    message: `${metric.prefix} at ${Math.round(metric.value)}% on "${server.name}" (threshold: ${metric.threshold}%)`,
+                    resource_type: 'server',
+                  });
+                }
               } catch {
-                // swallowed
+                // swallowed — never crash agent pings
               }
             })();
           }
