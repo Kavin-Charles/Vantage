@@ -1,7 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database, EmailAccount } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { decryptSecret } from '../lib/mail-crypto';
 import { createGmailProvider } from '../lib/gmail-provider';
@@ -34,23 +34,7 @@ const patchSchema = z.object({
   folder: z.enum(['inbox', 'sent', 'drafts', 'trash', 'spam']).optional(),
 }).refine(d => Object.keys(d).length > 0, { message: 'At least one field required' });
 
-interface EmailAccountRow {
-  id: string;
-  provider: string;
-  access_token: string | null;
-  refresh_token: string | null;
-  imap_host: string | null;
-  imap_port: number | null;
-  imap_user: string | null;
-  imap_pass: string | null;
-  smtp_host: string | null;
-  smtp_port: number | null;
-  smtp_user: string | null;
-  smtp_pass: string | null;
-  use_ssl: boolean;
-}
-
-function getProvider(account: EmailAccountRow): MailProvider {
+function getProvider(account: EmailAccount): MailProvider {
   if (account.provider === 'gmail') {
     return createGmailProvider({
       accessToken: decryptSecret(account.access_token!),
@@ -70,11 +54,7 @@ function getProvider(account: EmailAccountRow): MailProvider {
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyDb = Kysely<any>;
-
 export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
-  const anyDb = db as unknown as AnyDb;
   const router = Router();
 
   // GET /api/mail/emails
@@ -83,23 +63,20 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
       const { user } = req as unknown as AuthenticatedRequest;
       const q = listQuerySchema.parse(req.query);
 
-      let query = anyDb.selectFrom('emails').where('user_id', '=', user.id);
+      let query = db.selectFrom('emails').where('user_id', '=', user.id);
       if (q.account_id) query = query.where('account_id', '=', q.account_id);
       if (q.folder) query = query.where('folder', '=', q.folder);
       if (q.contact_id) query = query.where('contact_id', '=', q.contact_id);
       if (q.q) {
         const term = `%${q.q}%`;
-        query = query.where((eb: { or: Function; ilike: Function }) =>
-          (eb as unknown as { or: Function }).or([
-            (eb as unknown as { ilike?: Function; ref?: Function })['ilike']
-              ? (eb as unknown as { ilike: Function }).ilike('subject', term)
-              : term,
-          ])
-        );
+        query = query.where(eb => eb.or([
+          eb('subject', 'ilike', term),
+          eb('snippet', 'ilike', term),
+        ]));
       }
 
       const countRow = await query
-        .select(anyDb.fn.countAll().as('count'))
+        .select(db.fn.countAll<number>().as('count'))
         .executeTakeFirstOrThrow();
 
       const emails = await query
@@ -117,9 +94,9 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
   router.get('/:id', async (req, res, next) => {
     try {
       const { user } = req as unknown as AuthenticatedRequest;
-      const email = await anyDb
+      const email = await db
         .selectFrom('emails')
-        .where('id', '=', req.params['id'])
+        .where('id', '=', req.params['id']!)
         .where('user_id', '=', user.id)
         .selectAll()
         .executeTakeFirst();
@@ -137,9 +114,9 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
       const { user } = req as unknown as AuthenticatedRequest;
       const body = patchSchema.parse(req.body);
 
-      const email = await anyDb
+      const email = await db
         .selectFrom('emails')
-        .where('id', '=', req.params['id'])
+        .where('id', '=', req.params['id']!)
         .where('user_id', '=', user.id)
         .select(['id', 'account_id', 'message_id'])
         .executeTakeFirst();
@@ -148,7 +125,7 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
         return;
       }
 
-      const updated = await anyDb
+      const updated = await db
         .updateTable('emails')
         .set(body)
         .where('id', '=', email.id)
@@ -158,7 +135,7 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
       // Mirror to provider (fire-and-forget)
       void (async () => {
         try {
-          const account: EmailAccountRow | undefined = await anyDb
+          const account = await db
             .selectFrom('email_accounts')
             .where('id', '=', email.account_id)
             .selectAll()
@@ -178,7 +155,7 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
       const { user } = req as unknown as AuthenticatedRequest;
       const body = sendSchema.parse(req.body);
 
-      const account: EmailAccountRow | undefined = await anyDb
+      const account = await db
         .selectFrom('email_accounts')
         .where('id', '=', body.account_id)
         .where('user_id', '=', user.id)
@@ -206,9 +183,9 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
   router.delete('/:id', async (req, res, next) => {
     try {
       const { user } = req as unknown as AuthenticatedRequest;
-      const email = await anyDb
+      const email = await db
         .selectFrom('emails')
-        .where('id', '=', req.params['id'])
+        .where('id', '=', req.params['id']!)
         .where('user_id', '=', user.id)
         .select(['id', 'account_id', 'message_id'])
         .executeTakeFirst();
@@ -217,7 +194,7 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
         return;
       }
 
-      await anyDb
+      await db
         .updateTable('emails')
         .set({ folder: 'trash' })
         .where('id', '=', email.id)
@@ -225,7 +202,7 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
 
       void (async () => {
         try {
-          const account: EmailAccountRow | undefined = await anyDb
+          const account = await db
             .selectFrom('email_accounts')
             .where('id', '=', email.account_id)
             .selectAll()
