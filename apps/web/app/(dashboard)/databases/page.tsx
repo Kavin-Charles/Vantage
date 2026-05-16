@@ -156,6 +156,7 @@ export default function DatabasesPage() {
   });
 
   const dbs: InfraDatabase[] = data?.data ?? [];
+  const cfg = ENGINE_CONFIG[form.engine as Engine] ?? ENGINE_CONFIG.other;
 
   return (
     <>
@@ -203,61 +204,57 @@ export default function DatabasesPage() {
         </div>
       </div>
 
-      {modal && (() => {
-        const cfg = ENGINE_CONFIG[form.engine as Engine] ?? ENGINE_CONFIG.other;
-        return (
-          <Modal title="Add database" onClose={() => setModal(false)}>
-            <form onSubmit={e => { e.preventDefault(); createMut.mutate(); }}>
-              <FormField label="Name *">
-                <Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={cfg.namePlaceholder} />
-              </FormField>
-              <FormField label="Engine">
-                <Select value={form.engine} onChange={e => {
-                  const eng = e.target.value as Engine;
-                  const newCfg = ENGINE_CONFIG[eng] ?? ENGINE_CONFIG.other;
-                  setForm(f => ({ ...f, engine: eng, port: newCfg.defaultPort }));
-                }}>
-                  {ENGINES.map(e => <option key={e} value={e}>{e}</option>)}
-                </Select>
-              </FormField>
-              {cfg.hint && (
-                <div style={{ marginBottom: 12, padding: '8px 10px', background: 'var(--surface2)', borderRadius: 8, fontSize: 12, color: 'var(--text2)' }}>
-                  {cfg.hint}
-                </div>
-              )}
-              <FormField label={cfg.hostLabel}>
-                <Input value={form.host} onChange={e => setForm(f => ({ ...f, host: e.target.value }))} placeholder={cfg.hostPlaceholder} />
-              </FormField>
-              <FormField label="Port">
-                <Input type="number" value={form.port} onChange={e => setForm(f => ({ ...f, port: e.target.value }))} placeholder={cfg.defaultPort || 'Port'} />
-              </FormField>
-              {cfg.showDbName && (
-                <FormField label={cfg.dbNameLabel}>
-                  <Input value={form.database_name} onChange={e => setForm(f => ({ ...f, database_name: e.target.value }))} placeholder={cfg.dbNamePlaceholder} />
-                </FormField>
-              )}
-              {cfg.showUser && (
-                <FormField label="User">
-                  <Input value={form.db_user} onChange={e => setForm(f => ({ ...f, db_user: e.target.value }))} placeholder={cfg.userPlaceholder} />
-                </FormField>
-              )}
-              <FormField label="Password">
-                <Input type="password" value={form.db_password} onChange={e => setForm(f => ({ ...f, db_password: e.target.value }))} placeholder="Database password" />
-              </FormField>
-              {cfg.showSsl && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>
-                  <input type="checkbox" checked={form.use_ssl} onChange={e => setForm(f => ({ ...f, use_ssl: e.target.checked }))} />
-                  Use SSL
-                </label>
-              )}
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
-                <Button type="button" onClick={() => setModal(false)}>Cancel</Button>
-                <Button type="submit" variant="primary" disabled={createMut.isPending}>{createMut.isPending ? 'Saving…' : 'Add database'}</Button>
+      {modal && (
+        <Modal title="Add database" onClose={() => setModal(false)}>
+          <form onSubmit={e => { e.preventDefault(); createMut.mutate(); }}>
+            <FormField label="Name *">
+              <Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={cfg.namePlaceholder} />
+            </FormField>
+            <FormField label="Engine">
+              <Select value={form.engine} onChange={e => {
+                const eng = e.target.value as Engine;
+                setForm(f => ({ ...f, engine: eng, port: ENGINE_CONFIG[eng]?.defaultPort ?? '' }));
+              }}>
+                {ENGINES.map(e => <option key={e} value={e}>{e}</option>)}
+              </Select>
+            </FormField>
+            {cfg.hint && (
+              <div style={{ marginBottom: 12, padding: '8px 10px', background: 'var(--surface2)', borderRadius: 8, fontSize: 12, color: 'var(--text2)' }}>
+                {cfg.hint}
               </div>
-            </form>
-          </Modal>
-        );
-      })()}
+            )}
+            <FormField label={cfg.hostLabel}>
+              <Input value={form.host} onChange={e => setForm(f => ({ ...f, host: e.target.value }))} placeholder={cfg.hostPlaceholder} />
+            </FormField>
+            <FormField label="Port">
+              <Input type="number" value={form.port} onChange={e => setForm(f => ({ ...f, port: e.target.value }))} placeholder={cfg.defaultPort || 'Port'} />
+            </FormField>
+            {cfg.showDbName && (
+              <FormField label={cfg.dbNameLabel}>
+                <Input value={form.database_name} onChange={e => setForm(f => ({ ...f, database_name: e.target.value }))} placeholder={cfg.dbNamePlaceholder} />
+              </FormField>
+            )}
+            {cfg.showUser && (
+              <FormField label="User">
+                <Input value={form.db_user} onChange={e => setForm(f => ({ ...f, db_user: e.target.value }))} placeholder={cfg.userPlaceholder} />
+              </FormField>
+            )}
+            <FormField label="Password">
+              <Input type="password" value={form.db_password} onChange={e => setForm(f => ({ ...f, db_password: e.target.value }))} placeholder="Database password" />
+            </FormField>
+            {cfg.showSsl && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>
+                <input type="checkbox" checked={form.use_ssl} onChange={e => setForm(f => ({ ...f, use_ssl: e.target.checked }))} />
+                Use SSL
+              </label>
+            )}
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+              <Button type="button" onClick={() => setModal(false)}>Cancel</Button>
+              <Button type="submit" variant="primary" disabled={createMut.isPending}>{createMut.isPending ? 'Saving…' : 'Add database'}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </>
   );
 }
