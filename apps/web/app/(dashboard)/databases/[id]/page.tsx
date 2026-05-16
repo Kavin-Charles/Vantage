@@ -15,6 +15,7 @@ import {
   listInfraDatabaseRows,
   listInfraDatabaseSchema,
   runInfraDatabaseSql,
+  runMongoDbQuery,
   testInfraDatabaseConnection,
   updateInfraDatabase,
   updateInfraDatabaseRow,
@@ -98,7 +99,8 @@ function OverviewTab({ database }: { database: InfraDatabase }) {
 function TablesTab({ databaseId, engine, isAdmin }: { databaseId: string; engine: string; isAdmin: boolean }) {
   const getToken = useApiToken();
   const qc = useQueryClient();
-  const supported = engine === 'postgres' || engine === 'mysql';
+  const isMongo = engine === 'mongo';
+  const supported = engine === 'postgres' || engine === 'mysql' || isMongo;
   const [selectedKey, setSelectedKey] = useState('');
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState(false);
@@ -161,7 +163,7 @@ function TablesTab({ databaseId, engine, isAdmin }: { databaseId: string; engine
   }
 
   if (!supported) {
-    return <div style={{ color: 'var(--text2)', fontSize: 13 }}>Data browsing supports Postgres and MySQL databases in this version.</div>;
+    return <div style={{ color: 'var(--text2)', fontSize: 13 }}>Data browsing supports Postgres, MySQL, and MongoDB databases.</div>;
   }
 
   const rows = rowsQuery.data?.data;
@@ -170,7 +172,11 @@ function TablesTab({ databaseId, engine, isAdmin }: { databaseId: string; engine
     <div>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
         <Select value={selectedKey} onChange={e => { setSelectedKey(e.target.value); setPage(1); setEditing(false); setEdits({}); }} style={{ width: 280 }}>
-          {tables.map(table => <option key={`${table.schema}.${table.name}`} value={`${table.schema}.${table.name}`}>{table.schema}.{table.name}</option>)}
+          {tables.map(table => (
+            <option key={`${table.schema}.${table.name}`} value={`${table.schema}.${table.name}`}>
+              {isMongo ? table.name : `${table.schema}.${table.name}`}
+            </option>
+          ))}
         </Select>
         {isAdmin && rows && (
           editing ? (
@@ -284,6 +290,86 @@ function SqlTab({ databaseId, isAdmin }: { databaseId: string; isAdmin: boolean 
   );
 }
 
+function MongoQueryTab({ databaseId }: { databaseId: string }) {
+  const getToken = useApiToken();
+  const schemaQuery = useQuery({
+    queryKey: ['infra-db-schema', databaseId],
+    queryFn: async () => listInfraDatabaseSchema(await getToken(), databaseId),
+  });
+  const collections = (schemaQuery.data?.data ?? []).map(t => t.name);
+
+  const [collection, setCollection] = useState('');
+  const [query, setQuery] = useState('{}');
+  const [result, setResult] = useState<InfraDatabaseSqlResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Auto-select first collection
+  useEffect(() => {
+    if (!collection && collections.length > 0) setCollection(collections[0]!);
+  }, [collection, collections]);
+
+  const runMut = useMutation({
+    mutationFn: async () => runMongoDbQuery(await getToken(), databaseId, collection, query),
+    onSuccess: res => { setResult(res.data); setError(null); },
+    onError: err => { setError(err instanceof Error ? err.message : 'Query failed'); },
+  });
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Select
+          value={collection}
+          onChange={e => setCollection(e.target.value)}
+          style={{ width: 220 }}
+        >
+          {collections.map(c => <option key={c} value={c}>{c}</option>)}
+        </Select>
+        <span style={{ fontSize: 12, color: 'var(--text3)' }}>collection</span>
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>
+        Query — JSON filter <code>{'{}'}</code> or aggregate pipeline <code>{'[{"$match": {...}}]'}</code>
+      </div>
+      <Textarea
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        style={{ minHeight: 120, fontFamily: 'monospace', marginBottom: 12 }}
+        placeholder='{}'
+      />
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
+        <Button variant="primary" onClick={() => runMut.mutate()} disabled={runMut.isPending || !collection}>
+          {runMut.isPending ? 'Running...' : 'Run'}
+        </Button>
+        <span style={{ fontSize: 12, color: 'var(--text3)' }}>Returns up to 100 documents.</span>
+      </div>
+      {error && <div style={{ color: 'var(--red)', fontSize: 13, marginBottom: 12 }}>{error}</div>}
+      {result && result.kind === 'select' && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'auto' }}>
+          {result.rows.length === 0 ? (
+            <div style={{ padding: 16, fontSize: 13, color: 'var(--text3)' }}>No documents matched.</div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>{result.columns.map(col => <th key={col} style={th}>{col}</th>)}</tr></thead>
+              <tbody>
+                {result.rows.map((row, i) => (
+                  <tr key={i}>
+                    {result.columns.map(col => (
+                      <td key={col} style={td}>
+                        <span style={{ fontFamily: 'monospace', fontSize: 12 }}>
+                          {row[col] === null || row[col] === undefined ? <span style={{ color: 'var(--text3)' }}>null</span> : String(row[col])}
+                        </span>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SettingsTab({ database }: { database: InfraDatabase }) {
   const getToken = useApiToken();
   const qc = useQueryClient();
@@ -362,7 +448,7 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
   const getToken = useApiToken();
   const router = useRouter();
   const { user } = useAuth();
-  const [tab, setTab] = useState<'overview' | 'tables' | 'sql' | 'settings'>('overview');
+  const [tab, setTab] = useState<'overview' | 'tables' | 'sql' | 'mongo-query' | 'settings'>('overview');
 
   const { data, isLoading } = useQuery({
     queryKey: ['infra-database', id],
@@ -376,6 +462,8 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
   if (isLoading) return <><Topbar /><div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading...</div></>;
   if (!database) return <><Topbar /><div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Database not found.</div></>;
 
+  const isMongo = database.engine === 'mongo';
+
   return (
     <>
       <Topbar action={<Button onClick={() => router.push('/databases')}>Back to databases</Button>} />
@@ -388,10 +476,13 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
         </div>
 
         <div style={{ display: 'flex', gap: 2, marginBottom: 24, borderBottom: '1px solid var(--border)' }}>
-          {(['overview', 'tables', 'sql', 'settings'] as const).map(nextTab => (
+          {(isMongo
+            ? ['overview', 'tables', 'mongo-query', 'settings'] as const
+            : ['overview', 'tables', 'sql', 'settings'] as const
+          ).map(nextTab => (
             <button
               key={nextTab}
-              onClick={() => setTab(nextTab)}
+              onClick={() => setTab(nextTab as typeof tab)}
               style={{
                 background: 'none',
                 border: 'none',
@@ -405,14 +496,15 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
                 marginBottom: -1,
               }}
             >
-              {nextTab}
+              {nextTab === 'mongo-query' ? 'Query' : nextTab === 'tables' && isMongo ? 'Collections' : nextTab}
             </button>
           ))}
         </div>
 
         {tab === 'overview' && <OverviewTab database={database} />}
         {tab === 'tables' && <TablesTab databaseId={id} engine={database.engine} isAdmin={isAdmin} />}
-        {tab === 'sql' && <SqlTab databaseId={id} isAdmin={isAdmin} />}
+        {tab === 'sql' && !isMongo && <SqlTab databaseId={id} isAdmin={isAdmin} />}
+        {tab === 'mongo-query' && isMongo && <MongoQueryTab databaseId={id} />}
         {tab === 'settings' && <SettingsTab database={database} />}
       </div>
     </>

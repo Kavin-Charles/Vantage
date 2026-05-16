@@ -75,3 +75,11 @@ export async function runInfraDatabaseSql(token: string, id: string, sql: string
 export async function deleteInfraDatabase(token: string, id: string) {
   return apiFetch<{ data: { ok: boolean }; error: null }>(`/api/databases/${id}`, { method: 'DELETE', token });
 }
+
+export async function runMongoDbQuery(token: string, id: string, collection: string, query: string) {
+  return apiFetch<{ data: InfraDatabaseSqlResult; error: null }>(`/api/databases/${id}/mongo-query`, {
+    method: 'POST',
+    body: JSON.stringify({ collection, query }),
+    token,
+  });
+}

@@ -5,9 +5,12 @@ import type { Database, InfraDatabase, InfraDatabaseUpdate } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import {
   classifySqlStatement,
+  listMongoRows,
+  listMongoSchema,
   listTargetDatabaseRows,
   listTargetDatabaseSchema,
   redactInfraDatabase,
+  runMongoQuery,
   runTargetDatabaseSql,
   testTargetDatabaseConnection,
   updateTargetDatabaseRow,
@@ -171,7 +174,9 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
       const { workspace } = req as unknown as AuthenticatedRequest;
       const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
       if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
-      const result = await listTargetDatabaseSchema(infraDb);
+      const result = infraDb.engine === 'mongo'
+        ? await listMongoSchema(infraDb)
+        : await listTargetDatabaseSchema(infraDb);
       res.json({ data: result, error: null });
     } catch (err) {
       if (!sendInfraError(res, err)) next(err);
@@ -184,7 +189,9 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
       const query = rowsQuerySchema.parse(req.query);
       const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
       if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
-      const result = await listTargetDatabaseRows(infraDb, query.schema, req.params['table'] as string, query.page, query.limit);
+      const result = infraDb.engine === 'mongo'
+        ? await listMongoRows(infraDb, req.params['table'] as string, query.page, query.limit)
+        : await listTargetDatabaseRows(infraDb, query.schema, req.params['table'] as string, query.page, query.limit);
       res.json({ data: result, error: null });
     } catch (err) {
       if (!sendInfraError(res, err)) next(err);
@@ -206,11 +213,37 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
     }
   });
 
+  // MongoDB query endpoint: POST /:id/mongo-query
+  // Body: { collection: string, query: string (JSON) }
+  router.post('/:id/mongo-query', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const body = z.object({ collection: z.string().min(1), query: z.string().default('{}') }).parse(req.body);
+      const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
+      if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      if (infraDb.engine !== 'mongo') {
+        res.status(400).json({ data: null, error: { code: 'WRONG_ENGINE', message: 'This endpoint is only for MongoDB databases' } });
+        return;
+      }
+      const result = await runMongoQuery(infraDb, body.collection, body.query);
+      res.json({ data: result, error: null });
+    } catch (err) {
+      if (!sendInfraError(res, err)) next(err);
+    }
+  });
+
   router.post('/:id/sql', async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       const { workspace, user } = auth;
       const body = sqlSchema.parse(req.body);
+      const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
+      if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      // MongoDB uses the dedicated /mongo-query endpoint
+      if (infraDb.engine === 'mongo') {
+        res.status(400).json({ data: null, error: { code: 'WRONG_ENGINE', message: 'Use /mongo-query for MongoDB databases' } });
+        return;
+      }
       const classification = classifySqlStatement(body.sql);
       if (classification.kind === 'blocked') {
         res.status(400).json({ data: null, error: { code: classification.code, message: classification.message } });
@@ -223,8 +256,6 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
           return;
         }
       }
-      const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
-      if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
       const result = await runTargetDatabaseSql(infraDb, body.sql);
       res.json({ data: result, error: null });
     } catch (err) {

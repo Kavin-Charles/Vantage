@@ -3,6 +3,7 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 type SupportedDialect = 'postgres' | 'mysql';
 type SupportedEngine = Extract<InfraDatabase['engine'], SupportedDialect>;
+type MongoEngine = Extract<InfraDatabase['engine'], 'mongo'>;
 type DataRow = Record<string, unknown>;
 
 export type SafeInfraDatabase = Omit<InfraDatabase, 'db_password'> & {
@@ -233,6 +234,9 @@ export async function testTargetDatabaseConnection(
   row: InfraDatabase,
   passwordOverride?: string,
 ): Promise<InfraDbConnectionTestResult> {
+  if (isMongoEngine(row.engine)) {
+    return testMongoConnection(row, passwordOverride);
+  }
   const start = Date.now();
   try {
     await withTargetClient(row, passwordOverride, {
@@ -510,5 +514,252 @@ export async function runTargetDatabaseSql(
     }
     const [result] = await client.query<ResultSetHeader>(normalized);
     return { kind: 'dml', columns: [], rows: [], row_count: result.affectedRows };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MongoDB support
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Suppress unused-type lint — MongoEngine is used as a guard type below
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _MongoGuard = MongoEngine;
+
+function isMongoEngine(engine: InfraDatabase['engine']): engine is 'mongo' {
+  return engine === 'mongo';
+}
+
+/**
+ * Build a MongoDB connection URI from the InfraDatabase row.
+ * Users may store a full URI in the `host` field or individual fields.
+ */
+function buildMongoUri(row: InfraDatabase, passwordOverride?: string): string {
+  const host = row.host ?? 'localhost';
+
+  // If host already looks like a full URI, use it directly (replacing password if overridden)
+  if (host.startsWith('mongodb://') || host.startsWith('mongodb+srv://')) {
+    if (passwordOverride) {
+      // Inject password into existing URI  mongodb://user:PASS@host/db
+      return host.replace(/(:\/\/[^:@]*:)[^@]+(@)/, `$1${encodeURIComponent(passwordOverride)}$2`);
+    }
+    return host;
+  }
+
+  const port = row.port ?? 27017;
+  const user = row.db_user;
+  const password = passwordOverride ?? row.db_password ?? undefined;
+  const database = row.database_name ?? 'admin';
+
+  if (user && password) {
+    return `mongodb://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${database}`;
+  }
+  if (user) {
+    return `mongodb://${encodeURIComponent(user)}@${host}:${port}/${database}`;
+  }
+  return `mongodb://${host}:${port}/${database}`;
+}
+
+async function withMongoClient<T>(
+  row: InfraDatabase,
+  passwordOverride: string | undefined,
+  callback: (
+    client: import('mongodb').MongoClient,
+    db: import('mongodb').Db,
+  ) => Promise<T>,
+): Promise<T> {
+  const { MongoClient } = await import('mongodb');
+  const uri = buildMongoUri(row, passwordOverride);
+  const dbName = row.database_name ?? undefined;
+  const client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+    tls: row.use_ssl,
+    tlsAllowInvalidCertificates: row.use_ssl, // dev-friendly; prod can tighten
+  });
+  await client.connect();
+  try {
+    const db = client.db(dbName);
+    return await callback(client, db);
+  } finally {
+    await client.close();
+  }
+}
+
+/** Infer field types from a sample document. */
+function inferDocumentFields(doc: Record<string, unknown>): InfraDbColumn[] {
+  return Object.keys(doc).map(key => {
+    const value = doc[key];
+    let data_type = 'string';
+    if (value === null || value === undefined) data_type = 'null';
+    else if (typeof value === 'number') data_type = Number.isInteger(value) ? 'int' : 'double';
+    else if (typeof value === 'boolean') data_type = 'boolean';
+    else if (value instanceof Date) data_type = 'date';
+    else if (typeof value === 'object' && !Array.isArray(value)) data_type = 'object';
+    else if (Array.isArray(value)) data_type = 'array';
+    else if (typeof value === 'string') {
+      // ObjectId strings look like 24-char hex
+      if (/^[0-9a-f]{24}$/i.test(value)) data_type = 'objectId';
+      else data_type = 'string';
+    }
+    return {
+      name: key,
+      data_type,
+      nullable: true,
+      primary_key: key === '_id',
+    };
+  });
+}
+
+export async function testMongoConnection(
+  row: InfraDatabase,
+  passwordOverride?: string,
+): Promise<InfraDbConnectionTestResult> {
+  const start = Date.now();
+  try {
+    await withMongoClient(row, passwordOverride, async (client) => {
+      await client.db('admin').command({ ping: 1 });
+    });
+    return { ok: true, latency_ms: Date.now() - start, message: 'Connection succeeded.' };
+  } catch (err) {
+    return {
+      ok: false,
+      latency_ms: Date.now() - start,
+      message: err instanceof Error ? err.message : 'Connection failed.',
+    };
+  }
+}
+
+/** Returns MongoDB collections as InfraDbTable entries (schema = db name). */
+export async function listMongoSchema(row: InfraDatabase): Promise<InfraDbTable[]> {
+  return withMongoClient(row, undefined, async (_client, db) => {
+    const dbName = db.databaseName;
+    const collections = await db.listCollections().toArray();
+    const tables: InfraDbTable[] = [];
+
+    for (const coll of collections) {
+      // Sample up to 5 docs to infer schema
+      const rawDocs = await db.collection<Record<string, unknown>>(coll.name).find({}).limit(5).toArray();
+      const docs: Record<string, unknown>[] = rawDocs.map(d => d as Record<string, unknown>);
+      const merged: Record<string, unknown> = {};
+      for (const doc of docs) {
+        for (const [k, v] of Object.entries(doc)) {
+          if (!(k in merged)) merged[k] = v;
+        }
+      }
+      const columns = docs.length > 0
+        ? inferDocumentFields(merged)
+        : [{ name: '_id', data_type: 'objectId', nullable: false, primary_key: true }];
+
+      tables.push({
+        schema: dbName,
+        name: coll.name,
+        columns,
+        primary_key: ['_id'],
+      });
+    }
+    return tables;
+  });
+}
+
+/** Browse documents in a MongoDB collection (paginated). */
+export async function listMongoRows(
+  row: InfraDatabase,
+  collectionName: string,
+  page: number,
+  limit: number,
+): Promise<InfraDbRowsResult> {
+  const safePage = Math.max(1, page);
+  const safeLimit = Math.min(Math.max(1, limit), 100);
+  const skip = (safePage - 1) * safeLimit;
+
+  return withMongoClient(row, undefined, async (_client, db) => {
+    const dbName = db.databaseName;
+    const rawDocs = await db.collection<Record<string, unknown>>(collectionName).find({}).skip(skip).limit(safeLimit).toArray();
+    const docs: Record<string, unknown>[] = rawDocs.map(d => d as Record<string, unknown>);
+
+    // Infer columns from first page results
+    const merged: Record<string, unknown> = {};
+    for (const doc of docs) {
+      for (const [k, v] of Object.entries(doc)) {
+        if (!(k in merged)) merged[k] = v;
+      }
+    }
+    const columns = docs.length > 0
+      ? inferDocumentFields(merged)
+      : [{ name: '_id', data_type: 'objectId', nullable: false, primary_key: true }];
+
+    return {
+      columns,
+      rows: docs.map(doc => {
+        const r: DataRow = {};
+        for (const [k, v] of Object.entries(doc)) {
+          // Serialize complex types to JSON strings for display
+          if (v !== null && typeof v === 'object' && !(v instanceof Date)) {
+            r[k] = JSON.stringify(v);
+          } else {
+            r[k] = v;
+          }
+        }
+        return r;
+      }),
+      primary_key: ['_id'],
+      page: safePage,
+      limit: safeLimit,
+    };
+  });
+}
+
+/**
+ * Run a MongoDB query. `queryStr` is either:
+ *   - A JSON object: `{"field": "value"}` → find filter
+ *   - A JSON array:  `[{"$match": {...}}, {"$group": {...}}]` → aggregate pipeline
+ */
+export async function runMongoQuery(
+  row: InfraDatabase,
+  collectionName: string,
+  queryStr: string,
+): Promise<InfraDbSqlResult> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(queryStr.trim() || '{}');
+  } catch {
+    throw new Error('Invalid JSON query. Use {} for find-all, {"field":"value"} for filter, or [{$match:...},...] for aggregate pipeline.');
+  }
+
+  return withMongoClient(row, undefined, async (_client, db) => {
+    const coll = db.collection(collectionName);
+    let docs: Record<string, unknown>[];
+
+    if (Array.isArray(parsed)) {
+      // Aggregate pipeline
+      docs = await coll.aggregate(parsed as object[]).limit(100).toArray() as Record<string, unknown>[];
+    } else {
+      // Find filter
+      docs = await coll.find(parsed as object).limit(100).toArray() as Record<string, unknown>[];
+    }
+
+    // Collect columns from merged sample
+    const merged: Record<string, unknown> = {};
+    for (const doc of docs) {
+      for (const [k, v] of Object.entries(doc)) {
+        if (!(k in merged)) merged[k] = v;
+      }
+    }
+    const columns = Object.keys(merged);
+
+    return {
+      kind: 'select',
+      columns,
+      rows: docs.map(doc => {
+        const r: DataRow = {};
+        for (const [k, v] of Object.entries(doc)) {
+          r[k] = (v !== null && typeof v === 'object' && !(v instanceof Date))
+            ? JSON.stringify(v)
+            : v;
+        }
+        return r;
+      }),
+      row_count: docs.length,
+    };
   });
 }
