@@ -101,6 +101,7 @@ function TablesTab({ databaseId, engine, isAdmin }: { databaseId: string; engine
   const qc = useQueryClient();
   const isMongo = engine === 'mongo';
   const supported = engine === 'postgres' || engine === 'mysql' || isMongo;
+  const supportsEdit = engine === 'postgres' || engine === 'mysql';
   const [selectedKey, setSelectedKey] = useState('');
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState(false);
@@ -178,7 +179,7 @@ function TablesTab({ databaseId, engine, isAdmin }: { databaseId: string; engine
             </option>
           ))}
         </Select>
-        {isAdmin && rows && (
+        {isAdmin && supportsEdit && rows && (
           editing ? (
             <>
               <Button variant="primary" onClick={() => void save(rows)} disabled={updateMut.isPending || Object.keys(edits).length === 0}>{updateMut.isPending ? 'Saving...' : 'Save changes'}</Button>
@@ -450,7 +451,7 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
   const { user } = useAuth();
   const [tab, setTab] = useState<'overview' | 'tables' | 'sql' | 'mongo-query' | 'settings'>('overview');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['infra-database', id],
     queryFn: async () => getInfraDatabase(await getToken(), id),
     refetchInterval: 30_000,
@@ -460,6 +461,7 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
   const isAdmin = user?.role === 'admin';
 
   if (isLoading) return <><Topbar /><div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading...</div></>;
+  if (isError) return <><Topbar /><div style={{ padding: 40, textAlign: 'center', color: 'var(--red)' }}>Failed to load database. Check that the API is running.</div></>;
   if (!database) return <><Topbar /><div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Database not found.</div></>;
 
   const isMongo = database.engine === 'mongo';
