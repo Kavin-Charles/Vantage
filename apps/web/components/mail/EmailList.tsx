@@ -21,6 +21,7 @@ interface Props {
   folder: string;
   search: string;
   selectedId: string | null;
+  onlyStarred?: boolean;
   onSelect: (email: Email) => void;
 }
 
@@ -33,7 +34,7 @@ function relativeTime(iso: string): string {
   return `${Math.floor(hrs / 24)}d`;
 }
 
-export function EmailList({ accountId, folder, search, selectedId, onSelect }: Props) {
+export function EmailList({ accountId, folder, search, selectedId, onlyStarred, onSelect }: Props) {
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,7 +60,9 @@ export function EmailList({ accountId, folder, search, selectedId, onSelect }: P
       Loading…
     </div>
   );
-  if (!emails.length) return (
+  const visible = onlyStarred ? emails.filter(e => e.is_starred) : emails;
+
+  if (!visible.length) return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontSize: 13, padding: 32 }}>
       No emails
     </div>
@@ -67,7 +70,7 @@ export function EmailList({ accountId, folder, search, selectedId, onSelect }: P
 
   return (
     <div style={{ overflowY: 'auto', height: '100%' }}>
-      {emails.map(email => (
+      {visible.map(email => (
         <div
           key={email.id}
           onClick={() => onSelect(email)}

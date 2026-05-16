@@ -15,6 +15,7 @@ const pageTitles: Record<string, string> = {
   '/files': 'Files',
   '/analytics': 'Analytics',
   '/alerts': 'Alerts',
+  '/mail': 'Mail',
   '/settings': 'Settings',
 };
 

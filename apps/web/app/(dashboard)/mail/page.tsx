@@ -60,7 +60,8 @@ export default function MailPage() {
   return (
     <>
       <Topbar />
-      <div style={{ display: 'flex', height: 'calc(100vh - 56px)', overflow: 'hidden', background: 'var(--bg)' }}>
+      {/* Negative margin escapes the dashboard layout's padding:24 so the mail panes fill edge-to-edge */}
+      <div style={{ display: 'flex', height: 'calc(100vh - var(--header-h) - 24px)', overflow: 'hidden', background: 'var(--bg)', margin: '0 -24px -24px' }}>
         <FolderSidebar
           selectedAccount={selectedAccount}
           selectedFolder={selectedFolder}
@@ -84,6 +85,7 @@ export default function MailPage() {
               folder={apiFolder}
               search={search}
               selectedId={selectedEmail?.id ?? null}
+              onlyStarred={selectedFolder === 'starred'}
               onSelect={(email) => setSelectedEmail(email as unknown as Email)}
             />
           </div>
