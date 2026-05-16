@@ -30,6 +30,9 @@ import { createSshActionsRouter } from './routes/ssh-actions';
 import { createWebhooksRouter } from './routes/webhooks';
 import { createApiKeysRouter } from './routes/api-keys';
 import { createNotificationsRouter } from './routes/notifications';
+import { createMailAccountsRouter, handleGmailCallback } from './routes/mail-accounts';
+import { createMailEmailsRouter } from './routes/mail-emails';
+import { startMailSync } from './workers/mail-sync';
 import { createV1Router } from './routes/v1/index';
 import { seedOnFirstBoot } from './lib/seed';
 import { logger } from './lib/logger';
@@ -63,6 +66,13 @@ app.use('/api/tasks', requireAuth, createTasksRouter(db));
 app.use('/api/activity', requireAuth, createActivityRouter(db));
 app.use('/api/alerts', requireAuth, createAlertsRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
+// Gmail OAuth callback — no cookie auth, identity verified via state JWT
+app.get('/api/mail/accounts/gmail/callback', (req, res, next) => {
+  void handleGmailCallback(db, req, res, next);
+});
+// Mail routes (authenticated)
+app.use('/api/mail/accounts', requireAuth, createMailAccountsRouter(db));
+app.use('/api/mail/emails', requireAuth, createMailEmailsRouter(db));
 app.use('/api/item-groups', requireAuth, createItemGroupsRouter(db));
 app.use('/api/items', requireAuth, createItemsRouter(db));
 app.use('/api/analytics', requireAuth, createAnalyticsRouter(db));
@@ -97,6 +107,9 @@ app.use(errorHandler);
 seedOnFirstBoot(db, config).catch((err: unknown) => {
   logger.error({ err }, '[Vantage] First-boot seeding failed');
 });
+
+// Start mail sync worker (polls every 5 min)
+startMailSync(db);
 
 app.listen(env.PORT, () => {
   logger.info({ port: env.PORT }, 'API server running');
