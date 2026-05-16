@@ -123,7 +123,7 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
               from_name: env.from?.[0]?.name ?? null,
               to_addresses: (env.to ?? []).map(a => a.address).filter((a): a is string => Boolean(a)),
               cc_addresses: (env.cc ?? []).map(a => a.address).filter((a): a is string => Boolean(a)),
-              bcc_addresses: [],
+              bcc_addresses: (env.bcc ?? []).map(a => a.address).filter((a): a is string => Boolean(a)),
               body_html: null,
               body_text: body_text || null,
               snippet: body_text?.slice(0, 200) ?? null,
@@ -148,15 +148,19 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
         secure: opts.use_ssl,
         auth: { user: opts.smtp_user, pass: opts.smtp_pass },
       });
-      const info = await transporter.sendMail({
-        from: opts.smtp_user,
-        to: params.to.join(', '),
-        cc: params.cc?.join(', '),
-        bcc: params.bcc?.join(', '),
-        subject: params.subject,
-        html: params.body_html,
-      });
-      return { message_id: info.messageId };
+      try {
+        const info = await transporter.sendMail({
+          from: opts.smtp_user,
+          to: params.to.join(', '),
+          cc: params.cc?.join(', '),
+          bcc: params.bcc?.join(', '),
+          subject: params.subject,
+          html: params.body_html,
+        });
+        return { message_id: info.messageId };
+      } finally {
+        transporter.close();
+      }
     },
 
     async updateEmail(message_id: string, update: { is_read?: boolean; is_starred?: boolean; folder?: string }) {
