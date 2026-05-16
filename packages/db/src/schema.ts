@@ -318,6 +318,57 @@ export interface ItemFieldValueTable {
   updated_at: Generated<Date>;
 }
 
+export interface EmailAccountTable {
+  id: Generated<string>;
+  user_id: string;
+  workspace_id: string;
+  provider: 'gmail' | 'imap';
+  email: string;
+  display_name: string | null;
+  access_token: string | null;
+  refresh_token: string | null;
+  gmail_history_id: string | null;
+  imap_host: string | null;
+  imap_port: number | null;
+  imap_user: string | null;
+  imap_pass: string | null;
+  smtp_host: string | null;
+  smtp_port: number | null;
+  smtp_user: string | null;
+  smtp_pass: string | null;
+  use_ssl: Generated<boolean>;
+  sync_status: Generated<'idle' | 'syncing' | 'error'>;
+  sync_error: string | null;
+  last_synced_at: string | null;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
+export interface EmailTable {
+  id: Generated<string>;
+  account_id: string;
+  workspace_id: string;
+  user_id: string;
+  message_id: string;
+  thread_id: string | null;
+  subject: string | null;
+  from_address: string;
+  from_name: string | null;
+  to_addresses: string[];
+  cc_addresses: string[];
+  bcc_addresses: string[];
+  body_html: string | null;
+  body_text: string | null;
+  snippet: string | null;
+  folder: Generated<'inbox' | 'sent' | 'drafts' | 'trash' | 'spam'>;
+  is_read: Generated<boolean>;
+  is_starred: Generated<boolean>;
+  sent_at: string;
+  synced_at: Generated<string>;
+  contact_id: string | null;
+  deal_id: string | null;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -343,6 +394,8 @@ export interface Database {
   items: ItemTable;
   item_fields: ItemFieldTable;
   item_field_values: ItemFieldValueTable;
+  email_accounts: EmailAccountTable;
+  emails: EmailTable;
 }
 
 // Convenience types
@@ -425,6 +478,13 @@ export type ItemFieldUpdate = Updateable<ItemFieldTable>;
 export type ItemFieldValue = Selectable<ItemFieldValueTable>;
 export type NewItemFieldValue = Insertable<ItemFieldValueTable>;
 export type ItemFieldValueUpdate = Updateable<ItemFieldValueTable>;
+
+export type EmailAccount = Selectable<EmailAccountTable>;
+export type NewEmailAccount = Insertable<EmailAccountTable>;
+export type EmailAccountUpdate = Updateable<EmailAccountTable>;
+export type Email = Selectable<EmailTable>;
+export type NewEmail = Insertable<EmailTable>;
+export type EmailUpdate = Updateable<EmailTable>;
 
 export type WorkspaceSshKeypair = Selectable<WorkspaceSshKeypairTable>;
 export type NewWorkspaceSshKeypair = Insertable<WorkspaceSshKeypairTable>;
