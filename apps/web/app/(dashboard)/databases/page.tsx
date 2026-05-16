@@ -14,6 +14,99 @@ import type { InfraDatabase } from '@vantage/types';
 
 const ENGINES = ['postgres', 'mysql', 'redis', 'clickhouse', 'mongo', 'other'] as const;
 
+type Engine = typeof ENGINES[number];
+
+interface EngineConfig {
+  defaultPort: string;
+  namePlaceholder: string;
+  hostPlaceholder: string;
+  hostLabel: string;
+  dbNameLabel: string;
+  dbNamePlaceholder: string;
+  showDbName: boolean;
+  showUser: boolean;
+  userPlaceholder: string;
+  showSsl: boolean;
+  hint?: string;
+}
+
+const ENGINE_CONFIG: Record<Engine, EngineConfig> = {
+  postgres: {
+    defaultPort: '5432',
+    namePlaceholder: 'prod-postgres',
+    hostLabel: 'Host',
+    hostPlaceholder: 'db.example.com',
+    dbNameLabel: 'Database name',
+    dbNamePlaceholder: 'mydb',
+    showDbName: true,
+    showUser: true,
+    userPlaceholder: 'postgres',
+    showSsl: true,
+  },
+  mysql: {
+    defaultPort: '3306',
+    namePlaceholder: 'prod-mysql',
+    hostLabel: 'Host',
+    hostPlaceholder: 'db.example.com',
+    dbNameLabel: 'Database name',
+    dbNamePlaceholder: 'mydb',
+    showDbName: true,
+    showUser: true,
+    userPlaceholder: 'root',
+    showSsl: true,
+  },
+  redis: {
+    defaultPort: '6379',
+    namePlaceholder: 'prod-redis',
+    hostLabel: 'Host',
+    hostPlaceholder: 'redis.example.com',
+    dbNameLabel: 'DB index',
+    dbNamePlaceholder: '0',
+    showDbName: false,
+    showUser: false,
+    userPlaceholder: '',
+    showSsl: true,
+    hint: 'Password only — Redis does not use usernames.',
+  },
+  clickhouse: {
+    defaultPort: '8123',
+    namePlaceholder: 'prod-clickhouse',
+    hostLabel: 'Host',
+    hostPlaceholder: 'ch.example.com',
+    dbNameLabel: 'Database name',
+    dbNamePlaceholder: 'default',
+    showDbName: true,
+    showUser: true,
+    userPlaceholder: 'default',
+    showSsl: true,
+  },
+  mongo: {
+    defaultPort: '27017',
+    namePlaceholder: 'prod-mongo',
+    hostLabel: 'Host or connection URI',
+    hostPlaceholder: 'mongodb+srv://cluster.example.net or localhost',
+    dbNameLabel: 'Database name',
+    dbNamePlaceholder: 'mydb',
+    showDbName: true,
+    showUser: true,
+    userPlaceholder: 'mongouser',
+    showSsl: false,
+    hint: 'You can paste a full mongodb:// or mongodb+srv:// URI into the host field.',
+  },
+  other: {
+    defaultPort: '',
+    namePlaceholder: 'my-database',
+    hostLabel: 'Host',
+    hostPlaceholder: 'db.example.com',
+    dbNameLabel: 'Database name',
+    dbNamePlaceholder: 'mydb',
+    showDbName: true,
+    showUser: true,
+    userPlaceholder: 'dbuser',
+    showSsl: true,
+  },
+};
+
 const ENGINE_COLOR: Record<string, 'blue' | 'green' | 'red' | 'amber' | 'purple' | 'gray'> = {
   postgres: 'blue',
   mysql: 'amber',
@@ -25,21 +118,14 @@ const ENGINE_COLOR: Record<string, 'blue' | 'green' | 'red' | 'amber' | 'purple'
 const th: React.CSSProperties = { padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border)' };
 const td: React.CSSProperties = { padding: '12px 16px', fontSize: 13, color: 'var(--text)', borderBottom: '1px solid var(--border)' };
 
+const BLANK_FORM = { name: '', engine: 'postgres', host: '', port: '5432', database_name: '', db_user: '', db_password: '', use_ssl: false };
+
 export default function DatabasesPage() {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const router = useRouter();
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({
-    name: '',
-    engine: 'postgres',
-    host: '',
-    port: '',
-    database_name: '',
-    db_user: '',
-    db_password: '',
-    use_ssl: false,
-  });
+  const [form, setForm] = useState(BLANK_FORM);
 
   const { data, isLoading } = useQuery({
     queryKey: ['infra-databases'],
@@ -60,16 +146,7 @@ export default function DatabasesPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['infra-databases'] });
       setModal(false);
-      setForm({
-        name: '',
-        engine: 'postgres',
-        host: '',
-        port: '',
-        database_name: '',
-        db_user: '',
-        db_password: '',
-        use_ssl: false,
-      });
+      setForm(BLANK_FORM);
     },
   });
 
@@ -126,43 +203,61 @@ export default function DatabasesPage() {
         </div>
       </div>
 
-      {modal && (
-        <Modal title="Add database" onClose={() => setModal(false)}>
-          <form onSubmit={e => { e.preventDefault(); createMut.mutate(); }}>
-            <FormField label="Name *">
-              <Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="prod-postgres" />
-            </FormField>
-            <FormField label="Engine">
-              <Select value={form.engine} onChange={e => setForm(f => ({ ...f, engine: e.target.value }))}>
-                {ENGINES.map(e => <option key={e} value={e}>{e}</option>)}
-              </Select>
-            </FormField>
-            <FormField label="Host">
-              <Input value={form.host} onChange={e => setForm(f => ({ ...f, host: e.target.value }))} placeholder="localhost" />
-            </FormField>
-            <FormField label="Port">
-              <Input type="number" value={form.port} onChange={e => setForm(f => ({ ...f, port: e.target.value }))} placeholder="5432" />
-            </FormField>
-            <FormField label="Database name">
-              <Input value={form.database_name} onChange={e => setForm(f => ({ ...f, database_name: e.target.value }))} placeholder="defaultdb" />
-            </FormField>
-            <FormField label="User">
-              <Input value={form.db_user} onChange={e => setForm(f => ({ ...f, db_user: e.target.value }))} placeholder="avnadmin" />
-            </FormField>
-            <FormField label="Password">
-              <Input type="password" value={form.db_password} onChange={e => setForm(f => ({ ...f, db_password: e.target.value }))} placeholder="Database password" />
-            </FormField>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>
-              <input type="checkbox" checked={form.use_ssl} onChange={e => setForm(f => ({ ...f, use_ssl: e.target.checked }))} />
-              Use SSL
-            </label>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
-              <Button type="button" onClick={() => setModal(false)}>Cancel</Button>
-              <Button type="submit" variant="primary" disabled={createMut.isPending}>{createMut.isPending ? 'Saving…' : 'Add database'}</Button>
-            </div>
-          </form>
-        </Modal>
-      )}
+      {modal && (() => {
+        const cfg = ENGINE_CONFIG[form.engine as Engine] ?? ENGINE_CONFIG.other;
+        return (
+          <Modal title="Add database" onClose={() => setModal(false)}>
+            <form onSubmit={e => { e.preventDefault(); createMut.mutate(); }}>
+              <FormField label="Name *">
+                <Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={cfg.namePlaceholder} />
+              </FormField>
+              <FormField label="Engine">
+                <Select value={form.engine} onChange={e => {
+                  const eng = e.target.value as Engine;
+                  const newCfg = ENGINE_CONFIG[eng] ?? ENGINE_CONFIG.other;
+                  setForm(f => ({ ...f, engine: eng, port: newCfg.defaultPort }));
+                }}>
+                  {ENGINES.map(e => <option key={e} value={e}>{e}</option>)}
+                </Select>
+              </FormField>
+              {cfg.hint && (
+                <div style={{ marginBottom: 12, padding: '8px 10px', background: 'var(--surface2)', borderRadius: 8, fontSize: 12, color: 'var(--text2)' }}>
+                  {cfg.hint}
+                </div>
+              )}
+              <FormField label={cfg.hostLabel}>
+                <Input value={form.host} onChange={e => setForm(f => ({ ...f, host: e.target.value }))} placeholder={cfg.hostPlaceholder} />
+              </FormField>
+              <FormField label="Port">
+                <Input type="number" value={form.port} onChange={e => setForm(f => ({ ...f, port: e.target.value }))} placeholder={cfg.defaultPort || 'Port'} />
+              </FormField>
+              {cfg.showDbName && (
+                <FormField label={cfg.dbNameLabel}>
+                  <Input value={form.database_name} onChange={e => setForm(f => ({ ...f, database_name: e.target.value }))} placeholder={cfg.dbNamePlaceholder} />
+                </FormField>
+              )}
+              {cfg.showUser && (
+                <FormField label="User">
+                  <Input value={form.db_user} onChange={e => setForm(f => ({ ...f, db_user: e.target.value }))} placeholder={cfg.userPlaceholder} />
+                </FormField>
+              )}
+              <FormField label="Password">
+                <Input type="password" value={form.db_password} onChange={e => setForm(f => ({ ...f, db_password: e.target.value }))} placeholder="Database password" />
+              </FormField>
+              {cfg.showSsl && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>
+                  <input type="checkbox" checked={form.use_ssl} onChange={e => setForm(f => ({ ...f, use_ssl: e.target.checked }))} />
+                  Use SSL
+                </label>
+              )}
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+                <Button type="button" onClick={() => setModal(false)}>Cancel</Button>
+                <Button type="submit" variant="primary" disabled={createMut.isPending}>{createMut.isPending ? 'Saving…' : 'Add database'}</Button>
+              </div>
+            </form>
+          </Modal>
+        );
+      })()}
     </>
   );
 }
