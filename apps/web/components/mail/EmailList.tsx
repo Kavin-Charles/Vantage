@@ -55,6 +55,12 @@ export function EmailList({ accountId, folder, search, selectedId, onlyStarred, 
 
   useEffect(() => { void load(); }, [load]);
 
+  // Re-fetch every 60s so new incoming emails appear without manual refresh
+  useEffect(() => {
+    const t = setInterval(() => { void load(); }, 60_000);
+    return () => clearInterval(t);
+  }, [load]);
+
   if (loading) return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontSize: 13, padding: 32 }}>
       Loading…

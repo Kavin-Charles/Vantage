@@ -175,6 +175,30 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
         reply_to_message_id: body.reply_to_message_id,
       });
 
+      // Store sent email in DB so it appears in Sent folder immediately
+      await db.insertInto('emails').values({
+        account_id: account.id,
+        workspace_id: account.workspace_id,
+        user_id: user.id,
+        message_id,
+        thread_id: message_id,
+        subject: body.subject,
+        from_address: account.email,
+        from_name: account.display_name ?? account.email,
+        to_addresses: JSON.stringify(body.to) as unknown as string[],
+        cc_addresses: JSON.stringify(body.cc ?? []) as unknown as string[],
+        bcc_addresses: JSON.stringify(body.bcc ?? []) as unknown as string[],
+        body_html: body.body_html,
+        body_text: null,
+        snippet: body.body_html.replace(/<[^>]+>/g, '').slice(0, 200),
+        folder: 'sent',
+        is_read: true,
+        is_starred: false,
+        sent_at: new Date().toISOString(),
+        contact_id: null,
+        deal_id: null,
+      }).onConflict(oc => oc.columns(['account_id', 'message_id']).doNothing()).execute();
+
       res.status(201).json({ data: { message_id }, error: null });
     } catch (err) { next(err); }
   });

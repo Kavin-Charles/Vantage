@@ -37,6 +37,7 @@ export default function MailPage() {
   const [showCompose, setShowCompose] = useState(false);
   const [replyTo, setReplyTo] = useState<{ account_id: string; to: string; subject: string; message_id: string } | undefined>();
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [listKey, setListKey] = useState(0);
 
   useEffect(() => {
     void apiFetch<{ data: Account[] }>('/api/mail/accounts')
@@ -81,6 +82,7 @@ export default function MailPage() {
           </div>
           <div style={{ flex: 1, overflowY: 'auto' }}>
             <EmailList
+              key={listKey}
               accountId={selectedAccount}
               folder={apiFolder}
               search={search}
@@ -111,7 +113,7 @@ export default function MailPage() {
           accounts={accounts}
           replyTo={replyTo}
           onClose={() => setShowCompose(false)}
-          onSent={() => setSelectedEmail(null)}
+          onSent={() => { setSelectedEmail(null); setSelectedFolder('sent'); setListKey(k => k + 1); }}
         />
       )}
     </>
