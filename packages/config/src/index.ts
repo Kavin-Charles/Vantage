@@ -13,6 +13,12 @@ export const apiEnvSchema = z.object({
   CRON_SECRET: z.string(),
   SSH_ENCRYPTION_KEY: z.string().min(64, 'SSH_ENCRYPTION_KEY must be a 64-char hex string (32 bytes)'),
   PORT: z.coerce.number().default(3001),
+  // Mail — optional; app boots without them, mail routes throw at runtime if unset
+  APP_URL: z.string().default('http://localhost:3000'),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_REDIRECT_URI: z.string().optional(),
+  MAIL_ENCRYPTION_KEY: z.string().length(64).optional(),
 });
 
 // Web env
