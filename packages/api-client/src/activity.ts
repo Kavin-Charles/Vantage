@@ -9,7 +9,7 @@ export async function listActivity(
     limit?: number;
     offset?: number;
   },
-) {
+): Promise<{ data: Activity[]; total: number; error: null }> {
   const qs = new URLSearchParams();
   if (params?.contact_id) qs.set('contact_id', params.contact_id);
   if (params?.deal_id) qs.set('deal_id', params.deal_id);
@@ -25,7 +25,7 @@ export async function listActivity(
 export async function createActivity(
   token: string,
   body: { type: Activity['type']; body?: string; contact_id?: string; deal_id?: string },
-) {
+): Promise<{ data: Activity; error: null }> {
   return apiFetch<{ data: Activity; error: null }>('/api/activity', {
     method: 'POST',
     body: JSON.stringify(body),
