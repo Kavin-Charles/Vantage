@@ -47,11 +47,11 @@ function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigge
 
   const { data: dealsData } = useQuery({
     queryKey: ['deals', pipelineId],
-    queryFn: () => listDeals(pipelineId),
+    queryFn: async () => listDeals(await getToken(), pipelineId),
   });
 
   const stageMut = useMutation({
-    mutationFn: ({ id, stage_id }: { id: string; stage_id: string }) => updateDeal(id, { stage_id }),
+    mutationFn: async ({ id, stage_id }: { id: string; stage_id: string }) => updateDeal(await getToken(), id, { stage_id }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['deals', pipelineId] }),
   });
 

@@ -476,6 +476,9 @@ function FilesTab({ serverId }: { serverId: string }) {
   const [loading, setLoading] = useState(false);
   const [fileModal, setFileModal] = useState<{ path: string; content: string } | null>(null);
 
+  // Auto-load root on first mount
+  useEffect(() => { void navigate('/'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   async function navigate(newPath: string) {
     setPath(newPath);
     setLoading(true);
@@ -578,6 +581,13 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
   const router = useRouter();
   const qc = useQueryClient();
   const [tab, setTab] = useState<'overview' | 'console' | 'terminal' | 'services' | 'logs' | 'files'>('overview');
+  const [consoleEverActive, setConsoleEverActive] = useState(false);
+  const [filesEverActive, setFilesEverActive] = useState(false);
+
+  useEffect(() => {
+    if (tab === 'console') setConsoleEverActive(true);
+    if (tab === 'files') setFilesEverActive(true);
+  }, [tab]);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', region: '', ip_address: '', ssh_port: 22 });
 
@@ -656,11 +666,21 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
         </div>
 
         {tab === 'overview' && <OverviewTab server={server} snapshots={snapshots} />}
-        {tab === 'console' && <ConsoleTab serverId={id} />}
         {tab === 'terminal' && <TerminalTab serverId={id} />}
         {tab === 'services' && <ServicesTab serverId={id} />}
         {tab === 'logs' && <LogsTab serverId={id} />}
-        {tab === 'files' && <FilesTab serverId={id} />}
+        {/* Console: mount once, keep alive with CSS so SSH connection persists */}
+        {consoleEverActive && (
+          <div style={{ display: tab === 'console' ? 'block' : 'none' }}>
+            <ConsoleTab serverId={id} />
+          </div>
+        )}
+        {/* Files: mount once, keep alive so listing persists across tab switches */}
+        {filesEverActive && (
+          <div style={{ display: tab === 'files' ? 'block' : 'none' }}>
+            <FilesTab serverId={id} />
+          </div>
+        )}
       </div>
 
       {/* Edit modal */}

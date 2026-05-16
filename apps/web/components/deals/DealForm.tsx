@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { FormField, Input, Select } from '@/components/ui/FormField';
 import { createDeal, updateDeal } from '@/lib/deals';
+import { useApiToken } from '@/lib/useApiToken';
 import type { Deal, PipelineStage, StageField } from '@vantage/types';
 
 type StageWithFields = PipelineStage & { fields: StageField[] };
@@ -40,6 +41,7 @@ function FieldInput({ field, value, onChange }: { field: StageField; value: stri
 
 export function DealForm({ deal, pipelineId, stages, defaultStageId, onDone }: Props) {
   const qc = useQueryClient();
+  const getToken = useApiToken();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: deal?.name ?? '',
@@ -68,8 +70,9 @@ export function DealForm({ deal, pipelineId, stages, defaultStageId, onDone }: P
     setLoading(true);
     try {
       const fv = Object.keys(fieldValues).length > 0 ? fieldValues : undefined;
+      const token = await getToken();
       if (deal) {
-        await updateDeal(deal.id, {
+        await updateDeal(token, deal.id, {
           name: form.name,
           stage_id: form.stage_id,
           value: parseFloat(form.value) || 0,
@@ -78,7 +81,7 @@ export function DealForm({ deal, pipelineId, stages, defaultStageId, onDone }: P
           field_values: fv,
         });
       } else {
-        await createDeal({
+        await createDeal(token, {
           name: form.name,
           pipeline_id: pipelineId,
           stage_id: form.stage_id,

@@ -418,7 +418,10 @@ function SettingsTab({ database }: { database: InfraDatabase }) {
 
   const testMut = useMutation({
     mutationFn: async () => testInfraDatabaseConnection(await getToken(), database.id, form.db_password || undefined),
-    onSuccess: res => setTestResult(`${res.data.ok ? 'OK' : 'Failed'} in ${res.data.latency_ms}ms: ${res.data.message}`),
+    onSuccess: async res => {
+      setTestResult(`${res.data.ok ? 'OK' : 'Failed'} in ${res.data.latency_ms}ms: ${res.data.message}`);
+      await qc.invalidateQueries({ queryKey: ['infra-database', database.id] });
+    },
     onError: err => setTestResult(err instanceof Error ? err.message : 'Connection test failed'),
   });
 
