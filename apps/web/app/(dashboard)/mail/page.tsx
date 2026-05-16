@@ -25,7 +25,6 @@ interface Email {
   is_read: boolean;
   account_id: string;
   message_id: string;
-  snippet: string | null;
 }
 
 interface Account { id: string; email: string; }
@@ -85,7 +84,7 @@ export default function MailPage() {
               folder={apiFolder}
               search={search}
               selectedId={selectedEmail?.id ?? null}
-              onSelect={setSelectedEmail}
+              onSelect={(email) => setSelectedEmail(email as unknown as Email)}
             />
           </div>
         </div>

@@ -52,13 +52,14 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
         for (const [mailboxName, folder] of Object.entries(MAILBOX_MAP)) {
           try {
             const mailbox = await client.mailboxOpen(mailboxName);
-            uidvalidity = mailbox.uidValidity;
-            uidnext = mailbox.uidNext;
+            uidvalidity = Number(mailbox.uidValidity);
+            uidnext = Number(mailbox.uidNext);
             const emails: FetchedEmail[] = [];
 
             for await (const msg of client.fetch('1:*', { envelope: true, source: true })) {
               const env = msg.envelope;
-              const raw = msg.source.toString('utf8');
+              if (!env) continue;
+              const raw = msg.source?.toString('utf8') ?? '';
               const bodyStart = raw.indexOf('\r\n\r\n');
               const body_text = bodyStart !== -1 ? raw.slice(bodyStart + 4, bodyStart + 50004).trim() : null;
 
@@ -75,8 +76,8 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
                 body_text: body_text || null,
                 snippet: body_text?.slice(0, 200) ?? null,
                 folder,
-                is_read: msg.flags.has('\\Seen'),
-                is_starred: msg.flags.has('\\Flagged'),
+                is_read: msg.flags?.has('\\Seen') ?? false,
+                is_starred: msg.flags?.has('\\Flagged') ?? false,
                 sent_at: env.date?.toISOString() ?? new Date().toISOString(),
               });
 
@@ -105,13 +106,14 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
 
       try {
         const mailbox = await client.mailboxOpen('INBOX');
-        if (mailbox.uidValidity !== cursor.uidvalidity) throw new Error('UIDVALIDITY_CHANGED');
+        if (Number(mailbox.uidValidity) !== cursor.uidvalidity) throw new Error('UIDVALIDITY_CHANGED');
 
-        const newUidnext = mailbox.uidNext;
-        if (newUidnext > cursor.uidnext) {
+        const newUidnext = Number(mailbox.uidNext);
+        if (newUidnext > (cursor.uidnext ?? 1)) {
           for await (const msg of client.fetch(`${cursor.uidnext}:*`, { envelope: true, source: true }, { uid: true })) {
             const env = msg.envelope;
-            const raw = msg.source.toString('utf8');
+            if (!env) continue;
+            const raw = msg.source?.toString('utf8') ?? '';
             const bodyStart = raw.indexOf('\r\n\r\n');
             const body_text = bodyStart !== -1 ? raw.slice(bodyStart + 4, bodyStart + 50004).trim() : null;
 
@@ -128,8 +130,8 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
               body_text: body_text || null,
               snippet: body_text?.slice(0, 200) ?? null,
               folder: 'inbox',
-              is_read: msg.flags.has('\\Seen'),
-              is_starred: msg.flags.has('\\Flagged'),
+              is_read: msg.flags?.has('\\Seen') ?? false,
+              is_starred: msg.flags?.has('\\Flagged') ?? false,
               sent_at: env.date?.toISOString() ?? new Date().toISOString(),
             });
           }
@@ -168,9 +170,9 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
       await client.connect();
       try {
         await client.mailboxOpen('INBOX');
-        const uids = await client.search({ header: ['Message-ID', message_id] }, { uid: true });
-        if (!uids.length) return;
-        const uid = uids[0]!;
+        const uids = await client.search({ header: { 'Message-ID': message_id } }, { uid: true });
+        if (!uids || !uids.length) return;
+        const uid = (uids as number[])[0]!;
         if (update.is_read === true) await client.messageFlagsAdd({ uid }, ['\\Seen'], { uid: true });
         if (update.is_read === false) await client.messageFlagsRemove({ uid }, ['\\Seen'], { uid: true });
         if (update.is_starred === true) await client.messageFlagsAdd({ uid }, ['\\Flagged'], { uid: true });
