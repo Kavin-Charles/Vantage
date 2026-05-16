@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@clerk/express": "^1.0.0",
+    "@types/ws": "^8.18.1",
     "@vantage/config": "workspace:*",
     "@vantage/db": "workspace:*",
     "@vantage/types": "workspace:*",
@@ -31,6 +32,7 @@
     "ssh2": "^1.17.0",
     "stripe": "^15.0.0",
     "svix": "^1.21.0",
+    "ws": "^8.20.1",
     "zod": "^3.23.0"
   },
   "devDependencies": {

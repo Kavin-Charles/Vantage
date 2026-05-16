@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { useApiToken } from '@/lib/useApiToken';
 import { getServer, updateServer, regenToken } from '@/lib/servers';
 import { openSshStream, getSshHistory, listFiles, readFile } from '@/lib/ssh';
+import { SshTerminal } from '@/components/servers/SshTerminal';
 import type { Server, MetricsSnapshot, SshCommandLog, SshFileEntry } from '@vantage/types';
 
 function Sparkline({ data, color = '#2d6a4f' }: { data: number[]; color?: string }) {
@@ -129,6 +130,14 @@ function OverviewTab({ server, snapshots }: {
         </div>
       )}
     </>
+  );
+}
+
+function ConsoleTab({ serverId }: { serverId: string }) {
+  return (
+    <div style={{ height: 'calc(100vh - 220px)', minHeight: 400, border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <SshTerminal serverId={serverId} />
+    </div>
   );
 }
 
@@ -568,7 +577,7 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
   const getToken = useApiToken();
   const router = useRouter();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<'overview' | 'terminal' | 'services' | 'logs' | 'files'>('overview');
+  const [tab, setTab] = useState<'overview' | 'console' | 'terminal' | 'services' | 'logs' | 'files'>('overview');
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', region: '', ip_address: '', ssh_port: 22 });
 
@@ -624,7 +633,7 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
 
         {/* Tab bar */}
         <div style={{ display: 'flex', gap: 2, marginBottom: 24, borderBottom: '1px solid var(--border)' }}>
-          {(['overview', 'terminal', 'services', 'logs', 'files'] as const).map(t => (
+          {(['overview', 'console', 'terminal', 'services', 'logs', 'files'] as const).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -647,6 +656,7 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
         </div>
 
         {tab === 'overview' && <OverviewTab server={server} snapshots={snapshots} />}
+        {tab === 'console' && <ConsoleTab serverId={id} />}
         {tab === 'terminal' && <TerminalTab serverId={id} />}
         {tab === 'services' && <ServicesTab serverId={id} />}
         {tab === 'logs' && <LogsTab serverId={id} />}
