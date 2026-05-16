@@ -1,18 +1,19 @@
 import { apiFetch } from './core';
 import type { Deal } from '@vantage/types';
 
-export async function listDeals(pipelineId: string, token?: string) {
+export async function listDeals(token: string, pipelineId: string): Promise<{ data: Deal[] }> {
   return apiFetch<{ data: Deal[] }>(
     `/api/deals?pipeline_id=${pipelineId}&per_page=500`,
-    token ? { token } : {},
+    { token },
   );
 }
 
-export async function getDeal(id: string, token?: string) {
-  return apiFetch<{ data: Deal }>(`/api/deals/${id}`, token ? { token } : {});
+export async function getDeal(token: string, id: string): Promise<{ data: Deal }> {
+  return apiFetch<{ data: Deal }>(`/api/deals/${id}`, { token });
 }
 
 export async function createDeal(
+  token: string,
   body: {
     name: string;
     value?: number;
@@ -24,16 +25,16 @@ export async function createDeal(
     company_id?: string;
     field_values?: Record<string, string>;
   },
-  token?: string,
-) {
+): Promise<{ data: Deal }> {
   return apiFetch<{ data: Deal }>('/api/deals', {
     method: 'POST',
     body: JSON.stringify(body),
-    ...(token ? { token } : {}),
+    token,
   });
 }
 
 export async function updateDeal(
+  token: string,
   id: string,
   body: {
     name?: string;
@@ -43,18 +44,14 @@ export async function updateDeal(
     close_date?: string;
     field_values?: Record<string, string>;
   },
-  token?: string,
-) {
+): Promise<{ data: Deal }> {
   return apiFetch<{ data: Deal }>(`/api/deals/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(body),
-    ...(token ? { token } : {}),
+    token,
   });
 }
 
-export async function deleteDeal(id: string, token?: string) {
-  return apiFetch<{ data: { id: string } }>(`/api/deals/${id}`, {
-    method: 'DELETE',
-    ...(token ? { token } : {}),
-  });
+export async function deleteDeal(token: string, id: string): Promise<{ data: { id: string } }> {
+  return apiFetch<{ data: { id: string } }>(`/api/deals/${id}`, { method: 'DELETE', token });
 }

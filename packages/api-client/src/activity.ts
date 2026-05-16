@@ -24,7 +24,7 @@ export async function listActivity(
 
 export async function createActivity(
   token: string,
-  body: { type: string; body?: string; contact_id?: string; deal_id?: string },
+  body: { type: Activity['type']; body?: string; contact_id?: string; deal_id?: string },
 ) {
   return apiFetch<{ data: Activity; error: null }>('/api/activity', {
     method: 'POST',
