@@ -29,7 +29,7 @@ export function ComposeModal({ accounts, replyTo, onClose, onSent }: Props) {
     setSending(true);
     setError(null);
     try {
-      await apiFetch('/api/mail/send', {
+      await apiFetch('/api/mail/emails/send', {
         method: 'POST',
         body: JSON.stringify({
           account_id: accountId,
