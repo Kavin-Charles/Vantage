@@ -205,7 +205,7 @@ export async function handleGmailCallback(
           email,
           display_name: email,
           access_token: encryptSecret(tokens.access_token!),
-          refresh_token: encryptSecret(tokens.refresh_token!),
+          refresh_token: tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null,
           sync_status: 'syncing',
         })
         .returning('id')
