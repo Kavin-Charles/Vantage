@@ -8,7 +8,7 @@ import { Modal } from '@/components/ui/Modal';
 import { FormField, Select, Textarea } from '@/components/ui/FormField';
 import { useApiToken } from '@/lib/useApiToken';
 import { listActivity, createActivity } from '@/lib/activity';
-import type { Activity } from '@vantage/types';
+import type { Activity, ActivityType } from '@vantage/types';
 
 const TYPE_ICONS: Record<string, string> = {
   email: '✉️',
@@ -45,7 +45,7 @@ export default function ActivityPage() {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ type: 'note', body: '' });
+  const [form, setForm] = useState<{ type: ActivityType; body: string }>({ type: 'note', body: '' });
   const [offset, setOffset] = useState(0);
   const LIMIT = 25;
 
@@ -143,7 +143,7 @@ export default function ActivityPage() {
         <Modal title="Log activity" onClose={() => setModal(false)}>
           <form onSubmit={e => { e.preventDefault(); createMut.mutate(); }}>
             <FormField label="Type">
-              <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+              <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as ActivityType }))}>
                 <option value="note">Note</option>
                 <option value="email">Email</option>
                 <option value="call">Call</option>
