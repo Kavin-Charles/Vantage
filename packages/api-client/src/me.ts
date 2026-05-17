@@ -48,11 +48,12 @@ export async function unregisterPushToken(
 
 export async function updatePushPreferences(
   token: string,
+  pushToken: string,
   preferences: PushPreferences,
 ): Promise<{ data: { ok: boolean }; error: null }> {
   return apiFetch('/api/me/push-token', {
     method: 'PATCH',
-    body: JSON.stringify({ preferences }),
+    body: JSON.stringify({ token: pushToken, preferences }),
     token,
   });
 }

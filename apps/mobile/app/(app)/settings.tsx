@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, Switch, TouchableOpacity, ScrollView,
   StyleSheet, Image, ActivityIndicator,
@@ -41,6 +41,11 @@ export default function SettingsScreen() {
   const router = useRouter();
   const qc = useQueryClient();
   const [prefs, setPrefs] = useState<PushPrefs>(DEFAULT_PREFS);
+  const [pushToken, setPushToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    getPushToken().then(t => setPushToken(t)).catch(() => {});
+  }, []);
 
   const { data: meData, isLoading } = useQuery({
     queryKey: ['me'],
@@ -49,7 +54,10 @@ export default function SettingsScreen() {
   });
 
   const prefsMutation = useMutation({
-    mutationFn: (p: PushPrefs) => updatePushPreferences(token, p),
+    mutationFn: (p: PushPrefs) =>
+      pushToken
+        ? updatePushPreferences(token, pushToken, p)
+        : Promise.resolve({ data: { ok: true }, error: null }),
     onError: () => Toast.show({ type: 'error', text1: 'Failed to save preferences' }),
   });
 
