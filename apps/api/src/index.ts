@@ -38,6 +38,7 @@ import { createMailAccountsRouter, handleGmailCallback } from './routes/mail-acc
 import { createMailEmailsRouter } from './routes/mail-emails';
 import { startMailSync } from './workers/mail-sync';
 import { startWebsiteChecker } from './workers/website-checker';
+import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { createV1Router } from './routes/v1/index';
 import { seedOnFirstBoot } from './lib/seed';
 import { logger } from './lib/logger';
@@ -119,6 +120,9 @@ startMailSync(db);
 
 // Start website checker (polls every 60 s)
 startWebsiteChecker(db);
+
+// Start task-due notifier (fires at midnight UTC daily)
+startTaskDueNotifier(db);
 
 // ── HTTP + WebSocket server ────────────────────────────────────────────────
 const httpServer = createServer(app);
