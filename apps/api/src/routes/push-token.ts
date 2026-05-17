@@ -13,6 +13,8 @@ const pushPreferencesSchema = z.object({
   contacts_assigned: z.boolean().optional(),
 });
 
+const tokenBodySchema = z.object({ token: z.string().min(1) });
+
 export function createPushTokenRouter(db: Kysely<Database>): ExpressRouter {
   const router = Router();
 
@@ -54,13 +56,14 @@ export function createPushTokenRouter(db: Kysely<Database>): ExpressRouter {
   // DELETE /api/me/push-token — remove token on logout
   router.delete('/', async (req, res, next) => {
     try {
-      const { user } = req as unknown as AuthenticatedRequest;
-      const { token } = z.object({ token: z.string().min(1) }).parse(req.body);
+      const { user, workspace } = req as unknown as AuthenticatedRequest;
+      const { token } = tokenBodySchema.parse(req.body);
 
       await db
         .deleteFrom('push_tokens')
         .where('user_id', '=', user.id)
         .where('token', '=', token)
+        .where('workspace_id', '=', workspace.id)
         .execute();
 
       res.json({ data: { ok: true }, error: null });
@@ -72,12 +75,9 @@ export function createPushTokenRouter(db: Kysely<Database>): ExpressRouter {
   // PATCH /api/me/push-token — update notification preferences
   router.patch('/', async (req, res, next) => {
     try {
-      const { user } = req as unknown as AuthenticatedRequest;
-      const { token, preferences } = z
-        .object({
-          token: z.string().min(1),
-          preferences: pushPreferencesSchema,
-        })
+      const { user, workspace } = req as unknown as AuthenticatedRequest;
+      const { token, preferences } = tokenBodySchema
+        .merge(z.object({ preferences: pushPreferencesSchema }))
         .parse(req.body);
 
       await db
@@ -88,6 +88,7 @@ export function createPushTokenRouter(db: Kysely<Database>): ExpressRouter {
         })
         .where('user_id', '=', user.id)
         .where('token', '=', token)
+        .where('workspace_id', '=', workspace.id)
         .execute();
 
       res.json({ data: { ok: true }, error: null });
