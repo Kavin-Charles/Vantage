@@ -6,6 +6,8 @@ import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { csvEscape, toCSV } from '../lib/csv';
 import { logActivity } from '../lib/log-activity';
+import { logger } from '../lib/logger';
+import { queueWebhook } from '../lib/queue-webhook';
 
 const createContactSchema = z.object({
   name: z.string().min(1),
@@ -218,6 +220,15 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
         contact_id: contact.id,
       });
 
+      queueWebhook(db, workspace.id, 'contact.created', {
+        contact_id: contact.id,
+        name: contact.name,
+        email: contact.email,
+        status: contact.status,
+        workspace_id: workspace.id,
+        timestamp: new Date().toISOString(),
+      }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+
       res.status(201).json({ data: contact, error: null });
     } catch (err) {
       next(err);
@@ -250,6 +261,15 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
         body: `Updated contact ${contact.name}`,
         contact_id: contact.id,
       });
+
+      queueWebhook(db, workspace.id, 'contact.updated', {
+        contact_id: contact.id,
+        name: contact.name,
+        email: contact.email,
+        status: contact.status,
+        workspace_id: workspace.id,
+        timestamp: new Date().toISOString(),
+      }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
 
       res.json({ data: contact, error: null });
     } catch (err) {

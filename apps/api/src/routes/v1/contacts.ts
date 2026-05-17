@@ -6,6 +6,8 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { ApiKeyRequest } from '../../middleware/api-key-auth';
 import { requireScope } from '../../middleware/api-key-auth';
+import { logger } from '../../lib/logger';
+import { queueWebhook } from '../../lib/queue-webhook';
 
 const listSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -131,6 +133,15 @@ export function createV1ContactsRouter(db: Kysely<Database>): ExpressRouter {
         .where('id', '=', workspace.id)
         .execute();
 
+      queueWebhook(db, workspace.id, 'contact.created', {
+        contact_id: contact.id,
+        name: contact.name,
+        email: contact.email,
+        status: contact.status,
+        workspace_id: workspace.id,
+        timestamp: new Date().toISOString(),
+      }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+
       res.status(201).json({ data: contact, error: null });
     } catch (err) {
       next(err);
@@ -160,6 +171,16 @@ export function createV1ContactsRouter(db: Kysely<Database>): ExpressRouter {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Contact not found' } });
         return;
       }
+
+      queueWebhook(db, workspace.id, 'contact.updated', {
+        contact_id: contact.id,
+        name: contact.name,
+        email: contact.email,
+        status: contact.status,
+        workspace_id: workspace.id,
+        timestamp: new Date().toISOString(),
+      }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+
       res.json({ data: contact, error: null });
     } catch (err) {
       next(err);
