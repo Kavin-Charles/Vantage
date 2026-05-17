@@ -4,6 +4,8 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { ApiKeyRequest } from '../../middleware/api-key-auth';
 import { requireScope } from '../../middleware/api-key-auth';
+import { logger } from '../../lib/logger';
+import { queueWebhook } from '../../lib/queue-webhook';
 
 const listSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -68,6 +70,27 @@ export function createV1TasksRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
+  // GET /v1/tasks/:id
+  router.get('/:id', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as ApiKeyRequest;
+      const task = await db
+        .selectFrom('tasks')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .selectAll()
+        .executeTakeFirst();
+
+      if (!task) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Task not found' } });
+        return;
+      }
+      res.json({ data: task, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // POST /v1/tasks [read_write]
   router.post('/', requireScope('read_write'), async (req, res, next) => {
     try {
@@ -102,6 +125,15 @@ export function createV1TasksRouter(db: Kysely<Database>): ExpressRouter {
         })
         .returningAll()
         .executeTakeFirstOrThrow();
+
+      queueWebhook(db, workspace.id, 'task.created', {
+        task_id: task.id,
+        title: task.title,
+        due_date: task.due_date ? (task.due_date as Date).toISOString() : null,
+        assignee_id: task.assignee_id,
+        workspace_id: workspace.id,
+        timestamp: new Date().toISOString(),
+      }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
 
       res.status(201).json({ data: task, error: null });
     } catch (err) {
@@ -138,6 +170,17 @@ export function createV1TasksRouter(db: Kysely<Database>): ExpressRouter {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Task not found' } });
         return;
       }
+
+      if (parsed.data.status === 'done') {
+        queueWebhook(db, workspace.id, 'task.completed', {
+          task_id: task.id,
+          title: task.title,
+          assignee_id: task.assignee_id,
+          workspace_id: workspace.id,
+          timestamp: new Date().toISOString(),
+        }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+      }
+
       res.json({ data: task, error: null });
     } catch (err) {
       next(err);
