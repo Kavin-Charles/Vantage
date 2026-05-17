@@ -128,18 +128,19 @@ created_at        timestamptz NOT NULL DEFAULT now()
 ```
 
 #### `conversion_field_mappings`
-Per-field mapping within a conversion template. Either `_field_id` or `_builtin` is set, not both.
+Per-field mapping within a conversion template. Each row maps a source field/builtin to an optional target field/builtin. If both `target_field_id` and `target_builtin` are null, the source value is not carried over (row represents an explicit "don't copy" decision — useful for UI to show the mapping exists but is intentionally blank).
 ```sql
 id               uuid PK
 template_id      uuid FK → conversion_templates NOT NULL
 source_field_id  uuid FK → record_type_fields NULL
 source_builtin   text NULL  -- 'name' | 'contact_id' | 'company_id' | 'owner_id'
 target_field_id  uuid FK → record_type_fields NULL
-target_builtin   text NULL
+target_builtin   text NULL  -- 'name' | 'contact_id' | 'company_id' | 'owner_id'
+-- source must have exactly one of source_field_id or source_builtin
 CHECK (
-  (source_field_id IS NOT NULL OR source_builtin IS NOT NULL) AND
-  (target_field_id IS NOT NULL OR target_builtin IS NOT NULL)
+  (source_field_id IS NOT NULL) != (source_builtin IS NOT NULL)
 )
+-- target may be null (means don't copy this field)
 ```
 
 #### `record_conversions`
@@ -171,6 +172,8 @@ Format string tokens:
 - `NNN` / `NNNN` / `NNNNN` → zero-padded sequence (3/4/5 digits)
 
 Example: `PREFIX-YY-NNN` with prefix="ATP", sequence=1 → `ATP-24-001`
+
+**Validation:** `auto_number_prefix` must be non-empty when `auto_number_enabled = true`. Enforced at API layer.
 
 On record creation (if `auto_number_enabled`):
 1. `UPDATE record_types SET auto_number_sequence = auto_number_sequence + 1 WHERE id = $1 RETURNING auto_number_sequence` (atomic increment)
