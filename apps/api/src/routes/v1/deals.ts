@@ -4,6 +4,8 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { ApiKeyRequest } from '../../middleware/api-key-auth';
 import { requireScope } from '../../middleware/api-key-auth';
+import { logger } from '../../lib/logger';
+import { queueWebhook } from '../../lib/queue-webhook';
 
 const listSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -151,6 +153,17 @@ export function createV1DealsRouter(db: Kysely<Database>): ExpressRouter {
         .returningAll()
         .executeTakeFirstOrThrow();
 
+      queueWebhook(db, workspace.id, 'deal.created', {
+        deal_id: deal.id,
+        name: deal.name,
+        value: deal.value,
+        stage_id: deal.stage_id,
+        pipeline_id: deal.pipeline_id,
+        owner_id: deal.owner_id,
+        workspace_id: workspace.id,
+        timestamp: new Date().toISOString(),
+      }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+
       res.status(201).json({ data: deal, error: null });
     } catch (err) {
       next(err);
@@ -165,6 +178,27 @@ export function createV1DealsRouter(db: Kysely<Database>): ExpressRouter {
       if (!parsed.success) {
         res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
         return;
+      }
+
+      // Read current deal to detect stage change
+      const currentDeal = parsed.data.stage_id
+        ? await db
+            .selectFrom('deals')
+            .select(['stage_id', 'name', 'value', 'owner_id'])
+            .where('id', '=', req.params['id']!)
+            .where('workspace_id', '=', workspace.id)
+            .where('deleted_at', 'is', null)
+            .executeTakeFirst()
+        : null;
+
+      // Fetch target stage if stage is changing
+      let targetStage: { name: string; is_won: boolean; is_lost: boolean } | undefined;
+      if (parsed.data.stage_id && currentDeal && parsed.data.stage_id !== currentDeal.stage_id) {
+        targetStage = await db
+          .selectFrom('pipeline_stages')
+          .select(['name', 'is_won', 'is_lost'])
+          .where('id', '=', parsed.data.stage_id)
+          .executeTakeFirst();
       }
 
       const updateVals: Record<string, unknown> = { updated_at: new Date() };
@@ -185,6 +219,44 @@ export function createV1DealsRouter(db: Kysely<Database>): ExpressRouter {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Deal not found' } });
         return;
       }
+
+      // Fire webhook events on stage change
+      if (currentDeal && parsed.data.stage_id && parsed.data.stage_id !== currentDeal.stage_id) {
+        queueWebhook(db, workspace.id, 'deal.stage_changed', {
+          deal_id: deal.id,
+          deal_name: deal.name,
+          old_stage_id: currentDeal.stage_id,
+          new_stage_id: parsed.data.stage_id,
+          new_stage_name: targetStage?.name ?? null,
+          value: deal.value,
+          owner_id: deal.owner_id,
+          workspace_id: workspace.id,
+          timestamp: new Date().toISOString(),
+        }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+
+        if (targetStage?.is_won) {
+          queueWebhook(db, workspace.id, 'deal.won', {
+            deal_id: deal.id,
+            deal_name: deal.name,
+            value: deal.value,
+            owner_id: deal.owner_id,
+            workspace_id: workspace.id,
+            timestamp: new Date().toISOString(),
+          }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+        }
+
+        if (targetStage?.is_lost) {
+          queueWebhook(db, workspace.id, 'deal.lost', {
+            deal_id: deal.id,
+            deal_name: deal.name,
+            value: deal.value,
+            owner_id: deal.owner_id,
+            workspace_id: workspace.id,
+            timestamp: new Date().toISOString(),
+          }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+        }
+      }
+
       res.json({ data: deal, error: null });
     } catch (err) {
       next(err);

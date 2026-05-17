@@ -286,6 +286,17 @@ const dealsListQuerySchema = z.object({
         );
       }
 
+      queueWebhook(db, workspace.id, 'deal.created', {
+        deal_id: deal.id,
+        name: deal.name,
+        value: deal.value,
+        stage_id: deal.stage_id,
+        pipeline_id: deal.pipeline_id,
+        owner_id: deal.owner_id,
+        workspace_id: workspace.id,
+        timestamp: new Date().toISOString(),
+      }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+
       res.status(201).json({ data: deal, error: null });
     } catch (err) {
       next(err);
@@ -392,6 +403,28 @@ const dealsListQuerySchema = z.object({
           workspace_id: workspace.id,
           timestamp: new Date().toISOString(),
         }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+
+        if (targetStage?.is_won) {
+          queueWebhook(db, workspace.id, 'deal.won', {
+            deal_id: req.params['id']!,
+            deal_name: parsed.data.name ?? currentDeal.name,
+            value: parsed.data.value ?? currentDeal.value,
+            owner_id: currentDeal.owner_id,
+            workspace_id: workspace.id,
+            timestamp: new Date().toISOString(),
+          }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+        }
+
+        if (targetStage?.is_lost) {
+          queueWebhook(db, workspace.id, 'deal.lost', {
+            deal_id: req.params['id']!,
+            deal_name: parsed.data.name ?? currentDeal.name,
+            value: parsed.data.value ?? currentDeal.value,
+            owner_id: currentDeal.owner_id,
+            workspace_id: workspace.id,
+            timestamp: new Date().toISOString(),
+          }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+        }
 
         void logActivity(db, {
           workspace_id: workspace.id,
