@@ -35,7 +35,7 @@ export function createPushTokenRouter(db: Kysely<Database>): ExpressRouter {
           workspace_id: workspace.id,
           token,
           platform,
-          preferences: JSON.stringify({}) as never,
+          preferences: {} as Record<string, boolean>,
         })
         .onConflict(oc =>
           oc.columns(['user_id', 'token']).doUpdateSet({
@@ -83,7 +83,7 @@ export function createPushTokenRouter(db: Kysely<Database>): ExpressRouter {
       await db
         .updateTable('push_tokens')
         .set({
-          preferences: JSON.stringify(preferences) as never,
+          preferences: preferences as Record<string, boolean>,
           updated_at: new Date(),
         })
         .where('user_id', '=', user.id)
