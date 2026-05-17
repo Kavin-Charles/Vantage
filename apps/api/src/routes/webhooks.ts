@@ -99,5 +99,75 @@ export function createWebhooksRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
+  // GET /api/webhooks/deliveries?subscription_id=<id>&status=<status>&page=<n>&per_page=<n>
+  const deliveriesListSchema = z.object({
+    subscription_id: z.string().uuid(),
+    status: z.enum(['pending', 'delivered', 'failed']).optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    per_page: z.coerce.number().int().min(1).max(100).default(25),
+  });
+
+  router.get('/deliveries', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const parsed = deliveriesListSchema.safeParse(req.query);
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
+        return;
+      }
+
+      // Verify subscription belongs to this workspace
+      const sub = await db
+        .selectFrom('webhook_subscriptions')
+        .select(['id'])
+        .where('id', '=', parsed.data.subscription_id)
+        .where('workspace_id', '=', workspace.id)
+        .executeTakeFirst();
+
+      if (!sub) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Subscription not found' } });
+        return;
+      }
+
+      let query = db
+        .selectFrom('webhook_deliveries')
+        .select([
+          'id', 'subscription_id', 'event', 'status', 'attempts',
+          'last_error', 'delivered_at', 'next_attempt_at', 'created_at',
+        ])
+        .where('subscription_id', '=', parsed.data.subscription_id)
+        .orderBy('created_at', 'desc')
+        .limit(parsed.data.per_page)
+        .offset((parsed.data.page - 1) * parsed.data.per_page);
+
+      if (parsed.data.status) {
+        query = query.where('status', '=', parsed.data.status);
+      }
+
+      const deliveries = await query.execute();
+
+      let countQuery = db
+        .selectFrom('webhook_deliveries')
+        .select(db.fn.countAll<number>().as('count'))
+        .where('subscription_id', '=', parsed.data.subscription_id);
+
+      if (parsed.data.status) {
+        countQuery = countQuery.where('status', '=', parsed.data.status);
+      }
+
+      const { count } = await countQuery.executeTakeFirstOrThrow();
+
+      res.json({
+        data: deliveries,
+        total: Number(count),
+        page: parsed.data.page,
+        per_page: parsed.data.per_page,
+        error: null,
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   return router;
 }
