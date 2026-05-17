@@ -2,6 +2,8 @@ import { Router, type Router as ExpressRouter } from 'express';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
+import { queueWebhook } from '../lib/queue-webhook';
 
 export function createAlertsRouter(db: Kysely<Database>): ExpressRouter {
   const router = Router();
@@ -72,6 +74,17 @@ export function createAlertsRouter(db: Kysely<Database>): ExpressRouter {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Alert not found' } });
         return;
       }
+
+      queueWebhook(db, workspace.id, 'alert.resolved', {
+        alert_id: alert.id,
+        severity: alert.severity,
+        message: alert.message,
+        resource_type: alert.resource_type,
+        resource_id: alert.resource_id,
+        workspace_id: workspace.id,
+        timestamp: new Date().toISOString(),
+      }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+
       res.json({ data: alert, error: null });
     } catch (err) {
       next(err);

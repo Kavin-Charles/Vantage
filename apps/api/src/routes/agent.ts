@@ -6,6 +6,8 @@ import type { SmtpConfig } from '@vantage/config';
 import { createRequireAgentToken, type AgentRequest } from '../middleware/agentAuth';
 import { sendAlertEmail } from '../lib/send-alert-email';
 import { sendPush } from '../lib/push-notify';
+import { logger } from '../lib/logger';
+import { queueWebhook } from '../lib/queue-webhook';
 
 const dbCheckSchema = z.object({
   type: z.string(),
@@ -105,13 +107,23 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
         if (metric.value > metric.threshold) {
           if (!existingAlert) {
             const severity: 'critical' | 'warning' = metric.value >= 95 ? 'critical' : 'warning';
-            await db.insertInto('alerts').values({
+            const insertedAlert = await db.insertInto('alerts').values({
               workspace_id: server.workspace_id,
               resource_type: 'server',
               resource_id: server.id,
               severity,
               message: `${metric.prefix} at ${Math.round(metric.value)}% on "${server.name}" (threshold: ${metric.threshold}%)`,
-            }).execute();
+            }).returning(['id', 'severity', 'message', 'resource_type', 'resource_id']).executeTakeFirstOrThrow();
+
+            queueWebhook(db, server.workspace_id, 'alert.created', {
+              alert_id: insertedAlert.id,
+              severity: insertedAlert.severity,
+              message: insertedAlert.message,
+              resource_type: insertedAlert.resource_type,
+              resource_id: insertedAlert.resource_id,
+              workspace_id: server.workspace_id,
+              timestamp: new Date().toISOString(),
+            }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
 
             // Fire-and-forget notifications + email to workspace admins
             void (async () => {
