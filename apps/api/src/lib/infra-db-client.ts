@@ -570,11 +570,12 @@ async function withMongoClient<T>(
   const { MongoClient } = await import('mongodb');
   const uri = buildMongoUri(row, passwordOverride);
   const dbName = row.database_name ?? undefined;
+  // mongodb+srv:// URIs (Atlas) enable TLS by default — don't override it
+  const isSrv = uri.startsWith('mongodb+srv://');
   const client = new MongoClient(uri, {
     serverSelectionTimeoutMS: 5000,
     connectTimeoutMS: 5000,
-    tls: row.use_ssl,
-    tlsAllowInvalidCertificates: row.use_ssl, // dev-friendly; prod can tighten
+    ...(isSrv ? {} : { tls: row.use_ssl, tlsAllowInvalidCertificates: row.use_ssl }),
   });
   await client.connect();
   try {
@@ -616,8 +617,8 @@ export async function testMongoConnection(
 ): Promise<InfraDbConnectionTestResult> {
   const start = Date.now();
   try {
-    await withMongoClient(row, passwordOverride, async (client) => {
-      await client.db('admin').command({ ping: 1 });
+    await withMongoClient(row, passwordOverride, async (_client, db) => {
+      await db.command({ ping: 1 });
     });
     return { ok: true, latency_ms: Date.now() - start, message: 'Connection succeeded.' };
   } catch (err) {

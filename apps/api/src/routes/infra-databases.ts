@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database, InfraDatabase, InfraDatabaseUpdate } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
+import { logger } from '../lib/logger';
 import {
   classifySqlStatement,
   listMongoRows,
@@ -165,6 +166,16 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
       const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
       if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
       const result = await testTargetDatabaseConnection(infraDb, body.db_password);
+      // Persist status so list/detail pages reflect real health
+      const newStatus: InfraDatabase['status'] = result.ok ? 'healthy' : 'offline';
+      logger.info({ ok: result.ok, newStatus, id: req.params['id'] }, 'db test result');
+      await db
+        .updateTable('infra_databases')
+        .set({ status: newStatus, last_checked_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .where('id', '=', req.params['id'] as string)
+        .where('workspace_id', '=', workspace.id)
+        .execute();
+      logger.info({ newStatus }, 'db status updated');
       res.json({ data: result, error: null });
     } catch (err) { next(err); }
   });

@@ -266,7 +266,9 @@ export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
           const perms = parts[0] ?? '';
           const size = parseInt(parts[4] ?? '0', 10) || 0;
           const modified = parts[5] ?? '';
-          const name = parts.slice(8).join(' ');
+          // parts[6]+ is "name" for files/dirs, "name -> target" for symlinks
+          const nameRaw = parts.slice(6).join(' ');
+          const name = perms.startsWith('l') ? (nameRaw.split(' -> ')[0] ?? '') : nameRaw;
           const type: 'file' | 'dir' | 'link' | 'other' =
             perms.startsWith('d') ? 'dir'
             : perms.startsWith('l') ? 'link'
