@@ -415,6 +415,17 @@ export interface EmailTable {
   deal_id: string | null;
 }
 
+export interface PushTokenTable {
+  id: Generated<string>;
+  user_id: string;
+  workspace_id: string;
+  token: string;
+  platform: string;
+  preferences: Generated<Record<string, boolean>>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -446,6 +457,7 @@ export interface Database {
   notifications: NotificationTable;
   email_accounts: EmailAccountTable;
   emails: EmailTable;
+  push_tokens: PushTokenTable;
 }
 
 // Convenience types
@@ -555,3 +567,7 @@ export type EmailAccountUpdate = Updateable<EmailAccountTable>;
 export type Email = Selectable<EmailTable>;
 export type NewEmail = Insertable<EmailTable>;
 export type EmailUpdate = Updateable<EmailTable>;
+
+export type PushToken = Selectable<PushTokenTable>;
+export type NewPushToken = Insertable<PushTokenTable>;
+export type PushTokenUpdate = Updateable<PushTokenTable>;

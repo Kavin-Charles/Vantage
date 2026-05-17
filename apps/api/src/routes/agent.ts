@@ -5,6 +5,7 @@ import type { Database } from '@vantage/db';
 import type { SmtpConfig } from '@vantage/config';
 import { createRequireAgentToken, type AgentRequest } from '../middleware/agentAuth';
 import { sendAlertEmail } from '../lib/send-alert-email';
+import { sendPush } from '../lib/push-notify';
 
 const dbCheckSchema = z.object({
   type: z.string(),
@@ -143,6 +144,28 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
                     resource_type: 'server',
                   });
                 }
+
+                // Push notifications to all workspace users
+                const pushTokenRows = await db
+                  .selectFrom('push_tokens')
+                  .where('workspace_id', '=', server.workspace_id)
+                  .select(['token', 'preferences'])
+                  .execute();
+
+                const prefKey = severity === 'critical' ? 'alerts_critical' : 'alerts_warning';
+                const pushTokens = pushTokenRows
+                  .filter(row => {
+                    const prefs = (row.preferences ?? {}) as Record<string, boolean>;
+                    return prefs[prefKey] !== false; // default on
+                  })
+                  .map(row => row.token);
+
+                const emoji = severity === 'critical' ? '🔴' : '🟡';
+                await sendPush(
+                  pushTokens,
+                  `${emoji} Alert`,
+                  `${server.name}: ${metric.prefix} at ${Math.round(metric.value)}%`,
+                );
               } catch {
                 // swallowed — never crash agent pings
               }

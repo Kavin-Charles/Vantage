@@ -12,6 +12,7 @@ import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
 import { createConfigRouter } from './routes/config';
 import { createMeRouter } from './routes/me';
+import { createPushTokenRouter } from './routes/push-token';
 import { createContactsRouter } from './routes/contacts';
 import { createCompaniesRouter } from './routes/companies';
 import { createDealsRouter } from './routes/deals';
@@ -36,6 +37,8 @@ import { createNotificationsRouter } from './routes/notifications';
 import { createMailAccountsRouter, handleGmailCallback } from './routes/mail-accounts';
 import { createMailEmailsRouter } from './routes/mail-emails';
 import { startMailSync } from './workers/mail-sync';
+import { startWebsiteChecker } from './workers/website-checker';
+import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { createV1Router } from './routes/v1/index';
 import { seedOnFirstBoot } from './lib/seed';
 import { logger } from './lib/logger';
@@ -60,6 +63,7 @@ app.use('/api/auth', createAuthRouter(db, env.JWT_SECRET, config.smtp));
 
 // Authenticated routes
 app.use('/api/me', requireAuth, createMeRouter());
+app.use('/api/me/push-token', requireAuth, createPushTokenRouter(db));
 app.use('/api/contacts', requireAuth, createContactsRouter(db));
 app.use('/api/companies', requireAuth, createCompaniesRouter(db));
 app.use('/api/deals', requireAuth, createDealsRouter(db));
@@ -113,6 +117,12 @@ seedOnFirstBoot(db, config).catch((err: unknown) => {
 
 // Start mail sync worker (polls every 5 min)
 startMailSync(db);
+
+// Start website checker (polls every 60 s)
+startWebsiteChecker(db);
+
+// Start task-due notifier (fires at midnight UTC daily)
+startTaskDueNotifier(db);
 
 // ── HTTP + WebSocket server ────────────────────────────────────────────────
 const httpServer = createServer(app);

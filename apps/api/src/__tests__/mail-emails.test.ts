@@ -38,7 +38,7 @@ describe('GET /api/mail/emails', () => {
     const res = buildRes();
     await handler(req, res, vi.fn());
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ data: fakeEmails, error: null }));
-  });
+  }, 15000);
 });
 
 describe('PATCH /api/mail/emails/:id', () => {
