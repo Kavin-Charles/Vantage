@@ -96,7 +96,7 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
       for (const metric of metricsToCheck) {
         const existingAlert = await db
           .selectFrom('alerts')
-          .select(['id'])
+          .select(['id', 'severity', 'message'])
           .where('workspace_id', '=', server.workspace_id)
           .where('resource_type', '=', 'server')
           .where('resource_id', '=', server.id)
@@ -188,6 +188,14 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
             .set({ resolved: true, resolved_at: new Date() })
             .where('id', '=', existingAlert.id)
             .execute();
+
+          queueWebhook(db, server.workspace_id, 'alert.resolved', {
+            alert_id: existingAlert.id,
+            severity: existingAlert.severity,
+            message: existingAlert.message,
+            workspace_id: server.workspace_id,
+            timestamp: new Date().toISOString(),
+          }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
         }
       }
 
