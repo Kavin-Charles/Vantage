@@ -72,7 +72,7 @@ export async function deliverOne(db: Kysely<Database>, delivery: DeliveryRow): P
     if (newAttempts >= MAX_ATTEMPTS) {
       await db
         .updateTable('webhook_deliveries')
-        .set({ status: 'failed', attempts: newAttempts, last_error: errorMsg, next_attempt_at: null as never })
+        .set({ status: 'failed', attempts: newAttempts, last_error: errorMsg })
         .where('id', '=', id)
         .execute();
     } else {

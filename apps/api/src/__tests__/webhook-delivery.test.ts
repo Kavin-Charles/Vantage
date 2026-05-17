@@ -108,8 +108,8 @@ describe('webhook delivery worker — HTTP delivery', () => {
 
     await deliverOne(fakeDb as never, buildDelivery({ attempts: 4 }));
 
-    expect(updateChain.set).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'failed', attempts: 5, next_attempt_at: null }),
-    );
+    const failCall = updateChain.set.mock.calls[0][0];
+    expect(failCall).toMatchObject({ status: 'failed', attempts: 5 });
+    expect(failCall).not.toHaveProperty('next_attempt_at');
   });
 });

@@ -111,6 +111,15 @@ export function createTasksRouter(db: Kysely<Database>): ExpressRouter {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const body = updateTaskSchema.parse(req.body);
 
+      const currentTask = body.status === 'done'
+        ? await db
+            .selectFrom('tasks')
+            .select(['status'])
+            .where('id', '=', req.params['id']!)
+            .where('workspace_id', '=', workspace.id)
+            .executeTakeFirst()
+        : null;
+
       const task = await db
         .updateTable('tasks')
         .set({ ...body, updated_at: new Date(), due_date: body.due_date ? new Date(body.due_date) : undefined })
@@ -124,7 +133,7 @@ export function createTasksRouter(db: Kysely<Database>): ExpressRouter {
         return;
       }
 
-      if (body.status === 'done') {
+      if (body.status === 'done' && currentTask?.status !== 'done') {
         queueWebhook(db, workspace.id, 'task.completed', {
           task_id: task.id,
           title: task.title,
