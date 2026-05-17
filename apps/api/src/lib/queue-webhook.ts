@@ -1,18 +1,21 @@
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 
-export type WebhookEvent =
-  | 'contact.created'
-  | 'contact.updated'
-  | 'deal.created'
-  | 'deal.stage_changed'
-  | 'deal.won'
-  | 'deal.lost'
-  | 'task.created'
-  | 'task.completed'
-  | 'alert.created'
-  | 'alert.resolved'
-  | 'item.moved';
+export const WEBHOOK_EVENTS = [
+  'contact.created',
+  'contact.updated',
+  'deal.created',
+  'deal.stage_changed',
+  'deal.won',
+  'deal.lost',
+  'task.created',
+  'task.completed',
+  'alert.created',
+  'alert.resolved',
+  'item.moved',
+] as const;
+
+export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
 
 export async function queueWebhook(
   db: Kysely<Database>,

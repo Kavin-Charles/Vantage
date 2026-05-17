@@ -4,20 +4,9 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
+import { WEBHOOK_EVENTS } from '../lib/queue-webhook';
 
-const ALLOWED_EVENTS = [
-  'contact.created',
-  'contact.updated',
-  'deal.created',
-  'deal.stage_changed',
-  'deal.won',
-  'deal.lost',
-  'task.created',
-  'task.completed',
-  'alert.created',
-  'alert.resolved',
-  'item.moved',
-] as const;
+const ALLOWED_EVENTS = WEBHOOK_EVENTS;
 
 // Block private / loopback / link-local ranges to prevent SSRF
 const PRIVATE_HOSTNAME_RE =
