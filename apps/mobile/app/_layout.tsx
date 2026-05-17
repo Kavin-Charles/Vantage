@@ -16,10 +16,18 @@ export default function RootLayout() {
   useEffect(() => {
     if (token === undefined) return; // still loading
     const inAuthGroup = segments[0] === '(auth)';
-    if (!token && !inAuthGroup) {
-      router.replace('/(auth)/login');
-    } else if (token && inAuthGroup) {
+    if (token && inAuthGroup) {
       router.replace('/(app)');
+    } else if (!token && !inAuthGroup) {
+      // Re-read storage before redirecting — covers post-login navigation
+      // where login screen stored the token just before router.replace
+      void getAuthToken().then(fresh => {
+        if (fresh) {
+          setToken(fresh);
+        } else {
+          router.replace('/(auth)/login');
+        }
+      });
     }
   }, [token, segments, router]);
 
