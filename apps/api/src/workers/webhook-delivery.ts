@@ -8,6 +8,7 @@ import { logger } from '../lib/logger';
 const INTERVAL_MS = 10_000;
 const TIMEOUT_MS = 10_000;
 const MAX_ATTEMPTS = 5;
+const BATCH_SIZE = 20;
 
 // Delay in seconds after each failed attempt (index = attempt count after failure, 1-based)
 const BACKOFF_SECONDS = [30, 300, 1800, 7200] as const;
@@ -63,7 +64,7 @@ export async function deliverOne(db: Kysely<Database>, delivery: DeliveryRow): P
   if (success) {
     await db
       .updateTable('webhook_deliveries')
-      .set({ status: 'delivered', delivered_at: new Date().toISOString(), attempts: attempts + 1 })
+      .set({ status: 'delivered', delivered_at: new Date().toISOString(), attempts: attempts + 1, last_error: null })
       .where('id', '=', id)
       .execute();
   } else {
@@ -71,7 +72,7 @@ export async function deliverOne(db: Kysely<Database>, delivery: DeliveryRow): P
     if (newAttempts >= MAX_ATTEMPTS) {
       await db
         .updateTable('webhook_deliveries')
-        .set({ status: 'failed', attempts: newAttempts, last_error: errorMsg })
+        .set({ status: 'failed', attempts: newAttempts, last_error: errorMsg, next_attempt_at: null as never })
         .where('id', '=', id)
         .execute();
     } else {
@@ -96,7 +97,7 @@ async function runDeliveries(db: Kysely<Database>): Promise<void> {
     WHERE wd.status = 'pending'
       AND wd.next_attempt_at <= NOW()
     ORDER BY wd.next_attempt_at ASC
-    LIMIT 20
+    LIMIT ${sql.lit(BATCH_SIZE)}
     FOR UPDATE OF wd SKIP LOCKED
   `.execute(db);
 
