@@ -5,7 +5,19 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
-const ALLOWED_EVENTS = ['deal.stage_changed', 'item.moved'] as const;
+const ALLOWED_EVENTS = [
+  'contact.created',
+  'contact.updated',
+  'deal.created',
+  'deal.stage_changed',
+  'deal.won',
+  'deal.lost',
+  'task.created',
+  'task.completed',
+  'alert.created',
+  'alert.resolved',
+  'item.moved',
+] as const;
 
 // Block private / loopback / link-local ranges to prevent SSRF
 const PRIVATE_HOSTNAME_RE =
