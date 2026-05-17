@@ -76,7 +76,7 @@ export function createAuthRouter(
         path: '/',
       });
 
-      res.json({ data: { id: user.id, name: user.name, email: user.email, role: user.role }, error: null });
+      res.json({ data: { id: user.id, name: user.name, email: user.email, role: user.role, token }, error: null });
     } catch (err) {
       logger.error({ err }, 'POST /login error');
       res.status(500).json({ data: null, error: { code: 'INTERNAL_ERROR' } });

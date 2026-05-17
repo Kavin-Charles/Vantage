@@ -20,7 +20,12 @@ export function createRequireAuth(db: Kysely<Database>, jwtSecret: string) {
     res: Response,
     next: NextFunction,
   ): Promise<void> {
-    const token = req.cookies['vantage_token'] as string | undefined;
+    // Prefer Authorization: Bearer for mobile; fall back to cookie for web
+    const authHeader = req.headers.authorization;
+    const token =
+      authHeader?.startsWith('Bearer ')
+        ? authHeader.slice(7)
+        : (req.cookies['vantage_token'] as string | undefined);
     if (!token) {
       res.status(401).json({ data: null, error: { code: 'UNAUTHORIZED' } });
       return;

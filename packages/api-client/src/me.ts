@@ -37,8 +37,13 @@ export async function registerPushToken(
 
 export async function unregisterPushToken(
   token: string,
+  pushToken: string,
 ): Promise<{ data: { ok: boolean }; error: null }> {
-  return apiFetch('/api/me/push-token', { method: 'DELETE', token });
+  return apiFetch('/api/me/push-token', {
+    method: 'DELETE',
+    body: JSON.stringify({ token: pushToken }),
+    token,
+  });
 }
 
 export async function updatePushPreferences(
