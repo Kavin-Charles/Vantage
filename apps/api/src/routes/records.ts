@@ -207,13 +207,15 @@ export function createRecordsRouter(db: Kysely<Database>): ExpressRouter {
 
       // Upsert field values
       if (field_values && Object.keys(field_values).length > 0) {
-        for (const [field_id, value] of Object.entries(field_values)) {
-          await db
-            .insertInto('record_field_values')
-            .values({ record_id: (record as Record<string, unknown>)['id'] as string, field_id, value: JSON.stringify(value) } as never)
-            .onConflict(oc => oc.columns(['record_id', 'field_id'] as never).doUpdateSet({ value: JSON.stringify(value) } as never))
-            .execute();
-        }
+        await Promise.all(
+          Object.entries(field_values).map(([field_id, value]) =>
+            db
+              .insertInto('record_field_values')
+              .values({ record_id: (record as Record<string, unknown>)['id'] as string, field_id, value: JSON.stringify(value) } as never)
+              .onConflict(oc => oc.columns(['record_id', 'field_id'] as never).doUpdateSet({ value: JSON.stringify(value) } as never))
+              .execute()
+          )
+        );
       }
 
       res.json({ data: record, error: null });
@@ -224,12 +226,18 @@ export function createRecordsRouter(db: Kysely<Database>): ExpressRouter {
   router.delete('/:id', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      await db
+      const deleted = await db
         .updateTable('pipeline_records')
         .set({ deleted_at: new Date().toISOString() } as never)
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
-        .execute();
+        .where('deleted_at', 'is', null)
+        .returning(['id'])
+        .executeTakeFirst();
+      if (!deleted) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Record not found' } });
+        return;
+      }
       res.json({ data: { ok: true }, error: null });
     } catch (err) { next(err); }
   });
