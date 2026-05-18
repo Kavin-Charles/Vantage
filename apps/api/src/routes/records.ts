@@ -17,10 +17,10 @@ const createRecordSchema = z.object({
 });
 
 const listQuerySchema = z.object({
-  record_type_id: z.string().optional(),
-  pipeline_id: z.string().optional(),
-  stage_id: z.string().optional(),
-  owner_id: z.string().optional(),
+  record_type_id: z.string().uuid().optional(),
+  pipeline_id: z.string().uuid().optional(),
+  stage_id: z.string().uuid().optional(),
+  owner_id: z.string().uuid().optional(),
   q: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   per_page: z.coerce.number().int().min(1).max(100).default(25),
@@ -46,6 +46,7 @@ export function createRecordsRouter(db: Kysely<Database>): ExpressRouter {
       if (query.pipeline_id) q = q.where('pipeline_id', '=', query.pipeline_id);
       if (query.stage_id) q = q.where('stage_id', '=', query.stage_id);
       if (query.owner_id) q = q.where('owner_id', '=', query.owner_id);
+      if (query.q) q = q.where('name', 'like', `%${query.q}%`);
 
       const records = await q.orderBy('created_at', 'desc').limit(query.per_page).offset(offset).execute();
       res.json({ data: records, page: query.page, per_page: query.per_page, error: null });
@@ -88,6 +89,18 @@ export function createRecordsRouter(db: Kysely<Database>): ExpressRouter {
         return;
       }
       const { field_values, ...recordData } = parsed.data;
+
+      // Verify record_type belongs to workspace
+      const recordType = await db
+        .selectFrom('record_types')
+        .select(['id'])
+        .where('id', '=', recordData.record_type_id)
+        .where('workspace_id', '=', workspace.id)
+        .executeTakeFirst();
+      if (!recordType) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Record type not found' } });
+        return;
+      }
 
       // Auto-number (returns null if disabled)
       const record_number = await generateRecordNumber(db, recordData.record_type_id).catch(() => null);

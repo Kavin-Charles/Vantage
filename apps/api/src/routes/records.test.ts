@@ -49,7 +49,7 @@ describe('GET /', () => {
     const db = buildMockDb(records);
     const router = createRecordsRouter(db as unknown as Kysely<Database>);
     const handler = getHandler(router, 'get', '/');
-    const req = mockReq({ query: { record_type_id: 'rt-1' } });
+    const req = mockReq({ query: { record_type_id: '00000000-0000-0000-0000-000000000001' } });
     const res = mockRes();
     await handler(req, res, vi.fn());
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: null }));
