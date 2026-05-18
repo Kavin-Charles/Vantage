@@ -15,12 +15,12 @@ export function formatAutoNumber(
   const yyyy = String(date.getFullYear());
 
   return format
-    .replace('PREFIX', prefix)
-    .replace('YYYY', yyyy)
-    .replace('YY', yy)
-    .replace('NNNNN', String(sequence).padStart(5, '0'))
-    .replace('NNNN', String(sequence).padStart(4, '0'))
-    .replace('NNN', String(sequence).padStart(3, '0'));
+    .replaceAll('PREFIX', prefix)
+    .replaceAll('YYYY', yyyy)
+    .replaceAll('YY', yy)
+    .replaceAll('NNNNN', String(sequence).padStart(5, '0'))
+    .replaceAll('NNNN', String(sequence).padStart(4, '0'))
+    .replaceAll('NNN', String(sequence).padStart(3, '0'));
 }
 
 /**
