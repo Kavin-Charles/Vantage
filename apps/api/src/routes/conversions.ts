@@ -4,6 +4,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { generateRecordNumber } from '../lib/auto-number';
+import { logger } from '../lib/logger';
 
 const fieldMappingSchema = z.object({
   source_field_id: z.string().uuid().optional(),
@@ -128,11 +129,15 @@ export function createConversionsRouter(db: Kysely<Database>): ExpressRouter {
   router.delete('/templates/:id', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      await db
+      const result = await db
         .deleteFrom('conversion_templates')
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
-        .execute();
+        .executeTakeFirst();
+      if (!result || result.numDeletedRows === 0n) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Template not found' } });
+        return;
+      }
       res.json({ data: { ok: true }, error: null });
     } catch (err) { next(err); }
   });
@@ -197,48 +202,55 @@ export function createConversionsRouter(db: Kysely<Database>): ExpressRouter {
       }
 
       // Auto-number for target type
-      const record_number = await generateRecordNumber(db, template.target_type_id).catch(() => null);
+      const record_number = await generateRecordNumber(db, template.target_type_id).catch((err: unknown) => {
+        logger.error({ err }, '[conversions] auto-number generation failed');
+        return null;
+      });
 
-      // Create target record
-      const targetRecord = await db
-        .insertInto('pipeline_records')
-        .values({
-          workspace_id: workspace.id,
-          record_type_id: template.target_type_id,
-          pipeline_id: template.target_pipeline_id,
-          stage_id: template.target_stage_id,
-          record_number: record_number ?? null,
-          name: (builtins['name'] as string | undefined) ?? sourceRecord.name,
-          contact_id: (builtins['contact_id'] as string | undefined) ?? sourceRecord.contact_id ?? null,
-          company_id: (builtins['company_id'] as string | undefined) ?? sourceRecord.company_id ?? null,
-          owner_id: (builtins['owner_id'] as string | undefined) ?? sourceRecord.owner_id,
-        } as never)
-        .returningAll()
-        .executeTakeFirstOrThrow();
+      // Build field value inserts shape (record_id filled after target created)
+      const fieldMappingsToCopy = mappings.filter(m => m.source_field_id && m.target_field_id);
 
-      // Copy field values per mappings
-      const fieldValueInserts: { record_id: string; field_id: string; value: unknown }[] = [];
-      for (const m of mappings) {
-        if (!m.source_field_id || !m.target_field_id) continue;
-        const val = sourceValueMap.get(m.source_field_id);
-        if (val !== undefined) {
-          fieldValueInserts.push({ record_id: targetRecord.id, field_id: m.target_field_id, value: val });
+      // Wrap writes in a transaction for atomicity
+      const targetRecord = await db.transaction().execute(async (trx) => {
+        const created = await trx
+          .insertInto('pipeline_records')
+          .values({
+            workspace_id: workspace.id,
+            record_type_id: template.target_type_id,
+            pipeline_id: template.target_pipeline_id,
+            stage_id: template.target_stage_id,
+            record_number: record_number ?? null,
+            name: (builtins['name'] as string | undefined) ?? sourceRecord.name,
+            contact_id: (builtins['contact_id'] as string | undefined) ?? sourceRecord.contact_id ?? null,
+            company_id: (builtins['company_id'] as string | undefined) ?? sourceRecord.company_id ?? null,
+            owner_id: (builtins['owner_id'] as string | undefined) ?? sourceRecord.owner_id,
+          } as never)
+          .returningAll()
+          .executeTakeFirstOrThrow();
+
+        const fieldValueInserts: { record_id: string; field_id: string; value: unknown }[] = [];
+        for (const m of fieldMappingsToCopy) {
+          const val = sourceValueMap.get(m.source_field_id!);
+          if (val !== undefined) {
+            fieldValueInserts.push({ record_id: created.id, field_id: m.target_field_id!, value: val });
+          }
         }
-      }
-      if (fieldValueInserts.length > 0) {
-        await db.insertInto('record_field_values').values(fieldValueInserts as never).execute();
-      }
+        if (fieldValueInserts.length > 0) {
+          await trx.insertInto('record_field_values').values(fieldValueInserts as never).execute();
+        }
 
-      // Audit trail
-      await db
-        .insertInto('record_conversions')
-        .values({
-          source_record_id: sourceRecord.id,
-          target_record_id: targetRecord.id,
-          template_id,
-          converted_by: user.id,
-        } as never)
-        .execute();
+        await trx
+          .insertInto('record_conversions')
+          .values({
+            source_record_id: sourceRecord.id,
+            target_record_id: created.id,
+            template_id,
+            converted_by: user.id,
+          } as never)
+          .execute();
+
+        return created;
+      });
 
       res.json({ data: { record_id: targetRecord.id }, error: null });
     } catch (err) { next(err); }
