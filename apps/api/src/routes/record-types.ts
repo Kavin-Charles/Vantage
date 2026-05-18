@@ -42,6 +42,16 @@ const permissionsSchema = z.object({
 export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   const router = Router();
 
+  async function requireRecordTypeOwnership(recordTypeId: string, workspaceId: string): Promise<boolean> {
+    const rt = await db
+      .selectFrom('record_types')
+      .select(['id'])
+      .where('id', '=', recordTypeId)
+      .where('workspace_id', '=', workspaceId)
+      .executeTakeFirst();
+    return !!rt;
+  }
+
   // List
   router.get('/', async (req, res, next) => {
     try {
@@ -117,6 +127,12 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   // Fields — Reorder (must be before /:id/fields/:fieldId to avoid Express treating "reorder" as :fieldId)
   router.patch('/:id/fields/reorder', async (req, res, next) => {
     try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const owns = await requireRecordTypeOwnership(req.params['id']!, workspace.id);
+      if (!owns) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Record type not found' } });
+        return;
+      }
       const parsed = z.object({ ids: z.array(z.string()) }).safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: parsed.error.message } });
@@ -139,6 +155,12 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   // Fields — Update
   router.patch('/:id/fields/:fieldId', async (req, res, next) => {
     try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const owns = await requireRecordTypeOwnership(req.params['id']!, workspace.id);
+      if (!owns) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Record type not found' } });
+        return;
+      }
       const parsed = createFieldSchema.partial().safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: parsed.error.message } });
@@ -191,6 +213,12 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   // Fields — List
   router.get('/:id/fields', async (req, res, next) => {
     try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const owns = await requireRecordTypeOwnership(req.params['id']!, workspace.id);
+      if (!owns) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Record type not found' } });
+        return;
+      }
       const fields = await db
         .selectFrom('record_type_fields')
         .selectAll()
@@ -204,6 +232,12 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   // Fields — Create
   router.post('/:id/fields', async (req, res, next) => {
     try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const owns = await requireRecordTypeOwnership(req.params['id']!, workspace.id);
+      if (!owns) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Record type not found' } });
+        return;
+      }
       const parsed = createFieldSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: parsed.error.message } });
@@ -225,6 +259,12 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   // Fields — Delete
   router.delete('/:id/fields/:fieldId', async (req, res, next) => {
     try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const owns = await requireRecordTypeOwnership(req.params['id']!, workspace.id);
+      if (!owns) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Record type not found' } });
+        return;
+      }
       await db
         .deleteFrom('record_type_fields')
         .where('id', '=', req.params['fieldId']!)
