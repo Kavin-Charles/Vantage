@@ -160,7 +160,7 @@ export function createRecordsRouter(db: Kysely<Database>): ExpressRouter {
           .selectFrom('stage_required_fields as srf' as 'stage_required_fields')
           .innerJoin('record_type_fields as rtf' as 'record_type_fields', 'record_type_fields.id' as never, 'stage_required_fields.field_id' as never)
           .select(['stage_required_fields.field_id' as never, 'record_type_fields.label' as never])
-          .where('stage_required_fields.stage_id' as never, '=', stage_id)
+          .where('stage_required_fields.stage_id' as never, '=', stage_id as never)
           .execute() as { field_id: string; label: string }[];
 
         if (requiredFields.length > 0) {
