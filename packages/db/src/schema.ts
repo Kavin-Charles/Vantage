@@ -446,7 +446,7 @@ export interface RecordTypeFieldTable {
   id: Generated<string>;
   record_type_id: string;
   label: string;
-  field_type: 'text' | 'number' | 'date' | 'select' | 'boolean';
+  field_type: FieldType;
   options: unknown | null;
   is_required: Generated<boolean>;
   position: Generated<number>;
@@ -675,3 +675,37 @@ export type EmailUpdate = Updateable<EmailTable>;
 export type PushToken = Selectable<PushTokenTable>;
 export type NewPushToken = Insertable<PushTokenTable>;
 export type PushTokenUpdate = Updateable<PushTokenTable>;
+
+export type RecordType = Selectable<RecordTypeTable>;
+export type NewRecordType = Insertable<RecordTypeTable>;
+export type RecordTypeUpdate = Updateable<RecordTypeTable>;
+
+export type RecordTypeField = Selectable<RecordTypeFieldTable>;
+export type NewRecordTypeField = Insertable<RecordTypeFieldTable>;
+export type RecordTypeFieldUpdate = Updateable<RecordTypeFieldTable>;
+
+export type RecordTypePermission = Selectable<RecordTypePermissionTable>;
+export type NewRecordTypePermission = Insertable<RecordTypePermissionTable>;
+export type RecordTypePermissionUpdate = Updateable<RecordTypePermissionTable>;
+
+export type StageRequiredField = Selectable<StageRequiredFieldTable>;
+export type NewStageRequiredField = Insertable<StageRequiredFieldTable>;
+
+export type PipelineRecord = Selectable<PipelineRecordTable>;
+export type NewPipelineRecord = Insertable<PipelineRecordTable>;
+export type PipelineRecordUpdate = Updateable<PipelineRecordTable>;
+
+export type RecordFieldValue = Selectable<RecordFieldValueTable>;
+export type NewRecordFieldValue = Insertable<RecordFieldValueTable>;
+export type RecordFieldValueUpdate = Updateable<RecordFieldValueTable>;
+
+export type ConversionTemplate = Selectable<ConversionTemplateTable>;
+export type NewConversionTemplate = Insertable<ConversionTemplateTable>;
+export type ConversionTemplateUpdate = Updateable<ConversionTemplateTable>;
+
+export type ConversionFieldMapping = Selectable<ConversionFieldMappingTable>;
+export type NewConversionFieldMapping = Insertable<ConversionFieldMappingTable>;
+export type ConversionFieldMappingUpdate = Updateable<ConversionFieldMappingTable>;
+
+export type RecordConversion = Selectable<RecordConversionTable>;
+export type NewRecordConversion = Insertable<RecordConversionTable>;
