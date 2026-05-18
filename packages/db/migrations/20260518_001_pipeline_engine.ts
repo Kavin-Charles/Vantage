@@ -113,6 +113,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute();
 
   await sql`ALTER TABLE conversion_field_mappings ADD CONSTRAINT conversion_field_mappings_source_check CHECK ((source_field_id IS NOT NULL) != (source_builtin IS NOT NULL))`.execute(db);
+  await sql`ALTER TABLE conversion_field_mappings ADD CONSTRAINT conversion_field_mappings_target_check CHECK (target_field_id IS NULL OR target_builtin IS NULL)`.execute(db);
 
   // record_conversions
   await db.schema
@@ -127,9 +128,27 @@ export async function up(db: Kysely<unknown>): Promise<void> {
 
   // Alter pipelines — add nullable record_type_id (NOT NULL enforced post-backfill)
   await sql`ALTER TABLE pipelines ADD COLUMN record_type_id uuid REFERENCES record_types(id)`.execute(db);
+
+  // Indexes for high-frequency query paths
+  await sql`CREATE INDEX pipeline_records_workspace_id_idx ON pipeline_records(workspace_id)`.execute(db);
+  await sql`CREATE INDEX pipeline_records_pipeline_id_idx ON pipeline_records(pipeline_id)`.execute(db);
+  await sql`CREATE INDEX pipeline_records_stage_id_idx ON pipeline_records(stage_id)`.execute(db);
+  await sql`CREATE INDEX pipeline_records_record_type_id_idx ON pipeline_records(record_type_id)`.execute(db);
+  await sql`CREATE INDEX pipeline_records_deleted_at_idx ON pipeline_records(deleted_at)`.execute(db);
+  await sql`CREATE INDEX record_type_fields_record_type_id_idx ON record_type_fields(record_type_id)`.execute(db);
+  await sql`CREATE INDEX record_conversions_source_record_id_idx ON record_conversions(source_record_id)`.execute(db);
+  await sql`CREATE INDEX record_conversions_target_record_id_idx ON record_conversions(target_record_id)`.execute(db);
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
+  await sql`DROP INDEX IF EXISTS pipeline_records_workspace_id_idx`.execute(db);
+  await sql`DROP INDEX IF EXISTS pipeline_records_pipeline_id_idx`.execute(db);
+  await sql`DROP INDEX IF EXISTS pipeline_records_stage_id_idx`.execute(db);
+  await sql`DROP INDEX IF EXISTS pipeline_records_record_type_id_idx`.execute(db);
+  await sql`DROP INDEX IF EXISTS pipeline_records_deleted_at_idx`.execute(db);
+  await sql`DROP INDEX IF EXISTS record_type_fields_record_type_id_idx`.execute(db);
+  await sql`DROP INDEX IF EXISTS record_conversions_source_record_id_idx`.execute(db);
+  await sql`DROP INDEX IF EXISTS record_conversions_target_record_id_idx`.execute(db);
   await sql`ALTER TABLE pipelines DROP COLUMN IF EXISTS record_type_id`.execute(db);
   await db.schema.dropTable('record_conversions').ifExists().execute();
   await db.schema.dropTable('conversion_field_mappings').ifExists().execute();
