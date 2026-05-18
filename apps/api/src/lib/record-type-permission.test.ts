@@ -5,7 +5,7 @@ import type { Database } from '@vantage/db';
 
 function buildMockDb(perm: Record<string, boolean> | undefined) {
   const chain: Record<string, unknown> = {};
-  for (const f of ['selectFrom', 'select', 'where', 'executeTakeFirst']) {
+  for (const f of ['selectFrom', 'select', 'where']) {
     chain[f] = vi.fn().mockReturnValue(chain);
   }
   chain['executeTakeFirst'] = vi.fn().mockResolvedValue(perm);
