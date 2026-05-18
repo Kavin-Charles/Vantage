@@ -7,11 +7,14 @@ function buildMockDb(rows: unknown[] = [], single?: unknown) {
   const chain: Record<string, unknown> = {};
   const methods = ['selectFrom','insertInto','updateTable','values','set','where','select',
     'selectAll','orderBy','limit','offset','returning','returningAll',
-    'execute','executeTakeFirst','executeTakeFirstOrThrow'];
+    'innerJoin','execute','executeTakeFirst','executeTakeFirstOrThrow'];
   for (const m of methods) chain[m] = vi.fn().mockReturnValue(chain);
   chain['execute'] = vi.fn().mockResolvedValue(rows);
   chain['executeTakeFirst'] = vi.fn().mockResolvedValue(single ?? rows[0]);
   chain['executeTakeFirstOrThrow'] = vi.fn().mockResolvedValue(single ?? rows[0] ?? { id: 'new-id' });
+  const onConflictChain = { columns: vi.fn(), doUpdateSet: vi.fn().mockReturnValue(chain) };
+  onConflictChain.columns = vi.fn().mockReturnValue(onConflictChain);
+  chain['onConflict'] = vi.fn((cb: (oc: typeof onConflictChain) => unknown) => { cb(onConflictChain); return chain; });
   return {
     selectFrom: vi.fn().mockReturnValue(chain),
     insertInto: vi.fn().mockReturnValue(chain),
@@ -96,5 +99,34 @@ describe('POST /', () => {
     const res = mockRes();
     await handler(req, res, vi.fn());
     expect(res.status).toHaveBeenCalledWith(400);
+  });
+});
+
+describe('PATCH /:id', () => {
+  it('moves record to new stage when no required fields missing', async () => {
+    const existing = { id: 'rec-1', workspace_id: 'ws-1', stage_id: 'stage-1' };
+    const updated = { ...existing, stage_id: '00000000-0000-0000-0000-000000000002', name: 'Updated' };
+    const db = buildMockDb([], updated);
+    const router = createRecordsRouter(db as unknown as Kysely<Database>);
+    const handler = getHandler(router, 'patch', '/:id');
+    const req = mockReq({
+      params: { id: 'rec-1' },
+      body: { stage_id: '00000000-0000-0000-0000-000000000002', name: 'Updated' },
+    });
+    const res = mockRes();
+    await handler(req, res, vi.fn());
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: null }));
+  });
+});
+
+describe('DELETE /:id', () => {
+  it('soft deletes record', async () => {
+    const db = buildMockDb([], { id: 'rec-1' });
+    const router = createRecordsRouter(db as unknown as Kysely<Database>);
+    const handler = getHandler(router, 'delete', '/:id');
+    const req = mockReq({ params: { id: 'rec-1' } });
+    const res = mockRes();
+    await handler(req, res, vi.fn());
+    expect(res.json).toHaveBeenCalledWith({ data: { ok: true }, error: null });
   });
 });

@@ -132,5 +132,107 @@ export function createRecordsRouter(db: Kysely<Database>): ExpressRouter {
     } catch (err) { next(err); }
   });
 
+  const updateRecordSchema = z.object({
+    name: z.string().min(1).optional(),
+    stage_id: z.string().uuid().optional(),
+    pipeline_id: z.string().uuid().optional(),
+    owner_id: z.string().uuid().optional(),
+    contact_id: z.string().uuid().nullable().optional(),
+    company_id: z.string().uuid().nullable().optional(),
+    field_values: z.record(z.unknown()).optional(),
+  });
+
+  // Update
+  router.patch('/:id', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const parsed = updateRecordSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: parsed.error.message } });
+        return;
+      }
+
+      const { field_values, stage_id, ...rest } = parsed.data;
+
+      // Stage enforcement: if moving to a new stage, check required fields
+      if (stage_id) {
+        const requiredFields = await db
+          .selectFrom('stage_required_fields as srf' as 'stage_required_fields')
+          .innerJoin('record_type_fields as rtf' as 'record_type_fields', 'record_type_fields.id' as never, 'stage_required_fields.field_id' as never)
+          .select(['stage_required_fields.field_id' as never, 'record_type_fields.label' as never])
+          .where('stage_required_fields.stage_id' as never, '=', stage_id)
+          .execute() as { field_id: string; label: string }[];
+
+        if (requiredFields.length > 0) {
+          const existingValues = await db
+            .selectFrom('record_field_values')
+            .select(['field_id', 'value'])
+            .where('record_id', '=', req.params['id']!)
+            .execute();
+
+          const filledFieldIds = new Set(existingValues.map(v => v.field_id));
+          // Also count incoming field_values
+          if (field_values) {
+            for (const k of Object.keys(field_values)) filledFieldIds.add(k);
+          }
+
+          const missing = requiredFields.filter(f => !filledFieldIds.has(f.field_id));
+          if (missing.length > 0) {
+            res.status(422).json({
+              data: null,
+              error: {
+                code: 'REQUIRED_FIELDS_MISSING',
+                message: 'Required fields missing for this stage',
+                fields: missing.map(f => ({ field_id: f.field_id, label: f.label })),
+              },
+            });
+            return;
+          }
+        }
+      }
+
+      const record = await db
+        .updateTable('pipeline_records')
+        .set({ ...rest, ...(stage_id ? { stage_id } : {}), updated_at: new Date().toISOString() } as never)
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .where('deleted_at', 'is', null)
+        .returningAll()
+        .executeTakeFirst();
+
+      if (!record) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Record not found' } });
+        return;
+      }
+
+      // Upsert field values
+      if (field_values && Object.keys(field_values).length > 0) {
+        for (const [field_id, value] of Object.entries(field_values)) {
+          await db
+            .insertInto('record_field_values')
+            .values({ record_id: (record as Record<string, unknown>)['id'] as string, field_id, value: JSON.stringify(value) } as never)
+            .onConflict(oc => oc.columns(['record_id', 'field_id'] as never).doUpdateSet({ value: JSON.stringify(value) } as never))
+            .execute();
+        }
+      }
+
+      res.json({ data: record, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // Delete (soft)
+  router.delete('/:id', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      await db
+        .updateTable('pipeline_records')
+        .set({ deleted_at: new Date().toISOString() } as never)
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .execute();
+      res.json({ data: { ok: true }, error: null });
+    } catch (err) { next(err); }
+  });
+
   return router;
 }
