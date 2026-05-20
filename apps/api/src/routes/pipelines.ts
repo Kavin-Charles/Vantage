@@ -6,7 +6,10 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 
 // ── Zod schemas ────────────────────────────────────────────────────────────────
 
-const createPipelineSchema = z.object({ name: z.string().min(1) });
+const createPipelineSchema = z.object({
+  name: z.string().min(1),
+  record_type_id: z.string().uuid().optional(),
+});
 const updatePipelineSchema = z.object({
   name: z.string().min(1).optional(),
   is_default: z.boolean().optional(),
@@ -86,7 +89,7 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
 
       const pipeline = await db
         .insertInto('pipelines')
-        .values({ workspace_id: workspace.id, name: parsed.name })
+        .values({ workspace_id: workspace.id, name: parsed.name, ...(parsed.record_type_id ? { record_type_id: parsed.record_type_id } : {}) } as never)
         .returningAll()
         .executeTakeFirstOrThrow();
 
@@ -463,6 +466,36 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
     } catch (err) {
       next(err);
     }
+  });
+
+  // PUT /:id/stages/:stageId/required-fields — set which fields are required to enter this stage
+  router.put('/:id/stages/:stageId/required-fields', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const { field_ids } = z.object({ field_ids: z.array(z.string().uuid()) }).parse(req.body);
+
+      // Verify pipeline belongs to workspace
+      const pipeline = await db
+        .selectFrom('pipelines')
+        .select(['id'])
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .executeTakeFirst();
+      if (!pipeline) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Pipeline not found' } });
+        return;
+      }
+
+      // Replace required fields for this stage (full replace semantics)
+      await db.deleteFrom('stage_required_fields').where('stage_id', '=', req.params['stageId']!).execute();
+      if (field_ids.length > 0) {
+        await db
+          .insertInto('stage_required_fields')
+          .values(field_ids.map(field_id => ({ stage_id: req.params['stageId']!, field_id })))
+          .execute();
+      }
+      res.json({ data: { ok: true }, error: null });
+    } catch (err) { next(err); }
   });
 
   return router;

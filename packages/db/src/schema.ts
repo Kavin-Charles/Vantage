@@ -218,6 +218,7 @@ export interface SshCommandLogTable {
 export interface PipelineTable {
   id: Generated<string>;
   workspace_id: string;
+  record_type_id: string | null;
   name: string;
   is_default: Generated<boolean>;
   position: Generated<number>;
@@ -426,6 +427,100 @@ export interface PushTokenTable {
   updated_at: Generated<Date>;
 }
 
+export interface RecordTypeTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  icon: Generated<string>;
+  color: Generated<string>;
+  position: Generated<number>;
+  auto_number_enabled: Generated<boolean>;
+  auto_number_prefix: Generated<string>;
+  auto_number_format: Generated<string>;
+  auto_number_sequence: Generated<number>;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
+export interface RecordTypeFieldTable {
+  id: Generated<string>;
+  record_type_id: string;
+  label: string;
+  field_type: FieldType;
+  options: unknown | null;
+  is_required: Generated<boolean>;
+  position: Generated<number>;
+  created_at: Generated<string>;
+}
+
+export interface RecordTypePermissionTable {
+  id: Generated<string>;
+  record_type_id: string;
+  role: 'admin' | 'member';
+  can_view: Generated<boolean>;
+  can_create: Generated<boolean>;
+  can_edit: Generated<boolean>;
+  can_delete: Generated<boolean>;
+}
+
+export interface StageRequiredFieldTable {
+  stage_id: string;
+  field_id: string;
+}
+
+export interface PipelineRecordTable {
+  id: Generated<string>;
+  workspace_id: string;
+  record_type_id: string;
+  pipeline_id: string;
+  stage_id: string;
+  record_number: string | null;
+  name: string;
+  contact_id: string | null;
+  company_id: string | null;
+  owner_id: string;
+  deleted_at: string | null;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
+export interface RecordFieldValueTable {
+  id: Generated<string>;
+  record_id: string;
+  field_id: string;
+  value: unknown;
+}
+
+export interface ConversionTemplateTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  source_type_id: string;
+  target_type_id: string;
+  target_pipeline_id: string;
+  target_stage_id: string;
+  position: Generated<number>;
+  created_at: Generated<string>;
+}
+
+export interface ConversionFieldMappingTable {
+  id: Generated<string>;
+  template_id: string;
+  source_field_id: string | null;
+  source_builtin: string | null;
+  target_field_id: string | null;
+  target_builtin: string | null;
+}
+
+export interface RecordConversionTable {
+  id: Generated<string>;
+  source_record_id: string;
+  target_record_id: string;
+  template_id: string;
+  converted_by: string;
+  converted_at: Generated<string>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -458,6 +553,15 @@ export interface Database {
   email_accounts: EmailAccountTable;
   emails: EmailTable;
   push_tokens: PushTokenTable;
+  record_types: RecordTypeTable;
+  record_type_fields: RecordTypeFieldTable;
+  record_type_permissions: RecordTypePermissionTable;
+  stage_required_fields: StageRequiredFieldTable;
+  pipeline_records: PipelineRecordTable;
+  record_field_values: RecordFieldValueTable;
+  conversion_templates: ConversionTemplateTable;
+  conversion_field_mappings: ConversionFieldMappingTable;
+  record_conversions: RecordConversionTable;
 }
 
 // Convenience types
@@ -571,3 +675,37 @@ export type EmailUpdate = Updateable<EmailTable>;
 export type PushToken = Selectable<PushTokenTable>;
 export type NewPushToken = Insertable<PushTokenTable>;
 export type PushTokenUpdate = Updateable<PushTokenTable>;
+
+export type RecordType = Selectable<RecordTypeTable>;
+export type NewRecordType = Insertable<RecordTypeTable>;
+export type RecordTypeUpdate = Updateable<RecordTypeTable>;
+
+export type RecordTypeField = Selectable<RecordTypeFieldTable>;
+export type NewRecordTypeField = Insertable<RecordTypeFieldTable>;
+export type RecordTypeFieldUpdate = Updateable<RecordTypeFieldTable>;
+
+export type RecordTypePermission = Selectable<RecordTypePermissionTable>;
+export type NewRecordTypePermission = Insertable<RecordTypePermissionTable>;
+export type RecordTypePermissionUpdate = Updateable<RecordTypePermissionTable>;
+
+export type StageRequiredField = Selectable<StageRequiredFieldTable>;
+export type NewStageRequiredField = Insertable<StageRequiredFieldTable>;
+
+export type PipelineRecord = Selectable<PipelineRecordTable>;
+export type NewPipelineRecord = Insertable<PipelineRecordTable>;
+export type PipelineRecordUpdate = Updateable<PipelineRecordTable>;
+
+export type RecordFieldValue = Selectable<RecordFieldValueTable>;
+export type NewRecordFieldValue = Insertable<RecordFieldValueTable>;
+export type RecordFieldValueUpdate = Updateable<RecordFieldValueTable>;
+
+export type ConversionTemplate = Selectable<ConversionTemplateTable>;
+export type NewConversionTemplate = Insertable<ConversionTemplateTable>;
+export type ConversionTemplateUpdate = Updateable<ConversionTemplateTable>;
+
+export type ConversionFieldMapping = Selectable<ConversionFieldMappingTable>;
+export type NewConversionFieldMapping = Insertable<ConversionFieldMappingTable>;
+export type ConversionFieldMappingUpdate = Updateable<ConversionFieldMappingTable>;
+
+export type RecordConversion = Selectable<RecordConversionTable>;
+export type NewRecordConversion = Insertable<RecordConversionTable>;

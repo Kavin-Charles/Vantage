@@ -104,7 +104,7 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
             owner_id: user.id,
           })))
           .execute();
-        created = result.numInsertedOrUpdatedRows ? Number(result.numInsertedOrUpdatedRows) : validRows.length;
+        created = result[0]?.numInsertedOrUpdatedRows ? Number(result[0].numInsertedOrUpdatedRows) : validRows.length;
 
         if (created > 0) {
           await db.updateTable('workspaces')
