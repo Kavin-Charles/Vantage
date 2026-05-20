@@ -13,6 +13,8 @@ const createPipelineSchema = z.object({
 const updatePipelineSchema = z.object({
   name: z.string().min(1).optional(),
   is_default: z.boolean().optional(),
+  view: z.enum(['kanban', 'table', 'list']).optional(),
+  table_columns: z.array(z.string()).nullable().optional(),
 });
 
 const createStageSchema = z.object({
