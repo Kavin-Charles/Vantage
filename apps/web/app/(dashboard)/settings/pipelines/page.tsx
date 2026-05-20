@@ -33,7 +33,104 @@ import type { Pipeline, PipelineWithStages, StageField, ItemGroup, ItemGroupWith
 
 const FIELD_TYPES = ['text', 'number', 'date', 'select', 'boolean'] as const;
 
+const ALL_COLUMNS: { key: string; label: string }[] = [
+  { key: 'record_number', label: 'Record #' },
+  { key: 'name', label: 'Name' },
+  { key: 'stage', label: 'Stage' },
+  { key: 'owner_id', label: 'Owner' },
+  { key: 'contact_id', label: 'Contact' },
+  { key: 'company_id', label: 'Company' },
+  { key: 'created_at', label: 'Created' },
+];
+
+const DEFAULT_TABLE_COLUMNS = ['record_number', 'name', 'stage', 'owner_id', 'created_at'];
+
 // ── PipelineEditor ──────────────────────────────────────────────────────────
+
+function ViewSettings({ pipeline, onChanged }: { pipeline: Pipeline; onChanged: () => void }) {
+  const getToken = useApiToken();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const currentView = pipeline.view ?? 'kanban';
+  const currentColumns: string[] = (pipeline.table_columns as string[] | null) ?? DEFAULT_TABLE_COLUMNS;
+
+  async function handleViewChange(view: string) {
+    setSaving(true);
+    setError(null);
+    try {
+      await updatePipeline(await getToken(), pipeline.id, { view });
+      onChanged();
+    } catch {
+      setError('Failed to save view setting');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleColumnToggle(key: string, checked: boolean) {
+    const next = checked
+      ? [...currentColumns, key]
+      : currentColumns.filter(c => c !== key);
+    setSaving(true);
+    setError(null);
+    try {
+      await updatePipeline(await getToken(), pipeline.id, {
+        table_columns: next.length > 0 ? next : null,
+      });
+      onChanged();
+    } catch {
+      setError('Failed to save column setting');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid var(--border)' }}>
+      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8, fontWeight: 600 }}>View</div>
+      {error && (
+        <p style={{ color: '#ef4444', fontSize: 12, margin: '0 0 8px' }}>{error}</p>
+      )}
+      <select
+        value={currentView}
+        onChange={e => void handleViewChange(e.target.value)}
+        disabled={saving}
+        style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6,
+          padding: '6px 8px', fontSize: 13, color: 'var(--text)', marginBottom: 12,
+          opacity: saving ? 0.6 : 1,
+        }}
+      >
+        <option value="kanban">Kanban</option>
+        <option value="table">Table</option>
+        <option value="list">List</option>
+      </select>
+
+      {currentView === 'table' && (
+        <div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 6 }}>Columns</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            {ALL_COLUMNS.map(col => (
+              <label
+                key={col.key}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--text2)', cursor: saving ? 'not-allowed' : 'pointer' }}
+              >
+                <input
+                  type="checkbox"
+                  checked={currentColumns.includes(col.key)}
+                  disabled={saving}
+                  onChange={e => void handleColumnToggle(col.key, e.target.checked)}
+                />
+                {col.label}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function StageFieldRow({
   field,
@@ -949,6 +1046,10 @@ export default function PipelinesSettingsPage() {
                   )
                 )}
               </div>
+              <ViewSettings
+                pipeline={activePipeline}
+                onChanged={() => { void refetch(); void qc.invalidateQueries({ queryKey: ['pipelines'] }); }}
+              />
               <PipelineEditor key={activePipeline.id} pipeline={activePipeline} />
               <ItemGroupsSection pipelineId={activePipeline.id} />
             </>
