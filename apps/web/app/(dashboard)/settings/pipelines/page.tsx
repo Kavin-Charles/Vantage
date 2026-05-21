@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { Button } from '@/components/ui/Button';
@@ -51,17 +51,31 @@ function ViewSettings({ pipeline, onChanged }: { pipeline: Pipeline; onChanged: 
   const getToken = useApiToken();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localView, setLocalView] = useState<string | null>(null);
+  const [localColumns, setLocalColumns] = useState<string[] | null>(null);
+  const prevPipelineId = useRef(pipeline.id);
 
-  const currentView = pipeline.view ?? 'kanban';
-  const currentColumns: string[] = (pipeline.table_columns as string[] | null) ?? DEFAULT_TABLE_COLUMNS;
+  // Reset local state when switching to a different pipeline
+  useEffect(() => {
+    if (prevPipelineId.current !== pipeline.id) {
+      setLocalView(null);
+      setLocalColumns(null);
+      prevPipelineId.current = pipeline.id;
+    }
+  }, [pipeline.id]);
+
+  const currentView = localView ?? pipeline.view ?? 'kanban';
+  const currentColumns: string[] = localColumns ?? (pipeline.table_columns as string[] | null) ?? DEFAULT_TABLE_COLUMNS;
 
   async function handleViewChange(view: string) {
+    setLocalView(view); // optimistic update
     setSaving(true);
     setError(null);
     try {
       await updatePipeline(await getToken(), pipeline.id, { view });
       onChanged();
     } catch {
+      setLocalView(null); // revert on error
       setError('Failed to save view setting');
     } finally {
       setSaving(false);
@@ -72,6 +86,7 @@ function ViewSettings({ pipeline, onChanged }: { pipeline: Pipeline; onChanged: 
     const next = checked
       ? [...currentColumns, key]
       : currentColumns.filter(c => c !== key);
+    setLocalColumns(next.length > 0 ? next : DEFAULT_TABLE_COLUMNS); // optimistic update
     setSaving(true);
     setError(null);
     try {
@@ -80,6 +95,7 @@ function ViewSettings({ pipeline, onChanged }: { pipeline: Pipeline; onChanged: 
       });
       onChanged();
     } catch {
+      setLocalColumns(null); // revert on error
       setError('Failed to save column setting');
     } finally {
       setSaving(false);
