@@ -17,8 +17,6 @@ const ALL_TABS: Tab[] = [
   { href: '/settings/team', label: 'Team' },
   { href: '/settings/mail', label: 'Mail' },
   { href: '/settings/pipelines', label: 'Pipelines', adminOnly: true },
-  { href: '/settings/record-types', label: 'Record Types', adminOnly: true },
-  { href: '/settings/conversions', label: 'Conversions', adminOnly: true },
   { href: '/settings/ssh', label: 'SSH Keys', adminOnly: true },
   { href: '/settings/api-keys', label: 'API Keys', adminOnly: true },
 ];
@@ -37,8 +35,6 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   useEffect(() => {
     if (!isLoading && !isAdmin && (
       pathname.startsWith('/settings/pipelines') ||
-      pathname.startsWith('/settings/record-types') ||
-      pathname.startsWith('/settings/conversions') ||
       pathname.startsWith('/settings/ssh') ||
       pathname.startsWith('/settings/api-keys')
     )) {

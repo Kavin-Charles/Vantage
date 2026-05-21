@@ -58,14 +58,14 @@ function ViewSettings({ pipeline, onChanged }: { pipeline: Pipeline; onChanged: 
   const [localRecordTypeId, setLocalRecordTypeId] = useState<string | null | undefined>(undefined);
   const prevPipelineId = useRef(pipeline.id);
 
-  const { data: typesResp } = useQuery<{ data: RecordType[] }>({
+  const { data: recordTypes = [] } = useQuery<RecordType[]>({
     queryKey: ['record-types'],
     queryFn: async () => {
       const res = await fetch('/api/record-types');
-      return res.json() as Promise<{ data: RecordType[] }>;
+      const json = await res.json() as { data: RecordType[] };
+      return json.data;
     },
   });
-  const recordTypes: RecordType[] = typesResp?.data ?? [];
 
   // Reset local state when switching to a different pipeline
   useEffect(() => {
