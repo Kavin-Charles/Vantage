@@ -6,6 +6,8 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 import { generateRecordNumber } from '../lib/auto-number';
 import { logger } from '../lib/logger';
 
+const BUILTIN_KEYS = new Set(['name', 'contact_id', 'company_id', 'owner_id']);
+
 const fieldMappingSchema = z.object({
   source_field_id: z.string().uuid().optional(),
   source_builtin: z.string().optional(),
@@ -195,7 +197,10 @@ export function createConversionsRouter(db: Kysely<Database>): ExpressRouter {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
       const bodyParsed = z.object({
         template_id: z.string().uuid(),
-        field_overrides: z.record(z.unknown()).optional(),
+        field_overrides: z.record(
+          z.union([z.enum(['name', 'contact_id', 'company_id', 'owner_id']), z.string().uuid()]),
+          z.unknown(),
+        ).optional(),
       }).safeParse(req.body);
       if (!bodyParsed.success) {
         res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: bodyParsed.error.message } });
@@ -259,7 +264,6 @@ export function createConversionsRouter(db: Kysely<Database>): ExpressRouter {
 
       // Build field value inserts shape (record_id filled after target created)
       const fieldMappingsToCopy = mappings.filter(m => m.source_field_id && m.target_field_id);
-      const BUILTIN_KEYS = new Set(['name', 'contact_id', 'company_id', 'owner_id']);
 
       // Wrap writes in a transaction for atomicity
       const targetRecord = await db.transaction().execute(async (trx) => {

@@ -138,18 +138,19 @@ describe('GET /templates/:id', () => {
     const template = { id: 'tpl-1', name: 'Enquiry → Quote', workspace_id: 'ws-1', source_type_id: 'rt-1', target_type_id: 'rt-2', target_pipeline_id: 'pl-1', target_stage_id: 'st-1', position: 0, created_at: new Date().toISOString() };
     const mapping = { id: 'map-1', template_id: 'tpl-1', source_field_id: null, source_builtin: 'name', target_field_id: null, target_builtin: 'name' };
 
-    let callCount = 0;
+    let takeFirstCount = 0;
+    let executeCount = 0;
     const chain: Record<string, unknown> = {};
     const methods = ['selectFrom','insertInto','updateTable','deleteFrom','values','set','where','select',
       'selectAll','returning','returningAll','execute','executeTakeFirst','executeTakeFirstOrThrow','orderBy','in'];
     for (const m of methods) chain[m] = vi.fn().mockReturnValue(chain);
     chain['executeTakeFirst'] = vi.fn().mockImplementation(() => {
-      callCount++;
-      return callCount === 1 ? Promise.resolve(template) : Promise.resolve(null);
+      takeFirstCount++;
+      return takeFirstCount === 1 ? Promise.resolve(template) : Promise.resolve(null);
     });
     chain['execute'] = vi.fn().mockImplementation(() => {
-      callCount++;
-      return callCount === 2 ? Promise.resolve([mapping]) : Promise.resolve([]);
+      executeCount++;
+      return executeCount === 1 ? Promise.resolve([mapping]) : Promise.resolve([]);
     });
     const db = { selectFrom: vi.fn().mockReturnValue(chain), insertInto: vi.fn().mockReturnValue(chain), updateTable: vi.fn().mockReturnValue(chain), deleteFrom: vi.fn().mockReturnValue(chain), fn: { countAll: vi.fn().mockReturnValue({ as: vi.fn().mockReturnValue('count') }) } };
 
@@ -236,5 +237,18 @@ describe('POST /records/:id/convert with field_overrides', () => {
     const res = mockRes();
     await handler(req, res, vi.fn());
     expect(res.json).toHaveBeenCalledWith({ data: { record_id: 'tgt-1' }, error: null });
+
+    // Verify the override name was used in the pipeline_records insert.
+    // All chain methods return the same chain object, so chain['values'] accumulates
+    // every .values() call regardless of which table it targets.
+    const valuesSpy = chain['values'] as ReturnType<typeof vi.fn>;
+    // Note: because the chain is shared across all insertInto calls, we cannot
+    // distinguish which .values() call was for pipeline_records vs record_field_values.
+    // We assert that at least one call received an object with name: 'Override Name'.
+    const valuesArg = valuesSpy.mock.calls.find((args: unknown[]) => {
+      const obj = args[0] as Record<string, unknown> | undefined;
+      return obj != null && 'name' in obj && obj['name'] === 'Override Name';
+    })?.[0] as Record<string, unknown> | undefined;
+    expect(valuesArg?.name).toBe('Override Name');
   });
 });
