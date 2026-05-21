@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { listPipelines } from '@/lib/pipelines';
 import { useApiToken } from '@/lib/useApiToken';
@@ -19,10 +20,12 @@ export function PipelineSwitcher({ value, onChange }: Props) {
 
   const pipelines: Pipeline[] = data?.data ?? [];
 
-  // Auto-select first pipeline when loaded
-  if (!isLoading && pipelines.length > 0 && !value) {
-    onChange(pipelines[0]!.id);
-  }
+  // Auto-select first pipeline when loaded (must be in effect, not render)
+  useEffect(() => {
+    if (!isLoading && pipelines.length > 0 && !value) {
+      onChange(pipelines[0]!.id);
+    }
+  }, [isLoading, pipelines, value, onChange]);
 
   if (isLoading || pipelines.length === 0) {
     return (

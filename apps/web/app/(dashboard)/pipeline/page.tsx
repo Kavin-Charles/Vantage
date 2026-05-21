@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/components/Topbar';
 import { Button } from '@/components/ui/Button';
@@ -27,14 +27,12 @@ function stageColor(stage: PipelineStage | GroupStage): string {
   return stage.color ?? '#6366f1';
 }
 
-// ── Deals kanban ────────────────────────────────────────────────────────────────
+// ── Deals List ───────────────────────────────────────────────────────────────
 
-function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigger?: number }) {
+function DealsList({ pipelineId, addTrigger }: { pipelineId: string; addTrigger?: number }) {
   const qc = useQueryClient();
   const getToken = useApiToken();
   const [modal, setModal] = useState<'create' | Deal | null>(null);
-  const [defaultStageId, setDefaultStageId] = useState<string | null>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
 
   useEffect(() => {
     if (addTrigger && addTrigger > 0) setModal('create');
@@ -50,22 +48,14 @@ function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigge
     queryFn: async () => listDeals(await getToken(), pipelineId),
   });
 
-  const stageMut = useMutation({
-    mutationFn: async ({ id, stage_id }: { id: string; stage_id: string }) => updateDeal(await getToken(), id, { stage_id }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['deals', pipelineId] }),
-  });
-
   const pipeline = pipelineData?.data;
   const stages = pipeline?.stages ?? [];
   const deals: Deal[] = dealsData?.data ?? [];
 
-  const byStage = useCallback(
-    (stageId: string) => deals.filter(d => d.stage_id === stageId),
-    [deals],
-  );
+  const stageMap = Object.fromEntries(stages.map(s => [s.id, s]));
 
   const activeDeals = deals.filter(d => {
-    const s = stages.find(st => st.id === d.stage_id);
+    const s = stageMap[d.stage_id];
     return s && !s.is_won && !s.is_lost;
   });
   const totalValue = activeDeals.reduce((s, d) => s + Number(d.value), 0);
@@ -73,51 +63,66 @@ function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigge
   return (
     <>
       {deals.length > 0 && (
-        <div style={{ marginBottom: 20, fontSize: 13, color: 'var(--text2)' }}>
+        <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text2)' }}>
           {deals.length} items · <strong style={{ color: 'var(--text)' }}>{fmtValue(totalValue)}</strong> in pipeline
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12 }}>
-        {stages.map(stage => {
-          const col = byStage(stage.id);
-          const color = stageColor(stage);
-          return (
-            <div key={stage.id} style={{ minWidth: 220, flexShrink: 0 }}
-              onDragOver={e => e.preventDefault()}
-              onDrop={() => { if (dragId) stageMut.mutate({ id: dragId, stage_id: stage.id }); setDragId(null); }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ background: color + '1a', color, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{stage.name}</span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>{col.length}</span>
-                </div>
-                <button onClick={() => { setDefaultStageId(stage.id); setModal('create'); }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, lineHeight: 1 }}>+</button>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 10 }}>{fmtValue(col.reduce((s, d) => s + Number(d.value), 0))}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 60 }}>
-                {col.map(deal => (
-                  <div key={deal.id} draggable onDragStart={() => setDragId(deal.id)} onClick={() => setModal(deal)}
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', cursor: 'grab' }}
-                    onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}
-                    onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}>
-                    <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 6 }}>{deal.name}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 13 }}>{fmtValue(deal.value)}</span>
-                      <span style={{ fontSize: 11, color: 'var(--text3)' }}>{deal.probability}%</span>
-                    </div>
-                    {deal.close_date && (
-                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>
-                        Close {new Date(deal.close_date + 'T00:00:00').toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
+      {deals.length === 0 ? (
+        <div style={{ color: 'var(--text3)', fontSize: 13, fontFamily: 'DM Sans, sans-serif', paddingTop: 24 }}>
+          No items yet. Add your first item to get started.
+        </div>
+      ) : (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
+                {['Name', 'Stage', 'Value', 'Owner', 'Close Date'].map(h => (
+                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--text2)', fontSize: 12 }}>{h}</th>
                 ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              </tr>
+            </thead>
+            <tbody>
+              {deals.map((deal, i) => {
+                const stage = stageMap[deal.stage_id];
+                return (
+                  <tr
+                    key={deal.id}
+                    onClick={() => setModal(deal)}
+                    style={{
+                      borderBottom: i < deals.length - 1 ? '1px solid var(--border)' : 'none',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '')}
+                  >
+                    <td style={{ padding: '10px 14px', fontWeight: 500, color: 'var(--text)' }}>{deal.name}</td>
+                    <td style={{ padding: '10px 14px' }}>
+                      {stage ? (
+                        <span style={{
+                          background: stageColor(stage) + '1a',
+                          color: stageColor(stage),
+                          borderRadius: 4,
+                          padding: '2px 8px',
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}>{stage.name}</span>
+                      ) : '—'}
+                    </td>
+                    <td style={{ padding: '10px 14px', color: 'var(--text2)' }}>{fmtValue(deal.value)}</td>
+                    <td style={{ padding: '10px 14px', color: 'var(--text2)' }}>{deal.owner_id ? '—' : '—'}</td>
+                    <td style={{ padding: '10px 14px', color: 'var(--text2)' }}>
+                      {deal.close_date
+                        ? new Date(deal.close_date + 'T00:00:00').toLocaleDateString()
+                        : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {modal && (
         <Modal title={modal === 'create' ? 'Add item' : 'Edit item'} onClose={() => setModal(null)}>
@@ -125,7 +130,7 @@ function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigge
             deal={modal === 'create' ? undefined : (modal as Deal)}
             pipelineId={pipelineId}
             stages={stages}
-            defaultStageId={defaultStageId ?? stages[0]?.id ?? null}
+            defaultStageId={stages[0]?.id ?? null}
             onDone={() => { setModal(null); void qc.invalidateQueries({ queryKey: ['deals', pipelineId] }); }}
           />
         </Modal>
@@ -134,17 +139,15 @@ function DealsKanban({ pipelineId, addTrigger }: { pipelineId: string; addTrigge
   );
 }
 
-// ── Items kanban ────────────────────────────────────────────────────────────────
+// ── Items List ───────────────────────────────────────────────────────────────
 
-function ItemsKanban({ groupId, pipelineId, addTrigger }: { groupId: string; pipelineId: string; addTrigger?: number }) {
+function ItemsList({ groupId, pipelineId, addTrigger }: { groupId: string; pipelineId: string; addTrigger?: number }) {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | Item | null>(null);
-  const [defaultStageId, setDefaultStageId] = useState<string | null>(null);
-  const [dragId, setDragId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (addTrigger && addTrigger > 0) { setDefaultStageId(null); setModal('create'); }
+    if (addTrigger && addTrigger > 0) { setModal('create'); }
   }, [addTrigger]);
 
   const { data: groupData } = useQuery({
@@ -158,55 +161,65 @@ function ItemsKanban({ groupId, pipelineId, addTrigger }: { groupId: string; pip
     queryFn: async () => listItems(await getToken(), groupId),
   });
 
-  const stageMut = useMutation({
-    mutationFn: async ({ id, stage_id }: { id: string; stage_id: string }) => updateItem(await getToken(), id, { stage_id }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['items', groupId] }),
-  });
-
   const group: ItemGroupWithStages | undefined = groupData?.data;
   const stages = group?.stages ?? [];
   const items: Item[] = itemsData?.data ?? [];
 
-  const byStage = useCallback(
-    (stageId: string) => items.filter(i => i.stage_id === stageId),
-    [items],
-  );
+  const stageMap = Object.fromEntries(stages.map(s => [s.id, s]));
 
   return (
     <>
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 12 }}>
-        {stages.map(stage => {
-          const col = byStage(stage.id);
-          const color = stageColor(stage);
-          return (
-            <div key={stage.id} style={{ minWidth: 220, flexShrink: 0 }}
-              onDragOver={e => e.preventDefault()}
-              onDrop={() => { if (dragId) stageMut.mutate({ id: dragId, stage_id: stage.id }); setDragId(null); }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ background: color + '1a', color, borderRadius: 4, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{stage.name}</span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>{col.length}</span>
-                </div>
-                <button onClick={() => { setDefaultStageId(stage.id); setModal('create'); }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, lineHeight: 1 }}>+</button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 60 }}>
-                {col.map(item => (
-                  <div key={item.id} draggable onDragStart={() => setDragId(item.id)} onClick={() => setModal(item)}
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', cursor: 'grab' }}
-                    onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}
-                    onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}>
-                    <div style={{ fontWeight: 500, fontSize: 13, marginBottom: 6 }}>{item.title}</div>
-                    {item.value != null && (
-                      <div style={{ fontSize: 13 }}>{fmtValue(item.value)}</div>
-                    )}
-                  </div>
+      {items.length === 0 ? (
+        <div style={{ color: 'var(--text3)', fontSize: 13, fontFamily: 'DM Sans, sans-serif', paddingTop: 24 }}>
+          No items yet. Add your first item to get started.
+        </div>
+      ) : (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
+                {['Title', 'Stage', 'Value'].map(h => (
+                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--text2)', fontSize: 12 }}>{h}</th>
                 ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item, i) => {
+                const stage = stageMap[item.stage_id ?? ''];
+                return (
+                  <tr
+                    key={item.id}
+                    onClick={() => setModal(item)}
+                    style={{
+                      borderBottom: i < items.length - 1 ? '1px solid var(--border)' : 'none',
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '')}
+                  >
+                    <td style={{ padding: '10px 14px', fontWeight: 500, color: 'var(--text)' }}>{item.title}</td>
+                    <td style={{ padding: '10px 14px' }}>
+                      {stage ? (
+                        <span style={{
+                          background: stageColor(stage) + '1a',
+                          color: stageColor(stage),
+                          borderRadius: 4,
+                          padding: '2px 8px',
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}>{stage.name}</span>
+                      ) : '—'}
+                    </td>
+                    <td style={{ padding: '10px 14px', color: 'var(--text2)' }}>
+                      {item.value != null ? fmtValue(item.value) : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {modal && group && (
         <Modal title={modal === 'create' ? `Add ${group.name.replace(/s$/, '')}` : 'Edit item'} onClose={() => setModal(null)}>
@@ -214,7 +227,7 @@ function ItemsKanban({ groupId, pipelineId, addTrigger }: { groupId: string; pip
             item={modal === 'create' ? undefined : (modal as Item)}
             group={group}
             pipelineId={pipelineId}
-            defaultStageId={defaultStageId ?? stages[0]?.id ?? null}
+            defaultStageId={stages[0]?.id ?? null}
             onDone={() => { setModal(null); void qc.invalidateQueries({ queryKey: ['items', groupId] }); }}
           />
         </Modal>
@@ -223,7 +236,7 @@ function ItemsKanban({ groupId, pipelineId, addTrigger }: { groupId: string; pip
   );
 }
 
-// ── Page ────────────────────────────────────────────────────────────────────────
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PipelinePage() {
   const getToken = useApiToken();
@@ -280,8 +293,8 @@ export default function PipelinePage() {
           <>
             <GroupTabs pipelineId={pipelineId} activeGroupId={activeGroupId} onChange={setActiveGroupId} />
             {activeGroupId === null
-              ? <DealsKanban pipelineId={pipelineId} addTrigger={dealsAddTrigger} />
-              : <ItemsKanban groupId={activeGroupId} pipelineId={pipelineId} addTrigger={itemsAddTrigger} />
+              ? <DealsList pipelineId={pipelineId} addTrigger={dealsAddTrigger} />
+              : <ItemsList groupId={activeGroupId} pipelineId={pipelineId} addTrigger={itemsAddTrigger} />
             }
           </>
         )}
