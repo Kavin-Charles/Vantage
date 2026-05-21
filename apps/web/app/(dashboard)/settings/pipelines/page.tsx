@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
+
+interface RecordType { id: string; name: string; icon: string; color: string; }
 import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/FormField';
 import {
@@ -53,19 +55,47 @@ function ViewSettings({ pipeline, onChanged }: { pipeline: Pipeline; onChanged: 
   const [error, setError] = useState<string | null>(null);
   const [localView, setLocalView] = useState<string | null>(null);
   const [localColumns, setLocalColumns] = useState<string[] | null>(null);
+  const [localRecordTypeId, setLocalRecordTypeId] = useState<string | null | undefined>(undefined);
   const prevPipelineId = useRef(pipeline.id);
+
+  const { data: typesResp } = useQuery<{ data: RecordType[] }>({
+    queryKey: ['record-types'],
+    queryFn: async () => {
+      const res = await fetch('/api/record-types');
+      return res.json() as Promise<{ data: RecordType[] }>;
+    },
+  });
+  const recordTypes: RecordType[] = typesResp?.data ?? [];
 
   // Reset local state when switching to a different pipeline
   useEffect(() => {
     if (prevPipelineId.current !== pipeline.id) {
       setLocalView(null);
       setLocalColumns(null);
+      setLocalRecordTypeId(undefined);
       prevPipelineId.current = pipeline.id;
     }
   }, [pipeline.id]);
 
   const currentView = localView ?? pipeline.view ?? 'kanban';
   const currentColumns: string[] = localColumns ?? (pipeline.table_columns as string[] | null) ?? DEFAULT_TABLE_COLUMNS;
+  const currentRecordTypeId = localRecordTypeId === undefined ? (pipeline.record_type_id ?? '') : (localRecordTypeId ?? '');
+
+  async function handleRecordTypeChange(rtId: string) {
+    const value = rtId === '' ? null : rtId;
+    setLocalRecordTypeId(value);
+    setSaving(true);
+    setError(null);
+    try {
+      await updatePipeline(await getToken(), pipeline.id, { record_type_id: value });
+      onChanged();
+    } catch {
+      setLocalRecordTypeId(undefined);
+      setError('Failed to save record type');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function handleViewChange(view: string) {
     setLocalView(view); // optimistic update
@@ -104,10 +134,28 @@ function ViewSettings({ pipeline, onChanged }: { pipeline: Pipeline; onChanged: 
 
   return (
     <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid var(--border)' }}>
-      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8, fontWeight: 600 }}>View</div>
       {error && (
         <p style={{ color: '#ef4444', fontSize: 12, margin: '0 0 8px' }}>{error}</p>
       )}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 6, fontWeight: 600 }}>Record Type</div>
+        <select
+          value={currentRecordTypeId}
+          onChange={e => void handleRecordTypeChange(e.target.value)}
+          disabled={saving}
+          style={{
+            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6,
+            padding: '6px 8px', fontSize: 13, color: 'var(--text)',
+            opacity: saving ? 0.6 : 1,
+          }}
+        >
+          <option value="">— None —</option>
+          {recordTypes.map(rt => (
+            <option key={rt.id} value={rt.id}>{rt.icon} {rt.name}</option>
+          ))}
+        </select>
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8, fontWeight: 600 }}>View</div>
       <select
         value={currentView}
         onChange={e => void handleViewChange(e.target.value)}

@@ -21,7 +21,7 @@ export async function createPipeline(token: string, body: { name: string }) {
 export async function updatePipeline(
   token: string,
   id: string,
-  body: { name?: string; is_default?: boolean; view?: string; table_columns?: string[] | null },
+  body: { name?: string; is_default?: boolean; view?: string; table_columns?: string[] | null; record_type_id?: string | null },
 ) {
   return apiFetch<{ data: Pipeline }>(`/api/pipelines/${id}`, {
     method: 'PATCH',
