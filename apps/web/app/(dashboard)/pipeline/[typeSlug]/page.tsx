@@ -7,6 +7,8 @@ import { Topbar } from '@/components/Topbar';
 import { RecordKanban } from '@/components/pipeline/RecordKanban';
 import { RecordTable } from '@/components/pipeline/RecordTable';
 import { RecordList } from '@/components/pipeline/RecordList';
+import { useApiToken } from '@/lib/useApiToken';
+import { listPipelines } from '@/lib/pipelines';
 
 interface RecordType { id: string; name: string; icon: string; color: string; }
 interface Pipeline {
@@ -29,6 +31,7 @@ async function apiFetch<T>(path: string): Promise<T> {
 export default function RecordTypePipelinePage() {
   const { typeSlug } = useParams<{ typeSlug: string }>();
   const [activePipelineId, setActivePipelineId] = useState<string | null>(null);
+  const getToken = useApiToken();
 
   const { data: types = [] } = useQuery<RecordType[]>({
     queryKey: ['record-types'],
@@ -39,11 +42,15 @@ export default function RecordTypePipelinePage() {
     t.id === typeSlug || t.name.toLowerCase().replace(/\s+/g, '-') === typeSlug
   );
 
-  const { data: allPipelines = [] } = useQuery<Pipeline[]>({
+  // Use listPipelines (same fn as settings page) so both pages share the same
+  // TanStack Query cache shape: { data: Pipeline[] }. Mismatched queryFns on
+  // the same queryKey cause stale cache to be interpreted as wrong shape.
+  const { data: pipelinesResp } = useQuery({
     queryKey: ['pipelines'],
-    queryFn: () => apiFetch('/pipelines'),
+    queryFn: async () => listPipelines(await getToken()),
     enabled: !!activeType,
   });
+  const allPipelines: Pipeline[] = (pipelinesResp?.data ?? []) as unknown as Pipeline[];
 
   const pipelines = allPipelines.filter(p => p.record_type_id === activeType?.id);
   const pipeline = pipelines.find(p => p.id === (activePipelineId ?? pipelines[0]?.id));

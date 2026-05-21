@@ -1,5 +1,6 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
+import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
@@ -137,9 +138,20 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
           .execute();
       }
 
+      // Build update payload; jsonb columns must be explicitly cast because
+      // pg sends plain JS arrays as Postgres array literals ({a,b}), not JSON ([a,b])
+      const { table_columns, ...rest } = parsed;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updateSet: any = { ...rest, updated_at: new Date() };
+      if (table_columns !== undefined) {
+        updateSet.table_columns = table_columns === null
+          ? null
+          : sql`${JSON.stringify(table_columns)}::jsonb`;
+      }
+
       const pipeline = await db
         .updateTable('pipelines')
-        .set({ ...parsed, updated_at: new Date() })
+        .set(updateSet)
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
         .returningAll()
