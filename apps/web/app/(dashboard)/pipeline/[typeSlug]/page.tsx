@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Topbar } from '@/components/Topbar';
-import { RecordKanban } from '@/components/pipeline/RecordKanban';
 import { RecordTable } from '@/components/pipeline/RecordTable';
 import { RecordList } from '@/components/pipeline/RecordList';
 import { useApiToken } from '@/lib/useApiToken';
@@ -105,7 +104,7 @@ export default function RecordTypePipelinePage() {
         ) : pipeline.view === 'list' ? (
           <RecordList recordTypeId={activeType.id} pipelineId={pipeline.id} />
         ) : (
-          <RecordKanban recordTypeId={activeType.id} pipelineId={pipeline.id} />
+          <RecordList recordTypeId={activeType.id} pipelineId={pipeline.id} />
         )}
       </div>
     </>

@@ -77,7 +77,7 @@ function ViewSettings({ pipeline, onChanged }: { pipeline: Pipeline; onChanged: 
     }
   }, [pipeline.id]);
 
-  const currentView = localView ?? pipeline.view ?? 'kanban';
+  const currentView = localView ?? pipeline.view ?? 'list';
   const currentColumns: string[] = localColumns ?? (pipeline.table_columns as string[] | null) ?? DEFAULT_TABLE_COLUMNS;
   const currentRecordTypeId = localRecordTypeId === undefined ? (pipeline.record_type_id ?? '') : (localRecordTypeId ?? '');
 
@@ -166,7 +166,6 @@ function ViewSettings({ pipeline, onChanged }: { pipeline: Pipeline; onChanged: 
           opacity: saving ? 0.6 : 1,
         }}
       >
-        <option value="kanban">Kanban</option>
         <option value="table">Table</option>
         <option value="list">List</option>
       </select>

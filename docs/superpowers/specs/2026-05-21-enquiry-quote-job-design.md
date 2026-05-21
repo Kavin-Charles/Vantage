@@ -17,7 +17,7 @@ Three new surfaces wired to the existing conversions backend:
 
 ### 1. RecordDrawer
 
-Slide-over panel triggered by clicking any record in kanban, table, or list view.
+Slide-over panel triggered by clicking any record in table or list view.
 Fetches the single record (`GET /api/pipeline-records/:id`) and applicable
 conversion templates (`GET /api/conversion-templates?source_type_id=X`). Renders
 built-in fields (name, contact, company, owner, stage), custom field values, past
@@ -41,7 +41,7 @@ show a "Converted to [name]" link.
 **Data flow:**
 
 ```
-record click → RecordDrawer opens
+record click (table row / list card) → RecordDrawer opens
   → fetch /api/pipeline-records/:id
   → fetch /api/conversion-templates?source_type_id=X
   → user clicks "Convert to Quote"
@@ -71,7 +71,6 @@ record click → RecordDrawer opens
 
 | File | Change |
 |---|---|
-| `apps/web/components/KanbanCard.tsx` | Add `onClick` prop → opens RecordDrawer |
 | `apps/web/app/(dashboard)/pipeline/[typeSlug]/page.tsx` | `drawerRecordId` state; render `<RecordDrawer>` |
 | `apps/web/components/RecordTable.tsx` | Row click → open drawer |
 | `apps/web/components/RecordList.tsx` | Card click → open drawer |
