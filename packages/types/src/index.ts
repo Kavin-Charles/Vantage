@@ -91,6 +91,9 @@ export interface Pipeline {
   workspace_id: string;
   name: string;
   is_default: boolean;
+  record_type_id: string | null;
+  view: string;                    // 'kanban' | 'table' | 'list'
+  table_columns: string[] | null;  // null = use default set
   created_at: string;
   updated_at: string;
 }

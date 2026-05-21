@@ -222,6 +222,8 @@ export interface PipelineTable {
   name: string;
   is_default: Generated<boolean>;
   position: Generated<number>;
+  view: Generated<string>;          // 'kanban' | 'table' | 'list'
+  table_columns: string[] | null;   // jsonb, null = use default columns
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }
