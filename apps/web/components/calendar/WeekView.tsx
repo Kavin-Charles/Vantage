@@ -34,7 +34,7 @@ export function WeekView({ date, events, tasks, isAdmin, onEditEvent, onDeleteEv
   const tasksByDate: Record<string, Task[]> = {};
   for (const task of tasks) {
     if (!task.due_date) continue;
-    const d = task.due_date.slice(0, 10);
+    const d = toIsoDate(task.due_date);
     if (!tasksByDate[d]) tasksByDate[d] = [];
     tasksByDate[d]!.push(task);
   }
