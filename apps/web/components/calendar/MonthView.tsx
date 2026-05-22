@@ -41,7 +41,7 @@ export function MonthView({ year, month, events, tasks, isAdmin, onEditEvent, on
   const tasksByDate: Record<string, Task[]> = {};
   for (const task of tasks) {
     if (!task.due_date) continue;
-    const d = toIsoDate(task.due_date);
+    const d = task.due_date.slice(0, 10);
     if (!tasksByDate[d]) tasksByDate[d] = [];
     tasksByDate[d]!.push(task);
   }

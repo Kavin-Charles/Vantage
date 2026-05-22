@@ -23,7 +23,7 @@ export function DayView({ date, events, tasks, isAdmin, onEditEvent, onDeleteEve
   const [popover, setPopover] = useState<{ event: CalendarEvent; rect: DOMRect } | null>(null);
 
   const dayEvents = events.filter(ev => eventDateRange(ev).includes(iso));
-  const dayTasks = tasks.filter(t => t.due_date != null && toIsoDate(t.due_date) === iso);
+  const dayTasks = tasks.filter(t => t.due_date?.slice(0, 10) === iso);
 
   return (
     <>
