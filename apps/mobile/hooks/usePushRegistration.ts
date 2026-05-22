@@ -1,6 +1,7 @@
 // apps/mobile/hooks/usePushRegistration.ts
 import { useEffect } from 'react';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { registerPushToken } from '@/lib/api';
 import { storePushToken } from '@/lib/secureStore';
@@ -27,7 +28,16 @@ export function usePushRegistration(authToken: string): void {
 
         if (finalStatus !== 'granted') return; // silently skip
 
-        const { data: expoPushToken } = await Notifications.getExpoPushTokenAsync();
+        // getExpoPushTokenAsync requires EAS projectId (SDK 50+).
+        // Skip silently in dev builds without EAS configured.
+        const extra = Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined;
+        const projectId = extra?.eas?.projectId;
+        if (!projectId) {
+          logger.info('[usePushRegistration] No EAS projectId — skipping push token');
+          return;
+        }
+
+        const { data: expoPushToken } = await Notifications.getExpoPushTokenAsync({ projectId });
         const platform = Platform.OS === 'ios' ? 'ios' : 'android';
 
         await storePushToken(expoPushToken);

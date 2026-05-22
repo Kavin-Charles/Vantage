@@ -67,7 +67,7 @@ export default function AppLayout() {
         }}
       />
       {/* Hidden non-tab routes */}
-      <Tabs.Screen name="activity/index" options={{ href: null }} />
+      <Tabs.Screen name="activity" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
   );

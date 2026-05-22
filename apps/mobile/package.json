@@ -21,6 +21,7 @@
     "@vantage/api-client": "workspace:*",
     "@vantage/types": "workspace:*",
     "expo": "~54.0.0",
+    "expo-constants": "~17.1.8",
     "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.23",
     "expo-secure-store": "~15.0.8",

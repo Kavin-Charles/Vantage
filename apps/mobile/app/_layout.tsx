@@ -1,8 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import * as Notifications from 'expo-notifications';
 import { queryClient, asyncStoragePersister } from '@/lib/queryClient';
 import { getAuthToken } from '@/lib/secureStore';
+
+// Show notifications while app is in foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 export default function RootLayout() {
   const [token, setToken] = useState<string | null | undefined>(undefined);
