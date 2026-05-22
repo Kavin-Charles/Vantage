@@ -54,6 +54,15 @@ const crmNav: NavItem[] = [
     ),
   },
   {
+    href: '/calendar',
+    label: 'Calendar',
+    icon: (
+      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4.5 1v2m6-2v2M1 5.5h13M2 2.5h11a1 1 0 011 1v9a1 1 0 01-1 1H2a1 1 0 01-1-1v-9a1 1 0 011-1zM4 8h2v2H4V8zm4 0h2v2H8V8z" stroke="currentColor" strokeWidth="1.1" />
+      </svg>
+    ),
+  },
+  {
     href: '/activity',
     label: 'Activity',
     icon: (
