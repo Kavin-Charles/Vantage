@@ -37,7 +37,12 @@ export async function runWebsitePing(): Promise<void> {
 
       logger.debug({ siteId: site.id, url: site.url, status, response_ms }, 'website ping');
     } catch (err) {
-      logger.error({ err, siteId: site.id }, 'website ping error');
+      const isNetworkErr = err instanceof TypeError && err.message === 'fetch failed';
+      if (isNetworkErr) {
+        logger.debug({ siteId: site.id }, 'website ping: api unreachable, will retry next interval');
+      } else {
+        logger.error({ err, siteId: site.id }, 'website ping error');
+      }
     }
   }
 }

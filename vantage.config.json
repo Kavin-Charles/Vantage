@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Vantage Test",
+    "name": "TTP CRM",
     "logoUrl": "/logo.png",
     "domain": "localhost"
   },
@@ -8,8 +8,8 @@
     "crm": true,
     "infra": true,
     "alerts": true,
-    "analytics": false,
-    "files": false
+    "analytics": true,
+    "files": true
   },
   "smtp": null,
   "databases": []
