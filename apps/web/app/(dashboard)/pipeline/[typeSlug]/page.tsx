@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Topbar } from '@/components/Topbar';
+import { PipelineSwitcher } from '../PipelineSwitcher';
 import { RecordTable } from '@/components/pipeline/RecordTable';
 import { RecordList } from '@/components/pipeline/RecordList';
 import { useApiToken } from '@/lib/useApiToken';
@@ -31,6 +32,7 @@ export default function RecordTypePipelinePage() {
   const { typeSlug } = useParams<{ typeSlug: string }>();
   const [activePipelineId, setActivePipelineId] = useState<string | null>(null);
   const getToken = useApiToken();
+  const router = useRouter();
 
   const { data: types = [] } = useQuery<RecordType[]>({
     queryKey: ['record-types'],
@@ -41,9 +43,6 @@ export default function RecordTypePipelinePage() {
     t.id === typeSlug || t.name.toLowerCase().replace(/\s+/g, '-') === typeSlug
   );
 
-  // Use listPipelines (same fn as settings page) so both pages share the same
-  // TanStack Query cache shape: { data: Pipeline[] }. Mismatched queryFns on
-  // the same queryKey cause stale cache to be interpreted as wrong shape.
   const { data: pipelinesResp } = useQuery({
     queryKey: ['pipelines'],
     queryFn: async () => listPipelines(await getToken()),
@@ -53,6 +52,9 @@ export default function RecordTypePipelinePage() {
 
   const pipelines = allPipelines.filter(p => p.record_type_id === activeType?.id);
   const pipeline = pipelines.find(p => p.id === (activePipelineId ?? pipelines[0]?.id));
+
+  // The switcher value: use the current pipeline's ID so it appears selected
+  const switcherValue = pipeline?.id ?? null;
 
   if (!activeType) {
     return (
@@ -70,10 +72,14 @@ export default function RecordTypePipelinePage() {
       <Topbar
         left={
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 20 }}>{activeType.icon}</span>
-            <span style={{ fontFamily: 'Instrument Serif, serif', fontSize: 18, color: 'var(--text)' }}>
-              {activeType.name}
-            </span>
+            <PipelineSwitcher
+              value={switcherValue}
+              onChange={id => {
+                // Non-record-type pipeline selected — go to main pipeline page
+                router.push(`/pipeline?id=${id}`);
+              }}
+            />
+            {/* If this record type has multiple pipelines, show a sub-selector */}
             {pipelines.length > 1 && (
               <select
                 value={pipeline?.id ?? ''}
@@ -101,8 +107,6 @@ export default function RecordTypePipelinePage() {
             pipelineId={pipeline.id}
             columns={pipeline.table_columns ?? DEFAULT_TABLE_COLUMNS}
           />
-        ) : pipeline.view === 'list' ? (
-          <RecordList recordTypeId={activeType.id} pipelineId={pipeline.id} />
         ) : (
           <RecordList recordTypeId={activeType.id} pipelineId={pipeline.id} />
         )}

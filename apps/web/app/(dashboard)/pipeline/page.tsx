@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/components/Topbar';
 import { Button } from '@/components/ui/Button';
@@ -241,7 +242,8 @@ function ItemsList({ groupId, pipelineId, addTrigger }: { groupId: string; pipel
 export default function PipelinePage() {
   const getToken = useApiToken();
   const qc = useQueryClient();
-  const [pipelineId, setPipelineId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [pipelineId, setPipelineId] = useState<string | null>(searchParams.get('id'));
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [dealsAddTrigger, setDealsAddTrigger] = useState(0);
   const [itemsAddTrigger, setItemsAddTrigger] = useState(0);
