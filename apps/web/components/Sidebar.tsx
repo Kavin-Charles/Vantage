@@ -16,13 +16,71 @@ interface NavItem {
   dot?: boolean;
 }
 
-const crmNav: NavItem[] = [
+const generalNav: NavItem[] = [
   {
     href: '/pipeline',
     label: 'Pipeline',
     icon: (
       <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M1 1h4v4H1V1zm0 5h4v4H1V6zm5-5h4v4H6V1zm0 5h4v4H6V6zm5-5h3v4h-3V1zm0 5h3v4h-3V6zM1 11h4v3H1v-3zm5 0h4v3H6v-3zm5 0h3v3h-3v-3z" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    href: '/analytics',
+    label: 'Analytics',
+    icon: (
+      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 14V8h3v6H1zm4 0V5h3v9H5zm4 0V2h3v12H9z" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    href: '/alerts',
+    label: 'Alerts',
+    icon: (
+      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M7.5 1L1 13h13L7.5 1zm0 3L12 13H3l4.5-9zM7 9V7h1v2H7zm0 1h1v1H7v-1z" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    href: '/tasks',
+    label: 'Tasks',
+    icon: (
+      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 1h13v2H1V1zm0 4h13v2H1V5zm0 4h13v2H1V9zm0 4h13v2H1v-2z" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    href: '/activity',
+    label: 'Activity',
+    icon: (
+      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 7.5L3 4l2.5 3L8.5 1 12 7.5l1.5-2H15" stroke="currentColor" strokeWidth="1.2" fill="none" />
+      </svg>
+    ),
+  },
+  {
+    href: '/calendar',
+    label: 'Calendar',
+    icon: (
+      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4.5 1v2m6-2v2M1 5.5h13M2 2.5h11a1 1 0 011 1v9a1 1 0 01-1 1H2a1 1 0 01-1-1v-9a1 1 0 011-1zM4 8h2v2H4V8zm4 0h2v2H8V8z" stroke="currentColor" strokeWidth="1.1" />
+      </svg>
+    ),
+  },
+];
+
+const commNav: NavItem[] = [
+  {
+    href: '/mail',
+    label: 'Mail',
+    icon: (
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="4" width="20" height="16" rx="2"/>
+        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
       </svg>
     ),
   },
@@ -41,43 +99,6 @@ const crmNav: NavItem[] = [
     icon: (
       <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M1 1h13v13H1V1zm1 1v11h11V2H2zm2 2h3v3H4V4zm4 0h3v3H8V4zM4 9h3v3H4V9zm4 0h3v3H8V9z" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    href: '/tasks',
-    label: 'Tasks',
-    icon: (
-      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M1 1h13v2H1V1zm0 4h13v2H1V5zm0 4h13v2H1V9zm0 4h13v2H1v-2z" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    href: '/calendar',
-    label: 'Calendar',
-    icon: (
-      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M4.5 1v2m6-2v2M1 5.5h13M2 2.5h11a1 1 0 011 1v9a1 1 0 01-1 1H2a1 1 0 01-1-1v-9a1 1 0 011-1zM4 8h2v2H4V8zm4 0h2v2H8V8z" stroke="currentColor" strokeWidth="1.1" />
-      </svg>
-    ),
-  },
-  {
-    href: '/activity',
-    label: 'Activity',
-    icon: (
-      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0 7.5L3 4l2.5 3L8.5 1 12 7.5l1.5-2H15" stroke="currentColor" strokeWidth="1.2" fill="none" />
-      </svg>
-    ),
-  },
-  {
-    href: '/mail',
-    label: 'Mail',
-    icon: (
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="2" y="4" width="20" height="16" rx="2"/>
-        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
       </svg>
     ),
   },
@@ -122,35 +143,6 @@ const infraNav: NavItem[] = [
   },
 ];
 
-const analyticsNav: NavItem[] = [
-  {
-    href: '/analytics',
-    label: 'Analytics',
-    icon: (
-      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M1 14V8h3v6H1zm4 0V5h3v9H5zm4 0V2h3v12H9z" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    href: '/alerts',
-    label: 'Alerts',
-    icon: (
-      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M7.5 1L1 13h13L7.5 1zm0 3L12 13H3l4.5-9zM7 9V7h1v2H7zm0 1h1v1H7v-1z" fill="currentColor" />
-      </svg>
-    ),
-  },
-  {
-    href: '/settings/profile',
-    label: 'Settings',
-    icon: (
-      <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M6 1h3l.5 2a5 5 0 011.2.7l2-.7 1.5 2.6-1.5 1.4a5 5 0 010 1.4l1.5 1.4-1.5 2.6-2-.7a5 5 0 01-1.2.7L9 14H6l-.5-2a5 5 0 01-1.2-.7l-2 .7-1.5-2.6 1.5-1.4a5 5 0 010-1.4L.8 5.6l1.5-2.6 2 .7A5 5 0 015.5 3L6 1zm1.5 4a2.5 2.5 0 100 5 2.5 2.5 0 000-5z" fill="currentColor" />
-      </svg>
-    ),
-  },
-];
 
 function NavLink({ item }: { item: NavItem }) {
   const pathname = usePathname();
@@ -196,7 +188,7 @@ export function Sidebar() {
   });
   const hasCritical = (alertData?.total ?? 0) > 0;
 
-  const analyticsNavWithBadge = analyticsNav.map(item =>
+  const generalNavWithBadge = generalNav.map(item =>
     item.href === '/alerts' ? { ...item, dot: hasCritical } : item
   );
 
@@ -227,13 +219,25 @@ export function Sidebar() {
         </span>
       </div>
 
-      {/* CRM */}
+      {/* General */}
+      <div style={{ padding: '14px 12px 6px' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, padding: '0 8px', marginBottom: 4 }}>
+          General
+        </div>
+        {generalNavWithBadge
+          .filter(item => item.href !== '/analytics' || (config?.features.analytics ?? true))
+          .filter(item => item.href !== '/alerts' || (config?.features.alerts ?? true))
+          .filter(item => item.href !== '/calendar' || (config?.features.calendar ?? true))
+          .map(item => <NavLink key={item.href} item={item} />)}
+      </div>
+
+      {/* Communication */}
       {(config?.features.crm ?? true) && (
         <div style={{ padding: '14px 12px 6px' }}>
           <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, padding: '0 8px', marginBottom: 4 }}>
-            CRM
+            Communication
           </div>
-          {crmNav.map(item => <NavLink key={item.href} item={item} />)}
+          {commNav.map(item => <NavLink key={item.href} item={item} />)}
         </div>
       )}
 
@@ -248,17 +252,6 @@ export function Sidebar() {
             .map(item => <NavLink key={item.href} item={item} />)}
         </div>
       )}
-
-      {/* General */}
-      <div style={{ padding: '14px 12px 6px' }}>
-        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, padding: '0 8px', marginBottom: 4 }}>
-          General
-        </div>
-        {analyticsNavWithBadge
-          .filter(item => item.href !== '/analytics' || (config?.features.analytics ?? true))
-          .filter(item => item.href !== '/alerts' || (config?.features.alerts ?? true))
-          .map(item => <NavLink key={item.href} item={item} />)}
-      </div>
 
       {/* User */}
       <div style={{ marginTop: 'auto', padding: 12, borderTop: '1px solid var(--border)' }}>

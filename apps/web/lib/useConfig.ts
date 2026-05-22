@@ -9,6 +9,7 @@ interface PublicConfig {
     alerts: boolean;
     analytics: boolean;
     files: boolean;
+    calendar: boolean;
   };
 }
 
