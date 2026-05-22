@@ -523,6 +523,21 @@ export interface RecordConversionTable {
   converted_at: Generated<string>;
 }
 
+export interface CalendarEventTable {
+  id: Generated<string>;
+  workspace_id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  color: string | null;
+  start_date: string;
+  end_date: string | null;
+  all_day: Generated<boolean>;
+  created_by: string;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -564,6 +579,7 @@ export interface Database {
   conversion_templates: ConversionTemplateTable;
   conversion_field_mappings: ConversionFieldMappingTable;
   record_conversions: RecordConversionTable;
+  calendar_events: CalendarEventTable;
 }
 
 // Convenience types
@@ -711,3 +727,7 @@ export type ConversionFieldMappingUpdate = Updateable<ConversionFieldMappingTabl
 
 export type RecordConversion = Selectable<RecordConversionTable>;
 export type NewRecordConversion = Insertable<RecordConversionTable>;
+
+export type CalendarEvent = Selectable<CalendarEventTable>;
+export type NewCalendarEvent = Insertable<CalendarEventTable>;
+export type CalendarEventUpdate = Updateable<CalendarEventTable>;

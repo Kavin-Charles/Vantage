@@ -456,3 +456,18 @@ export interface ApiKey {
   created_at: string;
   // key_hash never returned to client
 }
+
+export interface CalendarEvent {
+  id: string;
+  workspace_id: string;
+  title: string;
+  description: string | null;
+  category: 'holiday' | 'company_event' | 'meeting' | 'other';
+  color: string | null;
+  start_date: string;
+  end_date: string | null;
+  all_day: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
