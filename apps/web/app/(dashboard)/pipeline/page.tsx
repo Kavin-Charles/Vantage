@@ -56,7 +56,7 @@ function DealsList({ pipelineId, addTrigger }: { pipelineId: string; addTrigger?
   const stageMap = Object.fromEntries(stages.map(s => [s.id, s]));
 
   const activeDeals = deals.filter(d => {
-    const s = stageMap[d.stage_id];
+    const s = d.stage_id ? stageMap[d.stage_id] : undefined;
     return s && !s.is_won && !s.is_lost;
   });
   const totalValue = activeDeals.reduce((s, d) => s + Number(d.value), 0);
@@ -85,7 +85,7 @@ function DealsList({ pipelineId, addTrigger }: { pipelineId: string; addTrigger?
             </thead>
             <tbody>
               {deals.map((deal, i) => {
-                const stage = stageMap[deal.stage_id];
+                const stage = deal.stage_id ? stageMap[deal.stage_id] : undefined;
                 return (
                   <tr
                     key={deal.id}
