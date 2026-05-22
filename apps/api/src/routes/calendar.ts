@@ -108,6 +108,10 @@ export function createCalendarRouter(db: Kysely<Database>): Router {
         res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
         return;
       }
+      if (Object.keys(parsed.data).length === 0) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: 'No fields to update' } });
+        return;
+      }
       const event = await db
         .updateTable('calendar_events')
         .set({ ...parsed.data, updated_at: new Date() } as never)
@@ -117,7 +121,7 @@ export function createCalendarRouter(db: Kysely<Database>): Router {
         .executeTakeFirst();
 
       if (!event) {
-        res.status(404).json({ data: null, error: { code: 'NOT_FOUND' } });
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Event not found' } });
         return;
       }
       res.json({ data: event, error: null });
@@ -142,7 +146,7 @@ export function createCalendarRouter(db: Kysely<Database>): Router {
         .executeTakeFirst();
 
       if (!deleted) {
-        res.status(404).json({ data: null, error: { code: 'NOT_FOUND' } });
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Event not found' } });
         return;
       }
       res.json({ data: null, error: null });
