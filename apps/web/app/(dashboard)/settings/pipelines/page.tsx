@@ -1002,6 +1002,14 @@ export default function PipelinesSettingsPage() {
     },
   });
 
+  const setDefaultMut = useMutation({
+    mutationFn: async (id: string) => updatePipeline(await getToken(), id, { is_default: true }),
+    onSuccess: () => {
+      void refetch();
+      void qc.invalidateQueries({ queryKey: ['pipelines'] });
+    },
+  });
+
   if (isLoading) {
     return <div style={{ fontSize: 13, color: 'var(--text3)' }}>Loading pipelines…</div>;
   }
@@ -1080,34 +1088,59 @@ export default function PipelinesSettingsPage() {
           {activePipeline ? (
             <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{activePipeline.name}</h3>
-                {!activePipeline.is_default && (
-                  deletingId === activePipeline.id ? (
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span style={{ fontSize: 12, color: '#ef4444' }}>Delete pipeline?</span>
-                      <Button
-                        onClick={() => deleteMut.mutate(activePipeline.id)}
-                        disabled={deleteMut.isPending}
-                      >
-                        {deleteMut.isPending ? '…' : 'Yes, delete'}
-                      </Button>
-                      <Button onClick={() => setDeletingId(null)}>Cancel</Button>
-                    </div>
-                  ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{activePipeline.name}</h3>
+                  {activePipeline.is_default && (
+                    <span style={{ fontSize: 10, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 6px', color: 'var(--text3)', fontWeight: 500 }}>default</span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {!activePipeline.is_default && (
                     <button
-                      onClick={() => setDeletingId(activePipeline.id)}
+                      onClick={() => setDefaultMut.mutate(activePipeline.id)}
+                      disabled={setDefaultMut.isPending}
                       style={{
                         background: 'none',
-                        border: 'none',
+                        border: '1px solid var(--border)',
+                        borderRadius: 6,
                         cursor: 'pointer',
                         fontSize: 12,
-                        color: 'var(--text3)',
+                        color: 'var(--text2)',
+                        padding: '4px 10px',
+                        opacity: setDefaultMut.isPending ? 0.5 : 1,
                       }}
                     >
-                      Delete pipeline
+                      Set as default
                     </button>
-                  )
-                )}
+                  )}
+                  {!activePipeline.is_default && (
+                    deletingId === activePipeline.id ? (
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span style={{ fontSize: 12, color: '#ef4444' }}>Delete pipeline?</span>
+                        <Button
+                          onClick={() => deleteMut.mutate(activePipeline.id)}
+                          disabled={deleteMut.isPending}
+                        >
+                          {deleteMut.isPending ? '…' : 'Yes, delete'}
+                        </Button>
+                        <Button onClick={() => setDeletingId(null)}>Cancel</Button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeletingId(activePipeline.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          color: 'var(--text3)',
+                        }}
+                      >
+                        Delete pipeline
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
               <ViewSettings
                 pipeline={activePipeline}

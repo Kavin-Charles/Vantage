@@ -11,6 +11,7 @@ const listQuerySchema = z.object({
   per_page: z.coerce.number().int().min(1).max(100).default(25),
   status: z.enum(['todo', 'done']).optional(),
   assignee_id: z.string().uuid().optional(),
+  show_all: z.coerce.boolean().optional(),
 });
 
 const createTaskSchema = z.object({
@@ -40,8 +41,10 @@ export function createTasksRouter(db: Kysely<Database>): ExpressRouter {
         res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
         return;
       }
-      const { page, per_page, status, assignee_id } = parsed.data;
-      const effectiveAssignee = assignee_id ?? user.id;
+      const { page, per_page, status, assignee_id, show_all } = parsed.data;
+      // show_all=true (admin only) returns all workspace tasks regardless of assignee
+      const showAll = show_all === true && user.role === 'admin';
+      const effectiveAssignee = showAll ? null : (assignee_id ?? user.id);
 
       let query = db
         .selectFrom('tasks')

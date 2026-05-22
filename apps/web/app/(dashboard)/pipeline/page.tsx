@@ -264,17 +264,6 @@ export default function PipelinePage() {
         action={
           pipelineId && activeGroupId === null && stages.length > 0 ? (
             <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => {
-                  window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/deals/export?pipeline_id=${pipelineId}`;
-                }}
-                style={{
-                  padding: '7px 14px', borderRadius: 7, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                  border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text2)',
-                }}
-              >
-                Export CSV
-              </button>
               <CsvImportExport
                 resource="deals"
                 filename="items.csv"
