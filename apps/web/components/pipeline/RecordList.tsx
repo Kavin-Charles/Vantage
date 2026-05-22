@@ -113,7 +113,7 @@ function RecordCard({
   const [editStageId, setEditStageId] = useState(record.stage_id);
   const [fieldEdits, setFieldEdits] = useState<Record<string, string>>({});
   const [showConvert, setShowConvert] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Fetch full record with field_values
   const { data: fullRecord } = useQuery<PipelineRecord>({
@@ -138,9 +138,9 @@ function RecordCard({
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['record', record.id] });
       void qc.invalidateQueries({ queryKey: ['records'] });
-      setSaving(false);
+      onClose();
     },
-    onError: () => setSaving(false),
+    onError: (err: Error) => setSaveError(err.message),
   });
 
   const fieldValues = fullRecord?.field_values ?? record.field_values ?? [];
@@ -150,16 +150,17 @@ function RecordCard({
     if (fieldEdits[f.id] !== undefined) return fieldEdits[f.id]!;
     const raw = fvMap.get(f.id);
     if (raw == null) return '';
+    // node-postgres parses jsonb → JS value; strip stray JSON quotes if returned as string
     return String(raw).replace(/^"|"$/g, '');
   }
 
   function handleSave() {
-    setSaving(true);
+    setSaveError(null);
     const patch: Record<string, unknown> = {};
-    if (editName !== record.name) patch['name'] = editName;
+    if (editName.trim() !== record.name) patch['name'] = editName.trim();
     if (editStageId !== record.stage_id) patch['stage_id'] = editStageId;
     if (Object.keys(fieldEdits).length > 0) patch['field_values'] = fieldEdits;
-    if (Object.keys(patch).length === 0) { setSaving(false); onClose(); return; }
+    if (Object.keys(patch).length === 0) { onClose(); return; }
     updateMut.mutate(patch);
   }
 
@@ -260,25 +261,38 @@ function RecordCard({
             </>
           )}
 
+          {/* Error */}
+          {saveError && (
+            <div style={{
+              marginBottom: 10, padding: '6px 10px',
+              background: 'var(--red-bg, #fee2e2)', color: 'var(--red, #991b1b)',
+              borderRadius: 6, fontSize: 12,
+            }}>
+              {saveError}
+            </div>
+          )}
+
           {/* Actions */}
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button
               onClick={handleSave}
-              disabled={saving || updateMut.isPending}
+              disabled={updateMut.isPending}
               style={{
                 background: 'var(--text, #1a1814)', color: '#fff',
                 border: 'none', borderRadius: 7, padding: '7px 16px',
                 fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                opacity: (saving || updateMut.isPending) ? 0.6 : 1,
+                opacity: updateMut.isPending ? 0.6 : 1,
               }}
             >
-              {(saving || updateMut.isPending) ? 'Saving…' : 'Save'}
+              {updateMut.isPending ? 'Saving…' : 'Save'}
             </button>
             <button
               onClick={onClose}
+              disabled={updateMut.isPending}
               style={{
                 background: 'none', border: '1px solid var(--border)',
                 borderRadius: 7, padding: '7px 14px', fontSize: 13, cursor: 'pointer',
+                opacity: updateMut.isPending ? 0.6 : 1,
               }}
             >
               Cancel
