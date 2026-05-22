@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import type { Kysely } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
@@ -42,15 +42,7 @@ export function createCalendarRouter(db: Kysely<Database>): Router {
         .selectAll()
         .where('workspace_id', '=', workspace.id)
         .where('start_date', '<=', end)
-        .where((eb) =>
-          eb.or([
-            eb('end_date', '>=', start),
-            eb.and([
-              eb('end_date', 'is', null),
-              eb('start_date', '>=', start),
-            ]),
-          ])
-        )
+        .where(sql`coalesce("end_date", "start_date") >= ${start}`)
         .orderBy('start_date', 'asc')
         .execute();
 
