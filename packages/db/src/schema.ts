@@ -528,7 +528,7 @@ export interface CalendarEventTable {
   workspace_id: string;
   title: string;
   description: string | null;
-  category: string;
+  category: 'holiday' | 'company_event' | 'meeting' | 'other';
   color: string | null;
   start_date: string;
   end_date: string | null;
