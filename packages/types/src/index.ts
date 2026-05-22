@@ -191,7 +191,7 @@ export interface Task {
   contact_id: UUID | null;
   deal_id: UUID | null;
   title: string;
-  due_date: Date | null;
+  due_date: string | null;
   status: TaskStatus;
   created_at: Date;
   updated_at: Date;
