@@ -8,6 +8,7 @@ import { Badge, statusColor } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useApiToken } from '@/lib/useApiToken';
 import { getServer, updateServer, regenToken } from '@/lib/servers';
+import { useServerMetrics } from '@/contexts/ServerMetricsContext';
 import { openSshStream, getSshHistory, listFiles, readFile } from '@/lib/ssh';
 import { SshTerminal } from '@/components/servers/SshTerminal';
 import type { Server, MetricsSnapshot, SshCommandLog, SshFileEntry } from '@vantage/types';
@@ -32,8 +33,8 @@ function MetricCard({ label, value, unit, snapshots, color }: {
   label: string; value: number | null; unit: string; snapshots: number[]; color?: string;
 }) {
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px' }}>
-      <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>{label}</div>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 20px' }}>
+      <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>{value !== null ? `${value}${unit}` : '—'}</div>
       <Sparkline data={snapshots} color={color} />
     </div>
@@ -75,8 +76,8 @@ function OverviewTab({ server, snapshots }: {
       </div>
 
       {/* Meta */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px' }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>Details</div>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 20px' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 12 }}>Details</div>
         {[
           ['Uptime', server.uptime_seconds !== null ? `${Math.floor(server.uptime_seconds / 86400)}d ${Math.floor((server.uptime_seconds % 86400) / 3600)}h` : '—'],
           ['IP', server.ip_address ?? '—'],
@@ -93,7 +94,7 @@ function OverviewTab({ server, snapshots }: {
 
         {/* Agent Token */}
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Agent Token</div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 8 }}>Agent Token</div>
           {!regenConfirming ? (
             <Button onClick={() => setRegenConfirming(true)}>Regenerate token</Button>
           ) : (
@@ -135,7 +136,7 @@ function OverviewTab({ server, snapshots }: {
 
 function ConsoleTab({ serverId }: { serverId: string }) {
   return (
-    <div style={{ height: 'calc(100vh - 220px)', minHeight: 400, border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: 'calc(100vh - 220px)', minHeight: 400, border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <SshTerminal serverId={serverId} />
     </div>
   );
@@ -340,12 +341,12 @@ function ServicesTab({ serverId }: { serverId: string }) {
       )}
 
       {services.length > 0 && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
                 {['Service', 'Active', 'Status', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border)' }}>{h}</th>
+                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4, borderBottom: '1px solid var(--border)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -525,12 +526,12 @@ function FilesTab({ serverId }: { serverId: string }) {
       </div>
 
       {entries.length > 0 && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr>
                 {['Name', 'Size', 'Modified'].map(h => (
-                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border)' }}>{h}</th>
+                  <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4, borderBottom: '1px solid var(--border)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -614,6 +615,8 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
     setEditOpen(true);
   }
 
+  const live = useServerMetrics(id);
+
   const { data, isLoading } = useQuery({
     queryKey: ['server', id],
     queryFn: async () => getServer(await getToken(), id),
@@ -626,6 +629,8 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
   if (isLoading) return <><Topbar /><div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading…</div></>;
   if (!server) return <><Topbar /><div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Server not found.</div></>;
 
+  const liveStatus = live?.status ?? server.status;
+
   return (
     <>
       <Topbar action={
@@ -637,7 +642,7 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
       <div style={{ padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>{server.name}</h2>
-          <Badge label={server.status} color={statusColor[server.status] ?? 'gray'} />
+          <Badge label={liveStatus} color={statusColor[liveStatus] ?? 'gray'} />
           {server.region && <span style={{ fontSize: 13, color: 'var(--text3)' }}>{server.region}</span>}
         </div>
 
@@ -665,7 +670,17 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
           ))}
         </div>
 
-        {tab === 'overview' && <OverviewTab server={server} snapshots={snapshots} />}
+        {tab === 'overview' && <OverviewTab server={{
+          ...server,
+          cpu_pct: live?.cpu_pct ?? server.cpu_pct,
+          mem_pct: live?.mem_pct ?? server.mem_pct,
+          disk_pct: live?.disk_pct ?? server.disk_pct,
+          load_avg_1m: live?.load_avg_1m ?? server.load_avg_1m,
+          uptime_seconds: live?.uptime_seconds ?? server.uptime_seconds,
+          last_ping_at: live?.last_ping_at ?? server.last_ping_at,
+          net_in_bytes: live?.net_in_bytes ?? server.net_in_bytes,
+          net_out_bytes: live?.net_out_bytes ?? server.net_out_bytes,
+        }} snapshots={snapshots} />}
         {tab === 'terminal' && <TerminalTab serverId={id} />}
         {tab === 'services' && <ServicesTab serverId={id} />}
         {tab === 'logs' && <LogsTab serverId={id} />}

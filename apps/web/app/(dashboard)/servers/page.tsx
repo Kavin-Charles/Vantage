@@ -11,6 +11,7 @@ import { FormField, Input } from '@/components/ui/FormField';
 import { useApiToken } from '@/lib/useApiToken';
 import { AgentInstallInstructions } from '@/components/ui/AgentInstallInstructions';
 import { listServers, createServer, deleteServer } from '@/lib/servers';
+import { useServerMetrics } from '@/contexts/ServerMetricsContext';
 import type { Server } from '@vantage/types';
 
 function timeAgo(dateStr: string | null): string {
@@ -23,8 +24,12 @@ function timeAgo(dateStr: string | null): string {
   return `${Math.floor(mins / 60)}h ago`;
 }
 
-const th: React.CSSProperties = { padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border)' };
-const td: React.CSSProperties = { padding: '12px 16px', fontSize: 13, color: 'var(--text)', borderBottom: '1px solid var(--border)' };
+const COLS = '1.4fr 1fr .8fr .8fr .8fr 1fr 1fr auto';
+
+const eyebrow: React.CSSProperties = {
+  fontSize: 10, fontWeight: 600, color: 'var(--text3)',
+  textTransform: 'uppercase', letterSpacing: 1.4,
+};
 
 export default function ServersPage() {
   const getToken = useApiToken();
@@ -61,46 +66,28 @@ export default function ServersPage() {
       <div style={{ padding: 24 }}>
         <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text2)' }}>{servers.length} servers</div>
 
-        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={th}>Name</th>
-                <th style={th}>Status</th>
-                <th style={th}>CPU</th>
-                <th style={th}>Mem</th>
-                <th style={th}>Disk</th>
-                <th style={th}>Region</th>
-                <th style={th}>Last ping</th>
-                <th style={th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td colSpan={8} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>Loading…</td></tr>
-              ) : servers.length === 0 ? (
-                <tr><td colSpan={8} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>No servers yet. Add one to start monitoring.</td></tr>
-              ) : servers.map(s => (
-                <tr key={s.id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => router.push(`/servers/${s.id}`)}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '')}
-                >
-                  <td style={td}><span style={{ fontWeight: 500 }}>{s.name}</span></td>
-                  <td style={td}><Badge label={s.status} color={statusColor[s.status] ?? 'gray'} /></td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{s.cpu_pct !== null ? `${s.cpu_pct}%` : '—'}</td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{s.mem_pct !== null ? `${s.mem_pct}%` : '—'}</td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{s.disk_pct !== null ? `${s.disk_pct}%` : '—'}</td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{s.region ?? '—'}</td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{timeAgo(s.last_ping_at)}</td>
-                  <td style={{ ...td, textAlign: 'right' }} onClick={e => e.stopPropagation()}>
-                    <Button onClick={() => { if (confirm('Deregister this server?')) deleteMut.mutate(s.id); }}>Remove</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ display: 'grid', gridTemplateColumns: COLS, padding: '11px 18px', borderBottom: '1px solid var(--border)', gap: 14, alignItems: 'center' }}>
+            {['Name', 'Status', 'CPU', 'Mem', 'Disk', 'Region', 'Last ping'].map(h => (
+              <span key={h} style={eyebrow}>{h}</span>
+            ))}
+            <span />
+          </div>
+
+          {isLoading ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading…</div>
+          ) : servers.length === 0 ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>No servers yet. Add one to start monitoring.</div>
+          ) : servers.map((s, i) => (
+            <ServerRow
+              key={s.id}
+              server={s}
+              last={i === servers.length - 1}
+              onClick={() => router.push(`/servers/${s.id}`)}
+              onDelete={() => { if (confirm('Deregister this server?')) deleteMut.mutate(s.id); }}
+            />
+          ))}
         </div>
       </div>
 
@@ -141,5 +128,50 @@ export default function ServersPage() {
         </Modal>
       )}
     </>
+  );
+}
+
+const metricColor = (n: number | null) =>
+  n === null ? 'var(--text3)' : n > 85 ? 'var(--red)' : n > 70 ? 'var(--amber)' : 'var(--text)';
+
+function ServerRow({ server: s, last, onClick, onDelete }: {
+  server: Server; last: boolean;
+  onClick: () => void; onDelete: () => void;
+}) {
+  const [hover, setHover] = useState(false);
+  const live = useServerMetrics(s.id);
+
+  const cpu = live?.cpu_pct ?? s.cpu_pct;
+  const mem = live?.mem_pct ?? s.mem_pct;
+  const disk = live?.disk_pct ?? s.disk_pct;
+  const status = live?.status ?? s.status;
+  const lastPing = live?.last_ping_at ?? s.last_ping_at;
+
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onClick={onClick}
+      style={{
+        display: 'grid', gridTemplateColumns: COLS,
+        gap: 14, alignItems: 'center',
+        padding: '12px 18px',
+        borderBottom: last ? 'none' : '1px solid var(--border)',
+        background: hover ? 'var(--surface2)' : 'transparent',
+        transition: 'background .12s',
+        cursor: 'pointer', fontSize: 13,
+      }}
+    >
+      <span style={{ fontWeight: 500, fontFamily: 'var(--font-mono)', fontSize: 12.5, color: 'var(--text)' }}>{s.name}</span>
+      <span><Badge label={status} color={statusColor[status] ?? 'gray'} /></span>
+      <span style={{ color: metricColor(cpu), fontVariantNumeric: 'tabular-nums' }}>{cpu !== null ? `${cpu}%` : '—'}</span>
+      <span style={{ color: metricColor(mem), fontVariantNumeric: 'tabular-nums' }}>{mem !== null ? `${mem}%` : '—'}</span>
+      <span style={{ color: metricColor(disk), fontVariantNumeric: 'tabular-nums' }}>{disk !== null ? `${disk}%` : '—'}</span>
+      <span style={{ color: 'var(--text2)' }}>{s.region ?? '—'}</span>
+      <span style={{ color: 'var(--text2)' }}>{timeAgo(lastPing)}</span>
+      <span onClick={e => e.stopPropagation()}>
+        <Button onClick={onDelete} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 12 }}>Remove</Button>
+      </span>
+    </div>
   );
 }
