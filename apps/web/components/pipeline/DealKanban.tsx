@@ -130,6 +130,7 @@ export function DealKanban({
                     key={deal.id}
                     draggable
                     onDragStart={() => setDragId(deal.id)}
+                    onDragEnd={() => setDragId(null)}
                     onClick={() => setSelectedDealId(deal.id)}
                     style={{
                       background: 'var(--surface)', border: '1px solid var(--border)',
