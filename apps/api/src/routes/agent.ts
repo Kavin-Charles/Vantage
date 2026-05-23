@@ -8,6 +8,11 @@ import { sendAlertEmail } from '../lib/send-alert-email';
 import { sendPush } from '../lib/push-notify';
 import { logger } from '../lib/logger';
 import { queueWebhook } from '../lib/queue-webhook';
+import { sseRegistry } from '../lib/sse-registry';
+
+// Rate-limit snapshot writes: track last insert time per server (resets on restart, acceptable)
+const lastSnapshotAt = new Map<string, number>();
+const SNAPSHOT_INTERVAL_MS = 30_000;
 
 const dbCheckSchema = z.object({
   type: z.string(),
@@ -37,17 +42,21 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
       const payload = pingSchema.parse(req.body);
       const now = new Date().toISOString();
 
-      // Write snapshot
-      await db.insertInto('metrics_snapshots').values({
-        server_id: server.id,
-        workspace_id: server.workspace_id,
-        cpu_pct: payload.cpu_pct,
-        mem_pct: payload.mem_pct,
-        disk_pct: payload.disk_pct,
-        load_avg_1m: payload.load_avg_1m,
-        net_in_bytes: payload.net_in_bytes,
-        net_out_bytes: payload.net_out_bytes,
-      }).execute();
+      // Write snapshot at most every 30s to avoid 6× DB write increase at 5s cadence
+      const lastSnap = lastSnapshotAt.get(server.id) ?? 0;
+      if (Date.now() - lastSnap >= SNAPSHOT_INTERVAL_MS) {
+        await db.insertInto('metrics_snapshots').values({
+          server_id: server.id,
+          workspace_id: server.workspace_id,
+          cpu_pct: payload.cpu_pct,
+          mem_pct: payload.mem_pct,
+          disk_pct: payload.disk_pct,
+          load_avg_1m: payload.load_avg_1m,
+          net_in_bytes: payload.net_in_bytes,
+          net_out_bytes: payload.net_out_bytes,
+        }).execute();
+        lastSnapshotAt.set(server.id, Date.now());
+      }
 
       // Update server current metrics
       await db.updateTable('servers')
@@ -65,6 +74,20 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
         })
         .where('id', '=', server.id)
         .execute();
+
+      // Push live metrics to any browser tabs subscribed to this workspace
+      sseRegistry.broadcast(server.workspace_id, 'metric', {
+        serverId: server.id,
+        cpu_pct: payload.cpu_pct,
+        mem_pct: payload.mem_pct,
+        disk_pct: payload.disk_pct,
+        load_avg_1m: payload.load_avg_1m,
+        net_in_bytes: payload.net_in_bytes,
+        net_out_bytes: payload.net_out_bytes,
+        uptime_seconds: payload.uptime_seconds,
+        status: 'online',
+        last_ping_at: now,
+      });
 
       // Update infra_databases from db_checks (match by port)
       for (const check of payload.db_checks) {
@@ -114,6 +137,15 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
               severity,
               message: `${metric.prefix} at ${Math.round(metric.value)}% on "${server.name}" (threshold: ${metric.threshold}%)`,
             }).returning(['id', 'severity', 'message', 'resource_type', 'resource_id']).executeTakeFirstOrThrow();
+
+            // Notify SSE subscribers so alert bar updates without polling
+            sseRegistry.broadcast(server.workspace_id, 'alert_new', {
+              id: insertedAlert.id,
+              severity: insertedAlert.severity,
+              message: insertedAlert.message,
+              resource_type: insertedAlert.resource_type,
+              resource_id: insertedAlert.resource_id,
+            });
 
             queueWebhook(db, server.workspace_id, 'alert.created', {
               alert_id: insertedAlert.id,

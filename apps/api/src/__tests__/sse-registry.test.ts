@@ -19,7 +19,8 @@ function mockRes(): MockRes {
     writableEnded: false,
     _closeCallback: null,
     simulateClose() {
-      if (this._closeCallback) this._closeCallback();
+      const self = res as MockRes;
+      if (self._closeCallback) self._closeCallback();
     },
   } as unknown as MockRes;
   return res;
