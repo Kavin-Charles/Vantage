@@ -23,6 +23,7 @@ import { createAlertsRouter } from './routes/alerts';
 import { createInternalRouter } from './routes/internal';
 import { createAgentRouter } from './routes/agent';
 import { createServersRouter } from './routes/servers';
+import { createSseRouter } from './routes/sse';
 import { createInfraDatabasesRouter } from './routes/infra-databases';
 import { createWebsitesRouter } from './routes/websites';
 import { createAlertThresholdsRouter } from './routes/alert-thresholds';
@@ -46,6 +47,7 @@ import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
 import { createV1Router } from './routes/v1/index';
 import { seedOnFirstBoot } from './lib/seed';
+import { seedDemo } from './lib/seed-demo';
 import { logger } from './lib/logger';
 
 const env = apiEnvSchema.parse(process.env);
@@ -100,6 +102,7 @@ app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 
 // Infra routes
 app.use('/api/servers', requireAuth, createServersRouter(db));
+app.use('/api/sse', requireAuth, createSseRouter(db));
 app.use('/api/databases', requireAuth, createInfraDatabasesRouter(db));
 app.use('/api/websites', requireAuth, createWebsitesRouter(db, env.CRON_SECRET));
 app.use('/api/alert-thresholds', requireAuth, createAlertThresholdsRouter(db));
@@ -123,6 +126,13 @@ app.use(errorHandler);
 seedOnFirstBoot(db, config).catch((err: unknown) => {
   logger.error({ err }, '[Vantage] First-boot seeding failed');
 });
+
+// Demo seed — only when DEMO_SEED=true
+if (process.env['DEMO_SEED'] === 'true') {
+  seedDemo(db).catch((err: unknown) => {
+    logger.error({ err }, '[Vantage] Demo seeding failed');
+  });
+}
 
 // Start mail sync worker (polls every 5 min)
 startMailSync(db);
