@@ -4,6 +4,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { WebSocketServer } from 'ws';
 import { handleTerminalUpgrade } from './ws/ssh-terminal';
+import { handleSftpUpgrade } from './ws/sftp-session';
 import { apiEnvSchema, readConfig } from '@vantage/config';
 import { createDb } from '@vantage/db';
 import { errorHandler } from './middleware/errors';
@@ -152,12 +153,16 @@ const httpServer = createServer(app);
 // WebSocket server (no-server mode — we route upgrades manually)
 const wss = new WebSocketServer({ noServer: true });
 
-// Route WebSocket upgrades for the SSH terminal endpoint
+// Route WebSocket upgrades for SSH terminal and SFTP endpoints
 httpServer.on('upgrade', (request, socket, head) => {
   const url = request.url ?? '';
   if (/^\/api\/servers\/[^/]+\/ssh\/terminal/.test(url)) {
     wss.handleUpgrade(request, socket as import('net').Socket, head, (ws) => {
       void handleTerminalUpgrade(ws, request, db, env.JWT_SECRET);
+    });
+  } else if (/^\/api\/servers\/[^/]+\/ssh\/sftp/.test(url)) {
+    wss.handleUpgrade(request, socket as import('net').Socket, head, (ws) => {
+      void handleSftpUpgrade(ws, request, db, env.JWT_SECRET);
     });
   } else {
     socket.destroy();
