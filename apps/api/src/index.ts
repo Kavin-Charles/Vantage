@@ -77,6 +77,9 @@ app.use('/api/companies', requireAuth, createCompaniesRouter(db));
 app.use('/api/deals', requireAuth, createDealsRouter());
 app.use('/api/record-types', requireAuth, createRecordTypesRouter(db));
 app.use('/api/records', requireAuth, createRecordsRouter(db));
+// Agent — must come before the broad /api catch below
+app.use('/api/agent', createAgentRouter(db, config.smtp));
+
 app.use('/api', requireAuth, createConversionsRouter(db));
 app.use('/api/pipelines', requireAuth, createPipelinesRouter(db));
 app.use('/api/stages', requireAuth, createStageFieldsRouter(db));
@@ -115,8 +118,7 @@ app.use('/api/servers/:id/ssh', requireAuth, createSshActionsRouter(db));
 // Internal (cron) — protected by CRON_SECRET, no auth cookie
 app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));
 
-// Agent — protected by agent token, not cookie auth
-app.use('/api/agent', createAgentRouter(db, config.smtp));
+// (agent route registered above the /api catch-all)
 
 // Public API v1 — API key auth (no requireAuth cookie)
 app.use('/v1', createV1Router(db));
