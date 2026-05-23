@@ -8,6 +8,7 @@ export class SseRegistry {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
     });
 
     if (!this.subs.has(workspaceId)) {
@@ -42,7 +43,11 @@ export class SseRegistry {
     if (!set || set.size === 0) return;
     const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
     for (const res of set) {
-      if (!res.writableEnded) res.write(payload);
+      if (res.writableEnded) {
+        set.delete(res);
+      } else {
+        res.write(payload);
+      }
     }
   }
 }
