@@ -31,12 +31,6 @@ function fmtValue(v: number | null | undefined) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
 }
 
-function stageColor(stage: PipelineStage | GroupStage): string {
-  if (stage.is_won) return '#22c55e';
-  if (stage.is_lost) return '#ef4444';
-  return stage.color ?? '#6366f1';
-}
-
 // ── View Toggle ──────────────────────────────────────────────────────────────
 
 const VIEW_OPTS = [
@@ -271,33 +265,14 @@ const eyebrow: React.CSSProperties = {
   textTransform: 'uppercase', letterSpacing: 1.4,
 };
 
-function DealGrid({ deals, stageMap, userMap }: {
-  deals: Deal[];
-  stageMap: Record<string, PipelineStage>;
-  userMap: Record<string, string>;
+function SortHead({ k, children, sort, onToggle }: {
+  k: string;
+  children: React.ReactNode;
+  sort: { key: string; dir: 'asc' | 'desc' };
+  onToggle: (key: string) => void;
 }) {
-  const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'close_date', dir: 'asc' });
-
-  const stageOrder = Object.fromEntries(Object.values(stageMap).map((s, i) => [s.id, i]));
-  const sorted = [...deals].sort((a, b) => {
-    const av = sort.key === 'stage_id'
-      ? (stageOrder[a.stage_id ?? ''] ?? 99)
-      : (a as Record<string, unknown>)[sort.key];
-    const bv = sort.key === 'stage_id'
-      ? (stageOrder[b.stage_id ?? ''] ?? 99)
-      : (b as Record<string, unknown>)[sort.key];
-    if (av == null && bv == null) return 0;
-    if (av == null) return 1;
-    if (bv == null) return -1;
-    const cmp = av < bv ? -1 : av > bv ? 1 : 0;
-    return sort.dir === 'asc' ? cmp : -cmp;
-  });
-
-  const toggleSort = (key: string) =>
-    setSort(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
-
-  const SortHead = ({ k, children }: { k: string; children: React.ReactNode }) => (
-    <button onClick={() => toggleSort(k)} style={{
+  return (
+    <button onClick={() => onToggle(k)} style={{
       background: 'none', border: 'none', cursor: 'pointer', padding: 0,
       fontSize: 10, fontWeight: 600, color: 'var(--text3)',
       textTransform: 'uppercase', letterSpacing: 1.4,
@@ -311,15 +286,41 @@ function DealGrid({ deals, stageMap, userMap }: {
       )}
     </button>
   );
+}
+
+function DealGrid({ deals, stageMap, userMap }: {
+  deals: Deal[];
+  stageMap: Record<string, PipelineStage>;
+  userMap: Record<string, string>;
+}) {
+  const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'close_date', dir: 'asc' });
+
+  const stageOrder = Object.fromEntries(Object.values(stageMap).map((s, i) => [s.id, i]));
+  const sorted = [...deals].sort((a, b) => {
+    const av = sort.key === 'stage_id'
+      ? (stageOrder[a.stage_id ?? ''] ?? 99)
+      : (a as unknown as Record<string, unknown>)[sort.key];
+    const bv = sort.key === 'stage_id'
+      ? (stageOrder[b.stage_id ?? ''] ?? 99)
+      : (b as unknown as Record<string, unknown>)[sort.key];
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+    return sort.dir === 'asc' ? cmp : -cmp;
+  });
+
+  const toggleSort = (key: string) =>
+    setSort(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
       <div style={{ display: 'grid', gridTemplateColumns: DEAL_COLS, gap: 14, padding: '12px 18px', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
-        <SortHead k="name">Name</SortHead>
-        <SortHead k="value">Value</SortHead>
-        <SortHead k="stage_id">Stage</SortHead>
-        <SortHead k="probability">%</SortHead>
-        <SortHead k="close_date">Close</SortHead>
+        <SortHead k="name" sort={sort} onToggle={toggleSort}>Name</SortHead>
+        <SortHead k="value" sort={sort} onToggle={toggleSort}>Value</SortHead>
+        <SortHead k="stage_id" sort={sort} onToggle={toggleSort}>Stage</SortHead>
+        <SortHead k="probability" sort={sort} onToggle={toggleSort}>%</SortHead>
+        <SortHead k="close_date" sort={sort} onToggle={toggleSort}>Close</SortHead>
         <span style={eyebrow}>Owner</span>
       </div>
       {sorted.map((deal, i) => (
