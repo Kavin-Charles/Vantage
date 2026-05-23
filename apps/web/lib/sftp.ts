@@ -78,8 +78,22 @@ export class SftpClient {
   }
 }
 
-export function openSftpSession(serverId: string): SftpClient {
-  const apiUrl = (process.env['NEXT_PUBLIC_API_URL'] ?? '').replace(/^http/, 'ws');
-  const ws = new WebSocket(`${apiUrl}/api/servers/${serverId}/ssh/sftp`);
+export async function openSftpSession(serverId: string): Promise<SftpClient> {
+  const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? '';
+
+  // Exchange session cookie for a short-lived WS token — handles cross-origin deployments
+  // where SameSite=Strict prevents the cookie from being sent on WS upgrade requests.
+  let wsToken = '';
+  try {
+    const res = await fetch(`${apiUrl}/api/auth/ws-token`, { credentials: 'include' });
+    if (res.ok) {
+      const json = await res.json() as { data: { token: string } };
+      wsToken = json.data.token;
+    }
+  } catch { /* fall back to cookie auth (same-origin / same-site deployments) */ }
+
+  const wsBase = apiUrl.replace(/^http/, 'ws');
+  const qs = wsToken ? `?token=${encodeURIComponent(wsToken)}` : '';
+  const ws = new WebSocket(`${wsBase}/api/servers/${serverId}/ssh/sftp${qs}`);
   return new SftpClient(ws);
 }

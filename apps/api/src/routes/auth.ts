@@ -83,6 +83,29 @@ export function createAuthRouter(
     }
   });
 
+  // GET /api/auth/ws-token — exchange session cookie for a short-lived WS-only token
+  // Used by browser when opening cross-origin WebSocket (cookie SameSite blocks cross-site send)
+  router.get('/ws-token', (req, res) => {
+    const cookieToken = req.cookies['vantage_token'] as string | undefined;
+    if (!cookieToken) {
+      res.status(401).json({ data: null, error: { code: 'UNAUTHORIZED' } });
+      return;
+    }
+    let payload: { sub: string; workspaceId: string };
+    try {
+      payload = jwt.verify(cookieToken, jwtSecret) as { sub: string; workspaceId: string };
+    } catch {
+      res.status(401).json({ data: null, error: { code: 'UNAUTHORIZED' } });
+      return;
+    }
+    const wsToken = jwt.sign(
+      { sub: payload.sub, workspaceId: payload.workspaceId },
+      jwtSecret,
+      { expiresIn: '30s' },
+    );
+    res.json({ data: { token: wsToken }, error: null });
+  });
+
   // POST /api/auth/logout
   router.post('/logout', (_req, res) => {
     res.clearCookie('vantage_token', {

@@ -14,6 +14,10 @@ import { sseRegistry } from '../lib/sse-registry';
 const lastSnapshotAt = new Map<string, number>();
 const SNAPSHOT_INTERVAL_MS = 30_000;
 
+// Rate-limit SSE broadcasts to prevent event-loop flooding from burst pings
+const lastBroadcastAt = new Map<string, number>();
+const BROADCAST_INTERVAL_MS = 2_000;
+
 const dbCheckSchema = z.object({
   type: z.string(),
   port: z.number(),
@@ -75,19 +79,23 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
         .where('id', '=', server.id)
         .execute();
 
-      // Push live metrics to any browser tabs subscribed to this workspace
-      sseRegistry.broadcast(server.workspace_id, 'metric', {
-        serverId: server.id,
-        cpu_pct: payload.cpu_pct,
-        mem_pct: payload.mem_pct,
-        disk_pct: payload.disk_pct,
-        load_avg_1m: payload.load_avg_1m,
-        net_in_bytes: payload.net_in_bytes,
-        net_out_bytes: payload.net_out_bytes,
-        uptime_seconds: payload.uptime_seconds,
-        status: 'online',
-        last_ping_at: now,
-      });
+      // Push live metrics — rate-limited per server to prevent burst flooding
+      const lastBcast = lastBroadcastAt.get(server.id) ?? 0;
+      if (Date.now() - lastBcast >= BROADCAST_INTERVAL_MS) {
+        sseRegistry.broadcast(server.workspace_id, 'metric', {
+          serverId: server.id,
+          cpu_pct: payload.cpu_pct,
+          mem_pct: payload.mem_pct,
+          disk_pct: payload.disk_pct,
+          load_avg_1m: payload.load_avg_1m,
+          net_in_bytes: payload.net_in_bytes,
+          net_out_bytes: payload.net_out_bytes,
+          uptime_seconds: payload.uptime_seconds,
+          status: 'online',
+          last_ping_at: now,
+        });
+        lastBroadcastAt.set(server.id, Date.now());
+      }
 
       // Update infra_databases from db_checks (match by port)
       for (const check of payload.db_checks) {

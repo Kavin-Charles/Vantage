@@ -1,5 +1,6 @@
 // apps/api/src/ws/sftp-session.ts
 // Handles WebSocket-based SFTP file operations.
+import path from 'path';
 import type { IncomingMessage } from 'http';
 import jwt from 'jsonwebtoken';
 import { Client } from 'ssh2';
@@ -40,8 +41,9 @@ const MAX_READ_BYTES = 10 * 1024 * 1024; // 10 MB
 
 function guardPath(p: string): string | null {
   if (!p || p.includes('\0')) return null;
-  // Collapse duplicate slashes
-  return p.replace(/\/+/g, '/');
+  const resolved = path.posix.normalize(p);
+  if (resolved.includes('..')) return null;
+  return resolved;
 }
 
 // Promisify for ops that return a result (readdir → FileEntryWithStats[])
@@ -165,7 +167,10 @@ export async function handleSftpUpgrade(
       return idx < 0 ? [c.trim(), ''] : [c.slice(0, idx).trim(), c.slice(idx + 1).trim()];
     }),
   );
-  const token = cookies['vantage_token'];
+  // Also accept ?token= query param — browser can't send custom headers on WS, and
+  // SameSite=Strict blocks cross-origin cookies (e.g. vercel.app → railway.app)
+  const urlParams = new URL(url, 'http://localhost').searchParams;
+  const token = cookies['vantage_token'] ?? urlParams.get('token') ?? '';
   if (!token) { ws.close(4001, 'Unauthorized'); return; }
 
   let payload: JwtPayload;

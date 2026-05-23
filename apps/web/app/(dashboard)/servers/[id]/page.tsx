@@ -487,33 +487,38 @@ function FilesTab({ serverId }: { serverId: string }) {
 
   // Connect on mount, disconnect on unmount
   useEffect(() => {
-    const sftp = openSftpSession(serverId);
-    sftpRef.current = sftp;
-    const ws = (sftp as unknown as { ws: WebSocket }).ws;
+    let cancelled = false;
+    let ws: WebSocket | null = null;
 
-    function handleOpen() {
-      setConnState('ready');
-      void ls('/');
-    }
-    function handleError() {
-      setConnState('error');
-      setConnError('WebSocket connection failed.');
-    }
-    ws.addEventListener('open', handleOpen);
-    ws.addEventListener('error', handleError);
+    void openSftpSession(serverId).then(sftp => {
+      if (cancelled) { sftp.close(); return; }
+      sftpRef.current = sftp;
+      ws = (sftp as unknown as { ws: WebSocket }).ws;
 
-    sftp.onClose(() => {
-      setConnState('error');
-      setConnError('Connection closed.');
+      function handleOpen() {
+        setConnState('ready');
+        void ls('/');
+      }
+      function handleError() {
+        setConnState('error');
+        setConnError('WebSocket connection failed.');
+      }
+      ws.addEventListener('open', handleOpen);
+      ws.addEventListener('error', handleError);
+
+      sftp.onClose(() => {
+        setConnState('error');
+        setConnError('Connection closed.');
+      });
+
+      // If already open (readyState 1) — shouldn't happen on fresh WS but guard anyway
+      if (ws.readyState === WebSocket.OPEN) handleOpen();
     });
 
-    // If already open (readyState 1) — shouldn't happen on fresh WS but guard anyway
-    if (ws.readyState === WebSocket.OPEN) handleOpen();
-
     return () => {
-      ws.removeEventListener('open', handleOpen);
-      ws.removeEventListener('error', handleError);
-      sftp.close();
+      cancelled = true;
+      if (ws) ws.removeEventListener('open', () => undefined);
+      sftpRef.current?.close();
       sftpRef.current = null;
     };
   }, [serverId]); // eslint-disable-line react-hooks/exhaustive-deps
