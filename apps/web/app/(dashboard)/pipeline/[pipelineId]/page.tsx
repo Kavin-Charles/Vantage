@@ -119,12 +119,12 @@ function DealsList({ pipelineId, addTrigger, view }: { pipelineId: string; addTr
         </div>
       </div>
 
-      {deals.length === 0 ? (
+      {view === 'board' ? (
+        <DealKanban pipelineId={pipelineId} addTrigger={addTrigger} />
+      ) : deals.length === 0 ? (
         <div style={{ color: 'var(--text3)', fontSize: 13, paddingTop: 24 }}>
           No items yet. Add your first item to get started.
         </div>
-      ) : view === 'board' ? (
-        <DealKanban pipelineId={pipelineId} addTrigger={addTrigger} />
       ) : (
         <DealGrid deals={deals} stageMap={stageMap} userMap={userMap} />
       )}
