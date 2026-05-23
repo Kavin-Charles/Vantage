@@ -382,9 +382,12 @@ export function RecordList({
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const { data: pipelineData } = useQuery<PipelineWithStages>({
+  const { data: pipelineData } = useQuery<{ data: PipelineWithStages }>({
     queryKey: ['pipeline', pipelineId],
-    queryFn: () => apiFetch(`/pipelines/${pipelineId}`),
+    queryFn: async () => {
+      const res = await fetch(`/api/pipelines/${pipelineId}`, { headers: { 'Content-Type': 'application/json' } });
+      return res.json() as Promise<{ data: PipelineWithStages }>;
+    },
   });
 
   const { data: records = [], isError } = useQuery<PipelineRecord[]>({
@@ -397,7 +400,7 @@ export function RecordList({
     queryFn: () => apiFetch(`/record-types/${recordTypeId}/fields`),
   });
 
-  const stages = pipelineData?.stages ?? [];
+  const stages = pipelineData?.data?.stages ?? [];
   const stageMap = new Map(stages.map(s => [s.id, s]));
 
   const sorted = [...records].sort(

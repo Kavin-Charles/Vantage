@@ -27,9 +27,12 @@ export function RecordKanban({ recordTypeId, pipelineId }: { recordTypeId: strin
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [stageError, setStageError] = useState<string | null>(null);
 
-  const { data: pipelineData } = useQuery<PipelineWithStages>({
+  const { data: pipelineData } = useQuery<{ data: PipelineWithStages }>({
     queryKey: ['pipeline', pipelineId],
-    queryFn: () => apiFetch(`/pipelines/${pipelineId}`),
+    queryFn: async () => {
+      const res = await fetch(`/api/pipelines/${pipelineId}`, { headers: { 'Content-Type': 'application/json' } });
+      return res.json() as Promise<{ data: PipelineWithStages }>;
+    },
   });
 
   const { data: records = [] } = useQuery<PipelineRecord[]>({
@@ -52,7 +55,7 @@ export function RecordKanban({ recordTypeId, pipelineId }: { recordTypeId: strin
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['records', pipelineId, recordTypeId] }),
   });
 
-  const stages = pipelineData?.stages ?? [];
+  const stages = pipelineData?.data?.stages ?? [];
   const byStage = useCallback((sid: string) => records.filter(r => r.stage_id === sid), [records]);
 
   return (
