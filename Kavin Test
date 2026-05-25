@@ -1,0 +1,23 @@
+# ── App ────────────────────────────────────────────────
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
+
+# ── API ────────────────────────────────────────────────
+NEXT_PUBLIC_API_URL=http://localhost:3001
+
+# ── Database ───────────────────────────────────────────
+# Use docker-compose.yml for local dev (starts Postgres + Redis automatically)
+DATABASE_URL=postgresql://vantage:vantage@localhost:5432/vantage
+REDIS_URL=redis://localhost:6379
+
+# ── Auth ───────────────────────────────────────────────
+JWT_SECRET=change-me-to-a-random-256-bit-secret
+
+# ── SSH Management ─────────────────────────────────────
+# 32-byte hex key for encrypting stored SSH private keys
+# Generate: openssl rand -hex 32
+SSH_ENCRYPTION_KEY=
+
+# ── Internal ───────────────────────────────────────────
+AGENT_SIGNING_SECRET=change_me_in_production
+CRON_SECRET=change_me_in_production
