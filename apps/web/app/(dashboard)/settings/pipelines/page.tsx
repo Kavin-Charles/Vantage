@@ -967,6 +967,7 @@ export default function PipelinesSettingsPage() {
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['pipelines'],
@@ -998,7 +999,11 @@ export default function PipelinesSettingsPage() {
       void refetch();
       void qc.invalidateQueries({ queryKey: ['pipeline'] });
       setDeletingId(null);
+      setDeleteError(null);
       setSelected(null);
+    },
+    onError: (err: Error) => {
+      setDeleteError(err.message);
     },
   });
 
@@ -1115,15 +1120,22 @@ export default function PipelinesSettingsPage() {
                   )}
                   {!activePipeline.is_default && (
                     deletingId === activePipeline.id ? (
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <span style={{ fontSize: 12, color: '#ef4444' }}>Delete pipeline?</span>
-                        <Button
-                          onClick={() => deleteMut.mutate(activePipeline.id)}
-                          disabled={deleteMut.isPending}
-                        >
-                          {deleteMut.isPending ? '…' : 'Yes, delete'}
-                        </Button>
-                        <Button onClick={() => setDeletingId(null)}>Cancel</Button>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                        <span style={{ fontSize: 12, color: '#ef4444' }}>
+                          Delete &ldquo;{activePipeline.name}&rdquo;? This permanently removes the pipeline and all its items, stages, and groups.
+                        </span>
+                        {deleteError && (
+                          <span style={{ fontSize: 12, color: '#ef4444' }}>{deleteError}</span>
+                        )}
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <Button
+                            onClick={() => { setDeleteError(null); deleteMut.mutate(activePipeline.id); }}
+                            disabled={deleteMut.isPending}
+                          >
+                            {deleteMut.isPending ? '…' : 'Yes, delete'}
+                          </Button>
+                          <Button onClick={() => { setDeletingId(null); setDeleteError(null); }}>Cancel</Button>
+                        </div>
                       </div>
                     ) : (
                       <button

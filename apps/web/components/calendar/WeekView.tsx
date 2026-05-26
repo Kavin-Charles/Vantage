@@ -44,7 +44,7 @@ export function WeekView({ date, events, tasks, isAdmin, onEditEvent, onDeleteEv
 
   return (
     <>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
         {/* Header: day names */}
         <div style={{ display: 'grid', gridTemplateColumns: `${TIME_COL} ${COL}`, borderBottom: '1px solid var(--border)', background: 'var(--bg)' }}>
           <div />

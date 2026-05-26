@@ -5,22 +5,11 @@ interface Props {
   isLoading: boolean;
 }
 
-const th: React.CSSProperties = {
-  padding: '10px 16px',
-  textAlign: 'left',
-  fontSize: 11,
-  fontWeight: 600,
-  color: 'var(--text3)',
-  textTransform: 'uppercase',
-  letterSpacing: 0.5,
-  borderBottom: '1px solid var(--border)',
-};
+const COLS = '28px 1fr .7fr .8fr .7fr';
 
-const td: React.CSSProperties = {
-  padding: '12px 16px',
-  fontSize: 13,
-  color: 'var(--text)',
-  borderBottom: '1px solid var(--border)',
+const eyebrow: React.CSSProperties = {
+  fontSize: 10, fontWeight: 600, color: 'var(--text3)',
+  textTransform: 'uppercase', letterSpacing: 1.4,
 };
 
 function fmtRevenue(n: number): string {
@@ -31,54 +20,48 @@ function fmtRevenue(n: number): string {
 
 export function RepLeaderboard({ reps, isLoading }: Props) {
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-      <thead>
-        <tr>
-          <th style={th}>Rep</th>
-          <th style={{ ...th, textAlign: 'right' }}>Deals Won</th>
-          <th style={{ ...th, textAlign: 'right' }}>Revenue</th>
-          <th style={{ ...th, textAlign: 'right' }}>Win Rate</th>
-        </tr>
-      </thead>
-      <tbody>
-        {isLoading ? (
-          <tr>
-            <td
-              colSpan={4}
-              style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}
-            >
-              Loading…
-            </td>
-          </tr>
-        ) : !reps?.length ? (
-          <tr>
-            <td
-              colSpan={4}
-              style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}
-            >
-              No closed deals in this period
-            </td>
-          </tr>
-        ) : (
-          reps.map((rep, i) => (
-            <tr key={rep.user_id}>
-              <td style={td}>
-                <span style={{ fontWeight: i === 0 ? 600 : 400 }}>{rep.name}</span>
-                {i === 0 && reps.length > 1 && (
-                  <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--green)' }}>
-                    ★ Top
-                  </span>
-                )}
-              </td>
-              <td style={{ ...td, textAlign: 'right' }}>{rep.deals_won}</td>
-              <td style={{ ...td, textAlign: 'right' }}>{fmtRevenue(rep.revenue)}</td>
-              <td style={{ ...td, textAlign: 'right' }}>
-                {Math.round(rep.win_rate * 100)}%
-              </td>
-            </tr>
-          ))
-        )}
-      </tbody>
-    </table>
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: COLS, padding: '10px 16px', borderBottom: '1px solid var(--border)', gap: 12, alignItems: 'center' }}>
+        <span style={eyebrow}>#</span>
+        <span style={eyebrow}>Rep</span>
+        <span style={{ ...eyebrow, textAlign: 'right' }}>Won</span>
+        <span style={{ ...eyebrow, textAlign: 'right' }}>Revenue</span>
+        <span style={{ ...eyebrow, textAlign: 'right' }}>Win Rate</span>
+      </div>
+
+      {isLoading ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading…</div>
+      ) : !reps?.length ? (
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>No closed deals in this period</div>
+      ) : reps.map((rep, i) => (
+        <div key={rep.user_id} style={{
+          display: 'grid', gridTemplateColumns: COLS, gap: 12, alignItems: 'center',
+          padding: '11px 16px',
+          borderBottom: i === reps.length - 1 ? 'none' : '1px solid var(--border)',
+          fontSize: 13,
+        }}>
+          <span style={{ color: 'var(--text3)', fontSize: 11, fontWeight: 600 }}>{i + 1}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              width: 26, height: 26, borderRadius: '50%',
+              background: 'var(--surface2)', border: '1px solid var(--border)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 600, color: 'var(--text2)', flexShrink: 0,
+            }}>
+              {rep.name[0].toUpperCase()}
+            </span>
+            <span style={{ fontWeight: i === 0 ? 600 : 400, color: 'var(--text)' }}>
+              {rep.name}
+              {i === 0 && (reps?.length ?? 0) > 1 && (
+                <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--green)', fontWeight: 600 }}>TOP</span>
+              )}
+            </span>
+          </span>
+          <span style={{ textAlign: 'right', color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{rep.deals_won}</span>
+          <span style={{ textAlign: 'right', color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>{fmtRevenue(rep.revenue)}</span>
+          <span style={{ textAlign: 'right', color: 'var(--text2)', fontVariantNumeric: 'tabular-nums' }}>{Math.round(rep.win_rate * 100)}%</span>
+        </div>
+      ))}
+    </div>
   );
 }

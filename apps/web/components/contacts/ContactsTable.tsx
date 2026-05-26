@@ -10,120 +10,67 @@ import { useApiToken } from '@/lib/useApiToken';
 import { listContacts, deleteContact } from '@/lib/contacts';
 import type { Contact } from '@vantage/types';
 
-const th: React.CSSProperties = {
-  padding: '10px 16px',
-  textAlign: 'left',
-  fontSize: 11,
-  fontWeight: 600,
-  color: 'var(--text3)',
-  textTransform: 'uppercase',
-  letterSpacing: 0.5,
-  borderBottom: '1px solid var(--border)',
-  whiteSpace: 'nowrap',
-};
+const COLS = '1.6fr 1.6fr 1.1fr .9fr 1fr auto';
 
-const td: React.CSSProperties = {
-  padding: '12px 16px',
-  fontSize: 13,
-  color: 'var(--text)',
-  borderBottom: '1px solid var(--border)',
+const eyebrow: React.CSSProperties = {
+  fontSize: 10, fontWeight: 600, color: 'var(--text3)',
+  textTransform: 'uppercase', letterSpacing: 1.4,
 };
 
 export function ContactsTable() {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | Contact | null>(null);
+  const [removing, setRemoving] = useState<Set<string>>(new Set());
 
   const { data, isLoading } = useQuery({
     queryKey: ['contacts'],
-    queryFn: async () => {
-      const token = await getToken();
-      return listContacts(token);
-    },
+    queryFn: async () => listContacts(await getToken()),
   });
 
   const deleteMut = useMutation({
-    mutationFn: async (id: string) => {
-      const token = await getToken();
-      await deleteContact(token, id);
+    mutationFn: async (id: string) => deleteContact(await getToken(), id),
+    onMutate: (id) => setRemoving(s => new Set(s).add(id)),
+    onSuccess: (_, id) => {
+      setTimeout(() => qc.invalidateQueries({ queryKey: ['contacts'] }), 220);
+      setTimeout(() => setRemoving(s => { const n = new Set(s); n.delete(id); return n; }), 220);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['contacts'] }),
   });
 
   const contacts = data?.data ?? [];
 
-  if (isLoading) {
-    return <div style={{ padding: 24, color: 'var(--text3)' }}>Loading…</div>;
-  }
+  if (isLoading) return <div style={{ padding: 24, color: 'var(--text3)' }}>Loading…</div>;
 
   return (
     <>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <div>
-          <span style={{ fontSize: 13, color: 'var(--text2)' }}>{data?.total ?? 0} contacts</span>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <span style={{ fontSize: 13, color: 'var(--text2)' }}>{data?.total ?? 0} contacts</span>
         <Button variant="primary" onClick={() => setModal('create')}>+ Add Contact</Button>
       </div>
 
-      {/* Table */}
-      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={th}>Name</th>
-              <th style={th}>Email</th>
-              <th style={th}>Phone</th>
-              <th style={th}>Status</th>
-              <th style={th}>Last contacted</th>
-              <th style={th}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {contacts.length === 0 ? (
-              <tr>
-                <td colSpan={6} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>
-                  No contacts yet. Add your first one.
-                </td>
-              </tr>
-            ) : contacts.map(c => (
-              <tr key={c.id} style={{ cursor: 'pointer' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')} onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                <td style={td}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{
-                      width: 28, height: 28, borderRadius: '50%',
-                      background: 'var(--text)', color: '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 11, fontWeight: 600, flexShrink: 0,
-                    }}>
-                      {c.name.charAt(0).toUpperCase()}
-                    </div>
-                    <span style={{ fontWeight: 500 }}>{c.name}</span>
-                  </div>
-                </td>
-                <td style={{ ...td, color: 'var(--text2)' }}>{c.email}</td>
-                <td style={{ ...td, color: 'var(--text2)' }}>{c.phone ?? '—'}</td>
-                <td style={td}>
-                  <Badge label={c.status} color={statusColor[c.status] ?? 'gray'} />
-                </td>
-                <td style={{ ...td, color: 'var(--text2)' }}>
-                  {c.last_contacted_at ? new Date(c.last_contacted_at).toLocaleDateString() : '—'}
-                </td>
-                <td style={{ ...td, textAlign: 'right' }}>
-                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                    <Button onClick={() => setModal(c)}>Edit</Button>
-                    <Button
-                      variant="danger"
-                      onClick={() => { if (confirm(`Delete ${c.name}?`)) deleteMut.mutate(c.id); }}
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+        {/* Header */}
+        <div style={{ display: 'grid', gridTemplateColumns: COLS, padding: '11px 18px', borderBottom: '1px solid var(--border)', gap: 14, alignItems: 'center' }}>
+          {['Name', 'Email', 'Phone', 'Status', 'Last contacted'].map(h => (
+            <span key={h} style={eyebrow}>{h}</span>
+          ))}
+          <span />
+        </div>
+
+        {contacts.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+            No contacts yet. Add your first one.
+          </div>
+        ) : contacts.map((c, i) => (
+          <ContactRow
+            key={c.id}
+            c={c}
+            last={i === contacts.length - 1}
+            fading={removing.has(c.id)}
+            onEdit={() => setModal(c)}
+            onDelete={() => { if (confirm(`Delete ${c.name}?`)) deleteMut.mutate(c.id); }}
+          />
+        ))}
       </div>
 
       {modal && (
@@ -138,5 +85,50 @@ export function ContactsTable() {
         </Modal>
       )}
     </>
+  );
+}
+
+function ContactRow({ c, last, fading, onEdit, onDelete }: {
+  c: Contact; last: boolean; fading: boolean;
+  onEdit: () => void; onDelete: () => void;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'grid', gridTemplateColumns: COLS,
+        gap: 14, alignItems: 'center',
+        padding: '12px 18px',
+        borderBottom: last ? 'none' : '1px solid var(--border)',
+        background: hover ? 'var(--surface2)' : 'transparent',
+        opacity: fading ? 0 : 1,
+        transition: 'opacity .2s, background .15s',
+        fontSize: 13,
+      }}
+    >
+      <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: '50%',
+          background: 'var(--text)', color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 11, fontWeight: 600, flexShrink: 0,
+        }}>
+          {c.name.charAt(0).toUpperCase()}
+        </div>
+        <span style={{ color: 'var(--text)', fontWeight: 500 }}>{c.name}</span>
+      </span>
+      <span style={{ color: 'var(--text)' }}>{c.email}</span>
+      <span style={{ color: c.phone ? 'var(--text)' : 'var(--text3)' }}>{c.phone ?? '—'}</span>
+      <span><Badge label={c.status} color={statusColor[c.status] ?? 'gray'} /></span>
+      <span style={{ color: 'var(--text2)' }}>
+        {c.last_contacted_at ? new Date(c.last_contacted_at).toLocaleDateString() : '—'}
+      </span>
+      <span style={{ display: 'flex', gap: 6 }}>
+        <Button onClick={onEdit} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 12 }}>Edit</Button>
+        <Button variant="danger" onClick={onDelete} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 12 }}>Delete</Button>
+      </span>
+    </div>
   );
 }

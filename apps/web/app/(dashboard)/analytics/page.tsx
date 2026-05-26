@@ -20,7 +20,7 @@ const PERIODS: { label: string; value: Period }[] = [
 const card: React.CSSProperties = {
   background: 'var(--surface)',
   border: '1px solid var(--border)',
-  borderRadius: 10,
+  borderRadius: 'var(--radius-lg)',
   marginBottom: 16,
 };
 
@@ -49,7 +49,7 @@ export default function AnalyticsPage() {
         display: 'flex',
         gap: 3,
         background: 'var(--surface2)',
-        borderRadius: 8,
+        borderRadius: 'var(--radius-md)',
         padding: 3,
       }}
     >
@@ -59,7 +59,7 @@ export default function AnalyticsPage() {
           onClick={() => setPeriod(p.value)}
           style={{
             padding: '4px 14px',
-            borderRadius: 6,
+            borderRadius: 'var(--radius-sm)',
             border: 'none',
             cursor: 'pointer',
             fontSize: 12,

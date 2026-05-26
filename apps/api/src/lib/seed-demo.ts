@@ -30,13 +30,45 @@ function secondsAgo(s: number) {
 }
 
 export async function seedDemo(db: Kysely<Database>): Promise<void> {
-  // Guard — skip if demo data already exists
+  // Guard — skip inserts if demo data already exists, but always patch stale ping times
   const existingContact = await db
     .selectFrom('contacts')
     .select(['id'])
     .limit(1)
     .executeTakeFirst();
+
   if (existingContact) {
+    // Patch any demo servers whose last_ping_at is stale (no real agent ever ran).
+    // Null it out so deriveStatus falls back to the stored status instead of 'offline'.
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    await db
+      .updateTable('servers')
+      .set({ last_ping_at: null })
+      .where('last_ping_at', '<', fiveMinAgo)
+      .where('status', 'in', ['online', 'degraded'])
+      .execute();
+    logger.info('[Demo] Patched stale server last_ping_at → null so statuses persist');
+
+    // Null out host/port on demo databases so the worker stops overwriting their status.
+    await db
+      .updateTable('infra_databases')
+      .set({ host: null, port: null })
+      .where('host', 'in', ['db.internal.acme.com', 'cache.internal.acme.com', 'analytics.internal.acme.com'])
+      .execute();
+    // Restore seeded statuses the worker may have overwritten.
+    await db
+      .updateTable('infra_databases')
+      .set({ status: 'healthy' })
+      .where('name', 'in', ['prod-postgres', 'prod-redis'])
+      .where('status', '=', 'offline')
+      .execute();
+    await db
+      .updateTable('infra_databases')
+      .set({ status: 'degraded' })
+      .where('name', '=', 'analytics-clickhouse')
+      .where('status', '=', 'offline')
+      .execute();
+    logger.info('[Demo] Patched demo database host/port → null so worker skips them');
     logger.info('[Demo] Data already present — skipping demo seed');
     return;
   }
@@ -170,9 +202,8 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
 
   // ── Servers ───────────────────────────────────────────────────────────────
 
-  const now = new Date().toISOString();
-  const degradedAt = secondsAgo(150);   // 2.5 min ago → degraded
-
+  // Demo servers have no real agent — last_ping_at is intentionally null so
+  // deriveStatus falls back to the stored status and they never expire to offline.
   await db
     .insertInto('servers')
     .values([
@@ -190,7 +221,6 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
         net_in_bytes: 48_234_122,
         net_out_bytes: 29_812_744,
         status: 'online',
-        last_ping_at: now,
       },
       {
         workspace_id: wid,
@@ -206,7 +236,6 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
         net_in_bytes: 192_834_512,
         net_out_bytes: 87_234_901,
         status: 'online',
-        last_ping_at: now,
       },
       {
         workspace_id: wid,
@@ -222,7 +251,6 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
         net_in_bytes: 8_192_344,
         net_out_bytes: 4_102_881,
         status: 'online',
-        last_ping_at: now,
       },
       {
         workspace_id: wid,
@@ -238,12 +266,15 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
         net_in_bytes: 22_103_884,
         net_out_bytes: 11_201_990,
         status: 'degraded',
-        last_ping_at: degradedAt,
       },
     ])
     .execute();
 
+  const now = new Date().toISOString();
+
   // ── Infra databases ───────────────────────────────────────────────────────
+  // Demo databases intentionally have no host/port — this prevents the worker's
+  // db-health job from attempting connections and overwriting the seeded status.
 
   await db
     .insertInto('infra_databases')
@@ -253,8 +284,8 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
         name: 'prod-postgres',
         engine: 'postgres',
         version: '15.4',
-        host: 'db.internal.acme.com',
-        port: 5432,
+        host: null,
+        port: null,
         db_user: 'vantage_ro',
         db_password: null,
         database_name: 'production',
@@ -270,8 +301,8 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
         name: 'prod-redis',
         engine: 'redis',
         version: '7.2.3',
-        host: 'cache.internal.acme.com',
-        port: 6379,
+        host: null,
+        port: null,
         db_user: null,
         db_password: null,
         database_name: null,
@@ -288,8 +319,8 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
         name: 'analytics-clickhouse',
         engine: 'clickhouse',
         version: '24.1',
-        host: 'analytics.internal.acme.com',
-        port: 9000,
+        host: null,
+        port: null,
         db_user: 'readonly',
         db_password: null,
         database_name: 'events',
@@ -297,7 +328,7 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
         storage_gb: 312.7,
         connection_count: 8,
         status: 'degraded',
-        last_checked_at: secondsAgo(70),
+        last_checked_at: now,
       },
     ])
     .execute();

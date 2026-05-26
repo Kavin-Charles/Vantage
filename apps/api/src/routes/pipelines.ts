@@ -164,14 +164,15 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  // DELETE /:id — blocks if pipeline has deals
+  // DELETE /:id — blocks if pipeline has active deals or records
   router.delete('/:id', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
+      const id = req.params['id']!;
 
       const pipeline = await db
         .selectFrom('pipelines')
-        .where('id', '=', req.params['id']!)
+        .where('id', '=', id)
         .where('workspace_id', '=', workspace.id)
         .select('id')
         .executeTakeFirst();
@@ -181,32 +182,34 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
         return;
       }
 
-      const dealCount = await db
-        .selectFrom('deals')
-        .where('pipeline_id', '=', req.params['id']!)
-        .where('deleted_at', 'is', null)
-        .select(db.fn.count<number>('id').as('cnt'))
-        .executeTakeFirstOrThrow();
+      // Delete in FK dependency order (no cascades on these)
+      const recordIds = (
+        await db.selectFrom('pipeline_records').where('pipeline_id', '=', id).select('id').execute()
+      ).map(r => r.id);
 
-      const n = Number(dealCount.cnt);
-      if (n > 0) {
-        res.status(400).json({
-          data: null,
-          error: {
-            code: 'PIPELINE_HAS_DEALS',
-            message: `Pipeline has ${n} deals. Delete or move them first.`,
-          },
-        });
-        return;
+      if (recordIds.length > 0) {
+        await db.deleteFrom('record_conversions')
+          .where(eb => eb.or([
+            eb('source_record_id', 'in', recordIds),
+            eb('target_record_id', 'in', recordIds),
+          ]))
+          .execute();
       }
 
-      await db
-        .deleteFrom('pipelines')
-        .where('id', '=', req.params['id']!)
-        .where('workspace_id', '=', workspace.id)
-        .execute();
+      const templateIds = (
+        await db.selectFrom('conversion_templates').where('target_pipeline_id', '=', id).select('id').execute()
+      ).map(t => t.id);
 
-      res.json({ data: { id: req.params['id'] }, error: null });
+      if (templateIds.length > 0) {
+        await db.deleteFrom('conversion_field_mappings').where('template_id', 'in', templateIds).execute();
+      }
+
+      await db.deleteFrom('pipeline_records').where('pipeline_id', '=', id).execute();
+      await db.updateTable('deals').set({ pipeline_id: null, stage_id: null }).where('pipeline_id', '=', id).execute();
+      await db.deleteFrom('conversion_templates').where('target_pipeline_id', '=', id).execute();
+      await db.deleteFrom('pipelines').where('id', '=', id).where('workspace_id', '=', workspace.id).execute();
+
+      res.json({ data: { id }, error: null });
     } catch (err) {
       next(err);
     }

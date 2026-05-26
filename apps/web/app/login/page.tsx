@@ -25,7 +25,7 @@ function LoginForm() {
       const raw = searchParams.get('from') ?? '';
       // Prevent open redirect — only allow same-origin relative paths
       const from = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/pipeline';
-      router.push(from);
+      window.location.href = from;
     } catch {
       setError('Invalid email or password');
     } finally {
@@ -51,7 +51,7 @@ function LoginForm() {
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
           <div style={{
             width: 40, height: 40, background: 'var(--text)',
-            borderRadius: 10, display: 'inline-flex',
+            borderRadius: 'var(--radius-md)', display: 'inline-flex',
             alignItems: 'center', justifyContent: 'center', marginBottom: 12,
           }}>
             <svg width="22" height="22" viewBox="0 0 16 16" fill="none">

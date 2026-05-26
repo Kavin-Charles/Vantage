@@ -1,20 +1,25 @@
 import type { Metadata } from 'next';
-import { DM_Sans, Instrument_Serif } from 'next/font/google';
+import { IBM_Plex_Sans, IBM_Plex_Mono, Bricolage_Grotesque } from 'next/font/google';
 import { AuthProvider } from '@/lib/AuthContext';
 import { Providers } from '@/components/Providers';
 import './globals.css';
 
-const dmSans = DM_Sans({
+const ibmPlexSans = IBM_Plex_Sans({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
-  variable: '--font-dm-sans',
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-sans',
 });
 
-const instrumentSerif = Instrument_Serif({
+const ibmPlexMono = IBM_Plex_Mono({
   subsets: ['latin'],
-  weight: ['400'],
-  style: ['normal', 'italic'],
-  variable: '--font-instrument-serif',
+  weight: ['400', '500', '600'],
+  variable: '--font-mono',
+});
+
+const bricolageGrotesque = Bricolage_Grotesque({
+  subsets: ['latin'],
+  axes: ['opsz', 'wdth'],
+  variable: '--font-display',
 });
 
 export const metadata: Metadata = {
@@ -26,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${instrumentSerif.variable}`}
+      className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} ${bricolageGrotesque.variable}`}
       suppressHydrationWarning
     >
       <body suppressHydrationWarning>

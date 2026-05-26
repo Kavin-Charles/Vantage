@@ -72,7 +72,7 @@ export default function SshSettingsPage() {
       ) : (
         <>
           {/* Public key */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px', marginBottom: 16 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 20px', marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>Public Key</div>
               <Button onClick={copyKey}>{copied ? 'Copied!' : 'Copy'}</Button>
@@ -89,7 +89,7 @@ export default function SshSettingsPage() {
           </div>
 
           {/* SSH Username */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px', marginBottom: 16 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 20px', marginBottom: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>SSH Username</div>
             <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 12px' }}>
               The user Vantage SSH-es in as. Common values:{' '}
@@ -118,7 +118,7 @@ export default function SshSettingsPage() {
           </div>
 
           {/* Regenerate */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 20px' }}>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Regenerate keypair</div>
             <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 12px' }}>
               This will invalidate the current keypair. You will need to update{' '}

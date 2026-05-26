@@ -13,7 +13,6 @@ import { listInfraDatabases, createInfraDatabase, deleteInfraDatabase } from '@/
 import type { InfraDatabase } from '@vantage/types';
 
 const ENGINES = ['postgres', 'mysql', 'redis', 'clickhouse', 'mongo', 'other'] as const;
-
 type Engine = typeof ENGINES[number];
 
 interface EngineConfig {
@@ -31,92 +30,24 @@ interface EngineConfig {
 }
 
 const ENGINE_CONFIG: Record<Engine, EngineConfig> = {
-  postgres: {
-    defaultPort: '5432',
-    namePlaceholder: 'prod-postgres',
-    hostLabel: 'Host',
-    hostPlaceholder: 'db.example.com',
-    dbNameLabel: 'Database name',
-    dbNamePlaceholder: 'mydb',
-    showDbName: true,
-    showUser: true,
-    userPlaceholder: 'postgres',
-    showSsl: true,
-  },
-  mysql: {
-    defaultPort: '3306',
-    namePlaceholder: 'prod-mysql',
-    hostLabel: 'Host',
-    hostPlaceholder: 'db.example.com',
-    dbNameLabel: 'Database name',
-    dbNamePlaceholder: 'mydb',
-    showDbName: true,
-    showUser: true,
-    userPlaceholder: 'root',
-    showSsl: true,
-  },
-  redis: {
-    defaultPort: '6379',
-    namePlaceholder: 'prod-redis',
-    hostLabel: 'Host',
-    hostPlaceholder: 'redis.example.com',
-    dbNameLabel: 'DB index',
-    dbNamePlaceholder: '0',
-    showDbName: false,
-    showUser: false,
-    userPlaceholder: '',
-    showSsl: true,
-    hint: 'Password only — Redis does not use usernames.',
-  },
-  clickhouse: {
-    defaultPort: '8123',
-    namePlaceholder: 'prod-clickhouse',
-    hostLabel: 'Host',
-    hostPlaceholder: 'ch.example.com',
-    dbNameLabel: 'Database name',
-    dbNamePlaceholder: 'default',
-    showDbName: true,
-    showUser: true,
-    userPlaceholder: 'default',
-    showSsl: true,
-  },
-  mongo: {
-    defaultPort: '27017',
-    namePlaceholder: 'prod-mongo',
-    hostLabel: 'Host or connection URI',
-    hostPlaceholder: 'mongodb+srv://cluster.example.net or localhost',
-    dbNameLabel: 'Database name',
-    dbNamePlaceholder: 'mydb',
-    showDbName: true,
-    showUser: true,
-    userPlaceholder: 'mongouser',
-    showSsl: false,
-    hint: 'You can paste a full mongodb:// or mongodb+srv:// URI into the host field.',
-  },
-  other: {
-    defaultPort: '',
-    namePlaceholder: 'my-database',
-    hostLabel: 'Host',
-    hostPlaceholder: 'db.example.com',
-    dbNameLabel: 'Database name',
-    dbNamePlaceholder: 'mydb',
-    showDbName: true,
-    showUser: true,
-    userPlaceholder: 'dbuser',
-    showSsl: true,
-  },
+  postgres:   { defaultPort: '5432',  namePlaceholder: 'prod-postgres',    hostLabel: 'Host',                    hostPlaceholder: 'db.example.com',               dbNameLabel: 'Database name', dbNamePlaceholder: 'mydb',    showDbName: true,  showUser: true,  userPlaceholder: 'postgres',  showSsl: true },
+  mysql:      { defaultPort: '3306',  namePlaceholder: 'prod-mysql',       hostLabel: 'Host',                    hostPlaceholder: 'db.example.com',               dbNameLabel: 'Database name', dbNamePlaceholder: 'mydb',    showDbName: true,  showUser: true,  userPlaceholder: 'root',      showSsl: true },
+  redis:      { defaultPort: '6379',  namePlaceholder: 'prod-redis',       hostLabel: 'Host',                    hostPlaceholder: 'redis.example.com',            dbNameLabel: 'DB index',      dbNamePlaceholder: '0',       showDbName: false, showUser: false, userPlaceholder: '',          showSsl: true,  hint: 'Password only — Redis does not use usernames.' },
+  clickhouse: { defaultPort: '8123',  namePlaceholder: 'prod-clickhouse',  hostLabel: 'Host',                    hostPlaceholder: 'ch.example.com',               dbNameLabel: 'Database name', dbNamePlaceholder: 'default', showDbName: true,  showUser: true,  userPlaceholder: 'default',   showSsl: true },
+  mongo:      { defaultPort: '27017', namePlaceholder: 'prod-mongo',       hostLabel: 'Host or connection URI',  hostPlaceholder: 'mongodb+srv://cluster.example.net or localhost', dbNameLabel: 'Database name', dbNamePlaceholder: 'mydb', showDbName: true, showUser: true, userPlaceholder: 'mongouser', showSsl: false, hint: 'You can paste a full mongodb:// or mongodb+srv:// URI into the host field.' },
+  other:      { defaultPort: '',      namePlaceholder: 'my-database',      hostLabel: 'Host',                    hostPlaceholder: 'db.example.com',               dbNameLabel: 'Database name', dbNamePlaceholder: 'mydb',    showDbName: true,  showUser: true,  userPlaceholder: 'dbuser',    showSsl: true },
 };
 
 const ENGINE_COLOR: Record<string, 'blue' | 'green' | 'red' | 'amber' | 'purple' | 'gray'> = {
-  postgres: 'blue',
-  mysql: 'amber',
-  redis: 'red',
-  clickhouse: 'purple',
-  mongo: 'green',
-  other: 'gray',
+  postgres: 'blue', mysql: 'amber', redis: 'red', clickhouse: 'purple', mongo: 'green', other: 'gray',
 };
-const th: React.CSSProperties = { padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border)' };
-const td: React.CSSProperties = { padding: '12px 16px', fontSize: 13, color: 'var(--text)', borderBottom: '1px solid var(--border)' };
+
+const COLS = 'minmax(160px,1.4fr) .8fr 1.6fr .6fr .8fr 1.2fr auto';
+
+const eyebrow: React.CSSProperties = {
+  fontSize: 10, fontWeight: 600, color: 'var(--text3)',
+  textTransform: 'uppercase', letterSpacing: 1.4,
+};
 
 const BLANK_FORM = { name: '', engine: 'postgres', host: '', port: '5432', database_name: '', db_user: '', db_password: '', use_ssl: false };
 
@@ -163,44 +94,28 @@ export default function DatabasesPage() {
       <Topbar action={<Button variant="primary" onClick={() => setModal(true)}>+ Add Database</Button>} />
       <div style={{ padding: 24 }}>
         <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text2)' }}>{dbs.length} databases</div>
-        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={th}>Name</th>
-                <th style={th}>Engine</th>
-                <th style={th}>Host</th>
-                <th style={th}>Port</th>
-                <th style={th}>Status</th>
-                <th style={th}>Last checked</th>
-                <th style={th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td colSpan={7} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>Loading…</td></tr>
-              ) : dbs.length === 0 ? (
-                <tr><td colSpan={7} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>No databases configured.</td></tr>
-              ) : dbs.map(db => (
-                <tr key={db.id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => router.push(`/databases/${db.id}`)}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '')}
-                >
-                  <td style={td}><span style={{ fontWeight: 500 }}>{db.name}</span></td>
-                  <td style={td}><Badge label={db.engine} color={ENGINE_COLOR[db.engine] ?? 'gray'} /></td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{db.host ?? '—'}</td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{db.port ?? '—'}</td>
-                  <td style={td}><Badge label={db.status} color={statusColor[db.status] ?? 'gray'} /></td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{db.last_checked_at ? new Date(db.last_checked_at).toLocaleString() : 'never'}</td>
-                  <td style={{ ...td, textAlign: 'right' }} onClick={e => e.stopPropagation()}>
-                    <Button onClick={() => { if (confirm('Remove this database?')) deleteMut.mutate(db.id); }}>Remove</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ display: 'grid', gridTemplateColumns: COLS, padding: '11px 18px', borderBottom: '1px solid var(--border)', gap: 14, alignItems: 'center' }}>
+            {['Name', 'Engine', 'Host', 'Port', 'Status', 'Last checked'].map(h => (
+              <span key={h} style={eyebrow}>{h}</span>
+            ))}
+            <span />
+          </div>
+
+          {isLoading ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading…</div>
+          ) : dbs.length === 0 ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>No databases configured.</div>
+          ) : dbs.map((db, i) => (
+            <DatabaseRow
+              key={db.id}
+              db={db}
+              last={i === dbs.length - 1}
+              onClick={() => router.push(`/databases/${db.id}`)}
+              onDelete={() => { if (confirm('Remove this database?')) deleteMut.mutate(db.id); }}
+            />
+          ))}
         </div>
       </div>
 
@@ -256,5 +171,38 @@ export default function DatabasesPage() {
         </Modal>
       )}
     </>
+  );
+}
+
+function DatabaseRow({ db, last, onClick, onDelete }: {
+  db: InfraDatabase; last: boolean;
+  onClick: () => void; onDelete: () => void;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onClick={onClick}
+      style={{
+        display: 'grid', gridTemplateColumns: COLS,
+        gap: 14, alignItems: 'center',
+        padding: '12px 18px',
+        borderBottom: last ? 'none' : '1px solid var(--border)',
+        background: hover ? 'var(--surface2)' : 'transparent',
+        transition: 'background .12s',
+        cursor: 'pointer', fontSize: 13,
+      }}
+    >
+      <span style={{ fontWeight: 500, color: 'var(--text)', fontFamily: 'var(--font-mono)', fontSize: 12.5 }}>{db.name}</span>
+      <span><Badge label={db.engine} color={ENGINE_COLOR[db.engine] ?? 'gray'} /></span>
+      <span style={{ color: 'var(--text2)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>{db.host ?? '—'}</span>
+      <span style={{ color: 'var(--text2)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>{db.port ?? '—'}</span>
+      <span><Badge label={db.status} color={statusColor[db.status] ?? 'gray'} /></span>
+      <span style={{ color: 'var(--text2)' }}>{db.last_checked_at ? new Date(db.last_checked_at).toLocaleString() : 'never'}</span>
+      <span onClick={e => e.stopPropagation()}>
+        <Button onClick={onDelete} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 12 }}>Remove</Button>
+      </span>
+    </div>
   );
 }

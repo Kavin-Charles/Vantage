@@ -39,17 +39,17 @@ export function KpiCards({ data, isLoading }: Props) {
           style={{
             background: 'var(--surface)',
             border: '1px solid var(--border)',
-            borderRadius: 10,
+            borderRadius: 'var(--radius-lg)',
             padding: '16px 20px',
           }}
         >
           <div
             style={{
-              fontSize: 11,
+              fontSize: 10,
               color: 'var(--text3)',
               fontWeight: 600,
               textTransform: 'uppercase',
-              letterSpacing: 0.5,
+              letterSpacing: 1.4,
               marginBottom: 8,
             }}
           >
@@ -57,10 +57,12 @@ export function KpiCards({ data, isLoading }: Props) {
           </div>
           <div
             style={{
-              fontSize: 26,
-              fontWeight: 700,
-              fontFamily: 'var(--font-instrument-serif), Instrument Serif, serif',
+              fontSize: 28,
+              fontWeight: 600,
+              fontFamily: 'var(--font-display)',
               color: 'var(--text)',
+              letterSpacing: '-0.6px',
+              lineHeight: 1.05,
             }}
           >
             {isLoading ? '—' : card.value}

@@ -27,7 +27,7 @@ export function DayView({ date, events, tasks, isAdmin, onEditEvent, onDeleteEve
 
   return (
     <>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
         {/* All-day row */}
         {(dayEvents.length > 0 || dayTasks.length > 0) && (
           <div style={{ display: 'grid', gridTemplateColumns: '64px 1fr', borderBottom: '1px solid var(--border)', padding: '8px 0', minHeight: 36 }}>

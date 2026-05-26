@@ -123,7 +123,7 @@ export default function SettingsTasksPage() {
       </div>
 
       {/* Task list */}
-      <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
         {isLoading ? (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading…</div>
         ) : tasks.length === 0 ? (

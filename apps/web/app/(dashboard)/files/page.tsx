@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/components/Topbar';
 import { Button } from '@/components/ui/Button';
+import { Icon } from '@/components/ui/Icon';
 import { useApiToken } from '@/lib/useApiToken';
 import { apiFetch } from '@/lib/api';
 
@@ -32,32 +33,20 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
-function fileIcon(contentType: string): string {
-  if (contentType.startsWith('image/')) return '🖼';
-  if (contentType === 'application/pdf') return '📄';
-  if (contentType.startsWith('video/')) return '🎬';
-  if (contentType.startsWith('audio/')) return '🎵';
-  if (contentType.includes('zip') || contentType.includes('tar') || contentType.includes('gz')) return '🗜';
-  if (contentType.startsWith('text/')) return '📝';
-  return '📁';
+function fileIconName(contentType: string): string {
+  if (contentType.startsWith('image/')) return 'files';
+  if (contentType === 'application/pdf') return 'files';
+  if (contentType.startsWith('video/')) return 'files';
+  if (contentType.startsWith('audio/')) return 'files';
+  if (contentType.startsWith('text/')) return 'note';
+  return 'files';
 }
 
-const th: React.CSSProperties = {
-  padding: '10px 16px',
-  textAlign: 'left',
-  fontSize: 11,
-  fontWeight: 600,
-  color: 'var(--text3)',
-  textTransform: 'uppercase',
-  letterSpacing: 0.5,
-  borderBottom: '1px solid var(--border)',
-};
+const COLS = 'minmax(220px,2.4fr) .7fr 1fr .8fr auto';
 
-const td: React.CSSProperties = {
-  padding: '12px 16px',
-  fontSize: 13,
-  color: 'var(--text)',
-  borderBottom: '1px solid var(--border)',
+const eyebrow: React.CSSProperties = {
+  fontSize: 10, fontWeight: 600, color: 'var(--text3)',
+  textTransform: 'uppercase', letterSpacing: 1.4,
 };
 
 export default function FilesPage() {
@@ -115,59 +104,73 @@ export default function FilesPage() {
       <div style={{ padding: 24 }}>
         <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text2)' }}>{files.length} files</div>
 
-        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={th}>Name</th>
-                <th style={th}>Size</th>
-                <th style={th}>Type</th>
-                <th style={th}>Uploaded</th>
-                <th style={th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td colSpan={5} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>Loading…</td></tr>
-              ) : files.length === 0 ? (
-                <tr><td colSpan={5} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>No files yet. Upload one to get started.</td></tr>
-              ) : files.map((f, i) => (
-                <tr
-                  key={f.key}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '')}
-                >
-                  <td style={td}>
-                    <a
-                      href={f.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text)', textDecoration: 'none', fontWeight: 500 }}
-                    >
-                      <span style={{ fontSize: 16 }}>{fileIcon(f.content_type)}</span>
-                      {f.name}
-                    </a>
-                  </td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{fmtSize(f.size)}</td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{f.content_type}</td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{timeAgo(f.uploaded_at)}</td>
-                  <td style={{ ...td, textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                      <Button onClick={() => window.open(f.url, '_blank')}>Download</Button>
-                      <Button
-                        variant="danger"
-                        onClick={() => { if (confirm(`Delete "${f.name}"?`)) deleteMut.mutate(f.key); }}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ display: 'grid', gridTemplateColumns: COLS, padding: '11px 18px', borderBottom: '1px solid var(--border)', gap: 14, alignItems: 'center' }}>
+            {['Name', 'Size', 'Type', 'Uploaded'].map(h => (
+              <span key={h} style={eyebrow}>{h}</span>
+            ))}
+            <span />
+          </div>
+
+          {isLoading ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading…</div>
+          ) : files.length === 0 ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>No files yet. Upload one to get started.</div>
+          ) : files.map((f, i) => (
+            <FileRow
+              key={f.key}
+              file={f}
+              last={i === files.length - 1}
+              onDelete={() => { if (confirm(`Delete "${f.name}"?`)) deleteMut.mutate(f.key); }}
+            />
+          ))}
         </div>
       </div>
     </>
+  );
+}
+
+function FileRow({ file: f, last, onDelete }: {
+  file: FileObject; last: boolean; onDelete: () => void;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'grid', gridTemplateColumns: COLS,
+        gap: 14, alignItems: 'center',
+        padding: '12px 18px',
+        borderBottom: last ? 'none' : '1px solid var(--border)',
+        background: hover ? 'var(--surface2)' : 'transparent',
+        transition: 'background .12s', fontSize: 13,
+      }}
+    >
+      <a
+        href={f.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text)', textDecoration: 'none', fontWeight: 500 }}
+      >
+        <div style={{
+          width: 34, height: 34, borderRadius: 10,
+          background: 'var(--surface2)', border: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--text2)', flexShrink: 0,
+        }}>
+          <Icon name={fileIconName(f.content_type)} size={15} />
+        </div>
+        {f.name}
+      </a>
+      <span style={{ color: 'var(--text2)', fontVariantNumeric: 'tabular-nums' }}>{fmtSize(f.size)}</span>
+      <span style={{ color: 'var(--text3)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>{f.content_type}</span>
+      <span style={{ color: 'var(--text2)' }}>{timeAgo(f.uploaded_at)}</span>
+      <span style={{ display: 'flex', gap: 6 }}>
+        <Button onClick={() => window.open(f.url, '_blank')} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 12 }}>Download</Button>
+        <Button variant="danger" onClick={onDelete} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 12 }}>Delete</Button>
+      </span>
+    </div>
   );
 }

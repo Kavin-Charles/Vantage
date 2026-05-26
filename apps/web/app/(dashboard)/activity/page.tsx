@@ -5,27 +5,27 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/components/Topbar';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { Icon } from '@/components/ui/Icon';
 import { FormField, Select, Textarea } from '@/components/ui/FormField';
 import { useApiToken } from '@/lib/useApiToken';
 import { listActivity, createActivity } from '@/lib/activity';
 import type { Activity, ActivityType } from '@vantage/types';
 
 const TYPE_ICONS: Record<string, string> = {
-  email: '✉️',
-  call: '📞',
-  note: '📝',
-  meeting: '🤝',
-  deal_change: '💼',
-  contact_created: '👤',
-  default: '📌',
+  email:           'mail',
+  call:            'phone',
+  note:            'note',
+  meeting:         'meeting',
+  deal_change:     'arrow',
+  contact_created: 'contacts',
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  email: 'Email',
-  call: 'Call',
-  note: 'Note',
-  meeting: 'Meeting',
-  deal_change: 'Deal Change',
+  email:           'Email',
+  call:            'Call',
+  note:            'Note',
+  meeting:         'Meeting',
+  deal_change:     'Deal Change',
   contact_created: 'Contact Created',
 };
 
@@ -55,10 +55,7 @@ export default function ActivityPage() {
   });
 
   const createMut = useMutation({
-    mutationFn: async () => {
-      const token = await getToken();
-      return createActivity(token, form);
-    },
+    mutationFn: async () => createActivity(await getToken(), form),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['activity'] });
       setModal(false);
@@ -74,53 +71,17 @@ export default function ActivityPage() {
     <>
       <Topbar action={<Button variant="primary" onClick={() => setModal(true)}>+ Log Activity</Button>} />
       <div style={{ padding: 24 }}>
-        <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text2)' }}>
+        <div style={{ marginBottom: 14, fontSize: 13, color: 'var(--text2)' }}>
           {total} total activities
         </div>
 
-        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
           {isLoading ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading…</div>
           ) : items.length === 0 ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>No activity yet.</div>
           ) : items.map((item, i) => (
-            <div
-              key={item.id}
-              style={{
-                display: 'flex',
-                gap: 14,
-                padding: '14px 18px',
-                borderBottom: i < items.length - 1 ? '1px solid var(--border)' : 'none',
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
-              onMouseLeave={e => (e.currentTarget.style.background = '')}
-            >
-              <div style={{
-                width: 36, height: 36, borderRadius: '50%',
-                background: 'var(--surface2)', border: '1px solid var(--border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 16, flexShrink: 0,
-              }}>
-                {TYPE_ICONS[item.type] ?? TYPE_ICONS.default}
-              </div>
-
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                    {TYPE_LABELS[item.type] ?? item.type}
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>·</span>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    {timeAgo(item.created_at as unknown as string)}
-                  </span>
-                </div>
-                {item.body && (
-                  <p style={{ margin: 0, fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}>
-                    {item.body}
-                  </p>
-                )}
-              </div>
-            </div>
+            <ActivityRow key={item.id} item={item} last={i === items.length - 1} />
           ))}
         </div>
 
@@ -158,7 +119,7 @@ export default function ActivityPage() {
                 rows={4}
               />
             </FormField>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
               <Button type="button" onClick={() => setModal(false)}>Cancel</Button>
               <Button type="submit" variant="primary" disabled={createMut.isPending}>
                 {createMut.isPending ? 'Saving…' : 'Log'}
@@ -168,5 +129,50 @@ export default function ActivityPage() {
         </Modal>
       )}
     </>
+  );
+}
+
+function ActivityRow({ item, last }: { item: Activity; last: boolean }) {
+  const [hover, setHover] = useState(false);
+  const iconName = TYPE_ICONS[item.type] ?? 'note';
+  const label = TYPE_LABELS[item.type] ?? item.type;
+
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'flex', gap: 14, padding: '14px 18px',
+        borderBottom: last ? 'none' : '1px solid var(--border)',
+        background: hover ? 'var(--surface2)' : 'transparent',
+        transition: 'background .12s',
+      }}
+    >
+      <div style={{
+        width: 36, height: 36, borderRadius: '50%',
+        background: 'var(--surface2)', border: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--text2)', flexShrink: 0,
+      }}>
+        <Icon name={iconName} size={15} />
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            {label}
+          </span>
+          <span style={{ fontSize: 11, color: 'var(--text3)' }}>·</span>
+          <span style={{ fontSize: 11, color: 'var(--text3)' }}>
+            {timeAgo(item.created_at as unknown as string)}
+          </span>
+        </div>
+        {item.body && (
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--text)', lineHeight: 1.5 }}>
+            {item.body}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

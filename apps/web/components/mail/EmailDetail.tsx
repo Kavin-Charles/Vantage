@@ -55,19 +55,32 @@ export function EmailDetail({ email, onReply, onClose }: Props) {
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0, fontFamily: 'Instrument Serif, serif' }}>
+        <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0, fontFamily: 'var(--font-display)', letterSpacing: '-0.3px', lineHeight: 1.2, color: 'var(--text)' }}>
           {email.subject ?? '(no subject)'}
         </h1>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: 'var(--text3)' }}>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text3)', padding: 4, borderRadius: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, lineHeight: 1, flexShrink: 0,
+          }}
+        >
           &times;
         </button>
       </div>
 
-      <div style={{ fontSize: 12, color: 'var(--text2)', display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <div><strong>From:</strong> {from}</div>
-        <div><strong>To:</strong> {email.to_addresses.join(', ')}</div>
-        {email.cc_addresses.length > 0 && <div><strong>Cc:</strong> {email.cc_addresses.join(', ')}</div>}
-        <div><strong>Date:</strong> {new Date(email.sent_at).toLocaleString()}</div>
+      <div style={{
+        fontSize: 12, color: 'var(--text2)',
+        display: 'flex', flexDirection: 'column', gap: 4,
+        padding: '12px 16px', background: 'var(--bg)',
+        borderRadius: 10, border: '1px solid var(--border)',
+      }}>
+        <div><span style={{ color: 'var(--text3)', fontWeight: 500 }}>From</span> &nbsp;{from}</div>
+        <div><span style={{ color: 'var(--text3)', fontWeight: 500 }}>To</span> &nbsp;{email.to_addresses.join(', ')}</div>
+        {email.cc_addresses.length > 0 && <div><span style={{ color: 'var(--text3)', fontWeight: 500 }}>Cc</span> &nbsp;{email.cc_addresses.join(', ')}</div>}
+        <div><span style={{ color: 'var(--text3)', fontWeight: 500 }}>Date</span> &nbsp;{new Date(email.sent_at).toLocaleString()}</div>
         {email.contact_id && (
           <div>
             <Link href={`/contacts/${email.contact_id}`} style={{ color: 'var(--text)', fontSize: 12, background: 'var(--surface2)', padding: '2px 8px', borderRadius: 12, textDecoration: 'none', display: 'inline-block', marginTop: 2 }}>
@@ -95,9 +108,15 @@ export function EmailDetail({ email, onReply, onClose }: Props) {
       <div style={{ display: 'flex', gap: 8 }}>
         <button
           onClick={() => onReply(email)}
-          style={{ padding: '8px 16px', fontSize: 13, background: 'var(--text)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 500 }}
+          style={{
+            padding: '8px 18px', fontSize: 13,
+            background: 'var(--text)', color: '#fff',
+            border: 'none', borderRadius: 10,
+            cursor: 'pointer', fontWeight: 500,
+            fontFamily: 'var(--font-sans)',
+          }}
         >
-          Reply
+          ↩ Reply
         </button>
       </div>
     </div>

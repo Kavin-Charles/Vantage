@@ -11,7 +11,7 @@ export default function ProfilePage() {
   const card: React.CSSProperties = {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: 10,
+    borderRadius: 'var(--radius-lg)',
     padding: '20px 24px',
     marginBottom: 16,
   };

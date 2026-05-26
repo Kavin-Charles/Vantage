@@ -42,7 +42,7 @@ export function EventPopover({ event, anchorRect, onClose, isAdmin, onEdit, onDe
         zIndex: 1000,
         background: 'var(--surface)',
         border: '1px solid var(--border)',
-        borderRadius: 10,
+        borderRadius: 'var(--radius-lg)',
         boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
         padding: 16,
         width: 240,

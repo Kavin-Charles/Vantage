@@ -1,9 +1,10 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { Icon } from '@/components/ui/Icon';
 import { NotificationBell } from './NotificationBell';
 
-const pageTitles: Record<string, string> = {
+const PAGE_TITLES: Record<string, string> = {
   '/pipeline': 'Pipeline',
   '/contacts': 'Contacts',
   '/companies': 'Companies',
@@ -22,46 +23,35 @@ const pageTitles: Record<string, string> = {
 export function Topbar({ action, left }: { action?: React.ReactNode; left?: React.ReactNode }) {
   const pathname = usePathname();
   const segment = '/' + (pathname.split('/')[1] ?? '');
-  const title = pageTitles[segment] ?? 'Vantage';
+  const title = PAGE_TITLES[segment] ?? 'Vantage';
 
   return (
     <div style={{
       height: 'var(--header-h)',
       background: 'var(--surface)',
       borderBottom: '1px solid var(--border)',
-      display: 'flex',
-      alignItems: 'center',
-      padding: '0 24px',
-      gap: 16,
-      flexShrink: 0,
+      display: 'flex', alignItems: 'center',
+      padding: '0 24px', gap: 16, flexShrink: 0,
     }}>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
         {left ?? (
           <span style={{
-            fontFamily: 'var(--font-instrument-serif), Instrument Serif, serif',
-            fontSize: 20,
-            color: 'var(--text)',
-          }}>
-            {title}
-          </span>
+            fontFamily: 'var(--font-display)',
+            fontSize: 20, fontWeight: 500,
+            letterSpacing: '-0.4px', color: 'var(--text)',
+          }}>{title}</span>
         )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        {/* Search */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          background: 'var(--bg)',
-          border: '1px solid var(--border)',
-          borderRadius: 8,
-          padding: '6px 12px',
-          width: 220,
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: 'var(--bg)', border: '1px solid var(--border)',
+          borderRadius: 10, padding: '6px 12px', width: 240,
         }}>
-          <svg width="14" height="14" viewBox="0 0 15 15" fill="none" style={{ color: 'var(--text3)', flexShrink: 0 }}>
-            <path d="M10 6.5a3.5 3.5 0 11-7 0 3.5 3.5 0 017 0zm-.7 3.1l3.6 3.6-.7.7-3.6-3.6a4.5 4.5 0 11.7-.7z" fill="currentColor" />
-          </svg>
+          <span style={{ color: 'var(--text3)', display: 'inline-flex', flexShrink: 0 }}>
+            <Icon name="search" size={15} />
+          </span>
           <input
             placeholder="Search..."
             style={{ border: 'none', background: 'none', outline: 'none', fontSize: 13, color: 'var(--text)', fontFamily: 'inherit', width: '100%' }}

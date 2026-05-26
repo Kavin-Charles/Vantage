@@ -20,7 +20,7 @@ export default function TeamPage() {
   const card: React.CSSProperties = {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    borderRadius: 10,
+    borderRadius: 'var(--radius-lg)',
     padding: '20px 24px',
     marginBottom: 16,
   };
@@ -38,7 +38,7 @@ export default function TeamPage() {
         <>
           {workspace && (
             <div style={card}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 16 }}>Workspace</div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 16 }}>Workspace</div>
               <div style={{ display: 'grid', gap: 0 }}>
                 {[
                   { label: 'Name', value: workspace.name },
@@ -56,7 +56,7 @@ export default function TeamPage() {
 
           {currentUser && (
             <div style={card}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 16 }}>Your Role</div>
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 16 }}>Your Role</div>
               <div style={{ display: 'grid', gap: 0 }}>
                 {[
                   { label: 'Role', value: <Badge label={currentUser.role} color={currentUser.role === 'admin' ? 'purple' : 'gray'} /> },

@@ -1,3 +1,7 @@
+'use client';
+
+import { useState } from 'react';
+
 export function FormField({
   label,
   children,
@@ -8,7 +12,7 @@ export function FormField({
   error?: string;
 }) {
   return (
-    <div style={{ marginBottom: 16 }}>
+    <div style={{ marginBottom: 14 }}>
       <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text2)', marginBottom: 6 }}>
         {label}
       </label>
@@ -18,30 +22,64 @@ export function FormField({
   );
 }
 
-const inputStyle: React.CSSProperties = {
+const baseInputStyle: React.CSSProperties = {
   width: '100%',
   padding: '8px 12px',
-  borderRadius: 8,
+  borderRadius: 10,
   border: '1px solid var(--border)',
   background: 'var(--bg)',
   fontSize: 13,
   color: 'var(--text)',
   fontFamily: 'inherit',
   outline: 'none',
+  transition: 'border-color .15s, box-shadow .15s, background .15s',
 };
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} style={{ ...inputStyle, ...props.style }} />;
+  const [focus, setFocus] = useState(false);
+  return (
+    <input
+      {...props}
+      onFocus={e => { setFocus(true); props.onFocus?.(e); }}
+      onBlur={e => { setFocus(false); props.onBlur?.(e); }}
+      style={{
+        ...baseInputStyle,
+        ...(focus ? {
+          borderColor: 'var(--text2)',
+          background: 'var(--surface)',
+          boxShadow: '0 0 0 3px rgba(11,19,48,0.06)',
+        } : {}),
+        ...props.style,
+      }}
+    />
+  );
 }
 
 export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select {...props} style={{ ...inputStyle, ...props.style }}>
+    <select {...props} style={{ ...baseInputStyle, ...props.style }}>
       {props.children}
     </select>
   );
 }
 
 export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} style={{ ...inputStyle, minHeight: 80, resize: 'vertical', ...props.style }} />;
+  const [focus, setFocus] = useState(false);
+  return (
+    <textarea
+      {...props}
+      onFocus={e => { setFocus(true); props.onFocus?.(e); }}
+      onBlur={e => { setFocus(false); props.onBlur?.(e); }}
+      style={{
+        ...baseInputStyle,
+        minHeight: 80, resize: 'vertical',
+        ...(focus ? {
+          borderColor: 'var(--text2)',
+          background: 'var(--surface)',
+          boxShadow: '0 0 0 3px rgba(11,19,48,0.06)',
+        } : {}),
+        ...props.style,
+      }}
+    />
+  );
 }

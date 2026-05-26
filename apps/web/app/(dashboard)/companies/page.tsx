@@ -5,14 +5,19 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/components/Topbar';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { Icon } from '@/components/ui/Icon';
 import { CompanyForm } from '@/components/companies/CompanyForm';
 import { CsvImportExport } from '@/components/CsvImportExport';
 import { useApiToken } from '@/lib/useApiToken';
 import { listCompanies } from '@/lib/companies';
 import type { Company } from '@vantage/types';
 
-const th: React.CSSProperties = { padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border)' };
-const td: React.CSSProperties = { padding: '12px 16px', fontSize: 13, color: 'var(--text)', borderBottom: '1px solid var(--border)' };
+const COLS = '1.6fr 1.2fr 1.2fr 1fr 1.4fr auto';
+
+const eyebrow: React.CSSProperties = {
+  fontSize: 10, fontWeight: 600, color: 'var(--text3)',
+  textTransform: 'uppercase', letterSpacing: 1.4,
+};
 
 export default function CompaniesPage() {
   const getToken = useApiToken();
@@ -42,41 +47,29 @@ export default function CompaniesPage() {
         }
       />
       <div style={{ padding: 24 }}>
-        <div style={{ marginBottom: 20 }}>
-          <span style={{ fontSize: 13, color: 'var(--text2)' }}>{data?.total ?? 0} companies</span>
-        </div>
+        <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text2)' }}>{data?.total ?? 0} companies</div>
 
-        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={th}>Company</th>
-                <th style={th}>Industry</th>
-                <th style={th}>Location</th>
-                <th style={th}>Employees</th>
-                <th style={th}>Website</th>
-                <th style={th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td colSpan={6} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>Loading…</td></tr>
-              ) : companies.length === 0 ? (
-                <tr><td colSpan={6} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>No companies yet.</td></tr>
-              ) : companies.map(c => (
-                <tr key={c.id} onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')} onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                  <td style={td}><span style={{ fontWeight: 500 }}>{c.name}</span></td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{c.industry ?? '—'}</td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{c.location ?? '—'}</td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{c.employee_count ?? '—'}</td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{c.website ?? '—'}</td>
-                  <td style={{ ...td, textAlign: 'right' }}>
-                    <Button onClick={() => setModal(c)}>Edit</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ display: 'grid', gridTemplateColumns: COLS, padding: '11px 18px', borderBottom: '1px solid var(--border)', gap: 14, alignItems: 'center' }}>
+            {['Company', 'Industry', 'Location', 'Employees', 'Website'].map(h => (
+              <span key={h} style={eyebrow}>{h}</span>
+            ))}
+            <span />
+          </div>
+
+          {isLoading ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading…</div>
+          ) : companies.length === 0 ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>No companies yet.</div>
+          ) : companies.map((c, i) => (
+            <CompanyRow
+              key={c.id}
+              company={c}
+              last={i === companies.length - 1}
+              onEdit={() => setModal(c)}
+            />
+          ))}
         </div>
 
         {modal && (
@@ -86,5 +79,51 @@ export default function CompaniesPage() {
         )}
       </div>
     </>
+  );
+}
+
+function CompanyRow({ company: c, last, onEdit }: {
+  company: Company; last: boolean; onEdit: () => void;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'grid', gridTemplateColumns: COLS,
+        gap: 14, alignItems: 'center',
+        padding: '12px 18px',
+        borderBottom: last ? 'none' : '1px solid var(--border)',
+        background: hover ? 'var(--surface2)' : 'transparent',
+        transition: 'background .12s', fontSize: 13,
+      }}
+    >
+      <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{
+          width: 30, height: 30, borderRadius: 8,
+          background: 'var(--surface2)', border: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, color: 'var(--text2)',
+        }}>
+          <Icon name="companies" size={15} />
+        </div>
+        <span style={{ fontWeight: 500, color: 'var(--text)' }}>{c.name}</span>
+      </span>
+      <span style={{ color: 'var(--text2)' }}>{c.industry ?? '—'}</span>
+      <span style={{ color: 'var(--text2)' }}>{c.location ?? '—'}</span>
+      <span style={{ color: 'var(--text2)' }}>{c.employee_count ?? '—'}</span>
+      <span>
+        {c.website ? (
+          <a href={c.website.startsWith('http') ? c.website : `https://${c.website}`} target="_blank" rel="noreferrer"
+            style={{ color: 'var(--text2)', textDecoration: 'underline', textDecorationColor: 'var(--border)', textUnderlineOffset: 3, fontSize: 13 }}>
+            {c.website}
+          </a>
+        ) : <span style={{ color: 'var(--text3)' }}>—</span>}
+      </span>
+      <span>
+        <Button onClick={onEdit} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 12 }}>Edit</Button>
+      </span>
+    </div>
   );
 }

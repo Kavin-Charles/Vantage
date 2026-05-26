@@ -124,7 +124,7 @@ export default function SettingsCalendarPage() {
         <Button variant="primary" onClick={openCreate}>+ Add Event</Button>
       </div>
 
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
         {isLoading ? (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>Loading…</div>
         ) : events.length === 0 ? (

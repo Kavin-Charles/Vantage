@@ -166,12 +166,22 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
       const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
       if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
       const result = await testTargetDatabaseConnection(infraDb, body.db_password);
-      // Persist status so list/detail pages reflect real health
+      // Persist status so list/detail pages reflect real health.
+      // Also save the password if one was provided and the test succeeded — ensures
+      // the background worker can use the same credentials without needing a manual save.
       const newStatus: InfraDatabase['status'] = result.ok ? 'healthy' : 'offline';
       logger.info({ ok: result.ok, newStatus, id: req.params['id'] }, 'db test result');
+      const updatePayload: Record<string, unknown> = {
+        status: newStatus,
+        last_checked_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      if (result.ok && body.db_password) {
+        updatePayload['db_password'] = body.db_password;
+      }
       await db
         .updateTable('infra_databases')
-        .set({ status: newStatus, last_checked_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .set(updatePayload)
         .where('id', '=', req.params['id'] as string)
         .where('workspace_id', '=', workspace.id)
         .execute();

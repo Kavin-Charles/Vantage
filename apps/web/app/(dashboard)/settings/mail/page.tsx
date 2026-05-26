@@ -131,7 +131,7 @@ export default function MailSettingsPage() {
 
       {accounts.map(acc => (
         <div key={acc.id} style={{
-          border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px',
+          border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '14px 16px',
           marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12,
         }}>
           <div style={{ flex: 1 }}>
@@ -174,7 +174,7 @@ export default function MailSettingsPage() {
       </div>
 
       {showImapForm && (
-        <div style={{ marginTop: 20, padding: 20, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--surface)' }}>
+        <div style={{ marginTop: 20, padding: 20, border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)' }}>
           <h3 style={{ fontSize: 14, fontWeight: 600, margin: '0 0 16px' }}>Company Mail (IMAP/SMTP)</h3>
           {error && <p style={{ color: 'var(--red)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

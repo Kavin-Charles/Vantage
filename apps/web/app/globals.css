@@ -1,26 +1,57 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f7f6f2;
-  --surface: #ffffff;
-  --surface2: #f0ede6;
-  --border: #e4e0d8;
-  --border2: #d4cfc5;
-  --text: #1a1814;
-  --text2: #6b665c;
-  --text3: #9e998f;
-  --green: #2d6a4f;
-  --green-bg: #d8f3dc;
-  --amber: #92400e;
-  --amber-bg: #fef3c7;
-  --red: #991b1b;
-  --red-bg: #fee2e2;
-  --blue: #1e3a8a;
-  --blue-bg: #dbeafe;
-  --purple: #4c1d95;
-  --purple-bg: #ede9fe;
-  --sidebar-w: 220px;
-  --header-h: 56px;
+  /* Surfaces */
+  --bg:        #f7f6f2;
+  --surface:   #ffffff;
+  --surface2:  #f0ede6;
+  --border:    #e4e0d8;
+  --border2:   #d4cfc5;
+
+  /* Text — cool ink-blue ladder */
+  --text:      #0b1330;
+  --text2:     #4a5677;
+  --text3:     #8e96ac;
+
+  /* Semantic colors */
+  --green:        #2d6a4f;
+  --green-bg:     #d8f3dc;
+  --amber:        #92400e;
+  --amber-bg:     #fef3c7;
+  --red:          #991b1b;
+  --red-bg:       #fee2e2;
+  --blue:         #1e3a8a;
+  --blue-bg:      #dbeafe;
+  --purple:       #4c1d95;
+  --purple-bg:    #ede9fe;
+
+  /* Layout */
+  --sidebar-w:   220px;
+  --header-h:    56px;
+  --alertbar-h:  36px;
+
+  /* Type families */
+  --font-sans:    'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Bricolage Grotesque', 'IBM Plex Sans', system-ui, sans-serif;
+  --font-serif:   var(--font-display);
+  --font-mono:    'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Radii */
+  --radius-sm:   6px;
+  --radius:      10px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-hover: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-modal: 0 8px 32px rgba(0,0,0,0.12);
+
+  /* Motion */
+  --motion-fast: .15s;
+  --motion-ease: ease;
+  --transition:  all var(--motion-fast) var(--motion-ease);
 }
 
 * {
@@ -30,8 +61,9 @@
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
+  -webkit-font-smoothing: antialiased;
 }

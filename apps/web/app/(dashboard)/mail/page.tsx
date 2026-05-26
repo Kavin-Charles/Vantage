@@ -61,8 +61,7 @@ export default function MailPage() {
   return (
     <>
       <Topbar />
-      {/* Negative margin escapes the dashboard layout's padding:24 so the mail panes fill edge-to-edge */}
-      <div style={{ display: 'flex', height: 'calc(100vh - var(--header-h) - 24px)', overflow: 'hidden', background: 'var(--bg)', margin: '0 -24px -24px' }}>
+      <div style={{ display: 'flex', height: 'calc(100dvh - var(--header-h))', overflow: 'hidden', background: 'var(--bg)' }}>
         <FolderSidebar
           selectedAccount={selectedAccount}
           selectedFolder={selectedFolder}

@@ -31,7 +31,7 @@ const ENGINE_COLOR: Record<string, 'blue' | 'green' | 'red' | 'amber' | 'purple'
   mongo: 'green',
   other: 'gray',
 };
-const th: React.CSSProperties = { padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' };
+const th: React.CSSProperties = { padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' };
 const td: React.CSSProperties = { padding: '10px 12px', fontSize: 13, color: 'var(--text)', borderBottom: '1px solid var(--border)', verticalAlign: 'top' };
 
 function valueText(value: unknown): string {
@@ -57,8 +57,8 @@ function isDml(sql: string): boolean {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 18px' }}>
-      <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>{label}</div>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 18px' }}>
+      <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>{value}</div>
     </div>
   );
@@ -75,8 +75,8 @@ function OverviewTab({ database }: { database: InfraDatabase }) {
         <Metric label="Clients" value={database.connected_clients !== null ? String(database.connected_clients) : '-'} />
         <Metric label="Uptime" value={database.uptime_seconds !== null ? `${Math.floor(database.uptime_seconds / 3600)}h` : '-'} />
       </div>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '16px 20px' }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>Details</div>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 20px' }}>
+        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 12 }}>Details</div>
         {[
           ['Host', database.host ?? '-'],
           ['Port', database.port !== null ? String(database.port) : '-'],
@@ -195,7 +195,7 @@ function TablesTab({ databaseId, engine, isAdmin }: { databaseId: string; engine
         </div>
       )}
       {error && <div style={{ marginBottom: 12, color: 'var(--red)', fontSize: 13 }}>{error}</div>}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'auto' }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>{(rows?.columns ?? []).map(column => <th key={column.name} style={th}>{column.name}{column.primary_key ? ' *' : ''}</th>)}</tr>
@@ -265,7 +265,7 @@ function SqlTab({ databaseId, isAdmin }: { databaseId: string; isAdmin: boolean 
       </div>
       {error && <div style={{ color: 'var(--red)', fontSize: 13, marginBottom: 12 }}>{error}</div>}
       {result && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'auto' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'auto' }}>
           {result.kind === 'dml' ? (
             <div style={{ padding: 16, fontSize: 13 }}>{result.row_count} rows affected.</div>
           ) : (
@@ -344,7 +344,7 @@ function MongoQueryTab({ databaseId }: { databaseId: string }) {
       </div>
       {error && <div style={{ color: 'var(--red)', fontSize: 13, marginBottom: 12 }}>{error}</div>}
       {result && result.kind === 'select' && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'auto' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'auto' }}>
           {result.rows.length === 0 ? (
             <div style={{ padding: 16, fontSize: 13, color: 'var(--text3)' }}>No documents matched.</div>
           ) : (

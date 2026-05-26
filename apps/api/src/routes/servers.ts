@@ -15,8 +15,9 @@ const updateServerSchema = createServerSchema.partial().extend({
   ssh_port: z.number().int().min(1).max(65535).optional(),
 });
 
-function deriveStatus(lastPingAt: string | null): 'online' | 'degraded' | 'offline' {
-  if (!lastPingAt) return 'offline';
+function deriveStatus(lastPingAt: string | null, storedStatus: string): 'online' | 'degraded' | 'offline' | 'stopped' {
+  // No agent has ever pinged — trust the stored status (e.g. demo/seeded servers)
+  if (!lastPingAt) return storedStatus as 'online' | 'degraded' | 'offline' | 'stopped';
   const diffMs = Date.now() - new Date(lastPingAt).getTime();
   if (diffMs < 90_000) return 'online';
   if (diffMs < 300_000) return 'degraded';
@@ -37,7 +38,7 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
         .orderBy('created_at', 'desc')
         .execute();
 
-      const withStatus = servers.map(s => ({ ...s, status: deriveStatus(s.last_ping_at) }));
+      const withStatus = servers.map(s => ({ ...s, status: deriveStatus(s.last_ping_at, s.status) }));
       res.json({ data: withStatus, total: withStatus.length, error: null });
     } catch (err) { next(err); }
   });
@@ -67,7 +68,7 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
         .orderBy('recorded_at', 'asc')
         .execute();
 
-      res.json({ data: { ...server, status: deriveStatus(server.last_ping_at), snapshots }, error: null });
+      res.json({ data: { ...server, status: deriveStatus(server.last_ping_at, server.status), snapshots }, error: null });
     } catch (err) { next(err); }
   });
 

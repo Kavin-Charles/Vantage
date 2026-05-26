@@ -19,8 +19,12 @@ function sslColor(dateStr: string | null): string {
   return 'var(--green)';
 }
 
-const th: React.CSSProperties = { padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid var(--border)' };
-const td: React.CSSProperties = { padding: '12px 16px', fontSize: 13, color: 'var(--text)', borderBottom: '1px solid var(--border)' };
+const COLS = '2fr 1fr 1fr 1fr 1.2fr auto';
+
+const eyebrow: React.CSSProperties = {
+  fontSize: 10, fontWeight: 600, color: 'var(--text3)',
+  textTransform: 'uppercase', letterSpacing: 1.4,
+};
 
 export default function WebsitesPage() {
   const getToken = useApiToken();
@@ -51,45 +55,27 @@ export default function WebsitesPage() {
       <Topbar action={<Button variant="primary" onClick={() => setModal(true)}>+ Add Website</Button>} />
       <div style={{ padding: 24 }}>
         <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text2)' }}>{sites.length} websites monitored</div>
-        <div style={{ background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={th}>Label / URL</th>
-                <th style={th}>Status</th>
-                <th style={th}>Response</th>
-                <th style={th}>Uptime 30d</th>
-                <th style={th}>SSL expiry</th>
-                <th style={th}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td colSpan={6} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>Loading…</td></tr>
-              ) : sites.length === 0 ? (
-                <tr><td colSpan={6} style={{ ...td, textAlign: 'center', color: 'var(--text3)', padding: 40 }}>No websites monitored yet.</td></tr>
-              ) : sites.map(site => (
-                <tr key={site.id}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '')}
-                >
-                  <td style={td}>
-                    <div style={{ fontWeight: 500 }}>{site.label ?? site.url}</div>
-                    {site.label && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{site.url}</div>}
-                  </td>
-                  <td style={td}><Badge label={site.status} color={statusColor[site.status] ?? 'gray'} /></td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{site.response_ms !== null ? `${site.response_ms}ms` : '—'}</td>
-                  <td style={{ ...td, color: 'var(--text2)' }}>{site.uptime_pct_30d !== null ? `${(site.uptime_pct_30d as number).toFixed(2)}%` : '—'}</td>
-                  <td style={{ ...td, color: sslColor(site.ssl_expiry_date) }}>
-                    {site.ssl_expiry_date ? new Date(site.ssl_expiry_date).toLocaleDateString() : '—'}
-                  </td>
-                  <td style={{ ...td, textAlign: 'right' }}>
-                    <Button onClick={() => { if (confirm('Stop monitoring this website?')) deleteMut.mutate(site.id); }}>Remove</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ display: 'grid', gridTemplateColumns: COLS, padding: '11px 18px', borderBottom: '1px solid var(--border)', gap: 14, alignItems: 'center' }}>
+            {['Label / URL', 'Status', 'Response', 'Uptime 30d', 'SSL expiry'].map(h => (
+              <span key={h} style={eyebrow}>{h}</span>
+            ))}
+            <span />
+          </div>
+
+          {isLoading ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading…</div>
+          ) : sites.length === 0 ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>No websites monitored yet.</div>
+          ) : sites.map((site, i) => (
+            <WebsiteRow
+              key={site.id}
+              site={site}
+              last={i === sites.length - 1}
+              onDelete={() => { if (confirm('Stop monitoring this website?')) deleteMut.mutate(site.id); }}
+            />
+          ))}
         </div>
       </div>
 
@@ -110,5 +96,43 @@ export default function WebsitesPage() {
         </Modal>
       )}
     </>
+  );
+}
+
+function WebsiteRow({ site, last, onDelete }: {
+  site: Website; last: boolean; onDelete: () => void;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        display: 'grid', gridTemplateColumns: COLS,
+        gap: 14, alignItems: 'center',
+        padding: '12px 18px',
+        borderBottom: last ? 'none' : '1px solid var(--border)',
+        background: hover ? 'var(--surface2)' : 'transparent',
+        transition: 'background .12s', fontSize: 13,
+      }}
+    >
+      <span>
+        <div style={{ fontWeight: 500, color: 'var(--text)' }}>{site.label ?? site.url}</div>
+        {site.label && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{site.url}</div>}
+      </span>
+      <span><Badge label={site.status} color={statusColor[site.status] ?? 'gray'} /></span>
+      <span style={{ color: site.response_ms !== null && site.response_ms > 500 ? 'var(--amber)' : 'var(--text2)', fontVariantNumeric: 'tabular-nums' }}>
+        {site.response_ms !== null ? `${site.response_ms}ms` : '—'}
+      </span>
+      <span style={{ color: site.uptime_pct_30d !== null && site.uptime_pct_30d < 99 ? 'var(--amber)' : 'var(--text2)', fontVariantNumeric: 'tabular-nums' }}>
+        {site.uptime_pct_30d !== null ? `${(site.uptime_pct_30d as number).toFixed(2)}%` : '—'}
+      </span>
+      <span style={{ color: sslColor(site.ssl_expiry_date) }}>
+        {site.ssl_expiry_date ? new Date(site.ssl_expiry_date).toLocaleDateString() : '—'}
+      </span>
+      <span>
+        <Button onClick={onDelete} style={{ padding: '4px 10px', borderRadius: 7, fontSize: 12 }}>Remove</Button>
+      </span>
+    </div>
   );
 }
