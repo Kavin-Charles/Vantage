@@ -5,7 +5,7 @@ import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import { z } from 'zod';
-import { smtpSchema, configSchema } from '@vantage/config';
+import { smtpSchema } from '@vantage/config';
 import { encryptSmtpPassword } from '../lib/setup-crypto';
 import { isConfigured } from '../lib/setup-db';
 import { logger } from '../lib/logger';
