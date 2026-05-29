@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 // Runtime config (vantage.config.json)
 export { readConfig, _resetConfig } from './read-config';
+export { readConfigFromDb } from './read-config-from-db';
 export type { VantageConfig, DbSeedConfig, SmtpConfig } from './config-schema';
 export { configSchema } from './config-schema';
 
