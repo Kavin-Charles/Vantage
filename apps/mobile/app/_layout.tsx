@@ -2,10 +2,24 @@ import { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import * as Notifications from 'expo-notifications';
+import * as SplashScreen from 'expo-splash-screen';
+import {
+  useFonts,
+  BricolageGrotesque_400Regular,
+  BricolageGrotesque_500Medium,
+  BricolageGrotesque_600SemiBold,
+} from '@expo-google-fonts/bricolage-grotesque';
+import {
+  IBMPlexSans_400Regular,
+  IBMPlexSans_500Medium,
+  IBMPlexSans_600SemiBold,
+} from '@expo-google-fonts/ibm-plex-sans';
+import { IBMPlexMono_400Regular } from '@expo-google-fonts/ibm-plex-mono';
 import { queryClient, asyncStoragePersister } from '@/lib/queryClient';
 import { getAuthToken } from '@/lib/secureStore';
 
-// Show notifications while app is in foreground
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -21,18 +35,32 @@ export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
 
+  const [fontsLoaded] = useFonts({
+    BricolageGrotesque_400Regular,
+    BricolageGrotesque_500Medium,
+    BricolageGrotesque_600SemiBold,
+    IBMPlexSans_400Regular,
+    IBMPlexSans_500Medium,
+    IBMPlexSans_600SemiBold,
+    IBMPlexMono_400Regular,
+  });
+
   useEffect(() => {
     void getAuthToken().then(setToken);
   }, []);
 
   useEffect(() => {
-    if (token === undefined) return; // still loading
+    if (fontsLoaded && token !== undefined) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [fontsLoaded, token]);
+
+  useEffect(() => {
+    if (token === undefined) return;
     const inAuthGroup = segments[0] === '(auth)';
     if (token && inAuthGroup) {
       router.replace('/(app)');
     } else if (!token && !inAuthGroup) {
-      // Re-read storage before redirecting — covers post-login navigation
-      // where login screen stored the token just before router.replace
       void getAuthToken().then(fresh => {
         if (fresh) {
           setToken(fresh);
@@ -43,7 +71,7 @@ export default function RootLayout() {
     }
   }, [token, segments, router]);
 
-  if (token === undefined) return null; // show nothing while loading token
+  if (!fontsLoaded || token === undefined) return null;
 
   return (
     <PersistQueryClientProvider
