@@ -12,6 +12,7 @@ import { createRequireAuth, requireAdmin } from './middleware/auth';
 import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
 import { createConfigRouter } from './routes/config';
+import { createSetupRouter } from './routes/setup';
 import { createMeRouter } from './routes/me';
 import { createPushTokenRouter } from './routes/push-token';
 import { createContactsRouter } from './routes/contacts';
@@ -66,8 +67,10 @@ app.use(cookieParser());
 app.use(express.json());
 
 // Public routes (no auth)
-app.use('/api/config', createConfigRouter(config));
+app.use('/api/config', createConfigRouter(config, db));
 app.use('/api/auth', createAuthRouter(db, env.JWT_SECRET, config.smtp));
+// Setup (public — must come before requireAuth routes)
+app.use('/api/setup', createSetupRouter(db));
 
 // Authenticated routes
 app.use('/api/me', requireAuth, createMeRouter());
