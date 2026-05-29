@@ -2,8 +2,9 @@ import { z } from 'zod';
 
 // Runtime config (vantage.config.json)
 export { readConfig, _resetConfig } from './read-config';
+export { readConfigFromDb } from './read-config-from-db';
 export type { VantageConfig, DbSeedConfig, SmtpConfig } from './config-schema';
-export { configSchema } from './config-schema';
+export { configSchema, smtpSchema } from './config-schema';
 
 // API env (process.env — only DB + secrets, no Clerk/Stripe)
 export const apiEnvSchema = z.object({
@@ -19,6 +20,8 @@ export const apiEnvSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.string().optional(),
   MAIL_ENCRYPTION_KEY: z.string().length(64).optional(),
+  GMAIL_PUBSUB_TOKEN: z.string().optional(),
+  GOOGLE_PUBSUB_TOPIC: z.string().optional(),
 });
 
 // Web env

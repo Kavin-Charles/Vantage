@@ -389,6 +389,7 @@ export interface EmailAccountTable {
   sync_status: Generated<'idle' | 'syncing' | 'error'>;
   sync_error: string | null;
   last_synced_at: string | null;
+  gmail_watch_expiry: string | null;
   created_at: Generated<string>;
   updated_at: Generated<string>;
 }
