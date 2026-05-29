@@ -538,6 +538,12 @@ export interface CalendarEventTable {
   updated_at: Generated<Date>;
 }
 
+export interface SystemSettingsTable {
+  key: string;
+  value: Record<string, unknown>;
+  updated_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -580,6 +586,7 @@ export interface Database {
   conversion_field_mappings: ConversionFieldMappingTable;
   record_conversions: RecordConversionTable;
   calendar_events: CalendarEventTable;
+  system_settings: SystemSettingsTable;
 }
 
 // Convenience types
