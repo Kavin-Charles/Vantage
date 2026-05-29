@@ -1,0 +1,50 @@
+import { redirect } from 'next/navigation';
+import { SetupWizard } from './SetupWizard';
+
+export const metadata = { title: 'Setup — Vantage' };
+
+async function getSetupStatus(): Promise<boolean> {
+  const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
+  try {
+    const res = await fetch(`${apiUrl}/api/setup/status`, { cache: 'no-store' });
+    const json = await res.json();
+    return json.data?.configured === true;
+  } catch {
+    return false;
+  }
+}
+
+export default async function SetupPage() {
+  const configured = await getSetupStatus();
+  if (configured) redirect('/');
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'var(--bg)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px',
+      fontFamily: 'DM Sans, sans-serif',
+    }}>
+      <div style={{ width: '100%', maxWidth: 560 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <h1 style={{
+            fontFamily: 'Instrument Serif, serif',
+            fontSize: 32,
+            fontWeight: 400,
+            color: 'var(--text)',
+            margin: '0 0 8px',
+          }}>
+            Welcome to Vantage
+          </h1>
+          <p style={{ color: 'var(--text2)', margin: 0 }}>
+            Let's get your instance set up.
+          </p>
+        </div>
+        <SetupWizard />
+      </div>
+    </div>
+  );
+}
