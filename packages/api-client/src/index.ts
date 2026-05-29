@@ -6,3 +6,5 @@ export * from './activity';
 export * from './alerts';
 export * from './companies';
 export * from './me';
+export * from './servers';
+export * from './pipelines';

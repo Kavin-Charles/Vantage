@@ -13,62 +13,71 @@ export default function AppLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.green,
+        tabBarActiveTintColor: Colors.text,
         tabBarInactiveTintColor: Colors.text3,
         tabBarStyle: {
           backgroundColor: Colors.surface,
           borderTopColor: Colors.border,
+          borderTopWidth: 1,
+        },
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontFamily: 'IBMPlexSans_500Medium',
+          marginBottom: 2,
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Home',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="contacts"
+        name="pipeline"
         options={{
-          title: 'Contacts',
+          title: 'Pipeline',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <Ionicons name="trending-up-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="deals"
+        name="activity"
         options={{
-          title: 'Deals',
+          title: 'Activity',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="briefcase-outline" size={size} color={color} />
+            <Ionicons name="flash-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="tasks"
+        name="servers"
         options={{
-          title: 'Tasks',
+          title: 'Servers',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="checkbox-outline" size={size} color={color} />
+            <Ionicons name="server-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="alerts"
+        name="more"
         options={{
-          title: 'Alerts',
+          title: 'More',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications-outline" size={size} color={color} />
+            <Ionicons name="ellipsis-horizontal-outline" size={size} color={color} />
           ),
         }}
       />
-      {/* Hidden non-tab routes */}
-      <Tabs.Screen name="activity" options={{ href: null }} />
-      <Tabs.Screen name="settings" options={{ href: null }} />
+
+      {/* Hidden routes — accessible via More / deep links */}
+      <Tabs.Screen name="contacts"  options={{ href: null }} />
+      <Tabs.Screen name="tasks"     options={{ href: null }} />
+      <Tabs.Screen name="alerts"    options={{ href: null }} />
+      <Tabs.Screen name="settings"  options={{ href: null }} />
     </Tabs>
   );
 }

@@ -1,4 +1,4 @@
 import { Stack } from 'expo-router';
-export default function DealsLayout() {
+export default function MoreLayout() {
   return <Stack screenOptions={{ headerShown: false }} />;
 }
