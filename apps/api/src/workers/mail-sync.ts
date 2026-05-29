@@ -5,6 +5,8 @@ import { createGmailProvider } from '../lib/gmail-provider';
 import { createImapProvider } from '../lib/imap-provider';
 import type { FetchedEmail, MailProvider } from '../lib/mail-provider';
 import { logger } from '../lib/logger';
+import { logActivity } from '../lib/log-activity';
+import { mailNotifier } from '../lib/mail-notifier';
 
 export function buildProvider(
   account: EmailAccount,
@@ -49,6 +51,33 @@ async function autoLinkContact(
   return null;
 }
 
+async function autoLinkDeal(
+  db: Kysely<Database>,
+  workspaceId: string,
+  contactId: string | null,
+): Promise<string | null> {
+  if (!contactId) return null;
+  const deal = await db
+    .selectFrom('deals')
+    .where('workspace_id', '=', workspaceId)
+    .where('contact_id', '=', contactId)
+    .where('stage', 'not in', ['won', 'lost'])
+    .orderBy('updated_at', 'desc')
+    .select('id')
+    .executeTakeFirst();
+  return deal?.id ?? null;
+}
+
+export async function storeEmailsForTest(
+  db: Kysely<Database>,
+  accountId: string,
+  workspaceId: string,
+  userId: string,
+  emails: FetchedEmail[],
+): Promise<void> {
+  return storeEmails(db, accountId, workspaceId, userId, emails);
+}
+
 async function storeEmails(
   db: Kysely<Database>,
   accountId: string,
@@ -59,9 +88,10 @@ async function storeEmails(
   for (const email of emails) {
     const allAddresses = [email.from_address, ...email.to_addresses, ...email.cc_addresses]
       .map(a => a.toLowerCase());
-    const contact_id = await autoLinkContact(db, workspaceId, allAddresses);
+    const contactId = await autoLinkContact(db, workspaceId, allAddresses);
+    const dealId = await autoLinkDeal(db, workspaceId, contactId);
 
-    await db
+    const inserted = await db
       .insertInto('emails')
       .values({
         account_id: accountId,
@@ -72,9 +102,9 @@ async function storeEmails(
         subject: email.subject,
         from_address: email.from_address,
         from_name: email.from_name,
-        to_addresses: JSON.stringify(email.to_addresses) as unknown as string[],
-        cc_addresses: JSON.stringify(email.cc_addresses) as unknown as string[],
-        bcc_addresses: JSON.stringify(email.bcc_addresses) as unknown as string[],
+        to_addresses: email.to_addresses as unknown as string[],
+        cc_addresses: email.cc_addresses as unknown as string[],
+        bcc_addresses: email.bcc_addresses as unknown as string[],
         body_html: email.body_html,
         body_text: email.body_text,
         snippet: email.snippet,
@@ -82,11 +112,29 @@ async function storeEmails(
         is_read: email.is_read,
         is_starred: email.is_starred,
         sent_at: email.sent_at,
-        contact_id,
-        deal_id: null,
+        contact_id: contactId,
+        deal_id: dealId,
       })
       .onConflict(oc => oc.columns(['account_id', 'message_id']).doNothing())
-      .execute();
+      .returningAll()
+      .executeTakeFirst();
+
+    if (inserted) {
+      void logActivity(db, {
+        workspace_id: workspaceId,
+        user_id: userId,
+        type: 'email',
+        body: email.subject ?? '(no subject)',
+        contact_id: contactId ?? undefined,
+        deal_id: dealId ?? undefined,
+        meta: {
+          email_id: inserted.id,
+          direction: 'inbound',
+          snippet: email.snippet ?? undefined,
+        },
+      });
+      mailNotifier.broadcast(userId, { type: 'new_email', email: inserted });
+    }
   }
 }
 
