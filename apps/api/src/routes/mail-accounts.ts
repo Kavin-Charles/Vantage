@@ -7,6 +7,7 @@ import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { encryptSecret, decryptSecret } from '../lib/mail-crypto';
 import { runFullSync, runIncrementalSync } from '../workers/mail-sync';
+import { registerGmailWatch } from '../workers/gmail-watch-renew';
 import { logger } from '../lib/logger';
 
 const connectImapSchema = z.object({
@@ -195,6 +196,9 @@ export async function handleGmailCallback(
         .where('id', '=', existing.id)
         .execute();
       void runIncrementalSync(db, existing.id);
+      void registerGmailWatch(db, existing.id).catch(err =>
+        logger.error({ err }, 'mail: gmail watch registration failed'),
+      );
     } else {
       const account = await db
         .insertInto('email_accounts')
@@ -211,6 +215,9 @@ export async function handleGmailCallback(
         .returning('id')
         .executeTakeFirstOrThrow();
       void runFullSync(db, account.id);
+      void registerGmailWatch(db, account.id).catch(err =>
+        logger.error({ err }, 'mail: gmail watch registration failed'),
+      );
     }
 
     const appUrl = process.env['APP_URL'] ?? 'http://localhost:3000';
