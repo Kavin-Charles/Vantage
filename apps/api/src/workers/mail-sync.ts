@@ -59,11 +59,14 @@ async function autoLinkDeal(
   if (!contactId) return null;
   const deal = await db
     .selectFrom('deals')
-    .where('workspace_id', '=', workspaceId)
-    .where('contact_id', '=', contactId)
-    .where('stage', 'not in', ['won', 'lost'])
-    .orderBy('updated_at', 'desc')
-    .select('id')
+    .innerJoin('pipeline_stages', 'pipeline_stages.id', 'deals.stage_id')
+    .where('deals.workspace_id', '=', workspaceId)
+    .where('deals.contact_id', '=', contactId)
+    .where('deals.deleted_at', 'is', null)
+    .where('pipeline_stages.is_won', '=', false)
+    .where('pipeline_stages.is_lost', '=', false)
+    .orderBy('deals.updated_at', 'desc')
+    .select('deals.id')
     .executeTakeFirst();
   return deal?.id ?? null;
 }

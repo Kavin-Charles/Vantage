@@ -49,6 +49,7 @@ function makeDb(opts: {
 
   return {
     selectFrom: vi.fn().mockReturnThis(),
+    innerJoin: vi.fn().mockReturnThis(),
     insertInto: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
     select: vi.fn().mockReturnThis(),
