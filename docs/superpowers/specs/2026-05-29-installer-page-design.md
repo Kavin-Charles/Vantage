@@ -24,11 +24,12 @@ GET  /api/setup/status     → returns { configured: boolean }
 ### Setup Guard (middleware.ts)
 
 Extended `apps/web/middleware.ts`:
-- Before Clerk checks: call `GET /api/setup/status`
-- If `configured = false` and path ≠ `/setup` or `/api/setup*` → redirect to `/setup`
-- If `configured = true` and path = `/setup` → redirect to `/`
+- Check for `vantage_setup_done` cookie (set by API on successful setup)
+- If cookie absent and path ≠ `/setup` or `/api/setup*` → redirect to `/setup`
+- If cookie present and path = `/setup` → redirect to `/`
+- The `/setup` page itself calls `GET /api/setup/status` on mount to confirm DB state
 
-The `/setup` page is intentionally outside Clerk auth — the admin creates their identity during setup.
+No per-request API call in middleware — cookie check is O(1). The admin creates their identity during setup before any auth flow.
 
 ---
 
@@ -41,16 +42,22 @@ The `/setup` page is intentionally outside Clerk auth — the admin creates thei
 3. `SELECT value FROM system_settings WHERE key = 'setup' FOR UPDATE`
 4. If `configured = true` → ROLLBACK → 403
 5. Validates all input with Zod
-6. Saves config row, sets `configured = true`
-7. COMMITS
+6. Hashes admin password with bcrypt (rounds=12)
+7. Creates workspace record
+8. Creates admin user (role=admin)
+9. Encrypts SMTP password (AES-256-CBC, SSH_ENCRYPTION_KEY)
+10. Saves config row to system_settings
+11. Sets configured = true
+12. COMMITS
+13. Sets `vantage_setup_done=1` cookie (httpOnly)
 
 This prevents TOCTOU race conditions — concurrent setup requests cannot both succeed.
 
-### No Password Storage
-Auth is Clerk. No passwords are collected or stored. "Admin account" step collects name + email only. The email is stored as `first_admin_email` in the config. On first Clerk sign-in matching that email, the user is auto-promoted to `admin` role and `first_admin_email` is cleared.
+### Password Handling
+Auth is custom JWT + bcrypt (not Clerk). The admin account step collects name, email, and password. Password is validated (min 8 chars, confirmed), then hashed with bcrypt (rounds=12) before storage in the `users` table. The plaintext password never touches the DB.
 
 ### SMTP Credentials Encryption
-SMTP password is encrypted at rest using `AES-256-GCM` with `ENCRYPTION_KEY` env var before being stored in DB. The `GET /api/setup/status` endpoint returns only `{ configured: boolean }` — no credentials ever exposed.
+SMTP password is encrypted at rest using `AES-256-CBC` with `SSH_ENCRYPTION_KEY` (already required env var, 64-char hex = 32 bytes). Follows the same pattern as `apps/api/src/lib/ssh-crypto.ts`. The `GET /api/setup/status` endpoint returns only `{ configured: boolean }` — no credentials ever exposed.
 
 ### Rate Limiting
 `POST /api/setup` rate-limited to 3 requests/min per IP.
@@ -89,7 +96,6 @@ Key: `"config"`. Value shape:
     "password": "<AES-256-GCM encrypted>",
     "from": "hello@acme.com"
   },
-  "first_admin_email": "admin@acme.com"
 }
 ```
 
@@ -141,10 +147,12 @@ Toggle switches:
 |---|---|---|
 | Full name | text | yes |
 | Email | email | yes |
+| Password | password | yes (min 8 chars) |
+| Confirm password | password | yes (must match) |
 
-Display note: *"You'll sign in via the login page after setup completes. This email will be granted admin access automatically."*
+Display note: *"This creates the first admin account. You'll use these credentials to log in after setup completes."*
 
-No password field — auth is handled by Clerk.
+Auth is custom JWT + bcrypt (not Clerk). Password is hashed with bcrypt before storage.
 
 ### Step 5 — Review & Confirm
 - Summary card showing all entered values
@@ -186,13 +194,9 @@ type SetupState = {
 
 ---
 
-## New Environment Variable
+## Environment Variables
 
-```
-ENCRYPTION_KEY=   # 32-byte hex string, used for AES-256-GCM SMTP password encryption
-```
-
-Must be set before first boot. API startup should fail fast with a clear error if missing.
+No new env vars required. SMTP encryption reuses `SSH_ENCRYPTION_KEY` (already required by the API).
 
 ---
 
