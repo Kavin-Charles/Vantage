@@ -133,6 +133,52 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
       }
     },
 
+    async fetchBody(messageId: string) {
+      const client = makeClient(opts);
+      await client.connect();
+      try {
+        let sourceStr: string | null = null;
+
+        // Synthetic IDs from our sync: imap-{MAILBOXNAME}-{UID}
+        const syntheticMatch = messageId.match(/^imap-(.+)-(\d+)$/);
+
+        if (syntheticMatch) {
+          const mailboxName = syntheticMatch[1]!;
+          const uid = Number(syntheticMatch[2]);
+          await client.mailboxOpen(mailboxName);
+          for await (const msg of client.fetch([uid], { source: true }, { uid: true })) {
+            sourceStr = msg.source?.toString('utf8') ?? null;
+            break;
+          }
+        } else {
+          // Real Message-ID: search across common mailboxes
+          for (const mailboxName of ['INBOX', 'Sent', 'Sent Items', 'Sent Messages']) {
+            try {
+              await client.mailboxOpen(mailboxName);
+              const uids = await client.search({ header: { 'Message-Id': messageId } }, { uid: true });
+              if (uids && uids.length > 0) {
+                for await (const msg of client.fetch([(uids as number[])[0]!], { source: true }, { uid: true })) {
+                  sourceStr = msg.source?.toString('utf8') ?? null;
+                  break;
+                }
+                if (sourceStr) break;
+              }
+            } catch { /* mailbox might not exist, try next */ }
+          }
+        }
+
+        if (!sourceStr) return { body_html: null, body_text: null };
+
+        // Extract body: everything after the blank line separating headers from body
+        const bodyStart = sourceStr.indexOf('\r\n\r\n');
+        if (bodyStart === -1) return { body_html: null, body_text: null };
+        const body_text = sourceStr.slice(bodyStart + 4).trim() || null;
+        return { body_html: null, body_text };
+      } finally {
+        try { await client.logout(); } catch { /* ignore */ }
+      }
+    },
+
     async sendEmail(params: SendEmailParams) {
       const transporter = nodemailer.createTransport({
         host: opts.smtp_host,

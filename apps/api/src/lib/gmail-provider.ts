@@ -124,6 +124,39 @@ export function createGmailProvider(opts: GmailProviderOptions): MailProvider {
       }
     },
 
+    async fetchBody(messageId: string) {
+      try {
+        const { data } = await gmail.users.messages.get({ userId: 'me', id: messageId, format: 'full' });
+
+        let body_html: string | null = null;
+        let body_text: string | null = null;
+
+        function parseParts(parts: NonNullable<typeof data.payload>['parts']): void {
+          if (!parts) return;
+          for (const p of parts) {
+            if (p.mimeType === 'text/html' && p.body?.data) {
+              body_html ??= Buffer.from(p.body.data, 'base64url').toString('utf8');
+            } else if (p.mimeType === 'text/plain' && p.body?.data) {
+              body_text ??= Buffer.from(p.body.data, 'base64url').toString('utf8');
+            }
+            if (p.parts) parseParts(p.parts);
+          }
+        }
+
+        if (data.payload?.body?.data) {
+          const raw = Buffer.from(data.payload.body.data, 'base64url').toString('utf8');
+          if (data.payload.mimeType === 'text/html') body_html = raw;
+          else body_text = raw;
+        } else {
+          parseParts(data.payload?.parts);
+        }
+
+        return { body_html, body_text };
+      } catch {
+        return { body_html: null, body_text: null };
+      }
+    },
+
     async sendEmail(params: SendEmailParams) {
       const lines = [
         `To: ${params.to.join(', ')}`,

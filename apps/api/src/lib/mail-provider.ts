@@ -39,6 +39,13 @@ export interface MailProvider {
    */
   fetchIncremental(cursor: SyncCursor): Promise<{ emails: FetchedEmail[]; newCursor: SyncCursor }>;
 
+  /**
+   * Fetch the full body of a single message by its provider message_id.
+   * Returns null fields if the message cannot be found or body is unavailable.
+   * Bodies are NEVER stored in the DB — this is a live fetch only.
+   */
+  fetchBody(messageId: string): Promise<{ body_html: string | null; body_text: string | null }>;
+
   /** Send an email. Returns provider's message_id. */
   sendEmail(params: SendEmailParams): Promise<{ message_id: string }>;
 
