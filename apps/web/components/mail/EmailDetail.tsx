@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 
@@ -11,8 +11,6 @@ interface Email {
   from_address: string;
   to_addresses: string[];
   cc_addresses: string[];
-  body_html: string | null;
-  body_text: string | null;
   sent_at: string;
   contact_id: string | null;
   is_starred: boolean;
@@ -28,8 +26,6 @@ interface Props {
 }
 
 export function EmailDetail({ email, onReply, onClose }: Props) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
   useEffect(() => {
     if (!email.is_read) {
       void apiFetch(`/api/mail/emails/${email.id}`, {
@@ -40,15 +36,8 @@ export function EmailDetail({ email, onReply, onClose }: Props) {
   }, [email.id, email.is_read]);
 
   useEffect(() => {
-    if (iframeRef.current && email.body_html) {
-      const doc = iframeRef.current.contentDocument;
-      if (doc) {
-        doc.open();
-        doc.write(email.body_html);
-        doc.close();
-      }
-    }
-  }, [email.body_html]);
+    // body_html is no longer stored; nothing to render into iframe
+  }, []);
 
   const from = email.from_name ? `${email.from_name} <${email.from_address}>` : email.from_address;
 
@@ -91,18 +80,9 @@ export function EmailDetail({ email, onReply, onClose }: Props) {
       </div>
 
       <div style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', minHeight: 300 }}>
-        {email.body_html ? (
-          <iframe
-            ref={iframeRef}
-            sandbox="allow-same-origin"
-            style={{ width: '100%', height: '100%', minHeight: 300, border: 'none' }}
-            title="Email body"
-          />
-        ) : (
-          <pre style={{ padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0, color: 'var(--text)' }}>
-            {email.body_text ?? '(empty)'}
-          </pre>
-        )}
+        <pre style={{ padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0, color: 'var(--text3)' }}>
+          (email body not stored)
+        </pre>
       </div>
 
       <div style={{ display: 'flex', gap: 8 }}>

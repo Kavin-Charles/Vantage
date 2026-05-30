@@ -18,8 +18,6 @@ interface Email {
   from_address: string;
   to_addresses: string[];
   cc_addresses: string[];
-  body_html: string | null;
-  body_text: string | null;
   sent_at: string;
   contact_id: string | null;
   is_starred: boolean;
