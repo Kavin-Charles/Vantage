@@ -62,6 +62,10 @@ export function useMailSocket({ onNewEmail, enabled = true }: UseMailSocketOptio
       }
 
       state.ws = ws;
+      if (state.cancelled) {
+        ws.close();
+        return;
+      }
 
       ws.addEventListener('message', (event) => {
         try {
