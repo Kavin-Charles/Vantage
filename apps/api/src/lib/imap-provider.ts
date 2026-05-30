@@ -56,12 +56,9 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
             uidnext = Number(mailbox.uidNext);
             const emails: FetchedEmail[] = [];
 
-            for await (const msg of client.fetch('1:*', { envelope: true, source: true })) {
+            for await (const msg of client.fetch('1:*', { envelope: true })) {
               const env = msg.envelope;
               if (!env) continue;
-              const raw = msg.source?.toString('utf8') ?? '';
-              const bodyStart = raw.indexOf('\r\n\r\n');
-              const body_text = bodyStart !== -1 ? raw.slice(bodyStart + 4, bodyStart + 50004).trim() : null;
 
               emails.push({
                 message_id: env.messageId ?? `imap-${mailboxName}-${msg.uid}`,
@@ -72,9 +69,7 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
                 to_addresses: (env.to ?? []).map(a => a.address).filter((a): a is string => Boolean(a)),
                 cc_addresses: (env.cc ?? []).map(a => a.address).filter((a): a is string => Boolean(a)),
                 bcc_addresses: (env.bcc ?? []).map(a => a.address).filter((a): a is string => Boolean(a)),
-                body_html: null,
-                body_text: body_text || null,
-                snippet: body_text?.slice(0, 200) ?? null,
+                snippet: env.subject?.slice(0, 200) ?? null,
                 folder,
                 is_read: msg.flags?.has('\\Seen') ?? false,
                 is_starred: msg.flags?.has('\\Flagged') ?? false,
@@ -110,12 +105,9 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
 
         const newUidnext = Number(mailbox.uidNext);
         if (newUidnext > (cursor.uidnext ?? 1)) {
-          for await (const msg of client.fetch(`${cursor.uidnext}:*`, { envelope: true, source: true }, { uid: true })) {
+          for await (const msg of client.fetch(`${cursor.uidnext}:*`, { envelope: true }, { uid: true })) {
             const env = msg.envelope;
             if (!env) continue;
-            const raw = msg.source?.toString('utf8') ?? '';
-            const bodyStart = raw.indexOf('\r\n\r\n');
-            const body_text = bodyStart !== -1 ? raw.slice(bodyStart + 4, bodyStart + 50004).trim() : null;
 
             emails.push({
               message_id: env.messageId ?? `imap-inbox-${msg.uid}`,
@@ -126,9 +118,7 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
               to_addresses: (env.to ?? []).map(a => a.address).filter((a): a is string => Boolean(a)),
               cc_addresses: (env.cc ?? []).map(a => a.address).filter((a): a is string => Boolean(a)),
               bcc_addresses: (env.bcc ?? []).map(a => a.address).filter((a): a is string => Boolean(a)),
-              body_html: null,
-              body_text: body_text || null,
-              snippet: body_text?.slice(0, 200) ?? null,
+              snippet: env.subject?.slice(0, 200) ?? null,
               folder: 'inbox',
               is_read: msg.flags?.has('\\Seen') ?? false,
               is_starred: msg.flags?.has('\\Flagged') ?? false,

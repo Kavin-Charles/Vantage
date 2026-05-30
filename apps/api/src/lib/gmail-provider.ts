@@ -48,34 +48,16 @@ export function createGmailProvider(opts: GmailProviderOptions): MailProvider {
 
   async function getMessage(id: string): Promise<FetchedEmail | null> {
     try {
-      const { data } = await gmail.users.messages.get({ userId: 'me', id, format: 'full' });
+      const { data } = await gmail.users.messages.get({
+        userId: 'me',
+        id,
+        format: 'metadata',
+        metadataHeaders: ['Subject', 'From', 'To', 'Cc', 'Bcc', 'Date'],
+      });
       const headers = data.payload?.headers ?? [];
       const h = (name: string) => headers.find(x => x.name?.toLowerCase() === name)?.value ?? null;
       const { address: from_address, name: from_name } = parseFrom(h('from') ?? '');
       const labels = data.labelIds ?? [];
-
-      let body_html: string | null = null;
-      let body_text: string | null = null;
-
-      function parseParts(parts: NonNullable<typeof data.payload>['parts']): void {
-        if (!parts) return;
-        for (const p of parts) {
-          if (p.mimeType === 'text/html' && p.body?.data) {
-            body_html ??= Buffer.from(p.body.data, 'base64url').toString('utf8');
-          } else if (p.mimeType === 'text/plain' && p.body?.data) {
-            body_text ??= Buffer.from(p.body.data, 'base64url').toString('utf8');
-          }
-          if (p.parts) parseParts(p.parts);
-        }
-      }
-
-      if (data.payload?.body?.data) {
-        const raw = Buffer.from(data.payload.body.data, 'base64url').toString('utf8');
-        if (data.payload.mimeType === 'text/html') body_html = raw;
-        else body_text = raw;
-      } else {
-        parseParts(data.payload?.parts);
-      }
 
       return {
         message_id: data.id!,
@@ -86,9 +68,7 @@ export function createGmailProvider(opts: GmailProviderOptions): MailProvider {
         to_addresses: parseAddressList(h('to')),
         cc_addresses: parseAddressList(h('cc')),
         bcc_addresses: parseAddressList(h('bcc')),
-        body_html,
-        body_text,
-        snippet: data.snippet ?? body_text?.slice(0, 200) ?? null,
+        snippet: data.snippet?.slice(0, 300) ?? null,
         folder: labelToFolder(labels),
         is_read: !labels.includes('UNREAD'),
         is_starred: labels.includes('STARRED'),
