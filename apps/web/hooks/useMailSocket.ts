@@ -37,9 +37,14 @@ export function useMailSocket({ onNewEmail, enabled = true }: UseMailSocketOptio
     const wsBase = apiBase.replace(/^http/, 'ws');
 
     // Mutable container so the async setup can hand off the socket to the cleanup closure.
-    const state: { ws: WebSocket | null; cancelled: boolean } = { ws: null, cancelled: false };
+    const state: {
+      ws: WebSocket | null;
+      cancelled: boolean;
+      retryDelay: number;
+      reconnectTimer: ReturnType<typeof setTimeout> | null;
+    } = { ws: null, cancelled: false, retryDelay: 1_000, reconnectTimer: null };
 
-    (async () => {
+    const connect = async (): Promise<void> => {
       // Exchange session cookie for a short-lived WS token — handles cross-origin deployments
       // where SameSite=Strict prevents the cookie from being sent on WS upgrade requests.
       let wsToken = '';
@@ -67,6 +72,10 @@ export function useMailSocket({ onNewEmail, enabled = true }: UseMailSocketOptio
         return;
       }
 
+      ws.addEventListener('open', () => {
+        state.retryDelay = 1_000;
+      });
+
       ws.addEventListener('message', (event) => {
         try {
           const msg = JSON.parse(event.data as string) as { type: string; email?: MailSocketEmail };
@@ -81,10 +90,23 @@ export function useMailSocket({ onNewEmail, enabled = true }: UseMailSocketOptio
           console.warn('[useMailSocket] WebSocket error');
         }
       });
-    })();
+
+      ws.addEventListener('close', () => {
+        if (!state.cancelled) {
+          const delay = state.retryDelay;
+          state.retryDelay = Math.min(state.retryDelay * 2, 30_000);
+          state.reconnectTimer = setTimeout(() => {
+            if (!state.cancelled) void connect();
+          }, delay);
+        }
+      });
+    };
+
+    void connect();
 
     return () => {
       state.cancelled = true;
+      if (state.reconnectTimer !== null) clearTimeout(state.reconnectTimer);
       state.ws?.close();
     };
   }, [enabled]);
