@@ -552,8 +552,8 @@ export interface WorkspaceImapConfigTable {
   smtp_host: string;
   smtp_port: number;
   use_ssl: Generated<boolean>;
-  created_at: Generated<string>;
-  updated_at: Generated<string>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
 }
 
 export interface Database {
