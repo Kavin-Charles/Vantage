@@ -134,7 +134,7 @@ export function Sidebar() {
           fontFamily: 'var(--font-display)', fontSize: 19,
           fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.4px',
         }}>
-          {config?.app.name ?? 'Vantage'}
+          {config?.app.name ?? ''}
         </span>
       </div>
 

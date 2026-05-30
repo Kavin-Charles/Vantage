@@ -17,6 +17,7 @@ export function useConfig() {
   return useQuery({
     queryKey: ['config'],
     queryFn: () => apiFetch<{ data: PublicConfig }>('/api/config').then(r => r.data),
-    staleTime: Infinity,
+    staleTime: 5 * 60 * 1000,
+    retry: 3,
   });
 }
