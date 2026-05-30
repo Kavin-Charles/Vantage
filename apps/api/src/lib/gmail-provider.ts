@@ -152,8 +152,10 @@ export function createGmailProvider(opts: GmailProviderOptions): MailProvider {
         }
 
         return { body_html, body_text };
-      } catch {
-        return { body_html: null, body_text: null };
+      } catch (err: unknown) {
+        const code = (err as { code?: number }).code ?? (err as { status?: number }).status;
+        if (code === 404) return { body_html: null, body_text: null };
+        throw err;
       }
     },
 

@@ -1,5 +1,6 @@
 import { ImapFlow } from 'imapflow';
 import nodemailer from 'nodemailer';
+import { simpleParser } from 'mailparser';
 import type { MailProvider, FetchedEmail, SendEmailParams, SyncCursor } from './mail-provider';
 
 interface ImapProviderOptions {
@@ -135,8 +136,8 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
 
     async fetchBody(messageId: string) {
       const client = makeClient(opts);
-      await client.connect();
       try {
+        await client.connect();
         let sourceStr: string | null = null;
 
         // Synthetic IDs from our sync: imap-{MAILBOXNAME}-{UID}
@@ -145,10 +146,14 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
         if (syntheticMatch) {
           const mailboxName = syntheticMatch[1]!;
           const uid = Number(syntheticMatch[2]);
-          await client.mailboxOpen(mailboxName);
-          for await (const msg of client.fetch([uid], { source: true }, { uid: true })) {
-            sourceStr = msg.source?.toString('utf8') ?? null;
-            break;
+          try {
+            await client.mailboxOpen(mailboxName);
+            for await (const msg of client.fetch([uid], { source: true }, { uid: true })) {
+              sourceStr = msg.source?.toString('utf8') ?? null;
+              break;
+            }
+          } catch {
+            return { body_html: null, body_text: null };
           }
         } else {
           // Real Message-ID: search across common mailboxes
@@ -169,11 +174,11 @@ export function createImapProvider(opts: ImapProviderOptions): MailProvider {
 
         if (!sourceStr) return { body_html: null, body_text: null };
 
-        // Extract body: everything after the blank line separating headers from body
-        const bodyStart = sourceStr.indexOf('\r\n\r\n');
-        if (bodyStart === -1) return { body_html: null, body_text: null };
-        const body_text = sourceStr.slice(bodyStart + 4).trim() || null;
-        return { body_html: null, body_text };
+        const parsed = await simpleParser(sourceStr);
+        return {
+          body_html: parsed.html || null,
+          body_text: parsed.text || null,
+        };
       } finally {
         try { await client.logout(); } catch { /* ignore */ }
       }
