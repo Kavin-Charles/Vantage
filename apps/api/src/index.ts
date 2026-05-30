@@ -86,6 +86,10 @@ app.use('/api/record-types', requireAuth, createRecordTypesRouter(db));
 app.use('/api/records', requireAuth, createRecordsRouter(db));
 // Agent — must come before the broad /api catch below
 app.use('/api/agent', createAgentRouter(db, config.smtp));
+// Gmail OAuth callback — public, must come before the broad /api requireAuth catch below
+app.get('/api/mail/accounts/gmail/callback', (req, res, next) => {
+  void handleGmailCallback(db, req, res, next);
+});
 
 app.use('/api', requireAuth, createConversionsRouter(db));
 app.use('/api/pipelines', requireAuth, createPipelinesRouter(db));
@@ -95,10 +99,6 @@ app.use('/api/calendar/events', requireAuth, createCalendarRouter(db));
 app.use('/api/activity', requireAuth, createActivityRouter(db));
 app.use('/api/alerts', requireAuth, createAlertsRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
-// Gmail OAuth callback — no cookie auth, identity verified via state JWT
-app.get('/api/mail/accounts/gmail/callback', (req, res, next) => {
-  void handleGmailCallback(db, req, res, next);
-});
 // Mail routes (authenticated)
 app.use('/api/mail/accounts', requireAuth, createMailAccountsRouter(db));
 app.use('/api/mail/emails', requireAuth, createMailEmailsRouter(db));
