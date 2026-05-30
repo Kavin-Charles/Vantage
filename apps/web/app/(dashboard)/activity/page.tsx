@@ -162,6 +162,20 @@ function ActivityRow({ item, last }: { item: Activity; last: boolean }) {
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
             {label}
           </span>
+          {item.type === 'email' && item.meta && (
+            <span style={{
+              fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
+              background: (item.meta as Record<string, unknown>)['direction'] === 'outbound'
+                ? 'var(--blue-bg)' : 'var(--surface2)',
+              color: (item.meta as Record<string, unknown>)['direction'] === 'outbound'
+                ? 'var(--blue)' : 'var(--text2)',
+              textTransform: 'uppercase' as const,
+              letterSpacing: 1,
+              marginLeft: 6,
+            }}>
+              {String((item.meta as Record<string, unknown>)['direction'] ?? 'inbound')}
+            </span>
+          )}
           <span style={{ fontSize: 11, color: 'var(--text3)' }}>·</span>
           <span style={{ fontSize: 11, color: 'var(--text3)' }}>
             {timeAgo(item.created_at as unknown as string)}
