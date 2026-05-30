@@ -44,6 +44,7 @@ export function createMailConfigRouter(db: Kysely<Database>): ExpressRouter {
             smtp_host: body.smtp_host,
             smtp_port: body.smtp_port,
             use_ssl: body.use_ssl,
+            updated_at: new Date().toISOString(),
           }),
         )
         .returningAll()
