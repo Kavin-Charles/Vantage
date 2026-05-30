@@ -28,8 +28,8 @@ export default function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/', req.url));
   }
 
-  // Allow public paths through (no auth cookie required)
-  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+  // Allow setup and public paths through (no auth cookie required)
+  if (isSetupPath || PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
