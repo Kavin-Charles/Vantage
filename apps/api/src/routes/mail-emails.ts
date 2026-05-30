@@ -68,7 +68,11 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
       const { user } = req as unknown as AuthenticatedRequest;
       const q = listQuerySchema.parse(req.query);
 
-      let query = db.selectFrom('emails').where('user_id', '=', user.id);
+      let query = db.selectFrom('emails').where('workspace_id', '=', user.workspace_id);
+      // Personal inbox: scope to current user only; deal/contact context: workspace-wide
+      if (!q.deal_id && !q.contact_id) {
+        query = query.where('user_id', '=', user.id);
+      }
       if (q.account_id) query = query.where('account_id', '=', q.account_id);
       if (q.folder) query = query.where('folder', '=', q.folder);
       if (q.contact_id) query = query.where('contact_id', '=', q.contact_id);
