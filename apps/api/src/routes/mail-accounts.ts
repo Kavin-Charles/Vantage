@@ -25,6 +25,24 @@ const connectImapSchema = z.object({
   use_ssl: z.boolean().optional(),
 });
 
+function sanitizeImapError(raw: string): string {
+  const lower = raw.toLowerCase();
+  if (lower.includes('auth') || lower.includes('login') || lower.includes('password') || lower.includes('credential')) {
+    return 'Authentication failed — check your email and password.';
+  }
+  if (lower.includes('timeout') || lower.includes('timed out')) {
+    return 'Connection timed out — check host and port.';
+  }
+  if (lower.includes('econnrefused') || lower.includes('connection refused')) {
+    return 'Connection refused — check host and port.';
+  }
+  if (lower.includes('enotfound') || lower.includes('not found') || lower.includes('getaddrinfo')) {
+    return 'Host not found — check the IMAP host.';
+  }
+  // Return generic message for anything unrecognised to avoid leaking server internals
+  return 'Connection failed — check your server settings.';
+}
+
 function makeOAuth2() {
   return new google.auth.OAuth2(
     process.env['GOOGLE_CLIENT_ID'],
@@ -70,14 +88,20 @@ export function createMailAccountsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // POST /api/mail/accounts/imap/test
-  router.post('/imap/test', async (req, res) => {
+  router.post('/imap/test', async (req, res, next) => {
+    const { workspace } = req as unknown as AuthenticatedRequest;
+    let body: { email: string; imap_pass: string };
     try {
-      const { workspace } = req as unknown as AuthenticatedRequest;
-      const body = z.object({
+      body = z.object({
         email: z.string().email(),
         imap_pass: z.string().min(1),
       }).parse(req.body);
+    } catch (err) {
+      next(err);
+      return;
+    }
 
+    try {
       const config = await db
         .selectFrom('workspace_imap_config')
         .where('workspace_id', '=', workspace.id)
@@ -114,12 +138,14 @@ export function createMailAccountsRouter(db: Kysely<Database>): ExpressRouter {
       } catch (err) {
         clearTimeout(timeoutId);
         try { client.close(); } catch { /* already closed */ }
-        const message = err instanceof Error ? err.message : 'Connection failed';
+        const raw = err instanceof Error ? err.message : 'Connection failed';
+        const message = sanitizeImapError(raw);
         res.status(400).json({ data: null, error: { code: 'IMAP_TEST_FAILED', message } });
         return;
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Connection failed';
+      const raw = err instanceof Error ? err.message : 'Connection failed';
+      const message = sanitizeImapError(raw);
       res.status(400).json({ data: null, error: { code: 'IMAP_TEST_FAILED', message } });
     }
   });
