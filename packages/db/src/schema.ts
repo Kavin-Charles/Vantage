@@ -389,6 +389,7 @@ export interface EmailAccountTable {
   sync_status: Generated<'idle' | 'syncing' | 'error'>;
   sync_error: string | null;
   last_synced_at: string | null;
+  gmail_watch_expiry: string | null;
   created_at: Generated<string>;
   updated_at: Generated<string>;
 }
@@ -551,8 +552,8 @@ export interface WorkspaceImapConfigTable {
   smtp_host: string;
   smtp_port: number;
   use_ssl: Generated<boolean>;
-  created_at: Generated<string>;
-  updated_at: Generated<string>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
 }
 
 export interface Database {

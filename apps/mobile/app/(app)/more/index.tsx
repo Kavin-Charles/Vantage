@@ -110,16 +110,28 @@ export default function MoreScreen() {
               onPress={() => router.push('/(app)/contacts')}
             />
             <ListRow
+              icon="business-outline"
+              iconBg={Colors.purpleBg}
+              title="Companies"
+              onPress={() => router.push('/(app)/companies')}
+            />
+            <ListRow
               icon="checkmark-circle-outline"
               iconBg={Colors.amberBg}
               title="Tasks"
               onPress={() => router.push('/(app)/tasks')}
             />
             <ListRow
-              icon="briefcase-outline"
+              icon="trending-up-outline"
               iconBg={Colors.purpleBg}
               title="Pipeline"
               onPress={() => router.push('/(app)/pipeline')}
+            />
+            <ListRow
+              icon="flash-outline"
+              iconBg={Colors.grayBg}
+              title="Activity"
+              onPress={() => router.push('/(app)/activity')}
               last
             />
           </View>

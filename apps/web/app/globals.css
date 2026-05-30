@@ -54,6 +54,11 @@
   --transition:  all var(--motion-fast) var(--motion-ease);
 }
 
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

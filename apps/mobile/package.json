@@ -10,6 +10,9 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo-google-fonts/bricolage-grotesque": "^0.4.1",
+    "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
+    "@expo-google-fonts/ibm-plex-sans": "^0.4.1",
     "@expo/metro-runtime": "6.1.2",
     "@expo/ngrok": "^4.1.3",
     "@expo/vector-icons": "^15.1.1",
@@ -25,6 +28,7 @@
     "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.23",
     "expo-secure-store": "~15.0.8",
+    "expo-splash-screen": "^56.0.10",
     "expo-status-bar": "~3.0.9",
     "metro-runtime": "~0.81.0",
     "react": "19.1.0",

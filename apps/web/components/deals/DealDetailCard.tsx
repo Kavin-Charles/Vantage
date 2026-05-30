@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DealForm } from './DealForm';
 import { StagePill } from './StagePill';
 import { Icon } from '@/components/ui/Icon';
 import { Button } from '@/components/ui/Button';
+import { apiFetch } from '@/lib/api';
+import { ComposeModal } from '@/components/mail/ComposeModal';
 import type { Deal, PipelineStage, StageField } from '@vantage/types';
 
 type StageWithFields = PipelineStage & { fields: StageField[] };
@@ -15,7 +17,130 @@ interface Props {
   stageMap: Record<string, PipelineStage>;
   userMap: Record<string, string>;
   pipelineId: string;
+  contactEmail?: string;
+  contactId?: string;
   onDone: () => void;
+}
+
+interface DealEmailRow {
+  id: string;
+  subject: string | null;
+  from_name: string | null;
+  from_address: string;
+  sent_at: string;
+  is_read: boolean;
+  folder: string;
+}
+
+function DealEmails({ dealId, contactEmail, contactId }: { dealId: string; contactEmail?: string; contactId?: string }) {
+  const [emails, setEmails] = useState<DealEmailRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCompose, setShowCompose] = useState(false);
+  const [accounts, setAccounts] = useState<{ id: string; email: string; display_name: string | null }[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  function loadEmails() {
+    setLoading(true);
+    void apiFetch<{ data: DealEmailRow[] }>(`/api/mail/emails?deal_id=${dealId}&per_page=10`)
+      .then(j => { if (mountedRef.current) setEmails(j.data ?? []); })
+      .finally(() => { if (mountedRef.current) setLoading(false); });
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    setAccountsLoading(true);
+    void apiFetch<{ data: DealEmailRow[] }>(`/api/mail/emails?deal_id=${dealId}&per_page=10`)
+      .then(j => { if (mountedRef.current) setEmails(j.data ?? []); })
+      .finally(() => { if (mountedRef.current) setLoading(false); });
+    void apiFetch<{ data: { id: string; email: string; display_name: string | null }[] }>('/api/mail/accounts')
+      .then(j => { if (mountedRef.current) setAccounts(j.data ?? []); })
+      .finally(() => { if (mountedRef.current) setAccountsLoading(false); });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dealId]);
+
+  const sectionLabelStyle: React.CSSProperties = {
+    fontSize: 11, fontWeight: 600, color: 'var(--text3)',
+    textTransform: 'uppercase', letterSpacing: 1.3,
+  };
+
+  return (
+    <div style={{
+      background: 'var(--bg)', border: '1px solid var(--border)',
+      borderRadius: 12, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={sectionLabelStyle}>Emails</span>
+        <button
+          onClick={() => setShowCompose(true)}
+          disabled={accountsLoading || accounts.length === 0}
+          style={{
+            fontSize: 12, fontWeight: 500, color: 'var(--text2)',
+            background: 'none', border: '1px solid var(--border)',
+            borderRadius: 6, padding: '3px 10px',
+            opacity: accountsLoading || accounts.length === 0 ? 0.5 : 1,
+            cursor: accountsLoading || accounts.length === 0 ? 'not-allowed' : 'pointer',
+          }}
+        >
+          + Send email
+        </button>
+      </div>
+
+      {loading ? (
+        <span style={{ fontSize: 13, color: 'var(--text3)' }}>Loading…</span>
+      ) : emails.length === 0 ? (
+        <span style={{ fontSize: 13, color: 'var(--text3)' }}>No emails linked to this deal.</span>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {emails.map(email => {
+            const isSent = email.folder === 'sent';
+            const date = new Date(email.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return (
+              <div key={email.id} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '7px 0', borderBottom: '1px solid var(--border)',
+              }}>
+                <span style={{
+                  fontSize: 10, fontWeight: 500, color: 'var(--text3)',
+                  background: 'var(--surface2)', borderRadius: 4, padding: '1px 6px',
+                  flexShrink: 0, textTransform: 'uppercase', letterSpacing: 0.5,
+                }}>
+                  {isSent ? 'Sent' : 'In'}
+                </span>
+                <span style={{
+                  flex: 1, fontSize: 13, color: 'var(--text)',
+                  fontWeight: email.is_read || isSent ? 400 : 600,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {email.subject ?? '(no subject)'}
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--text3)', flexShrink: 0 }}>{date}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {showCompose && accounts.length > 0 && (
+        <ComposeModal
+          accounts={accounts}
+          dealId={dealId}
+          contactId={contactId}
+          initialTo={contactEmail}
+          onClose={() => setShowCompose(false)}
+          onSent={() => {
+            setShowCompose(false);
+            loadEmails();
+          }}
+        />
+      )}
+    </div>
+  );
 }
 
 function fmtValue(v: number | null | undefined) {
@@ -32,7 +157,7 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-export function DealDetailCard({ deal, stages, stageMap, userMap, pipelineId, onDone }: Props) {
+export function DealDetailCard({ deal, stages, stageMap, userMap, pipelineId, contactEmail, contactId, onDone }: Props) {
   const [editing, setEditing] = useState(false);
   const stage = deal.stage_id ? stageMap[deal.stage_id] : undefined;
   const ownerName = deal.owner_id ? (userMap[deal.owner_id] ?? '—') : '—';
@@ -136,6 +261,9 @@ export function DealDetailCard({ deal, stages, stageMap, userMap, pipelineId, on
           </div>
         </div>
       )}
+
+      {/* Emails */}
+      <DealEmails dealId={deal.id} contactEmail={contactEmail} contactId={contactId} />
 
       {/* Created at */}
       {deal.created_at && (

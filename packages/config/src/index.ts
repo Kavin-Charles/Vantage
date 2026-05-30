@@ -20,6 +20,8 @@ export const apiEnvSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_REDIRECT_URI: z.string().optional(),
   MAIL_ENCRYPTION_KEY: z.string().length(64).optional(),
+  GMAIL_PUBSUB_TOKEN: z.string().optional(),
+  GOOGLE_PUBSUB_TOPIC: z.string().optional(),
 });
 
 // Web env

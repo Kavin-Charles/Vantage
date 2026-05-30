@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { sendSchema, listQuerySchema } from '../routes/mail-emails';
 
 function buildMockDb(rows: object[] = [], single: object | null = null) {
   const chain: Record<string, unknown> = {};
@@ -39,6 +40,29 @@ describe('GET /api/mail/emails', () => {
     await handler(req, res, vi.fn());
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ data: fakeEmails, error: null }));
   }, 15000);
+});
+
+describe('schema unit tests', () => {
+  it('sendSchema accepts deal_id and contact_id', () => {
+    const result = sendSchema.safeParse({
+      account_id: '00000000-0000-0000-0000-000000000001',
+      to: ['test@example.com'],
+      subject: 'Hello',
+      body_html: '<p>Hi</p>',
+      deal_id: '00000000-0000-0000-0000-000000000002',
+      contact_id: '00000000-0000-0000-0000-000000000003',
+    });
+    expect(result.success).toBe(true);
+    expect(result.data?.deal_id).toBe('00000000-0000-0000-0000-000000000002');
+  });
+
+  it('listQuerySchema accepts deal_id', () => {
+    const result = listQuerySchema.safeParse({
+      deal_id: '00000000-0000-0000-0000-000000000002',
+    });
+    expect(result.success).toBe(true);
+    expect(result.data?.deal_id).toBe('00000000-0000-0000-0000-000000000002');
+  });
 });
 
 describe('PATCH /api/mail/emails/:id', () => {

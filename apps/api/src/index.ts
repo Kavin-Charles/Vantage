@@ -43,7 +43,12 @@ import { createNotificationsRouter } from './routes/notifications';
 import { createCalendarRouter } from './routes/calendar';
 import { createMailAccountsRouter, handleGmailCallback } from './routes/mail-accounts';
 import { createMailEmailsRouter } from './routes/mail-emails';
+import { createMailWebhookRouter } from './routes/mail-webhook';
+import { createMailConfigRouter } from './routes/mail-config';
 import { startMailSync } from './workers/mail-sync';
+import { startGmailWatchRenew } from './workers/gmail-watch-renew';
+import { startImapIdle } from './workers/imap-idle';
+import { handleMailWsUpgrade } from './ws/mail-ws';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
@@ -82,6 +87,10 @@ app.use('/api/record-types', requireAuth, createRecordTypesRouter(db));
 app.use('/api/records', requireAuth, createRecordsRouter(db));
 // Agent — must come before the broad /api catch below
 app.use('/api/agent', createAgentRouter(db, config.smtp));
+// Gmail OAuth callback — public, must come before the broad /api requireAuth catch below
+app.get('/api/mail/accounts/gmail/callback', (req, res, next) => {
+  void handleGmailCallback(db, req, res, next);
+});
 
 app.use('/api', requireAuth, createConversionsRouter(db));
 app.use('/api/pipelines', requireAuth, createPipelinesRouter(db));
@@ -91,13 +100,12 @@ app.use('/api/calendar/events', requireAuth, createCalendarRouter(db));
 app.use('/api/activity', requireAuth, createActivityRouter(db));
 app.use('/api/alerts', requireAuth, createAlertsRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
-// Gmail OAuth callback — no cookie auth, identity verified via state JWT
-app.get('/api/mail/accounts/gmail/callback', (req, res, next) => {
-  void handleGmailCallback(db, req, res, next);
-});
 // Mail routes (authenticated)
 app.use('/api/mail/accounts', requireAuth, createMailAccountsRouter(db));
 app.use('/api/mail/emails', requireAuth, createMailEmailsRouter(db));
+app.use('/api/mail/workspace-config', requireAuth, createMailConfigRouter(db));
+// Gmail Pub/Sub push webhook — public, verified by token header
+app.use('/api/mail/webhook', createMailWebhookRouter(db, env.GMAIL_PUBSUB_TOKEN ?? ''));
 app.use('/api/item-groups', requireAuth, createItemGroupsRouter(db));
 app.use('/api/items', requireAuth, createItemsRouter(db));
 app.use('/api/analytics', requireAuth, createAnalyticsRouter(db));
@@ -143,6 +151,14 @@ if (process.env['DEMO_SEED'] === 'true') {
 // Start mail sync worker (polls every 5 min)
 startMailSync(db);
 
+// Start IMAP IDLE connections for real-time detection
+void startImapIdle(db).catch(err =>
+  logger.error({ err }, 'mail: IMAP IDLE startup failed'),
+);
+
+// Start Gmail watch renewal cron (renews every 6 h)
+startGmailWatchRenew(db);
+
 // Start website checker (polls every 60 s)
 startWebsiteChecker(db);
 
@@ -168,6 +184,10 @@ httpServer.on('upgrade', (request, socket, head) => {
   } else if (/^\/api\/servers\/[^/]+\/ssh\/sftp/.test(url)) {
     wss.handleUpgrade(request, socket as import('net').Socket, head, (ws) => {
       void handleSftpUpgrade(ws, request, db, env.JWT_SECRET);
+    });
+  } else if (/^\/api\/mail\/ws/.test(url)) {
+    wss.handleUpgrade(request, socket as import('net').Socket, head, (ws) => {
+      void handleMailWsUpgrade(ws, request, db, env.JWT_SECRET);
     });
   } else {
     socket.destroy();

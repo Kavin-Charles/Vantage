@@ -46,11 +46,11 @@ export default function AppLayout() {
         }}
       />
       <Tabs.Screen
-        name="activity"
+        name="contacts"
         options={{
-          title: 'Activity',
+          title: 'Contacts',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="flash-outline" size={size} color={color} />
+            <Ionicons name="people-outline" size={size} color={color} />
           ),
         }}
       />
@@ -74,10 +74,11 @@ export default function AppLayout() {
       />
 
       {/* Hidden routes — accessible via More / deep links */}
-      <Tabs.Screen name="contacts"  options={{ href: null }} />
+      <Tabs.Screen name="activity"  options={{ href: null }} />
       <Tabs.Screen name="tasks"     options={{ href: null }} />
       <Tabs.Screen name="alerts"    options={{ href: null }} />
       <Tabs.Screen name="settings"  options={{ href: null }} />
+      <Tabs.Screen name="companies" options={{ href: null }} />
     </Tabs>
   );
 }

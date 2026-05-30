@@ -8,17 +8,20 @@ import { createGmailProvider } from '../lib/gmail-provider';
 import { createImapProvider } from '../lib/imap-provider';
 import type { MailProvider } from '../lib/mail-provider';
 import { logger } from '../lib/logger';
+import { logActivity } from '../lib/log-activity';
+import { mailNotifier } from '../lib/mail-notifier';
 
-const listQuerySchema = z.object({
+export const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   per_page: z.coerce.number().int().min(1).max(100).default(25),
   account_id: z.string().uuid().optional(),
   folder: z.enum(['inbox', 'sent', 'drafts', 'trash', 'spam']).optional(),
   contact_id: z.string().uuid().optional(),
+  deal_id: z.string().uuid().optional(),
   q: z.string().optional(),
 });
 
-const sendSchema = z.object({
+export const sendSchema = z.object({
   account_id: z.string().uuid(),
   to: z.array(z.string().email()).min(1),
   cc: z.array(z.string().email()).optional(),
@@ -26,6 +29,8 @@ const sendSchema = z.object({
   subject: z.string().min(1),
   body_html: z.string().min(1),
   reply_to_message_id: z.string().optional(),
+  deal_id: z.string().uuid().optional(),
+  contact_id: z.string().uuid().optional(),
 });
 
 const patchSchema = z.object({
@@ -63,10 +68,15 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
       const { user } = req as unknown as AuthenticatedRequest;
       const q = listQuerySchema.parse(req.query);
 
-      let query = db.selectFrom('emails').where('user_id', '=', user.id);
+      let query = db.selectFrom('emails').where('workspace_id', '=', user.workspace_id);
+      // Personal inbox: scope to current user only; deal/contact context: workspace-wide
+      if (!q.deal_id && !q.contact_id) {
+        query = query.where('user_id', '=', user.id);
+      }
       if (q.account_id) query = query.where('account_id', '=', q.account_id);
       if (q.folder) query = query.where('folder', '=', q.folder);
       if (q.contact_id) query = query.where('contact_id', '=', q.contact_id);
+      if (q.deal_id) query = query.where('deal_id', '=', q.deal_id);
       if (q.q) {
         const term = `%${q.q}%`;
         query = query.where(eb => eb.or([
@@ -176,7 +186,7 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
       });
 
       // Store sent email in DB so it appears in Sent folder immediately
-      await db.insertInto('emails').values({
+      const sentEmail = await db.insertInto('emails').values({
         account_id: account.id,
         workspace_id: account.workspace_id,
         user_id: user.id,
@@ -195,9 +205,28 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
         is_read: true,
         is_starred: false,
         sent_at: new Date().toISOString(),
-        contact_id: null,
-        deal_id: null,
-      }).onConflict(oc => oc.columns(['account_id', 'message_id']).doNothing()).execute();
+        contact_id: body.contact_id ?? null,
+        deal_id: body.deal_id ?? null,
+      }).onConflict(oc => oc.columns(['account_id', 'message_id']).doNothing())
+        .returningAll()
+        .executeTakeFirst();
+
+      if (sentEmail) {
+        void logActivity(db, {
+          workspace_id: account.workspace_id,
+          user_id: user.id,
+          type: 'email',
+          body: body.subject,
+          contact_id: body.contact_id,
+          deal_id: body.deal_id,
+          meta: {
+            email_id: sentEmail.id,
+            direction: 'outbound',
+            snippet: sentEmail.snippet ?? undefined,
+          },
+        });
+        mailNotifier.broadcast(user.id, { type: 'new_email', email: sentEmail });
+      }
 
       res.status(201).json({ data: { message_id }, error: null });
     } catch (err) { next(err); }

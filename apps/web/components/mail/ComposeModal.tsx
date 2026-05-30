@@ -7,13 +7,16 @@ interface Account { id: string; email: string; }
 interface Props {
   accounts: Account[];
   replyTo?: { account_id: string; to: string; subject: string; message_id: string };
+  initialTo?: string;
+  dealId?: string;
+  contactId?: string;
   onClose: () => void;
   onSent: () => void;
 }
 
-export function ComposeModal({ accounts, replyTo, onClose, onSent }: Props) {
+export function ComposeModal({ accounts, replyTo, initialTo, dealId, contactId, onClose, onSent }: Props) {
   const [accountId, setAccountId] = useState(replyTo?.account_id ?? accounts[0]?.id ?? '');
-  const [to, setTo] = useState(replyTo?.to ?? '');
+  const [to, setTo] = useState(replyTo?.to ?? initialTo ?? '');
   const [cc, setCc] = useState('');
   const [subject, setSubject] = useState(replyTo ? `Re: ${replyTo.subject}` : '');
   const [body, setBody] = useState('');
@@ -38,6 +41,8 @@ export function ComposeModal({ accounts, replyTo, onClose, onSent }: Props) {
           subject,
           body_html: `<div style="font-family:sans-serif;font-size:14px;line-height:1.6">${body.replace(/\n/g, '<br>')}</div>`,
           reply_to_message_id: replyTo?.message_id,
+          deal_id: dealId,
+          contact_id: contactId,
         }),
       });
       onSent();
