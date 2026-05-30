@@ -545,6 +545,17 @@ export interface SystemSettingsTable {
   updated_at: Generated<Date>;
 }
 
+export interface WorkspaceImapConfigTable {
+  workspace_id: string;
+  imap_host: string;
+  imap_port: number;
+  smtp_host: string;
+  smtp_port: number;
+  use_ssl: Generated<boolean>;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -588,6 +599,7 @@ export interface Database {
   record_conversions: RecordConversionTable;
   calendar_events: CalendarEventTable;
   system_settings: SystemSettingsTable;
+  workspace_imap_config: WorkspaceImapConfigTable;
 }
 
 // Convenience types
@@ -739,3 +751,7 @@ export type NewRecordConversion = Insertable<RecordConversionTable>;
 export type CalendarEvent = Selectable<CalendarEventTable>;
 export type NewCalendarEvent = Insertable<CalendarEventTable>;
 export type CalendarEventUpdate = Updateable<CalendarEventTable>;
+
+export type WorkspaceImapConfig = Selectable<WorkspaceImapConfigTable>;
+export type NewWorkspaceImapConfig = Insertable<WorkspaceImapConfigTable>;
+export type WorkspaceImapConfigUpdate = Updateable<WorkspaceImapConfigTable>;
