@@ -9,6 +9,7 @@ vi.mock('imapflow', () => ({
   ImapFlow: vi.fn().mockImplementation(() => ({
     connect: vi.fn().mockResolvedValue(undefined),
     logout: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn(),
   })),
 }));
 
@@ -118,6 +119,29 @@ describe('POST /api/mail/accounts/imap/test', () => {
     const res = buildRes();
     await handler(req, res, vi.fn());
     expect(res.json).toHaveBeenCalledWith({ data: { ok: true }, error: null });
+  });
+
+  it('returns 400 when IMAP connection fails', async () => {
+    const { ImapFlow } = await import('imapflow');
+    (ImapFlow as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(() => ({
+      connect: vi.fn().mockRejectedValue(new Error('Authentication failed')),
+      logout: vi.fn(),
+      close: vi.fn(),
+    }));
+    const config = { workspace_id: 'ws1', imap_host: 'imap.co.com', imap_port: 993, smtp_host: 'smtp.co.com', smtp_port: 587, use_ssl: true };
+    const db = buildMockDb([config]);
+    const { createMailAccountsRouter } = await import('../routes/mail-accounts');
+    const router = createMailAccountsRouter(db as never);
+    const routes = (router as unknown as { stack: { route: { stack: { handle: Function }[] } }[] }).stack;
+    const testRoute = routes.find((r: unknown) => {
+      const route = (r as { route?: { path?: string } }).route;
+      return route?.path === '/imap/test';
+    });
+    const handler = (testRoute as { route: { stack: { handle: Function }[] } }).route.stack[0]?.handle;
+    const req = buildReq({ body: { email: 'user@co.com', imap_pass: 'wrongpass' } });
+    const res = buildRes();
+    await handler(req, res, vi.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
   });
 });
 

@@ -95,13 +95,29 @@ export function createMailAccountsRouter(db: Kysely<Database>): ExpressRouter {
         auth: { user: body.email, pass: body.imap_pass },
         logger: false,
       });
-      await Promise.race([
-        client.connect().then(() => client.logout()),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Connection timed out — check host and port')), 8000),
-        ),
-      ]);
-      res.json({ data: { ok: true }, error: null });
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          (async () => {
+            await client.connect();
+            await client.logout();
+          })(),
+          new Promise<never>((_, reject) => {
+            timeoutId = setTimeout(() => {
+              client.close();
+              reject(new Error('Connection timed out — check host and port'));
+            }, 8000);
+          }),
+        ]);
+        clearTimeout(timeoutId);
+        res.json({ data: { ok: true }, error: null });
+      } catch (err) {
+        clearTimeout(timeoutId);
+        try { client.close(); } catch { /* already closed */ }
+        const message = err instanceof Error ? err.message : 'Connection failed';
+        res.status(400).json({ data: null, error: { code: 'IMAP_TEST_FAILED', message } });
+        return;
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Connection failed';
       res.status(400).json({ data: null, error: { code: 'IMAP_TEST_FAILED', message } });
