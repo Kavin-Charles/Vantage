@@ -150,7 +150,9 @@ if (process.env['DEMO_SEED'] === 'true') {
 startMailSync(db);
 
 // Start IMAP IDLE connections for real-time detection
-void startImapIdle(db);
+void startImapIdle(db).catch(err =>
+  logger.error({ err }, 'mail: IMAP IDLE startup failed'),
+);
 
 // Start Gmail watch renewal cron (renews every 6 h)
 startGmailWatchRenew(db);
