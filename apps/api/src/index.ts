@@ -44,6 +44,7 @@ import { createCalendarRouter } from './routes/calendar';
 import { createMailAccountsRouter, handleGmailCallback } from './routes/mail-accounts';
 import { createMailEmailsRouter } from './routes/mail-emails';
 import { createMailWebhookRouter } from './routes/mail-webhook';
+import { createMailConfigRouter } from './routes/mail-config';
 import { startMailSync } from './workers/mail-sync';
 import { startGmailWatchRenew } from './workers/gmail-watch-renew';
 import { startImapIdle } from './workers/imap-idle';
@@ -102,6 +103,7 @@ app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
 // Mail routes (authenticated)
 app.use('/api/mail/accounts', requireAuth, createMailAccountsRouter(db));
 app.use('/api/mail/emails', requireAuth, createMailEmailsRouter(db));
+app.use('/api/mail/workspace-config', requireAuth, createMailConfigRouter(db));
 // Gmail Pub/Sub push webhook — public, verified by token header
 app.use('/api/mail/webhook', createMailWebhookRouter(db, env.GMAIL_PUBSUB_TOKEN ?? ''));
 app.use('/api/item-groups', requireAuth, createItemGroupsRouter(db));
