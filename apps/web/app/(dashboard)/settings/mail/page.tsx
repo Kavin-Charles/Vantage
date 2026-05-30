@@ -43,6 +43,10 @@ export default function MailSettingsPage() {
     if (searchParams.get('connected') === 'gmail') {
       setSuccessMsg('Gmail account connected successfully.');
     }
+    const oauthError = searchParams.get('error');
+    if (oauthError) {
+      setError(`Gmail connection failed: ${oauthError}`);
+    }
   }, [searchParams]);
 
   useEffect(() => {

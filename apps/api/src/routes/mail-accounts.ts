@@ -224,6 +224,8 @@ export async function handleGmailCallback(
     res.redirect(`${appUrl}/settings/mail?connected=gmail`);
   } catch (err) {
     logger.error({ err }, 'gmail: oauth callback failed');
-    next(err);
+    const appUrl = process.env['APP_URL'] ?? 'http://localhost:3000';
+    const message = err instanceof Error ? err.message : 'oauth_failed';
+    res.redirect(`${appUrl}/settings/mail?error=${encodeURIComponent(message)}`);
   }
 }
