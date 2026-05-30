@@ -35,26 +35,53 @@ export function useMailSocket({ onNewEmail, enabled = true }: UseMailSocketOptio
 
     const apiBase = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
     const wsBase = apiBase.replace(/^http/, 'ws');
-    const ws = new WebSocket(`${wsBase}/api/mail/ws`);
 
-    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    // Mutable container so the async setup can hand off the socket to the cleanup closure.
+    const state: { ws: WebSocket | null; cancelled: boolean } = { ws: null, cancelled: false };
 
-    ws.addEventListener('message', (event) => {
+    (async () => {
+      // Exchange session cookie for a short-lived WS token — handles cross-origin deployments
+      // where SameSite=Strict prevents the cookie from being sent on WS upgrade requests.
+      let wsToken = '';
       try {
-        const msg = JSON.parse(event.data as string) as { type: string; email?: MailSocketEmail };
-        if (msg.type === 'new_email' && msg.email) {
-          onNewEmailRef.current(msg.email);
+        const res = await fetch(`${apiBase}/api/auth/ws-token`, { credentials: 'include' });
+        if (res.ok) {
+          const json = await res.json() as { data: { token: string } };
+          wsToken = json.data.token;
         }
-      } catch { /* ignore malformed messages */ }
-    });
+      } catch { /* fall back to cookie auth (same-origin / same-site deployments) */ }
 
-    ws.addEventListener('close', () => {
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-    });
+      if (state.cancelled) return;
+
+      const qs = wsToken ? `?token=${encodeURIComponent(wsToken)}` : '';
+      let ws: WebSocket;
+      try {
+        ws = new WebSocket(`${wsBase}/api/mail/ws${qs}`);
+      } catch {
+        return;
+      }
+
+      state.ws = ws;
+
+      ws.addEventListener('message', (event) => {
+        try {
+          const msg = JSON.parse(event.data as string) as { type: string; email?: MailSocketEmail };
+          if (msg.type === 'new_email' && msg.email) {
+            onNewEmailRef.current(msg.email);
+          }
+        } catch { /* ignore malformed messages */ }
+      });
+
+      ws.addEventListener('error', () => {
+        if (process.env['NODE_ENV'] === 'development') {
+          console.warn('[useMailSocket] WebSocket error');
+        }
+      });
+    })();
 
     return () => {
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      ws.close();
+      state.cancelled = true;
+      state.ws?.close();
     };
   }, [enabled]);
 }

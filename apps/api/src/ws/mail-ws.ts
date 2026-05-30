@@ -31,7 +31,10 @@ export async function handleMailWsUpgrade(
   jwtSecret: string,
 ): Promise<void> {
   const cookies = parseCookies(request.headers.cookie ?? '');
-  const token = cookies['vantage_token'];
+  // Also accept ?token= query param — browser can't send custom headers on WS, and
+  // SameSite=Strict blocks cross-origin cookies (e.g. vercel.app → railway.app).
+  const urlParams = new URL(request.url ?? '/', 'http://localhost').searchParams;
+  const token = cookies['vantage_token'] ?? urlParams.get('token') ?? '';
 
   if (!token) {
     ws.close(4001, 'Unauthorized');
