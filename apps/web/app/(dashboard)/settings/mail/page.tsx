@@ -55,30 +55,38 @@ export default function MailSettingsPage() {
   }, []);
 
   async function loadAll() {
-    const [meRes, configRes, accountsRes] = await Promise.all([
-      apiFetch<{ data: { user: { role: 'admin' | 'member' } } }>('/api/me').catch(() => null),
-      apiFetch<{ data: WorkspaceImapConfig | null }>('/api/mail/workspace-config').catch(() => null),
-      apiFetch<{ data: MailAccount[] }>('/api/mail/accounts').catch(() => null),
-    ]);
-    if (meRes?.data?.user?.role) setUserRole(meRes.data.user.role);
-    if (configRes) {
-      setWorkspaceConfig(configRes.data);
-      if (configRes.data) {
-        setServerForm({
-          imap_host: configRes.data.imap_host,
-          imap_port: String(configRes.data.imap_port),
-          smtp_host: configRes.data.smtp_host,
-          smtp_port: String(configRes.data.smtp_port),
-          use_ssl: configRes.data.use_ssl,
-        });
+    try {
+      const [meRes, configRes, accountsRes] = await Promise.all([
+        apiFetch<{ data: { user: { role: 'admin' | 'member' } } }>('/api/me').catch(() => null),
+        apiFetch<{ data: WorkspaceImapConfig | null }>('/api/mail/workspace-config').catch(() => null),
+        apiFetch<{ data: MailAccount[] }>('/api/mail/accounts').catch(() => null),
+      ]);
+      if (meRes?.data?.user?.role) setUserRole(meRes.data.user.role);
+      if (configRes) {
+        setWorkspaceConfig(configRes.data);
+        if (configRes.data) {
+          setServerForm({
+            imap_host: configRes.data.imap_host,
+            imap_port: String(configRes.data.imap_port),
+            smtp_host: configRes.data.smtp_host,
+            smtp_port: String(configRes.data.smtp_port),
+            use_ssl: configRes.data.use_ssl,
+          });
+        }
       }
+      if (accountsRes) setAccounts(accountsRes.data ?? []);
+      if (!meRes && !configRes && !accountsRes) {
+        setError('Failed to load mail settings. Please refresh.');
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load mail settings');
     }
-    if (accountsRes) setAccounts(accountsRes.data ?? []);
   }
 
   async function saveServerConfig() {
     setSavingServer(true);
     setError(null);
+    setSuccessMsg(null);
     try {
       const saved = await apiFetch<{ data: WorkspaceImapConfig }>('/api/mail/workspace-config', {
         method: 'PUT',
@@ -91,7 +99,15 @@ export default function MailSettingsPage() {
         }),
       });
       setWorkspaceConfig(saved.data);
+      setServerForm({
+        imap_host: saved.data.imap_host,
+        imap_port: String(saved.data.imap_port),
+        smtp_host: saved.data.smtp_host,
+        smtp_port: String(saved.data.smtp_port),
+        use_ssl: saved.data.use_ssl,
+      });
       setSuccessMsg('Server settings saved.');
+      setTimeout(() => setSuccessMsg(null), 3000);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save server settings');
     } finally {
@@ -102,6 +118,7 @@ export default function MailSettingsPage() {
   async function disconnect(id: string) {
     if (!confirm('Disconnect this account? All synced emails will be deleted.')) return;
     setError(null);
+    setSuccessMsg(null);
     try {
       await apiFetch(`/api/mail/accounts/${id}`, { method: 'DELETE' });
       await loadAll();
