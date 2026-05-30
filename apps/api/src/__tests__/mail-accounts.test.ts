@@ -5,6 +5,13 @@ vi.mock('../workers/mail-sync', () => ({
   runIncrementalSync: vi.fn(),
 }));
 
+vi.mock('imapflow', () => ({
+  ImapFlow: vi.fn().mockImplementation(() => ({
+    connect: vi.fn().mockResolvedValue(undefined),
+    logout: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
+
 vi.mock('googleapis', () => ({
   google: {
     auth: {
@@ -75,5 +82,64 @@ describe('DELETE /api/mail/accounts/:id', () => {
     const res = buildRes();
     await deleteHandler(req, res, vi.fn());
     expect(res.status).toHaveBeenCalledWith(404);
+  });
+});
+
+describe('POST /api/mail/accounts/imap/test', () => {
+  it('returns 400 when workspace config is missing', async () => {
+    const db = buildMockDb([]);
+    (db as Record<string, unknown>)['executeTakeFirst'] = vi.fn().mockResolvedValue(null);
+    const { createMailAccountsRouter } = await import('../routes/mail-accounts');
+    const router = createMailAccountsRouter(db as never);
+    const routes = (router as unknown as { stack: { route: { stack: { handle: Function }[] } }[] }).stack;
+    const testRoute = routes.find((r: unknown) => {
+      const route = (r as { route?: { path?: string } }).route;
+      return route?.path === '/imap/test';
+    });
+    const handler = (testRoute as { route: { stack: { handle: Function }[] } }).route.stack[0]?.handle;
+    const req = buildReq({ body: { email: 'user@co.com', imap_pass: 'pass' } });
+    const res = buildRes();
+    await handler(req, res, vi.fn());
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it('returns ok when IMAP connection succeeds', async () => {
+    const config = { workspace_id: 'ws1', imap_host: 'imap.co.com', imap_port: 993, smtp_host: 'smtp.co.com', smtp_port: 587, use_ssl: true };
+    const db = buildMockDb([config]);
+    const { createMailAccountsRouter } = await import('../routes/mail-accounts');
+    const router = createMailAccountsRouter(db as never);
+    const routes = (router as unknown as { stack: { route: { stack: { handle: Function }[] } }[] }).stack;
+    const testRoute = routes.find((r: unknown) => {
+      const route = (r as { route?: { path?: string } }).route;
+      return route?.path === '/imap/test';
+    });
+    const handler = (testRoute as { route: { stack: { handle: Function }[] } }).route.stack[0]?.handle;
+    const req = buildReq({ body: { email: 'user@co.com', imap_pass: 'pass' } });
+    const res = buildRes();
+    await handler(req, res, vi.fn());
+    expect(res.json).toHaveBeenCalledWith({ data: { ok: true }, error: null });
+  });
+});
+
+describe('POST /api/mail/accounts/imap (with workspace config fallback)', () => {
+  it('fetches workspace config when imap_host not provided', async () => {
+    const config = { workspace_id: 'ws1', imap_host: 'imap.co.com', imap_port: 993,
+                     smtp_host: 'smtp.co.com', smtp_port: 587, use_ssl: true };
+    const inserted = { id: 'acc1', email: 'user@co.com', provider: 'imap', imap_pass: 'enc', smtp_pass: 'enc',
+                       access_token: null, refresh_token: null };
+    const db = buildMockDb([config]);
+    (db as Record<string, unknown>)['executeTakeFirstOrThrow'] = vi.fn().mockResolvedValue(inserted);
+    const { createMailAccountsRouter } = await import('../routes/mail-accounts');
+    const router = createMailAccountsRouter(db as never);
+    const routes = (router as unknown as { stack: { route: { stack: { handle: Function }[] } }[] }).stack;
+    const imapRoute = routes.find((r: unknown) => {
+      const route = (r as { route?: { path?: string; methods?: Record<string, boolean> } }).route;
+      return route?.path === '/imap' && route?.methods?.['post'];
+    });
+    const handler = (imapRoute as { route: { stack: { handle: Function }[] } }).route.stack[0]?.handle;
+    const req = buildReq({ body: { email: 'user@co.com', imap_pass: 'pass', smtp_pass: 'pass' } });
+    const res = buildRes();
+    await handler(req, res, vi.fn());
+    expect(res.status).toHaveBeenCalledWith(201);
   });
 });

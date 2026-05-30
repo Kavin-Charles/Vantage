@@ -9,19 +9,20 @@ import { encryptSecret, decryptSecret } from '../lib/mail-crypto';
 import { runFullSync, runIncrementalSync } from '../workers/mail-sync';
 import { registerGmailWatch } from '../workers/gmail-watch-renew';
 import { logger } from '../lib/logger';
+import { ImapFlow } from 'imapflow';
 
 const connectImapSchema = z.object({
   email: z.string().email(),
   display_name: z.string().optional(),
-  imap_host: z.string().min(1),
-  imap_port: z.coerce.number().int().min(1).max(65535),
-  imap_user: z.string().min(1),
   imap_pass: z.string().min(1),
-  smtp_host: z.string().min(1),
-  smtp_port: z.coerce.number().int().min(1).max(65535),
-  smtp_user: z.string().min(1),
   smtp_pass: z.string().min(1),
-  use_ssl: z.boolean().default(true),
+  imap_user: z.string().optional(),
+  imap_host: z.string().optional(),
+  imap_port: z.coerce.number().int().min(1).max(65535).optional(),
+  smtp_user: z.string().optional(),
+  smtp_host: z.string().optional(),
+  smtp_port: z.coerce.number().int().min(1).max(65535).optional(),
+  use_ssl: z.boolean().optional(),
 });
 
 function makeOAuth2() {
@@ -68,11 +69,74 @@ export function createMailAccountsRouter(db: Kysely<Database>): ExpressRouter {
     } catch (err) { next(err); }
   });
 
+  // POST /api/mail/accounts/imap/test
+  router.post('/imap/test', async (req, res) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const body = z.object({
+        email: z.string().email(),
+        imap_pass: z.string().min(1),
+      }).parse(req.body);
+
+      const config = await db
+        .selectFrom('workspace_imap_config')
+        .where('workspace_id', '=', workspace.id)
+        .selectAll()
+        .executeTakeFirst();
+      if (!config) {
+        res.status(400).json({ data: null, error: { code: 'NO_WORKSPACE_CONFIG', message: 'Workspace mail server not configured' } });
+        return;
+      }
+
+      const client = new ImapFlow({
+        host: config.imap_host,
+        port: config.imap_port,
+        secure: config.use_ssl,
+        auth: { user: body.email, pass: body.imap_pass },
+        logger: false,
+      });
+      await Promise.race([
+        client.connect().then(() => client.logout()),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Connection timed out — check host and port')), 8000),
+        ),
+      ]);
+      res.json({ data: { ok: true }, error: null });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Connection failed';
+      res.status(400).json({ data: null, error: { code: 'IMAP_TEST_FAILED', message } });
+    }
+  });
+
   // POST /api/mail/accounts/imap
   router.post('/imap', async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
       const body = connectImapSchema.parse(req.body);
+
+      let imapHost = body.imap_host;
+      let imapPort = body.imap_port;
+      let smtpHost = body.smtp_host;
+      let smtpPort = body.smtp_port;
+      let useSsl = body.use_ssl;
+
+      if (!imapHost || !imapPort || !smtpHost || !smtpPort) {
+        const wsConfig = await db
+          .selectFrom('workspace_imap_config')
+          .where('workspace_id', '=', workspace.id)
+          .selectAll()
+          .executeTakeFirst();
+        if (!wsConfig) {
+          res.status(400).json({ data: null, error: { code: 'NO_WORKSPACE_CONFIG', message: 'Workspace mail server not configured' } });
+          return;
+        }
+        imapHost = imapHost ?? wsConfig.imap_host;
+        imapPort = imapPort ?? wsConfig.imap_port;
+        smtpHost = smtpHost ?? wsConfig.smtp_host;
+        smtpPort = smtpPort ?? wsConfig.smtp_port;
+        useSsl = useSsl ?? wsConfig.use_ssl;
+      }
+
       const account = await db
         .insertInto('email_accounts')
         .values({
@@ -81,15 +145,15 @@ export function createMailAccountsRouter(db: Kysely<Database>): ExpressRouter {
           provider: 'imap',
           email: body.email,
           display_name: body.display_name ?? body.email,
-          imap_host: body.imap_host,
-          imap_port: body.imap_port,
-          imap_user: body.imap_user,
+          imap_host: imapHost,
+          imap_port: imapPort,
+          imap_user: body.imap_user ?? body.email,
           imap_pass: encryptSecret(body.imap_pass),
-          smtp_host: body.smtp_host,
-          smtp_port: body.smtp_port,
-          smtp_user: body.smtp_user,
+          smtp_host: smtpHost,
+          smtp_port: smtpPort,
+          smtp_user: body.smtp_user ?? body.email,
           smtp_pass: encryptSecret(body.smtp_pass),
-          use_ssl: body.use_ssl,
+          use_ssl: useSsl ?? true,
           sync_status: 'syncing',
         })
         .returningAll()
