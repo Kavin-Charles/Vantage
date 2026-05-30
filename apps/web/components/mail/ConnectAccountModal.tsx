@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiFetch } from '@/lib/api';
 import type { WorkspaceImapConfig } from '@/app/(dashboard)/settings/mail/page';
 
@@ -31,6 +31,14 @@ export default function ConnectAccountModal({ workspaceConfig, userRole, onClose
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   // Admin with no prior config sees full server fields
   const showServerFields = !workspaceConfig && userRole === 'admin';
   // Non-admin with no config sees "ask admin" message
@@ -49,6 +57,15 @@ export default function ConnectAccountModal({ workspaceConfig, userRole, onClose
   }
 
   async function handleConnect() {
+    // Validate server fields first (before showing loading state)
+    if (showServerFields) {
+      const port1 = Number(serverFields.imap_port);
+      const port2 = Number(serverFields.smtp_port);
+      if (!serverFields.imap_host || !serverFields.smtp_host || isNaN(port1) || isNaN(port2) || port1 < 1 || port1 > 65535 || port2 < 1 || port2 > 65535) {
+        setError('Please enter valid server host and port values (ports must be 1–65535).');
+        return;
+      }
+    }
     setConnecting(true);
     setError(null);
     try {
@@ -105,15 +122,21 @@ export default function ConnectAccountModal({ workspaceConfig, userRole, onClose
   };
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-    }}>
-      <div style={{
-        background: 'var(--surface)', borderRadius: 'var(--radius-lg)',
-        padding: 24, width: 420, maxWidth: '90vw',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-      }}>
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--surface)', borderRadius: 'var(--radius-lg)',
+          padding: 24, width: 420, maxWidth: '90vw',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+        }}
+      >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>Connect mail account</h3>
           <button
@@ -176,7 +199,10 @@ export default function ConnectAccountModal({ workspaceConfig, userRole, onClose
               Your admin hasn&apos;t configured the company mail server yet. Ask them to set it up in Settings → Mail.
             </p>
             <button
-              onClick={() => setScreen('pick')}
+              onClick={() => {
+                setError(null);
+                setScreen('pick');
+              }}
               style={{ padding: '8px 14px', fontSize: 13, background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer' }}
             >
               Back
@@ -265,7 +291,12 @@ export default function ConnectAccountModal({ workspaceConfig, userRole, onClose
                 {connecting ? 'Connecting…' : 'Connect'}
               </button>
               <button
-                onClick={() => setScreen('pick')}
+                onClick={() => {
+                  setEmail('');
+                  setPassword('');
+                  setError(null);
+                  setScreen('pick');
+                }}
                 style={{ padding: '8px 14px', fontSize: 13, background: 'var(--surface2)', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer' }}
               >
                 Back
