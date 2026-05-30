@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
+import { type MailSocketEmail } from '@/hooks/useMailSocket';
 
 interface Email {
   id: string;
@@ -22,6 +23,7 @@ interface Props {
   search: string;
   selectedId: string | null;
   onlyStarred?: boolean;
+  prependEmails?: MailSocketEmail[];
   onSelect: (email: Email) => void;
 }
 
@@ -78,7 +80,7 @@ function EmailItem({ email, selected, onSelect }: { email: Email; selected: bool
   );
 }
 
-export function EmailList({ accountId, folder, search, selectedId, onlyStarred, onSelect }: Props) {
+export function EmailList({ accountId, folder, search, selectedId, onlyStarred, prependEmails, onSelect }: Props) {
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -120,6 +122,35 @@ export function EmailList({ accountId, folder, search, selectedId, onlyStarred, 
 
   return (
     <div style={{ overflowY: 'auto', height: '100%' }}>
+      <style>{`
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      {(prependEmails ?? []).map(socketEmail => {
+        const email: Email = {
+          id: socketEmail.id,
+          subject: socketEmail.subject,
+          from_name: socketEmail.from_name,
+          from_address: socketEmail.from_address,
+          snippet: socketEmail.body_text ? socketEmail.body_text.slice(0, 120) : null,
+          sent_at: socketEmail.sent_at,
+          is_read: socketEmail.is_read,
+          is_starred: socketEmail.is_starred,
+          contact_id: socketEmail.contact_id,
+          folder: socketEmail.folder,
+        };
+        return (
+          <div key={socketEmail.id} style={{ animation: 'slideDown 200ms ease-out' }}>
+            <EmailItem
+              email={email}
+              selected={selectedId === email.id}
+              onSelect={onSelect}
+            />
+          </div>
+        );
+      })}
       {visible.map(email => (
         <EmailItem
           key={email.id}

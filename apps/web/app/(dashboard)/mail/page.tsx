@@ -7,6 +7,7 @@ import { EmailList } from '@/components/mail/EmailList';
 import { EmailDetail } from '@/components/mail/EmailDetail';
 import { ComposeModal } from '@/components/mail/ComposeModal';
 import { apiFetch } from '@/lib/api';
+import { useMailSocket, type MailSocketEmail } from '@/hooks/useMailSocket';
 
 type Folder = 'inbox' | 'sent' | 'starred' | 'trash';
 
@@ -38,6 +39,26 @@ export default function MailPage() {
   const [replyTo, setReplyTo] = useState<{ account_id: string; to: string; subject: string; message_id: string } | undefined>();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [listKey, setListKey] = useState(0);
+  const [liveEmails, setLiveEmails] = useState<MailSocketEmail[]>([]);
+
+  // 'starred' is a filter on inbox, not a separate folder on the server
+  const apiFolder = selectedFolder === 'starred' ? 'inbox' : selectedFolder;
+
+  useMailSocket({
+    onNewEmail: (email) => {
+      const isCurrentAccount = !selectedAccount || email.account_id === selectedAccount;
+      const isCurrentFolder =
+        email.folder === apiFolder ||
+        (selectedFolder === 'starred' && email.is_starred);
+      if (isCurrentAccount && isCurrentFolder) {
+        setLiveEmails(prev => [email, ...prev]);
+      }
+    },
+  });
+
+  useEffect(() => {
+    setLiveEmails([]);
+  }, [selectedAccount, selectedFolder]);
 
   useEffect(() => {
     void apiFetch<{ data: Account[] }>('/api/mail/accounts')
@@ -54,9 +75,6 @@ export default function MailPage() {
     });
     setShowCompose(true);
   }
-
-  // 'starred' is a filter on inbox, not a separate folder on the server
-  const apiFolder = selectedFolder === 'starred' ? 'inbox' : selectedFolder;
 
   return (
     <>
@@ -87,6 +105,7 @@ export default function MailPage() {
               search={search}
               selectedId={selectedEmail?.id ?? null}
               onlyStarred={selectedFolder === 'starred'}
+              prependEmails={liveEmails}
               onSelect={(email) => setSelectedEmail(email as unknown as Email)}
             />
           </div>
