@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DealForm } from './DealForm';
 import { StagePill } from './StagePill';
 import { Icon } from '@/components/ui/Icon';
@@ -37,25 +37,30 @@ function DealEmails({ dealId, contactEmail, contactId }: { dealId: string; conta
   const [loading, setLoading] = useState(true);
   const [showCompose, setShowCompose] = useState(false);
   const [accounts, setAccounts] = useState<{ id: string; email: string; display_name: string | null }[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(true);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   function loadEmails() {
     setLoading(true);
     void apiFetch<{ data: DealEmailRow[] }>(`/api/mail/emails?deal_id=${dealId}&per_page=10`)
-      .then(j => setEmails(j.data ?? []))
-      .finally(() => setLoading(false));
+      .then(j => { if (mountedRef.current) setEmails(j.data ?? []); })
+      .finally(() => { if (mountedRef.current) setLoading(false); });
   }
 
   useEffect(() => {
-    let cancelled = false;
-
     setLoading(true);
+    setAccountsLoading(true);
     void apiFetch<{ data: DealEmailRow[] }>(`/api/mail/emails?deal_id=${dealId}&per_page=10`)
-      .then(j => { if (!cancelled) setEmails(j.data ?? []); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .then(j => { if (mountedRef.current) setEmails(j.data ?? []); })
+      .finally(() => { if (mountedRef.current) setLoading(false); });
     void apiFetch<{ data: { id: string; email: string; display_name: string | null }[] }>('/api/mail/accounts')
-      .then(j => { if (!cancelled) setAccounts(j.data ?? []); });
-
-    return () => { cancelled = true; };
+      .then(j => { if (mountedRef.current) setAccounts(j.data ?? []); })
+      .finally(() => { if (mountedRef.current) setAccountsLoading(false); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dealId]);
 
@@ -71,18 +76,19 @@ function DealEmails({ dealId, contactEmail, contactId }: { dealId: string; conta
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={sectionLabelStyle}>Emails</span>
-        {accounts.length > 0 && (
-          <button
-            onClick={() => setShowCompose(true)}
-            style={{
-              fontSize: 12, fontWeight: 500, color: 'var(--text2)',
-              background: 'none', border: '1px solid var(--border)',
-              borderRadius: 6, padding: '3px 10px', cursor: 'pointer',
-            }}
-          >
-            + Send email
-          </button>
-        )}
+        <button
+          onClick={() => setShowCompose(true)}
+          disabled={accountsLoading || accounts.length === 0}
+          style={{
+            fontSize: 12, fontWeight: 500, color: 'var(--text2)',
+            background: 'none', border: '1px solid var(--border)',
+            borderRadius: 6, padding: '3px 10px',
+            opacity: accountsLoading || accounts.length === 0 ? 0.5 : 1,
+            cursor: accountsLoading || accounts.length === 0 ? 'not-allowed' : 'pointer',
+          }}
+        >
+          + Send email
+        </button>
       </div>
 
       {loading ? (
