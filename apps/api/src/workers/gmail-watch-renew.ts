@@ -2,11 +2,8 @@
 import { google } from 'googleapis';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
-import { apiEnvSchema } from '@vantage/config';
 import { decryptSecret } from '../lib/mail-crypto';
 import { logger } from '../lib/logger';
-
-const apiEnv = apiEnvSchema.parse(process.env);
 
 const WATCH_EXPIRY_BUFFER_MS = 24 * 60 * 60 * 1000; // renew 1 day before expiry
 
@@ -14,7 +11,7 @@ export async function registerGmailWatch(
   db: Kysely<Database>,
   accountId: string,
 ): Promise<void> {
-  const topic = apiEnv.GOOGLE_PUBSUB_TOPIC;
+  const topic = process.env['GOOGLE_PUBSUB_TOPIC'];
   if (!topic) return; // not configured — skip silently
 
   const account = await db
@@ -27,9 +24,9 @@ export async function registerGmailWatch(
   if (!account.access_token) return;
 
   const auth = new google.auth.OAuth2(
-    apiEnv.GOOGLE_CLIENT_ID,
-    apiEnv.GOOGLE_CLIENT_SECRET,
-    apiEnv.GOOGLE_REDIRECT_URI,
+    process.env['GOOGLE_CLIENT_ID'],
+    process.env['GOOGLE_CLIENT_SECRET'],
+    process.env['GOOGLE_REDIRECT_URI'],
   );
   auth.setCredentials({
     access_token: decryptSecret(account.access_token),
