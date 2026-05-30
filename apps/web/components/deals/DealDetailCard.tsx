@@ -18,6 +18,7 @@ interface Props {
   userMap: Record<string, string>;
   pipelineId: string;
   contactEmail?: string;
+  contactId?: string;
   onDone: () => void;
 }
 
@@ -31,7 +32,7 @@ interface DealEmailRow {
   folder: string;
 }
 
-function DealEmails({ dealId, contactEmail }: { dealId: string; contactEmail?: string }) {
+function DealEmails({ dealId, contactEmail, contactId }: { dealId: string; contactEmail?: string; contactId?: string }) {
   const [emails, setEmails] = useState<DealEmailRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCompose, setShowCompose] = useState(false);
@@ -45,9 +46,16 @@ function DealEmails({ dealId, contactEmail }: { dealId: string; contactEmail?: s
   }
 
   useEffect(() => {
-    loadEmails();
+    let cancelled = false;
+
+    setLoading(true);
+    void apiFetch<{ data: DealEmailRow[] }>(`/api/mail/emails?deal_id=${dealId}&per_page=10`)
+      .then(j => { if (!cancelled) setEmails(j.data ?? []); })
+      .finally(() => { if (!cancelled) setLoading(false); });
     void apiFetch<{ data: { id: string; email: string; display_name: string | null }[] }>('/api/mail/accounts')
-      .then(j => setAccounts(j.data ?? []));
+      .then(j => { if (!cancelled) setAccounts(j.data ?? []); });
+
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dealId]);
 
@@ -116,6 +124,7 @@ function DealEmails({ dealId, contactEmail }: { dealId: string; contactEmail?: s
         <ComposeModal
           accounts={accounts}
           dealId={dealId}
+          contactId={contactId}
           initialTo={contactEmail}
           onClose={() => setShowCompose(false)}
           onSent={() => {
@@ -142,7 +151,7 @@ function Meta({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-export function DealDetailCard({ deal, stages, stageMap, userMap, pipelineId, contactEmail, onDone }: Props) {
+export function DealDetailCard({ deal, stages, stageMap, userMap, pipelineId, contactEmail, contactId, onDone }: Props) {
   const [editing, setEditing] = useState(false);
   const stage = deal.stage_id ? stageMap[deal.stage_id] : undefined;
   const ownerName = deal.owner_id ? (userMap[deal.owner_id] ?? '—') : '—';
@@ -248,7 +257,7 @@ export function DealDetailCard({ deal, stages, stageMap, userMap, pipelineId, co
       )}
 
       {/* Emails */}
-      <DealEmails dealId={deal.id} contactEmail={contactEmail} />
+      <DealEmails dealId={deal.id} contactEmail={contactEmail} contactId={contactId} />
 
       {/* Created at */}
       {deal.created_at && (
