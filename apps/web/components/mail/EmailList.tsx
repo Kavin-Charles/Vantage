@@ -114,10 +114,14 @@ export function EmailList({ accountId, folder, search, selectedId, onlyStarred, 
   );
   const visible = onlyStarred ? emails.filter(e => e.is_starred) : emails;
 
-  if (!visible.length) return (
+  if (!visible.length && !(prependEmails?.length)) return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontSize: 13, padding: 32 }}>
       No emails
     </div>
+  );
+
+  const prependVisible = (prependEmails ?? []).filter(
+    pe => !visible.some(e => e.id === pe.id)
   );
 
   return (
@@ -128,7 +132,7 @@ export function EmailList({ accountId, folder, search, selectedId, onlyStarred, 
           to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-      {(prependEmails ?? []).map(socketEmail => {
+      {prependVisible.map(socketEmail => {
         const email: Email = {
           id: socketEmail.id,
           subject: socketEmail.subject,

@@ -131,7 +131,7 @@ export default function MailPage() {
           accounts={accounts}
           replyTo={replyTo}
           onClose={() => setShowCompose(false)}
-          onSent={() => { setSelectedEmail(null); setSelectedFolder('sent'); setListKey(k => k + 1); }}
+          onSent={() => { setSelectedEmail(null); setSelectedFolder('sent'); setListKey(k => k + 1); setLiveEmails([]); }}
         />
       )}
     </>
