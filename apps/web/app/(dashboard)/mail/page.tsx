@@ -51,7 +51,7 @@ export default function MailPage() {
         email.folder === apiFolder ||
         (selectedFolder === 'starred' && email.is_starred);
       if (isCurrentAccount && isCurrentFolder) {
-        setLiveEmails(prev => [email, ...prev]);
+        setLiveEmails(prev => [email, ...prev.filter(e => e.id !== email.id)]);
       }
     },
   });

@@ -126,12 +126,6 @@ export function EmailList({ accountId, folder, search, selectedId, onlyStarred, 
 
   return (
     <div style={{ overflowY: 'auto', height: '100%' }}>
-      <style>{`
-        @keyframes slideDown {
-          from { opacity: 0; transform: translateY(-8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
       {prependVisible.map(socketEmail => {
         const email: Email = {
           id: socketEmail.id,
