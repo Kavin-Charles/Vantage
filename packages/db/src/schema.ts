@@ -407,8 +407,6 @@ export interface EmailTable {
   to_addresses: string[];
   cc_addresses: string[];
   bcc_addresses: string[];
-  body_html: string | null;
-  body_text: string | null;
   snippet: string | null;
   folder: Generated<'inbox' | 'sent' | 'drafts' | 'trash' | 'spam'>;
   is_read: Generated<boolean>;
