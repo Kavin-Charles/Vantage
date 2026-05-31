@@ -84,8 +84,8 @@ export function EmailList({ accountId, folder, search, selectedId, onlyStarred, 
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const params = new URLSearchParams({ folder, per_page: '50' });
       if (accountId) params.set('account_id', accountId);
@@ -93,17 +93,17 @@ export function EmailList({ accountId, folder, search, selectedId, onlyStarred, 
       const json = await apiFetch<{ data: Email[] }>(`/api/mail/emails?${params}`);
       setEmails(json.data ?? []);
     } catch {
-      setEmails([]);
+      if (showLoading) setEmails([]);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }, [accountId, folder, search]);
 
   useEffect(() => { void load(); }, [load]);
 
-  // Re-fetch every 60s so new incoming emails appear without manual refresh
+  // Re-fetch every 60s — silent (no loading flash, no scroll reset)
   useEffect(() => {
-    const t = setInterval(() => { void load(); }, 60_000);
+    const t = setInterval(() => { void load(false); }, 60_000);
     return () => clearInterval(t);
   }, [load]);
 
