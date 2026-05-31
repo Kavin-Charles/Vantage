@@ -22,7 +22,12 @@ export function errorHandler(
   logger.error(err, 'Unhandled error');
 
   const isDev = process.env['NODE_ENV'] !== 'production';
-  const detail = isDev && err instanceof Error ? err.message : 'An unexpected error occurred';
+  let detail = 'An unexpected error occurred';
+  if (isDev) {
+    if (err instanceof Error) detail = `${err.constructor.name}: ${err.message}`;
+    else if (typeof err === 'object' && err !== null) detail = JSON.stringify(err);
+    else detail = String(err);
+  }
 
   res.status(500).json({
     data: null,
