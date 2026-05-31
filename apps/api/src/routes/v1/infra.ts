@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { ApiKeyRequest } from '../../middleware/api-key-auth';
+import { createDeploymentSchema, updateDeploymentSchema } from '../deployments';
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -141,6 +142,80 @@ export function createV1InfraRouter(db: Kysely<Database>): ExpressRouter {
     } catch (err) {
       next(err);
     }
+  });
+
+  // POST /v1/deployments — CI/webhook callers create a deployment
+  router.post('/deployments', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as ApiKeyRequest;
+      const body = createDeploymentSchema.parse(req.body);
+
+      const deployment = await db
+        .insertInto('deployments')
+        .values({
+          workspace_id: workspace.id,
+          server_id: body.server_id ?? null,
+          name: body.name ?? null,
+          environment: body.environment ?? null,
+          status: body.status,
+          source: body.source,
+          started_at: body.started_at ? new Date(body.started_at) : new Date(),
+          git_commit: body.git_commit ?? null,
+          git_branch: body.git_branch ?? null,
+          git_tag: body.git_tag ?? null,
+          git_message: body.git_message ?? null,
+          git_author: body.git_author ?? null,
+          meta: body.meta ?? null,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      res.status(201).json({ data: deployment, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // PATCH /v1/deployments/:id — CI updates deploy status on finish (two-phase)
+  router.patch('/deployments/:id', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as ApiKeyRequest;
+      const body = updateDeploymentSchema.parse(req.body);
+
+      const existing = await db
+        .selectFrom('deployments')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .select(['id', 'started_at'])
+        .executeTakeFirst();
+
+      if (!existing) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Deployment not found' } });
+        return;
+      }
+
+      const update: Record<string, unknown> = {};
+      if (body.status) update['status'] = body.status;
+      if (body.finished_at) {
+        const finished = new Date(body.finished_at);
+        const started = new Date(existing.started_at);
+        update['finished_at'] = finished;
+        update['duration_s'] = Math.max(0, Math.round((finished.getTime() - started.getTime()) / 1000));
+      }
+
+      if (Object.keys(update).length === 0) {
+        res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: 'No fields to update' } });
+        return;
+      }
+
+      const deployment = await db
+        .updateTable('deployments')
+        .set(update)
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .returningAll()
+        .executeTakeFirst();
+
+      res.json({ data: deployment, error: null });
+    } catch (err) { next(err); }
   });
 
   return router;
