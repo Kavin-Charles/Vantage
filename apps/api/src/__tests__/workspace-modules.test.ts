@@ -1,27 +1,21 @@
 // apps/api/src/__tests__/workspace-modules.test.ts
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import express from 'express';
+import request from 'supertest';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
+import { createWorkspaceModulesRouter } from '../routes/workspace-modules';
 
-function mockRes() {
-  const res: any = {};
-  res.status = vi.fn().mockReturnValue(res);
-  res.json = vi.fn().mockReturnValue(res);
-  return res;
-}
-
-function mockNext() {
-  return vi.fn();
-}
-
-function getHandler(router: any, path: string, method: 'get' | 'post' | 'patch') {
-  const stack = (router as any).stack as Array<{
-    route?: { path: string; methods: Record<string, boolean>; stack: { handle: Function }[] };
-  }>;
-  const layer = stack.find(
-    s => s.route?.path === path && s.route.methods[method],
-  );
-  return layer!.route!.stack[0]!.handle;
+function buildApp(db: Partial<Kysely<Database>>, role: 'admin' | 'member' = 'admin') {
+  const app = express();
+  app.use(express.json());
+  app.use((req, _res, next) => {
+    (req as any).workspace = { id: 'ws-1' };
+    (req as any).user = { id: 'user-1', role };
+    next();
+  });
+  app.use('/api/workspace/modules', createWorkspaceModulesRouter(db as Kysely<Database>));
+  return app;
 }
 
 const mockModuleRows = [
@@ -39,15 +33,10 @@ describe('GET /api/workspace/modules', () => {
         execute: vi.fn().mockResolvedValue(mockModuleRows),
       }),
     };
-    const { createWorkspaceModulesRouter } = await import('../routes/workspace-modules');
-    const router = createWorkspaceModulesRouter(db as Kysely<Database>);
-    const handler = getHandler(router, '/', 'get');
-
-    const req: any = { workspace: { id: 'ws-1' }, user: { id: 'user-1', role: 'admin' } };
-    const res = mockRes();
-    await handler(req, res, mockNext());
-
-    expect(res.json).toHaveBeenCalledWith({ data: mockModuleRows, error: null });
+    const res = await request(buildApp(db)).get('/api/workspace/modules');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(3);
+    expect(res.body.data[0]).toMatchObject({ module_id: 'contacts', enabled: true });
   });
 });
 
@@ -61,62 +50,51 @@ describe('PATCH /api/workspace/modules/:moduleId', () => {
         executeTakeFirst: vi.fn().mockResolvedValue(updateResult),
       }),
     };
-    const { createWorkspaceModulesRouter } = await import('../routes/workspace-modules');
-    const router = createWorkspaceModulesRouter(db as Kysely<Database>);
-    const handler = getHandler(router, '/:moduleId', 'patch');
+    const res = await request(buildApp(db))
+      .patch('/api/workspace/modules/contacts')
+      .send({ enabled: false });
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ module_id: 'contacts', enabled: false });
+  });
 
-    const req: any = {
-      workspace: { id: 'ws-1' },
-      user: { id: 'user-1', role: 'admin' },
-      params: { moduleId: 'contacts' },
-      body: { enabled: false },
+  it('returns 404 when module row does not exist for workspace', async () => {
+    const updateResult = { numUpdatedRows: BigInt(0) };
+    const db: any = {
+      updateTable: vi.fn().mockReturnValue({
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        executeTakeFirst: vi.fn().mockResolvedValue(updateResult),
+      }),
     };
-    const res = mockRes();
-    await handler(req, res, mockNext());
-
-    expect(res.json).toHaveBeenCalledWith({
-      data: { module_id: 'contacts', enabled: false },
-      error: null,
-    });
+    const res = await request(buildApp(db))
+      .patch('/api/workspace/modules/contacts')
+      .send({ enabled: false });
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe('MODULE_NOT_FOUND');
   });
 
   it('returns 403 for non-admin', async () => {
     const db: any = {};
-    const { createWorkspaceModulesRouter } = await import('../routes/workspace-modules');
-    const router = createWorkspaceModulesRouter(db as Kysely<Database>);
-    const handler = getHandler(router, '/:moduleId', 'patch');
-
-    const req: any = {
-      workspace: { id: 'ws-1' },
-      user: { id: 'user-1', role: 'member' },
-      params: { moduleId: 'contacts' },
-      body: { enabled: false },
-    };
-    const res = mockRes();
-    await handler(req, res, mockNext());
-
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({
-      data: null,
-      error: { code: 'FORBIDDEN' },
-    });
+    const res = await request(buildApp(db, 'member'))
+      .patch('/api/workspace/modules/contacts')
+      .send({ enabled: false });
+    expect(res.status).toBe(403);
   });
 
   it('returns 400 for unknown moduleId', async () => {
     const db: any = {};
-    const { createWorkspaceModulesRouter } = await import('../routes/workspace-modules');
-    const router = createWorkspaceModulesRouter(db as Kysely<Database>);
-    const handler = getHandler(router, '/:moduleId', 'patch');
+    const res = await request(buildApp(db))
+      .patch('/api/workspace/modules/unknown-module')
+      .send({ enabled: false });
+    expect(res.status).toBe(400);
+  });
 
-    const req: any = {
-      workspace: { id: 'ws-1' },
-      user: { id: 'user-1', role: 'admin' },
-      params: { moduleId: 'unknown-module' },
-      body: { enabled: false },
-    };
-    const res = mockRes();
-    await handler(req, res, mockNext());
-
-    expect(res.status).toHaveBeenCalledWith(400);
+  it('returns 400 for invalid body (INVALID_BODY)', async () => {
+    const db: any = {};
+    const res = await request(buildApp(db))
+      .patch('/api/workspace/modules/contacts')
+      .send({ enabled: 'yes' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('INVALID_BODY');
   });
 });

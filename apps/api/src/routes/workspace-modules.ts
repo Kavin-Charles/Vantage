@@ -54,7 +54,7 @@ export function createWorkspaceModulesRouter(db: Kysely<Database>): Router {
         return;
       }
 
-      await db
+      const result = await db
         .updateTable('workspace_modules')
         .set({
           enabled: parsed.data.enabled,
@@ -64,6 +64,14 @@ export function createWorkspaceModulesRouter(db: Kysely<Database>): Router {
         .where('workspace_id', '=', workspace.id)
         .where('module_id', '=', moduleId)
         .executeTakeFirst();
+
+      if (result.numUpdatedRows === BigInt(0)) {
+        res.status(404).json({
+          data: null,
+          error: { code: 'MODULE_NOT_FOUND', message: `Module ${moduleId} not found for this workspace.` },
+        });
+        return;
+      }
 
       // Invalidate cache so next request re-reads from DB
       invalidateModuleCache(workspace.id, moduleId);
