@@ -111,7 +111,7 @@ export function createAuthRouter(
     res.clearCookie('vantage_token', {
       httpOnly: true,
       secure: process.env['NODE_ENV'] === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/',
     });
     res.json({ data: null, error: null });
