@@ -7,12 +7,17 @@ interface GmailProviderOptions {
   onTokenRefreshed?: (newAccessToken: string) => Promise<void>;
 }
 
-function labelToFolder(labels: string[]): FetchedEmail['folder'] {
+// Labels that map to a real user-visible folder
+const SYNC_LABELS = ['INBOX', 'SENT', 'TRASH', 'SPAM', 'DRAFT'] as const;
+
+function labelToFolder(labels: string[]): FetchedEmail['folder'] | null {
   if (labels.includes('TRASH')) return 'trash';
   if (labels.includes('SPAM')) return 'spam';
   if (labels.includes('SENT')) return 'sent';
   if (labels.includes('DRAFT')) return 'drafts';
-  return 'inbox';
+  if (labels.includes('INBOX')) return 'inbox';
+  // archived / all-mail only — skip, don't store
+  return null;
 }
 
 function parseAddressList(header: string | null | undefined): string[] {
@@ -58,6 +63,8 @@ export function createGmailProvider(opts: GmailProviderOptions): MailProvider {
       const h = (name: string) => headers.find(x => x.name?.toLowerCase() === name)?.value ?? null;
       const { address: from_address, name: from_name } = parseFrom(h('from') ?? '');
       const labels = data.labelIds ?? [];
+      const folder = labelToFolder(labels);
+      if (!folder) return null; // archived / all-mail only — skip
 
       return {
         message_id: data.id!,
@@ -69,7 +76,7 @@ export function createGmailProvider(opts: GmailProviderOptions): MailProvider {
         cc_addresses: parseAddressList(h('cc')),
         bcc_addresses: parseAddressList(h('bcc')),
         snippet: data.snippet?.slice(0, 300) ?? null,
-        folder: labelToFolder(labels),
+        folder,
         is_read: !labels.includes('UNREAD'),
         is_starred: labels.includes('STARRED'),
         sent_at: new Date(Number(data.internalDate)).toISOString(),
