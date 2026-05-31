@@ -483,8 +483,8 @@ export interface Deployment {
   environment: string | null;
   status: DeploymentStatus;
   source: DeploymentSource;
-  started_at: Date;
-  finished_at: Date | null;
+  started_at: string;
+  finished_at: string | null;
   duration_s: number | null;
   git_commit: string | null;
   git_branch: string | null;
@@ -492,5 +492,5 @@ export interface Deployment {
   git_message: string | null;
   git_author: string | null;
   meta: Record<string, unknown> | null;
-  created_at: Date;
+  created_at: string;
 }
