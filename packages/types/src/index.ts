@@ -471,3 +471,26 @@ export interface CalendarEvent {
   created_at: string;
   updated_at: string;
 }
+
+export type DeploymentStatus = 'pending' | 'running' | 'success' | 'failed' | 'cancelled';
+export type DeploymentSource = 'webhook' | 'agent' | 'manual';
+
+export interface Deployment {
+  id: UUID;
+  workspace_id: UUID;
+  server_id: UUID | null;
+  name: string | null;
+  environment: string | null;
+  status: DeploymentStatus;
+  source: DeploymentSource;
+  started_at: Date;
+  finished_at: Date | null;
+  duration_s: number | null;
+  git_commit: string | null;
+  git_branch: string | null;
+  git_tag: string | null;
+  git_message: string | null;
+  git_author: string | null;
+  meta: Record<string, unknown> | null;
+  created_at: Date;
+}

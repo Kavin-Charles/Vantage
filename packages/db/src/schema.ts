@@ -554,6 +554,30 @@ export interface WorkspaceImapConfigTable {
   updated_at: Generated<Date>;
 }
 
+export interface DeploymentTable {
+  id: Generated<string>;
+  workspace_id: string;
+  server_id: string | null;
+  name: string | null;
+  environment: string | null;
+  status: 'pending' | 'running' | 'success' | 'failed' | 'cancelled';
+  source: 'webhook' | 'agent' | 'manual';
+  started_at: Generated<Date>;
+  finished_at: Date | null;
+  duration_s: number | null;
+  git_commit: string | null;
+  git_branch: string | null;
+  git_tag: string | null;
+  git_message: string | null;
+  git_author: string | null;
+  meta: Record<string, unknown> | null;
+  created_at: Generated<Date>;
+}
+
+export type Deployment = Selectable<DeploymentTable>;
+export type NewDeployment = Insertable<DeploymentTable>;
+export type DeploymentUpdate = Updateable<DeploymentTable>;
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -568,6 +592,7 @@ export interface Database {
   websites: WebsiteTable;
   metrics_snapshots: MetricsSnapshotTable;
   alert_thresholds: AlertThresholdTable;
+  deployments: DeploymentTable;
   workspace_ssh_keypairs: WorkspaceSshKeypairTable;
   ssh_command_log: SshCommandLogTable;
   pipelines: PipelineTable;
