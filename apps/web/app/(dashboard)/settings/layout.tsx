@@ -21,6 +21,7 @@ const ALL_TABS: Tab[] = [
   { href: '/settings/calendar', label: 'Calendar', adminOnly: true },
   { href: '/settings/ssh', label: 'SSH Keys', adminOnly: true },
   { href: '/settings/api-keys', label: 'API Keys', adminOnly: true },
+  { href: '/settings/modules', label: 'Modules', adminOnly: true },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
@@ -40,7 +41,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       pathname.startsWith('/settings/tasks') ||
       pathname.startsWith('/settings/calendar') ||
       pathname.startsWith('/settings/ssh') ||
-      pathname.startsWith('/settings/api-keys')
+      pathname.startsWith('/settings/api-keys') ||
+      pathname.startsWith('/settings/modules')
     )) {
       router.push('/settings/profile');
     }
