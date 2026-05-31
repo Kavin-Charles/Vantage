@@ -21,8 +21,11 @@ export function errorHandler(
 
   logger.error(err, 'Unhandled error');
 
+  const isDev = process.env['NODE_ENV'] !== 'production';
+  const detail = isDev && err instanceof Error ? err.message : 'An unexpected error occurred';
+
   res.status(500).json({
     data: null,
-    error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' },
+    error: { code: 'INTERNAL_ERROR', message: detail },
   });
 }
