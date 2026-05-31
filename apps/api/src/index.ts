@@ -54,6 +54,7 @@ import { handleMailWsUpgrade } from './ws/mail-ws';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
+import { startStaleDeploymentsCleaner } from './workers/stale-deployments';
 import { createV1Router } from './routes/v1/index';
 import { seedOnFirstBoot } from './lib/seed';
 import { seedDemo } from './lib/seed-demo';
@@ -165,6 +166,9 @@ startGmailWatchRenew(db);
 
 // Start website checker (polls every 60 s)
 startWebsiteChecker(db);
+
+// Start stale-deployments cleaner (runs every 1 h, cancels running deploys > 24 h old)
+startStaleDeploymentsCleaner(db);
 
 // Start task-due notifier (fires at midnight UTC daily)
 startTaskDueNotifier(db);
