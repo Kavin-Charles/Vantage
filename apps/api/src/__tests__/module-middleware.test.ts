@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
-import { createRequireModule, moduleCache } from '../middleware/module';
+import { createRequireModule, __clearModuleCacheForTesting } from '../middleware/module';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 function mockReq(workspaceId: string): Partial<AuthenticatedRequest> {
@@ -19,7 +19,7 @@ function mockRes() {
 describe('requireModule middleware', () => {
   let db: Partial<Kysely<Database>>;
 
-  beforeEach(() => moduleCache.clear());
+  beforeEach(() => __clearModuleCacheForTesting());
 
   beforeEach(() => {
     db = {
@@ -71,5 +71,21 @@ describe('requireModule middleware', () => {
     await middleware(mockReq('ws-1') as Request, res as Response, next);
     expect(res.status).toHaveBeenCalledWith(403);
     expect(next).not.toHaveBeenCalled();
+  });
+
+  it('hits cache on second call and skips DB', async () => {
+    const requireModule = createRequireModule(db as Kysely<Database>);
+    const middleware = requireModule('contacts');
+    const next1 = vi.fn();
+    const next2 = vi.fn();
+    // First call — populates cache
+    await middleware(mockReq('ws-cache') as Request, mockRes() as Response, next1);
+    // Second call — should use cache, not hit DB again
+    await middleware(mockReq('ws-cache') as Request, mockRes() as Response, next2);
+    expect(next1).toHaveBeenCalledOnce();
+    expect(next2).toHaveBeenCalledOnce();
+    // DB should have been called exactly once (cache hit on second call)
+    const selectFromMock = db.selectFrom as any;
+    expect(selectFromMock).toHaveBeenCalledTimes(1);
   });
 });

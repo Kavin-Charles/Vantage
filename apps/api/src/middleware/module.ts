@@ -5,7 +5,7 @@ import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from './auth';
 
 // In-memory cache: key = `{workspaceId}:{moduleId}`, value = { enabled, expiresAt }
-export const moduleCache = new Map<string, { enabled: boolean; expiresAt: number }>();
+const moduleCache = new Map<string, { enabled: boolean; expiresAt: number }>();
 const CACHE_TTL_MS = 60_000;
 
 async function isModuleEnabled(
@@ -35,6 +35,11 @@ export function invalidateModuleCache(workspaceId: string, moduleId: string): vo
   moduleCache.delete(`${workspaceId}:${moduleId}`);
 }
 
+/** Test-only. Do not use in production code. */
+export function __clearModuleCacheForTesting(): void {
+  moduleCache.clear();
+}
+
 export function createRequireModule(db: Kysely<Database>) {
   return function requireModule(moduleId: string) {
     return async function (
@@ -42,19 +47,23 @@ export function createRequireModule(db: Kysely<Database>) {
       res: Response,
       next: NextFunction,
     ): Promise<void> {
-      const { workspace } = req as AuthenticatedRequest;
-      const enabled = await isModuleEnabled(db, workspace.id, moduleId);
-      if (!enabled) {
-        res.status(403).json({
-          data: null,
-          error: {
-            code: 'MODULE_DISABLED',
-            message: `${moduleId} module is disabled for this workspace.`,
-          },
-        });
-        return;
+      try {
+        const { workspace } = req as AuthenticatedRequest;
+        const enabled = await isModuleEnabled(db, workspace.id, moduleId);
+        if (!enabled) {
+          res.status(403).json({
+            data: null,
+            error: {
+              code: 'MODULE_DISABLED',
+              message: `${moduleId} module is disabled for this workspace.`,
+            },
+          });
+          return;
+        }
+        next();
+      } catch (err) {
+        next(err);
       }
-      next();
     };
   };
 }
