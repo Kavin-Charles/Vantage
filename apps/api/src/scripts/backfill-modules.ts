@@ -5,20 +5,27 @@ import { seedWorkspaceModules } from '../lib/seed-modules';
 async function main() {
   const db = createDb(process.env['DATABASE_URL']!);
 
-  const workspaces = await db
-    .selectFrom('workspaces')
-    .select('id')
-    .execute();
+  try {
+    const workspaces = await db
+      .selectFrom('workspaces')
+      .select('id')
+      .execute();
 
-  console.log(`Backfilling ${workspaces.length} workspaces...`);
+    console.log(`Backfilling ${workspaces.length} workspaces...`);
 
-  for (const ws of workspaces) {
-    await seedWorkspaceModules(db, ws.id);
-    console.log(`  ✓ ${ws.id}`);
+    for (const ws of workspaces) {
+      try {
+        await seedWorkspaceModules(db, ws.id);
+        console.log(`  ✓ ${ws.id}`);
+      } catch (err) {
+        console.error(`  ✗ ${ws.id}`, err);
+      }
+    }
+
+    console.log('Done.');
+  } finally {
+    await db.destroy();
   }
-
-  console.log('Done.');
-  process.exit(0);
 }
 
 main().catch(err => {
