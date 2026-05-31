@@ -9,6 +9,7 @@ import { sendPush } from '../lib/push-notify';
 import { logger } from '../lib/logger';
 import { queueWebhook } from '../lib/queue-webhook';
 import { sseRegistry } from '../lib/sse-registry';
+import { createDeploymentSchema } from './deployments';
 
 // Rate-limit snapshot writes: track last insert time per server (resets on restart, acceptable)
 const lastSnapshotAt = new Map<string, number>();
@@ -35,6 +36,37 @@ const pingSchema = z.object({
   net_out_bytes: z.number().min(0),
   db_checks: z.array(dbCheckSchema).default([]),
 });
+
+export function createAgentDeploymentHandler(db: Kysely<Database>) {
+  return async (req: unknown, res: { status: (n: number) => { json: (d: unknown) => void }; json: (d: unknown) => void }, next: (e?: unknown) => void) => {
+    try {
+      const { server } = req as AgentRequest;
+      const body = createDeploymentSchema.omit({ source: true, server_id: true }).parse((req as { body: unknown }).body);
+
+      const deployment = await db
+        .insertInto('deployments')
+        .values({
+          workspace_id: server.workspace_id,
+          server_id: server.id,
+          name: body.name ?? null,
+          environment: body.environment ?? null,
+          status: body.status,
+          source: 'agent' as const,
+          started_at: body.started_at ? new Date(body.started_at) : new Date(),
+          git_commit: body.git_commit ?? null,
+          git_branch: body.git_branch ?? null,
+          git_tag: body.git_tag ?? null,
+          git_message: body.git_message ?? null,
+          git_author: body.git_author ?? null,
+          meta: body.meta ?? null,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      res.status(201).json({ data: deployment, error: null });
+    } catch (err) { next(err); }
+  };
+}
 
 export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null): ExpressRouter {
   const router = Router();
@@ -245,6 +277,36 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
     } catch (err) {
       next(err);
     }
+  });
+
+  // POST /agent/deployment — agent reports a deployment event
+  router.post('/deployment', requireAgentToken, async (req, res, next) => {
+    try {
+      const { server } = req as unknown as AgentRequest;
+      const body = createDeploymentSchema.omit({ source: true, server_id: true }).parse(req.body);
+
+      const deployment = await db
+        .insertInto('deployments')
+        .values({
+          workspace_id: server.workspace_id,
+          server_id: server.id,
+          name: body.name ?? null,
+          environment: body.environment ?? null,
+          status: body.status,
+          source: 'agent',
+          started_at: body.started_at ? new Date(body.started_at) : new Date(),
+          git_commit: body.git_commit ?? null,
+          git_branch: body.git_branch ?? null,
+          git_tag: body.git_tag ?? null,
+          git_message: body.git_message ?? null,
+          git_author: body.git_author ?? null,
+          meta: body.meta ?? null,
+        })
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      res.status(201).json({ data: deployment, error: null });
+    } catch (err) { next(err); }
   });
 
   return router;

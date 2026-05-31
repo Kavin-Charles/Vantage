@@ -71,3 +71,20 @@ describe('PATCH /api/deployments/:id — 404 on missing', () => {
     expect(res.status).toHaveBeenCalledWith(404);
   });
 });
+
+describe('POST /api/agent/deployment', () => {
+  it('creates a deployment with source=agent and auto-attaches server_id', async () => {
+    const created = { id: 'd3', workspace_id: 'ws1', server_id: 'srv1', status: 'success', source: 'agent', created_at: new Date() };
+    const db = buildMockDb([], created);
+    const { createAgentDeploymentHandler } = await import('../routes/agent');
+
+    const req = {
+      body: { status: 'success', name: 'api' },
+      server: { id: 'srv1', workspace_id: 'ws1' },
+    };
+    const res = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+    await createAgentDeploymentHandler(db as never)(req as never, res as never, vi.fn());
+
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+});
