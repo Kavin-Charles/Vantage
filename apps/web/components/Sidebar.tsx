@@ -9,6 +9,7 @@ import { useApiToken } from '@/lib/useApiToken';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
 import { useConfig } from '@/lib/useConfig';
+import { useModules } from '@/contexts/modules';
 import { Icon } from '@/components/ui/Icon';
 
 const NAV_GROUPS = [
@@ -16,30 +17,30 @@ const NAV_GROUPS = [
     label: 'CRM',
     feature: 'crm' as const,
     items: [
-      { href: '/pipeline',  label: 'Pipeline',  icon: 'pipeline'  },
-      { href: '/contacts',  label: 'Contacts',  icon: 'contacts'  },
-      { href: '/companies', label: 'Companies', icon: 'companies' },
-      { href: '/tasks',     label: 'Tasks',     icon: 'tasks'     },
-      { href: '/activity',  label: 'Activity',  icon: 'activity'  },
-      { href: '/mail',      label: 'Mail',      icon: 'mail'      },
+      { href: '/pipeline',  label: 'Pipeline',  icon: 'pipeline',  moduleId: 'pipelines' },
+      { href: '/contacts',  label: 'Contacts',  icon: 'contacts',  moduleId: 'contacts'  },
+      { href: '/companies', label: 'Companies', icon: 'companies', moduleId: 'companies' },
+      { href: '/tasks',     label: 'Tasks',     icon: 'tasks',     moduleId: 'tasks'     },
+      { href: '/activity',  label: 'Activity',  icon: 'activity',  moduleId: 'activity'  },
+      { href: '/mail',      label: 'Mail',      icon: 'mail'       },
     ],
   },
   {
     label: 'Infrastructure',
     feature: 'infra' as const,
     items: [
-      { href: '/servers',   label: 'Servers',   icon: 'servers'   },
-      { href: '/databases', label: 'Databases', icon: 'databases' },
-      { href: '/websites',     label: 'Websites',     icon: 'websites'     },
-      { href: '/deployments', label: 'Deployments', icon: 'activity'     },
-      { href: '/files',       label: 'Files',       icon: 'files',       featureKey: 'files' as const },
+      { href: '/servers',     label: 'Servers',     icon: 'servers',   moduleId: 'servers'  },
+      { href: '/databases',   label: 'Databases',   icon: 'databases'  },
+      { href: '/websites',    label: 'Websites',    icon: 'websites',  moduleId: 'websites' },
+      { href: '/deployments', label: 'Deployments', icon: 'activity'   },
+      { href: '/files',       label: 'Files',       icon: 'files',     featureKey: 'files' as const },
     ],
   },
   {
     label: 'General',
     feature: null,
     items: [
-      { href: '/analytics', label: 'Analytics', icon: 'analytics', featureKey: 'analytics' as const },
+      { href: '/analytics', label: 'Analytics', icon: 'analytics', moduleId: 'analytics', featureKey: 'analytics' as const },
       { href: '/alerts',    label: 'Alerts',    icon: 'alerts',    featureKey: 'alerts' as const, dot: true },
       { href: '/settings',  label: 'Settings',  icon: 'settings'  },
     ],
@@ -99,6 +100,7 @@ export function Sidebar() {
   const getToken = useApiToken();
   const { user, logout } = useAuth();
   const { data: config } = useConfig();
+  const { isEnabled } = useModules();
   const { data: alertData } = useQuery({
     queryKey: ['alerts-badge'],
     queryFn: async () => apiFetch<{ data: unknown[]; total: number; error: null }>('/api/alerts?resolved=false&severity=critical&limit=1', { token: await getToken() }),
@@ -151,6 +153,7 @@ export function Sidebar() {
               padding: '0 10px', marginBottom: 6,
             }}>{group.label}</div>
             {group.items.map(item => {
+              if ('moduleId' in item && item.moduleId && !isEnabled(item.moduleId)) return null;
               if ('featureKey' in item && item.featureKey) {
                 const key = item.featureKey as keyof NonNullable<typeof config>['features'];
                 if (config?.features && key in config.features && !config.features[key]) return null;
