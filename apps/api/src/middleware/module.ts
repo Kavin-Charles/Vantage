@@ -5,7 +5,7 @@ import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from './auth';
 
 // In-memory cache: key = `{workspaceId}:{moduleId}`, value = { enabled, expiresAt }
-const moduleCache = new Map<string, { enabled: boolean; expiresAt: number }>();
+export const moduleCache = new Map<string, { enabled: boolean; expiresAt: number }>();
 const CACHE_TTL_MS = 60_000;
 
 async function isModuleEnabled(
@@ -36,9 +36,6 @@ export function invalidateModuleCache(workspaceId: string, moduleId: string): vo
 }
 
 export function createRequireModule(db: Kysely<Database>) {
-  // Clear cache on factory creation so each call starts fresh.
-  moduleCache.clear();
-
   return function requireModule(moduleId: string) {
     return async function (
       req: Request,

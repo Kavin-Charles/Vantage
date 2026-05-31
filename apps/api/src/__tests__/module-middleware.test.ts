@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
-import { createRequireModule } from '../middleware/module';
+import { createRequireModule, moduleCache } from '../middleware/module';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 function mockReq(workspaceId: string): Partial<AuthenticatedRequest> {
@@ -18,6 +18,8 @@ function mockRes() {
 
 describe('requireModule middleware', () => {
   let db: Partial<Kysely<Database>>;
+
+  beforeEach(() => moduleCache.clear());
 
   beforeEach(() => {
     db = {
