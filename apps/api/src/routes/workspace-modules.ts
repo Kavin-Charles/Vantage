@@ -32,7 +32,7 @@ export function createWorkspaceModulesRouter(db: Kysely<Database>): Router {
   // PATCH /api/workspace/modules/:moduleId — toggle (admin only)
   router.patch('/:moduleId', async (req, res, next) => {
     try {
-      const { workspace, user } = req as AuthenticatedRequest;
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
 
       if (user.role !== 'admin') {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });

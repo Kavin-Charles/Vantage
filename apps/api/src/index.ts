@@ -9,6 +9,8 @@ import { apiEnvSchema, readConfig } from '@vantage/config';
 import { createDb } from '@vantage/db';
 import { errorHandler } from './middleware/errors';
 import { createRequireAuth, requireAdmin } from './middleware/auth';
+import { createRequireModule } from './middleware/module';
+import { createWorkspaceModulesRouter } from './routes/workspace-modules';
 import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
 import { createConfigRouter } from './routes/config';
@@ -64,6 +66,7 @@ const env = apiEnvSchema.parse(process.env);
 const config = readConfig();
 const db = createDb(env.DATABASE_URL);
 const requireAuth = createRequireAuth(db, env.JWT_SECRET);
+const requireModule = createRequireModule(db);
 
 const app = express();
 
@@ -83,11 +86,12 @@ app.use('/api/setup', createSetupRouter(db));
 // Authenticated routes
 app.use('/api/me', requireAuth, createMeRouter());
 app.use('/api/me/push-token', requireAuth, createPushTokenRouter(db));
-app.use('/api/contacts', requireAuth, createContactsRouter(db));
-app.use('/api/companies', requireAuth, createCompaniesRouter(db));
-app.use('/api/deals', requireAuth, createDealsRouter());
-app.use('/api/record-types', requireAuth, createRecordTypesRouter(db));
-app.use('/api/records', requireAuth, createRecordsRouter(db));
+app.use('/api/workspace/modules', requireAuth, createWorkspaceModulesRouter(db));
+app.use('/api/contacts', requireAuth, requireModule('contacts'), createContactsRouter(db));
+app.use('/api/companies', requireAuth, requireModule('companies'), createCompaniesRouter(db));
+app.use('/api/deals', requireAuth, requireModule('pipelines'), createDealsRouter());
+app.use('/api/record-types', requireAuth, requireModule('pipelines'), createRecordTypesRouter(db));
+app.use('/api/records', requireAuth, requireModule('pipelines'), createRecordsRouter(db));
 // Agent — must come before the broad /api catch below
 app.use('/api/agent', createAgentRouter(db, config.smtp));
 // Gmail OAuth callback — public, must come before the broad /api requireAuth catch below
@@ -95,12 +99,12 @@ app.get('/api/mail/accounts/gmail/callback', (req, res, next) => {
   void handleGmailCallback(db, req, res, next);
 });
 
-app.use('/api', requireAuth, createConversionsRouter(db));
-app.use('/api/pipelines', requireAuth, createPipelinesRouter(db));
-app.use('/api/stages', requireAuth, createStageFieldsRouter(db));
-app.use('/api/tasks', requireAuth, createTasksRouter(db));
+app.use('/api', requireAuth, requireModule('pipelines'), createConversionsRouter(db));
+app.use('/api/pipelines', requireAuth, requireModule('pipelines'), createPipelinesRouter(db));
+app.use('/api/stages', requireAuth, requireModule('pipelines'), createStageFieldsRouter(db));
+app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db));
 app.use('/api/calendar/events', requireAuth, createCalendarRouter(db));
-app.use('/api/activity', requireAuth, createActivityRouter(db));
+app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db));
 app.use('/api/alerts', requireAuth, createAlertsRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
 // Mail routes (authenticated)
@@ -110,9 +114,9 @@ app.use('/api/mail/emails', requireAuth, createMailBodyRouter(db));
 app.use('/api/mail/workspace-config', requireAuth, createMailConfigRouter(db));
 // Gmail Pub/Sub push webhook — public, verified by token header
 app.use('/api/mail/webhook', createMailWebhookRouter(db, env.GMAIL_PUBSUB_TOKEN ?? ''));
-app.use('/api/item-groups', requireAuth, createItemGroupsRouter(db));
-app.use('/api/items', requireAuth, createItemsRouter(db));
-app.use('/api/analytics', requireAuth, createAnalyticsRouter(db));
+app.use('/api/item-groups', requireAuth, requireModule('pipelines'), createItemGroupsRouter(db));
+app.use('/api/items', requireAuth, requireModule('pipelines'), createItemsRouter(db));
+app.use('/api/analytics', requireAuth, requireModule('analytics'), createAnalyticsRouter(db));
 app.use('/api/webhooks', requireAuth, createWebhooksRouter(db));
 app.use('/api/api-keys', requireAuth, createApiKeysRouter(db));
 
@@ -120,11 +124,11 @@ app.use('/api/api-keys', requireAuth, createApiKeysRouter(db));
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 
 // Infra routes
-app.use('/api/servers', requireAuth, createServersRouter(db));
-app.use('/api/deployments', requireAuth, createDeploymentsRouter(db));
+app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db));
+app.use('/api/deployments', requireAuth, requireModule('servers'), createDeploymentsRouter(db));
 app.use('/api/sse', requireAuth, createSseRouter(db));
 app.use('/api/databases', requireAuth, createInfraDatabasesRouter(db));
-app.use('/api/websites', requireAuth, createWebsitesRouter(db, env.CRON_SECRET));
+app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesRouter(db, env.CRON_SECRET));
 app.use('/api/alert-thresholds', requireAuth, createAlertThresholdsRouter(db));
 
 // SSH management
