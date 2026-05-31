@@ -149,3 +149,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 .worktrees
+.claude/
+docs/superpowers/
