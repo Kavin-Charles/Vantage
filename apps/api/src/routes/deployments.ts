@@ -51,10 +51,31 @@ export function createDeploymentsRouter(db: Kysely<Database>): ExpressRouter {
       if (q['environment']) query = query.where('environment', '=', q['environment']);
       if (q['server_id'])   query = query.where('server_id', '=', q['server_id']);
       if (q['source'])      query = query.where('source', '=', q['source'] as 'webhook' | 'agent' | 'manual');
-      if (q['from'])        query = query.where('started_at', '>=', new Date(q['from']).toISOString() as unknown as Date);
-      if (q['to'])          query = query.where('started_at', '<=', new Date(q['to']).toISOString() as unknown as Date);
+      if (q['from']) {
+        const fromDate = new Date(q['from']);
+        if (isNaN(fromDate.getTime())) {
+          res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: 'Invalid from date' } });
+          return;
+        }
+        query = query.where('started_at', '>=', fromDate.toISOString() as unknown as Date);
+      }
+      if (q['to']) {
+        const toDate = new Date(q['to']);
+        if (isNaN(toDate.getTime())) {
+          res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: 'Invalid to date' } });
+          return;
+        }
+        query = query.where('started_at', '<=', toDate.toISOString() as unknown as Date);
+      }
       if (q['status']) {
-        const statuses = q['status'].split(',') as Array<'pending' | 'running' | 'success' | 'failed' | 'cancelled'>;
+        const validStatuses = ['pending', 'running', 'success', 'failed', 'cancelled'] as const;
+        const statuses = q['status'].split(',').filter((s): s is typeof validStatuses[number] =>
+          (validStatuses as readonly string[]).includes(s),
+        );
+        if (statuses.length === 0) {
+          res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: 'Invalid status value(s)' } });
+          return;
+        }
         query = query.where('status', 'in', statuses);
       }
 
@@ -106,7 +127,7 @@ export function createDeploymentsRouter(db: Kysely<Database>): ExpressRouter {
           meta: body.meta ?? null,
         })
         .returningAll()
-        .executeTakeFirst();
+        .executeTakeFirstOrThrow();
 
       res.status(201).json({ data: deployment, error: null });
     } catch (err) { next(err); }
