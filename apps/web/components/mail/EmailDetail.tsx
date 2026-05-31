@@ -35,10 +35,6 @@ export function EmailDetail({ email, onReply, onClose }: Props) {
     }
   }, [email.id, email.is_read]);
 
-  useEffect(() => {
-    // body_html is no longer stored; nothing to render into iframe
-  }, []);
-
   const from = email.from_name ? `${email.from_name} <${email.from_address}>` : email.from_address;
 
   return (
