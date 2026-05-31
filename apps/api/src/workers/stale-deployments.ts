@@ -8,13 +8,13 @@ const INTERVAL_MS = 60 * 60 * 1_000; // 1 hour
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1_000; // 24 hours
 
 async function cleanStale(db: Kysely<Database>): Promise<void> {
-  const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS).toISOString();
+  const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS);
   const result = await db
     .updateTable('deployments')
     .set({ status: 'cancelled' })
     .where('status', '=', 'running')
-    .where('started_at', '<', cutoff as unknown as Date)
-    .returningAll()
+    .where('started_at', '<', cutoff)
+    .returning(['id'])
     .execute();
 
   if (result.length > 0) {

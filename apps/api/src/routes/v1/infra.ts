@@ -148,7 +148,12 @@ export function createV1InfraRouter(db: Kysely<Database>): ExpressRouter {
   router.post('/deployments', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as ApiKeyRequest;
-      const body = createDeploymentSchema.parse(req.body);
+      const parsedBody = createDeploymentSchema.safeParse(req.body);
+      if (!parsedBody.success) {
+        res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: parsedBody.error.message } });
+        return;
+      }
+      const body = parsedBody.data;
 
       const deployment = await db
         .insertInto('deployments')
@@ -178,7 +183,12 @@ export function createV1InfraRouter(db: Kysely<Database>): ExpressRouter {
   router.patch('/deployments/:id', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as ApiKeyRequest;
-      const body = updateDeploymentSchema.parse(req.body);
+      const parsedUpdate = updateDeploymentSchema.safeParse(req.body);
+      if (!parsedUpdate.success) {
+        res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: parsedUpdate.error.message } });
+        return;
+      }
+      const body = parsedUpdate.data;
 
       const existing = await db
         .selectFrom('deployments')
@@ -202,7 +212,7 @@ export function createV1InfraRouter(db: Kysely<Database>): ExpressRouter {
       }
 
       if (Object.keys(update).length === 0) {
-        res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: 'No fields to update' } });
+        res.status(400).json({ data: null, error: { code: 'VALIDATION_ERROR', message: 'No valid fields to update' } });
         return;
       }
 
