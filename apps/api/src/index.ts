@@ -25,6 +25,7 @@ import { createAlertsRouter } from './routes/alerts';
 import { createInternalRouter } from './routes/internal';
 import { createAgentRouter } from './routes/agent';
 import { createServersRouter } from './routes/servers';
+import { createDeploymentsRouter } from './routes/deployments';
 import { createSseRouter } from './routes/sse';
 import { createInfraDatabasesRouter } from './routes/infra-databases';
 import { createWebsitesRouter } from './routes/websites';
@@ -119,6 +120,7 @@ app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 
 // Infra routes
 app.use('/api/servers', requireAuth, createServersRouter(db));
+app.use('/api/deployments', requireAuth, createDeploymentsRouter(db));
 app.use('/api/sse', requireAuth, createSseRouter(db));
 app.use('/api/databases', requireAuth, createInfraDatabasesRouter(db));
 app.use('/api/websites', requireAuth, createWebsitesRouter(db, env.CRON_SECRET));
