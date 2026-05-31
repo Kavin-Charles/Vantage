@@ -9,7 +9,7 @@ function buildMockDb(rows: object[] = [], single: object | null = null) {
   }
   chain['execute'] = vi.fn().mockResolvedValue(rows);
   chain['executeTakeFirst'] = vi.fn().mockResolvedValue(single);
-  chain['executeTakeFirstOrThrow'] = vi.fn().mockResolvedValue({ count: rows.length });
+  chain['executeTakeFirstOrThrow'] = vi.fn().mockResolvedValue(single ?? rows[0] ?? {});
   return chain as unknown;
 }
 
