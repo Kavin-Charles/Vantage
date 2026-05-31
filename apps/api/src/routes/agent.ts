@@ -281,32 +281,7 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
 
   // POST /agent/deployment — agent reports a deployment event
   router.post('/deployment', requireAgentToken, async (req, res, next) => {
-    try {
-      const { server } = req as unknown as AgentRequest;
-      const body = createDeploymentSchema.omit({ source: true, server_id: true }).parse(req.body);
-
-      const deployment = await db
-        .insertInto('deployments')
-        .values({
-          workspace_id: server.workspace_id,
-          server_id: server.id,
-          name: body.name ?? null,
-          environment: body.environment ?? null,
-          status: body.status,
-          source: 'agent',
-          started_at: body.started_at ? new Date(body.started_at) : new Date(),
-          git_commit: body.git_commit ?? null,
-          git_branch: body.git_branch ?? null,
-          git_tag: body.git_tag ?? null,
-          git_message: body.git_message ?? null,
-          git_author: body.git_author ?? null,
-          meta: body.meta ?? null,
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
-
-      res.status(201).json({ data: deployment, error: null });
-    } catch (err) { next(err); }
+    await createAgentDeploymentHandler(db)(req as never, res as never, next);
   });
 
   return router;
