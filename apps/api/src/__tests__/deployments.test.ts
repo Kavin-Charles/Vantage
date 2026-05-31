@@ -86,5 +86,8 @@ describe('POST /api/agent/deployment', () => {
     await createAgentDeploymentHandler(db as never)(req as never, res as never, vi.fn());
 
     expect(res.status).toHaveBeenCalledWith(201);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ source: 'agent', server_id: 'srv1' }), error: null }),
+    );
   });
 });
