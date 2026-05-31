@@ -578,6 +578,15 @@ export type Deployment = Selectable<DeploymentTable>;
 export type NewDeployment = Insertable<DeploymentTable>;
 export type DeploymentUpdate = Updateable<DeploymentTable>;
 
+export interface WorkspaceModuleTable {
+  id: Generated<string>;
+  workspace_id: string;
+  module_id: string;
+  enabled: Generated<boolean>;
+  updated_at: Generated<Date>;
+  updated_by: string | null;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -623,6 +632,7 @@ export interface Database {
   calendar_events: CalendarEventTable;
   system_settings: SystemSettingsTable;
   workspace_imap_config: WorkspaceImapConfigTable;
+  workspace_modules: WorkspaceModuleTable;
 }
 
 // Convenience types
@@ -778,3 +788,7 @@ export type CalendarEventUpdate = Updateable<CalendarEventTable>;
 export type WorkspaceImapConfig = Selectable<WorkspaceImapConfigTable>;
 export type NewWorkspaceImapConfig = Insertable<WorkspaceImapConfigTable>;
 export type WorkspaceImapConfigUpdate = Updateable<WorkspaceImapConfigTable>;
+
+export type WorkspaceModule = Selectable<WorkspaceModuleTable>;
+export type NewWorkspaceModule = Insertable<WorkspaceModuleTable>;
+export type WorkspaceModuleUpdate = Updateable<WorkspaceModuleTable>;
