@@ -101,8 +101,8 @@ export function createSetupRouter(db: Kysely<Database>): Router {
           .returning(['id'])
           .executeTakeFirstOrThrow();
 
-        // Seed module toggles for new workspace
-        await seedWorkspaceModules(trx, workspace.id);
+        // Seed module toggles — respect installer feature selections
+        await seedWorkspaceModules(trx, workspace.id, features);
 
         // Create admin user
         await trx
