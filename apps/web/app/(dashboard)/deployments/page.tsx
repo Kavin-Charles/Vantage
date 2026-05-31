@@ -14,6 +14,8 @@ import type { CreateDeploymentBody } from '@/lib/deployments';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const GRID_COLS = '120px 1fr 120px 160px 100px 80px 100px 40px';
+
 function timeAgo(d: Date | string): string {
   const diff = Date.now() - new Date(d).getTime();
   const mins = Math.floor(diff / 60_000);
@@ -204,11 +206,13 @@ export default function DeploymentsPage() {
       setShowModal(false);
       setForm(EMPTY_FORM);
     },
+    onError: (err: Error) => { console.error('[deployments] create failed', err); },
   });
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => deleteDeployment(await getToken(), id),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['deployments'] }),
+    onError: (err: Error) => { console.error('[deployments] delete failed', err); },
   });
 
   const deployments = data?.data ?? [];
@@ -269,7 +273,7 @@ export default function DeploymentsPage() {
             {/* Table header */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '120px 1fr 120px 160px 100px 80px 100px 40px',
+              gridTemplateColumns: GRID_COLS,
               padding: '8px 16px', borderBottom: '1px solid var(--border)',
               fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em',
             }}>
@@ -282,7 +286,7 @@ export default function DeploymentsPage() {
                 dep={dep}
                 last={i === deployments.length - 1}
                 onClick={() => setSelected(dep)}
-                onDelete={() => deleteMut.mutate(dep.id)}
+                onDelete={() => { if (window.confirm('Delete this deployment record?')) deleteMut.mutate(dep.id); }}
               />
             ))}
           </div>
@@ -294,7 +298,7 @@ export default function DeploymentsPage() {
 
       {/* Log Deploy modal */}
       {showModal && (
-        <Modal title="Log Deploy" onClose={() => { setShowModal(false); setForm(EMPTY_FORM); }}>
+        <Modal title="Log Deploy" onClose={() => { setShowModal(false); setForm(EMPTY_FORM); setShowGit(false); }}>
           <form onSubmit={e => { e.preventDefault(); createMut.mutate(); }}>
             <FormField label="Name">
               <Input placeholder="api, web, monolith…" value={form.name ?? ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
@@ -336,7 +340,7 @@ export default function DeploymentsPage() {
             )}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'flex-end' }}>
-              <Button type="button" variant="secondary" onClick={() => { setShowModal(false); setForm(EMPTY_FORM); }}>Cancel</Button>
+              <Button type="button" variant="secondary" onClick={() => { setShowModal(false); setForm(EMPTY_FORM); setShowGit(false); }}>Cancel</Button>
               <Button type="submit" disabled={createMut.isPending}>
                 {createMut.isPending ? 'Logging…' : 'Log Deploy'}
               </Button>
@@ -364,7 +368,7 @@ function DeploymentRow({ dep, last, onClick, onDelete }: {
       onMouseLeave={() => setHover(false)}
       style={{
         display: 'grid',
-        gridTemplateColumns: '120px 1fr 120px 160px 100px 80px 100px 40px',
+        gridTemplateColumns: GRID_COLS,
         padding: '10px 16px',
         borderBottom: last ? 'none' : '1px solid var(--border)',
         cursor: 'pointer',
