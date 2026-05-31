@@ -20,7 +20,9 @@ export default function middleware(req: NextRequest) {
 
   // Setup guard: redirect to /setup if not configured
   if (!setupDone && !isSetupPath) {
-    return NextResponse.redirect(new URL('/setup', req.url));
+    const setupUrl = new URL('/setup', req.url);
+    setupUrl.searchParams.set('from', pathname);
+    return NextResponse.redirect(setupUrl);
   }
 
   // Prevent revisiting /setup after completion

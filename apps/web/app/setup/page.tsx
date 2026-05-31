@@ -14,9 +14,17 @@ async function getSetupStatus(): Promise<boolean> {
   }
 }
 
-export default async function SetupPage() {
+interface PageProps {
+  searchParams: Promise<{ from?: string }>;
+}
+
+export default async function SetupPage({ searchParams }: PageProps) {
   const configured = await getSetupStatus();
-  if (configured) redirect('/');
+  if (configured) {
+    const params = await searchParams;
+    const from = params.from ?? '/';
+    redirect(`/api/setup/activate?from=${encodeURIComponent(from)}`);
+  }
 
   return (
     <div style={{
