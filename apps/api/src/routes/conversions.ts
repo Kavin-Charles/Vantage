@@ -1,4 +1,4 @@
-import { Router, type Router as ExpressRouter } from 'express';
+import { Router, type Router as ExpressRouter, type RequestHandler } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
@@ -25,11 +25,14 @@ const createTemplateSchema = z.object({
   field_mappings: z.array(fieldMappingSchema).default([]),
 });
 
-export function createConversionsRouter(db: Kysely<Database>): ExpressRouter {
+export function createConversionsRouter(
+  db: Kysely<Database>,
+  pipelinesGuard?: RequestHandler,
+): ExpressRouter {
   const router = Router();
 
   // List templates
-  router.get('/templates', async (req, res, next) => {
+  router.get('/templates', ...(pipelinesGuard ? [pipelinesGuard] : []), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       let q = db
@@ -45,7 +48,7 @@ export function createConversionsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Get single template with enriched field_mappings
-  router.get('/templates/:id', async (req, res, next) => {
+  router.get('/templates/:id', ...(pipelinesGuard ? [pipelinesGuard] : []), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const template = await db
@@ -92,7 +95,7 @@ export function createConversionsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Create template
-  router.post('/templates', async (req, res, next) => {
+  router.post('/templates', ...(pipelinesGuard ? [pipelinesGuard] : []), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = createTemplateSchema.safeParse(req.body);
@@ -128,7 +131,7 @@ export function createConversionsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Update template
-  router.patch('/templates/:id', async (req, res, next) => {
+  router.patch('/templates/:id', ...(pipelinesGuard ? [pipelinesGuard] : []), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = createTemplateSchema.partial().safeParse(req.body);
@@ -175,7 +178,7 @@ export function createConversionsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Delete template
-  router.delete('/templates/:id', async (req, res, next) => {
+  router.delete('/templates/:id', ...(pipelinesGuard ? [pipelinesGuard] : []), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const result = await db
@@ -192,7 +195,7 @@ export function createConversionsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Execute conversion
-  router.post('/records/:id/convert', async (req, res, next) => {
+  router.post('/records/:id/convert', ...(pipelinesGuard ? [pipelinesGuard] : []), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
       const bodyParsed = z.object({
@@ -324,7 +327,7 @@ export function createConversionsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Conversion audit for a record
-  router.get('/records/:id/conversions', async (req, res, next) => {
+  router.get('/records/:id/conversions', ...(pipelinesGuard ? [pipelinesGuard] : []), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const record = await db

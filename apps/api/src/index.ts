@@ -99,7 +99,7 @@ app.get('/api/mail/accounts/gmail/callback', (req, res, next) => {
   void handleGmailCallback(db, req, res, next);
 });
 
-app.use('/api', requireAuth, requireModule('pipelines'), createConversionsRouter(db));
+app.use('/api', requireAuth, createConversionsRouter(db, requireModule('pipelines')));
 app.use('/api/pipelines', requireAuth, requireModule('pipelines'), createPipelinesRouter(db));
 app.use('/api/stages', requireAuth, requireModule('pipelines'), createStageFieldsRouter(db));
 app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db));
