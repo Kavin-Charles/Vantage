@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 
@@ -25,7 +25,18 @@ interface Props {
   onClose: () => void;
 }
 
+interface EmailBody {
+  body_html: string | null;
+  body_text: string | null;
+}
+
 export function EmailDetail({ email, onReply, onClose }: Props) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [body, setBody] = useState<EmailBody | null>(null);
+  const [bodyLoading, setBodyLoading] = useState(true);
+  const [bodyError, setBodyError] = useState<string | null>(null);
+
+  // Mark as read
   useEffect(() => {
     if (!email.is_read) {
       void apiFetch(`/api/mail/emails/${email.id}`, {
@@ -34,6 +45,36 @@ export function EmailDetail({ email, onReply, onClose }: Props) {
       }).catch(() => void 0);
     }
   }, [email.id, email.is_read]);
+
+  // Fetch body when email changes
+  useEffect(() => {
+    setBody(null);
+    setBodyLoading(true);
+    setBodyError(null);
+
+    void apiFetch<{ data: EmailBody }>(`/api/mail/emails/${email.id}/body`)
+      .then(res => {
+        setBody(res.data);
+      })
+      .catch(() => {
+        setBodyError('Failed to load email body.');
+      })
+      .finally(() => {
+        setBodyLoading(false);
+      });
+  }, [email.id]);
+
+  // Write HTML into sandboxed iframe
+  useEffect(() => {
+    if (iframeRef.current && body?.body_html) {
+      const doc = iframeRef.current.contentDocument;
+      if (doc) {
+        doc.open();
+        doc.write(body.body_html);
+        doc.close();
+      }
+    }
+  }, [body?.body_html]);
 
   const from = email.from_name ? `${email.from_name} <${email.from_address}>` : email.from_address;
 
@@ -49,19 +90,14 @@ export function EmailDetail({ email, onReply, onClose }: Props) {
             background: 'none', border: 'none', cursor: 'pointer',
             color: 'var(--text3)', padding: 4, borderRadius: 6,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 16, lineHeight: 1, flexShrink: 0,
           }}
+          aria-label="Close"
         >
-          &times;
+          ✕
         </button>
       </div>
 
-      <div style={{
-        fontSize: 12, color: 'var(--text2)',
-        display: 'flex', flexDirection: 'column', gap: 4,
-        padding: '12px 16px', background: 'var(--bg)',
-        borderRadius: 10, border: '1px solid var(--border)',
-      }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, padding: '10px 16px', background: 'var(--bg)', borderRadius: 10, border: '1px solid var(--border)' }}>
         <div><span style={{ color: 'var(--text3)', fontWeight: 500 }}>From</span> &nbsp;{from}</div>
         <div><span style={{ color: 'var(--text3)', fontWeight: 500 }}>To</span> &nbsp;{email.to_addresses.join(', ')}</div>
         {email.cc_addresses.length > 0 && <div><span style={{ color: 'var(--text3)', fontWeight: 500 }}>Cc</span> &nbsp;{email.cc_addresses.join(', ')}</div>}
@@ -76,9 +112,22 @@ export function EmailDetail({ email, onReply, onClose }: Props) {
       </div>
 
       <div style={{ flex: 1, border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', minHeight: 300 }}>
-        <pre style={{ padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0, color: 'var(--text3)' }}>
-          (email body not stored)
-        </pre>
+        {bodyLoading ? (
+          <div style={{ padding: 16, color: 'var(--text3)', fontSize: 13 }}>Loading…</div>
+        ) : bodyError ? (
+          <div style={{ padding: 16, color: 'var(--red)', fontSize: 13 }}>{bodyError}</div>
+        ) : body?.body_html ? (
+          <iframe
+            ref={iframeRef}
+            sandbox="allow-same-origin"
+            style={{ width: '100%', height: '100%', minHeight: 300, border: 'none' }}
+            title="Email body"
+          />
+        ) : (
+          <pre style={{ padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', margin: 0, color: 'var(--text)' }}>
+            {body?.body_text ?? '(empty)'}
+          </pre>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 8 }}>
@@ -87,12 +136,10 @@ export function EmailDetail({ email, onReply, onClose }: Props) {
           style={{
             padding: '8px 18px', fontSize: 13,
             background: 'var(--text)', color: '#fff',
-            border: 'none', borderRadius: 10,
-            cursor: 'pointer', fontWeight: 500,
-            fontFamily: 'var(--font-sans)',
+            border: 'none', borderRadius: 8, cursor: 'pointer',
           }}
         >
-          ↩ Reply
+          Reply
         </button>
       </div>
     </div>
