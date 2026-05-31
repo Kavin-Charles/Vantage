@@ -5,6 +5,7 @@ import type { Database } from '@vantage/db';
 import type { VantageConfig } from '@vantage/config';
 import { logger } from './logger';
 import { seedDefaultPipeline } from './seed-pipeline';
+import { seedWorkspaceModules } from './seed-modules';
 
 export async function seedOnFirstBoot(
   db: Kysely<Database>,
@@ -24,6 +25,9 @@ export async function seedOnFirstBoot(
       .executeTakeFirstOrThrow();
     logger.info({ workspaceId: workspace.id }, '[Vantage] Workspace seeded');
   }
+
+  // Seed module toggles (idempotent)
+  await seedWorkspaceModules(db, workspace.id);
 
   // Default pipeline
   await seedDefaultPipeline(db, workspace.id);

@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { smtpSchema } from '@vantage/config';
 import { encryptSmtpPassword } from '../lib/setup-crypto';
 import { isConfigured } from '../lib/setup-db';
+import { seedWorkspaceModules } from '../lib/seed-modules';
 import { logger } from '../lib/logger';
 
 // In-memory rate limiter: IP → timestamps of recent requests
@@ -99,6 +100,9 @@ export function createSetupRouter(db: Kysely<Database>): Router {
           })
           .returning(['id'])
           .executeTakeFirstOrThrow();
+
+        // Seed module toggles for new workspace
+        await seedWorkspaceModules(trx, workspace.id);
 
         // Create admin user
         await trx
