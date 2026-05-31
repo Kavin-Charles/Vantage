@@ -1,5 +1,5 @@
 import { apiFetch } from './api';
-import type { Deployment } from '@vantage/types';
+import type { Deployment, DeploymentStatus, DeploymentSource } from '@vantage/types';
 
 export interface ListDeploymentsParams {
   name?: string;
@@ -15,8 +15,8 @@ export interface ListDeploymentsParams {
 export interface CreateDeploymentBody {
   name?: string;
   environment?: string;
-  status: 'pending' | 'running' | 'success' | 'failed' | 'cancelled';
-  source: 'webhook' | 'agent' | 'manual';
+  status: DeploymentStatus;
+  source: DeploymentSource;
   server_id?: string;
   started_at?: string;
   git_commit?: string;
@@ -32,7 +32,8 @@ export async function listDeployments(token: string, params: ListDeploymentsPara
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== '') qs.set(k, String(v));
   }
-  const query = qs.toString() ? `?${qs.toString()}` : '';
+  const queryStr = qs.toString();
+  const query = queryStr ? `?${queryStr}` : '';
   return apiFetch<{ data: Deployment[]; total: number; error: null }>(`/api/deployments${query}`, { token });
 }
 
@@ -44,7 +45,7 @@ export async function createDeployment(token: string, body: CreateDeploymentBody
   });
 }
 
-export async function patchDeployment(token: string, id: string, body: { status?: string; finished_at?: string }) {
+export async function patchDeployment(token: string, id: string, body: { status?: DeploymentStatus; finished_at?: string }) {
   return apiFetch<{ data: Deployment; error: null }>(`/api/deployments/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(body),
