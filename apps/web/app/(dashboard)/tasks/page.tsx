@@ -11,6 +11,7 @@ import { Icon } from '@/components/ui/Icon';
 import { useApiToken } from '@/lib/useApiToken';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
+import { ModuleGuard } from '@/components/ModuleGuard';
 import type { Task } from '@vantage/types';
 
 interface WorkspaceUser { id: string; name: string; email: string; role: string; }
@@ -78,7 +79,7 @@ export default function TasksPage() {
   const FILTERS: ('all' | 'todo' | 'done')[] = ['all', 'todo', 'done'];
 
   return (
-    <>
+    <ModuleGuard moduleId="tasks">
       <Topbar action={isAdmin ? <Button variant="primary" onClick={() => setModal(true)}>+ Add Task</Button> : undefined} />
       <div style={{ padding: 24 }}>
         {overdue.length > 0 && (
@@ -170,7 +171,7 @@ export default function TasksPage() {
           </form>
         </Modal>
       )}
-    </>
+    </ModuleGuard>
   );
 }
 

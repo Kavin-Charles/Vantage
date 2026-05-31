@@ -8,6 +8,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Icon } from '@/components/ui/Icon';
 import { CompanyForm } from '@/components/companies/CompanyForm';
 import { CsvImportExport } from '@/components/CsvImportExport';
+import { ModuleGuard } from '@/components/ModuleGuard';
 import { useApiToken } from '@/lib/useApiToken';
 import { listCompanies } from '@/lib/companies';
 import type { Company } from '@vantage/types';
@@ -32,7 +33,7 @@ export default function CompaniesPage() {
   const companies = data?.data ?? [];
 
   return (
-    <>
+    <ModuleGuard moduleId="companies">
       <Topbar
         action={
           <div style={{ display: 'flex', gap: 8 }}>
@@ -78,7 +79,7 @@ export default function CompaniesPage() {
           </Modal>
         )}
       </div>
-    </>
+    </ModuleGuard>
   );
 }
 

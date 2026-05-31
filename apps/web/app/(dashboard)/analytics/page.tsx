@@ -10,6 +10,7 @@ import { KpiCards } from './KpiCards';
 import { RevenueChart } from './RevenueChart';
 import { PipelineChart } from './PipelineChart';
 import { RepLeaderboard } from './RepLeaderboard';
+import { ModuleGuard } from '@/components/ModuleGuard';
 
 const PERIODS: { label: string; value: Period }[] = [
   { label: '30D', value: '30d' },
@@ -77,7 +78,7 @@ export default function AnalyticsPage() {
   );
 
   return (
-    <>
+    <ModuleGuard moduleId="analytics">
       <Topbar action={periodToggle} />
 
       <div style={{ padding: 24 }}>
@@ -136,6 +137,6 @@ export default function AnalyticsPage() {
           <RepLeaderboard reps={teamData?.data?.reps} isLoading={teamLoading} />
         </div>
       </div>
-    </>
+    </ModuleGuard>
   );
 }

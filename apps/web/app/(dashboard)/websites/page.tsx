@@ -9,6 +9,7 @@ import { Badge, statusColor } from '@/components/ui/Badge';
 import { FormField, Input } from '@/components/ui/FormField';
 import { useApiToken } from '@/lib/useApiToken';
 import { listWebsites, createWebsite, deleteWebsite } from '@/lib/websites';
+import { ModuleGuard } from '@/components/ModuleGuard';
 import type { Website } from '@vantage/types';
 
 function sslColor(dateStr: string | null): string {
@@ -51,7 +52,7 @@ export default function WebsitesPage() {
   const sites: Website[] = data?.data ?? [];
 
   return (
-    <>
+    <ModuleGuard moduleId="websites">
       <Topbar action={<Button variant="primary" onClick={() => setModal(true)}>+ Add Website</Button>} />
       <div style={{ padding: 24 }}>
         <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text2)' }}>{sites.length} websites monitored</div>
@@ -95,7 +96,7 @@ export default function WebsitesPage() {
           </form>
         </Modal>
       )}
-    </>
+    </ModuleGuard>
   );
 }
 

@@ -12,6 +12,7 @@ import { useApiToken } from '@/lib/useApiToken';
 import { AgentInstallInstructions } from '@/components/ui/AgentInstallInstructions';
 import { listServers, createServer, deleteServer } from '@/lib/servers';
 import { useServerMetrics } from '@/contexts/ServerMetricsContext';
+import { ModuleGuard } from '@/components/ModuleGuard';
 import type { Server } from '@vantage/types';
 
 function timeAgo(dateStr: string | null): string {
@@ -61,7 +62,7 @@ export default function ServersPage() {
   const servers: Server[] = data?.data ?? [];
 
   return (
-    <>
+    <ModuleGuard moduleId="servers">
       <Topbar action={<Button variant="primary" onClick={() => setModal('create')}>+ Add Server</Button>} />
       <div style={{ padding: 24 }}>
         <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text2)' }}>{servers.length} servers</div>
@@ -127,7 +128,7 @@ export default function ServersPage() {
           </div>
         </Modal>
       )}
-    </>
+    </ModuleGuard>
   );
 }
 

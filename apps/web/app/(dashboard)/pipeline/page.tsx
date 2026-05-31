@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { listPipelines } from '@/lib/pipelines';
 import { useApiToken } from '@/lib/useApiToken';
+import { ModuleGuard } from '@/components/ModuleGuard';
 
 export default function PipelinePage() {
   const getToken = useApiToken();
@@ -24,8 +25,10 @@ export default function PipelinePage() {
   }, [isLoading, data, router]);
 
   return (
-    <div style={{ padding: 32, color: 'var(--text3)', fontSize: 13, fontFamily: 'var(--font-sans)' }}>
-      Loading…
-    </div>
+    <ModuleGuard moduleId="pipelines">
+      <div style={{ padding: 32, color: 'var(--text3)', fontSize: 13, fontFamily: 'var(--font-sans)' }}>
+        Loading…
+      </div>
+    </ModuleGuard>
   );
 }

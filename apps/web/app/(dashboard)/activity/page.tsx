@@ -9,6 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { FormField, Select, Textarea } from '@/components/ui/FormField';
 import { useApiToken } from '@/lib/useApiToken';
 import { listActivity, createActivity } from '@/lib/activity';
+import { ModuleGuard } from '@/components/ModuleGuard';
 import type { Activity, ActivityType } from '@vantage/types';
 
 const TYPE_ICONS: Record<string, string> = {
@@ -68,7 +69,7 @@ export default function ActivityPage() {
   const total = data?.total ?? 0;
 
   return (
-    <>
+    <ModuleGuard moduleId="activity">
       <Topbar action={<Button variant="primary" onClick={() => setModal(true)}>+ Log Activity</Button>} />
       <div style={{ padding: 24 }}>
         <div style={{ marginBottom: 14, fontSize: 13, color: 'var(--text2)' }}>
@@ -128,7 +129,7 @@ export default function ActivityPage() {
           </form>
         </Modal>
       )}
-    </>
+    </ModuleGuard>
   );
 }
 
