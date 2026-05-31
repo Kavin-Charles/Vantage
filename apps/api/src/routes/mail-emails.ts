@@ -227,7 +227,7 @@ export function createMailEmailsRouter(db: Kysely<Database>): ExpressRouter {
       }
 
       res.status(201).json({ data: { message_id }, error: null });
-    } catch (err) { next(err); }
+    } catch (err) { console.error('[mail:send]', err); next(err); }
   });
 
   // DELETE /api/mail/emails/:id — move to trash

@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { type MailSocketEmail } from '@/hooks/useMailSocket';
+
+const PER_PAGE = 50;
 
 interface Email {
   id: string;
@@ -83,35 +85,95 @@ function EmailItem({ email, selected, onSelect }: { email: Email; selected: bool
 export function EmailList({ accountId, folder, search, selectedId, onlyStarred, prependEmails, onSelect }: Props) {
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const load = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
+  // Reset + fetch page 1 whenever filter changes
+  const loadPage1 = useCallback(async () => {
+    setLoading(true);
+    setPage(1);
     try {
-      const params = new URLSearchParams({ folder, per_page: '50' });
+      const params = new URLSearchParams({ folder, per_page: String(PER_PAGE), page: '1' });
       if (accountId) params.set('account_id', accountId);
       if (search) params.set('q', search);
-      const json = await apiFetch<{ data: Email[] }>(`/api/mail/emails?${params}`);
-      setEmails(json.data ?? []);
+      const json = await apiFetch<{ data: Email[]; total: number }>(`/api/mail/emails?${params}`);
+      const data = json.data ?? [];
+      setEmails(data);
+      setHasMore(json.total > data.length);
     } catch {
-      if (showLoading) setEmails([]);
+      setEmails([]);
+      setHasMore(false);
     } finally {
-      if (showLoading) setLoading(false);
+      setLoading(false);
     }
   }, [accountId, folder, search]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void loadPage1(); }, [loadPage1]);
 
-  // Re-fetch every 60s — silent (no loading flash, no scroll reset)
+  // Silent 60s refresh — only refreshes page 1, doesn't reset scroll
   useEffect(() => {
-    const t = setInterval(() => { void load(false); }, 60_000);
+    const t = setInterval(async () => {
+      try {
+        const params = new URLSearchParams({ folder, per_page: String(PER_PAGE), page: '1' });
+        if (accountId) params.set('account_id', accountId);
+        if (search) params.set('q', search);
+        const json = await apiFetch<{ data: Email[]; total: number }>(`/api/mail/emails?${params}`);
+        const fresh = json.data ?? [];
+        // Merge: replace page-1 slice, keep beyond-page-1 emails already loaded
+        setEmails(prev => {
+          const beyond = prev.slice(PER_PAGE);
+          const merged = [...fresh, ...beyond.filter(e => !fresh.some(f => f.id === e.id))];
+          return merged;
+        });
+        setHasMore(json.total > emails.length);
+      } catch { /* silent */ }
+    }, 60_000);
     return () => clearInterval(t);
-  }, [load]);
+  }, [accountId, folder, search, emails.length]);
+
+  // Load next page
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    try {
+      const params = new URLSearchParams({ folder, per_page: String(PER_PAGE), page: String(nextPage) });
+      if (accountId) params.set('account_id', accountId);
+      if (search) params.set('q', search);
+      const json = await apiFetch<{ data: Email[]; total: number }>(`/api/mail/emails?${params}`);
+      const data = json.data ?? [];
+      setEmails(prev => {
+        const ids = new Set(prev.map(e => e.id));
+        return [...prev, ...data.filter(e => !ids.has(e.id))];
+      });
+      setPage(nextPage);
+      setHasMore(json.total > (emails.length + data.length));
+    } catch { /* silent */ }
+    finally { setLoadingMore(false); }
+  }, [loadingMore, hasMore, page, accountId, folder, search, emails.length]);
+
+  // Infinite scroll — trigger when 200px from bottom
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    function onScroll() {
+      if (!el) return;
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
+        void loadMore();
+      }
+    }
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [loadMore]);
 
   if (loading) return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontSize: 13, padding: 32 }}>
       Loading…
     </div>
   );
+
   const visible = onlyStarred ? emails.filter(e => e.is_starred) : emails;
 
   if (!visible.length && !(prependEmails?.length)) return (
@@ -125,7 +187,7 @@ export function EmailList({ accountId, folder, search, selectedId, onlyStarred, 
   );
 
   return (
-    <div style={{ overflowY: 'auto', height: '100%' }}>
+    <div ref={scrollRef} style={{ overflowY: 'auto', height: '100%' }}>
       {prependVisible.map(socketEmail => {
         const email: Email = {
           id: socketEmail.id,
@@ -157,6 +219,16 @@ export function EmailList({ accountId, folder, search, selectedId, onlyStarred, 
           onSelect={onSelect}
         />
       ))}
+      {loadingMore && (
+        <div style={{ padding: 16, textAlign: 'center', color: 'var(--text3)', fontSize: 12 }}>
+          Loading more…
+        </div>
+      )}
+      {!hasMore && visible.length > 0 && (
+        <div style={{ padding: 16, textAlign: 'center', color: 'var(--text3)', fontSize: 11 }}>
+          — end —
+        </div>
+      )}
     </div>
   );
 }

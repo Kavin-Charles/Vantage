@@ -30,8 +30,9 @@ const NAV_GROUPS = [
     items: [
       { href: '/servers',   label: 'Servers',   icon: 'servers'   },
       { href: '/databases', label: 'Databases', icon: 'databases' },
-      { href: '/websites',  label: 'Websites',  icon: 'websites'  },
-      { href: '/files',     label: 'Files',     icon: 'files',    featureKey: 'files' as const },
+      { href: '/websites',     label: 'Websites',     icon: 'websites'     },
+      { href: '/deployments', label: 'Deployments', icon: 'activity'     },
+      { href: '/files',       label: 'Files',       icon: 'files',       featureKey: 'files' as const },
     ],
   },
   {
