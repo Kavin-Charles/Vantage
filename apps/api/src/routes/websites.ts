@@ -16,10 +16,10 @@ const checkSchema = z.object({
   uptime_pct_30d: z.number().optional(),
 });
 
-export function createWebsitesRouter(db: Kysely<Database>, cronSecret: string): ExpressRouter {
+export function createWebsitesRouter(db: Kysely<Database>, cronSecret: string, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('websites:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const sites = await db
@@ -32,7 +32,7 @@ export function createWebsitesRouter(db: Kysely<Database>, cronSecret: string): 
     } catch (err) { next(err); }
   });
 
-  router.post('/', async (req, res, next) => {
+  router.post('/', requirePermission('websites:create'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const body = createSchema.parse(req.body);
@@ -46,7 +46,7 @@ export function createWebsitesRouter(db: Kysely<Database>, cronSecret: string): 
     } catch (err) { next(err); }
   });
 
-  router.patch('/:id', async (req, res, next) => {
+  router.patch('/:id', requirePermission('websites:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const body = z.object({ label: z.string().optional() }).parse(req.body);
@@ -62,7 +62,7 @@ export function createWebsitesRouter(db: Kysely<Database>, cronSecret: string): 
     } catch (err) { next(err); }
   });
 
-  router.delete('/:id', async (req, res, next) => {
+  router.delete('/:id', requirePermission('websites:delete'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const deleted = await db

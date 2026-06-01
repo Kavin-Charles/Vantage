@@ -90,8 +90,8 @@ app.use('/api/agent', createAgentRouter(db, config.smtp));
 app.use('/api', requireAuth, createConversionsRouter(db, requireModule('pipelines')));
 app.use('/api/pipelines', requireAuth, requireModule('pipelines'), createPipelinesRouter(db));
 app.use('/api/stages', requireAuth, requireModule('pipelines'), createStageFieldsRouter(db));
-app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db));
-app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db));
+app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db, requirePermission));
+app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
 app.use('/api/alerts', requireAuth, createAlertsRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
 app.use('/api/item-groups', requireAuth, requireModule('pipelines'), createItemGroupsRouter(db));
@@ -119,7 +119,7 @@ app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermi
 app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db));
 app.use('/api/sse', requireAuth, createSseRouter(db));
 app.use('/api/databases', requireAuth, createInfraDatabasesRouter(db));
-app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesRouter(db, env.CRON_SECRET));
+app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesRouter(db, env.CRON_SECRET, requirePermission));
 app.use('/api/alert-thresholds', requireAuth, createAlertThresholdsRouter(db));
 
 // SSH management

@@ -29,10 +29,10 @@ const updateTaskSchema = z.object({
   assignee_id: z.string().uuid().optional(),
 });
 
-export function createTasksRouter(db: Kysely<Database>): ExpressRouter {
+export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('tasks:view'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
 
@@ -76,7 +76,7 @@ export function createTasksRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  router.post('/', async (req, res, next) => {
+  router.post('/', requirePermission('tasks:create'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
       const body = createTaskSchema.parse(req.body);
@@ -109,7 +109,7 @@ export function createTasksRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  router.patch('/:id', async (req, res, next) => {
+  router.patch('/:id', requirePermission('tasks:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const body = updateTaskSchema.parse(req.body);

@@ -12,10 +12,10 @@ const createActivitySchema = z.object({
   meta: z.record(z.unknown()).optional(),
 });
 
-export function createActivityRouter(db: Kysely<Database>): ExpressRouter {
+export function createActivityRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('activity:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const page = Number(req.query['page'] ?? 1);
@@ -42,7 +42,7 @@ export function createActivityRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  router.post('/', async (req, res, next) => {
+  router.post('/', requirePermission('activity:create'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
       const body = createActivitySchema.parse(req.body);
