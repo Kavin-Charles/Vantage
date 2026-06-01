@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Form Fields</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 0; }
+  .card { padding: 20px 22px; gap: 0; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 18px;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .label .state {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text3);
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+  }
+
+  /* ── Inputs ────────────────────────────────────────────────────────────── */
+  .input {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font: 14px var(--font-sans);
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  .input::placeholder { color: var(--text3); }
+  .input:hover { border-color: var(--border2); }
+  .input:focus,
+  .input.focused {
+    border-color: var(--text2);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(26, 24, 20, 0.06);
+  }
+
+  /* Error state */
+  .input.error {
+    border-color: var(--red);
+    background: var(--surface);
+    box-shadow: 0 0 0 3px rgba(153, 27, 27, 0.08);
+  }
+  .help-error {
+    font-size: 11px;
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* Disabled */
+  .input:disabled {
+    background: var(--surface2);
+    color: var(--text3);
+    cursor: not-allowed;
+    border-color: var(--border);
+  }
+
+  /* Animated caret in the focused textarea */
+  .caret-text { position: relative; }
+  .caret-text textarea { padding-right: 14px; }
+  .caret {
+    position: absolute;
+    width: 1.5px;
+    height: 15px;
+    background: var(--text);
+    animation: blink 1.05s steps(2, start) infinite;
+    border-radius: 1px;
+    pointer-events: none;
+  }
+  @keyframes blink { to { visibility: hidden; } }
+
+  /* Select with caret indicator */
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '';
+    position: absolute;
+    right: 12px; top: 50%;
+    width: 7px; height: 7px;
+    border-right: 1.5px solid var(--text2);
+    border-bottom: 1.5px solid var(--text2);
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+  }
+  select.input { appearance: none; padding-right: 30px; }
+
+  /* Open select preview, anchored under the field on the right */
+  .select-open {
+    position: relative;
+  }
+  .menu {
+    position: absolute;
+    inset: calc(100% + 4px) 0 auto 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    padding: 4px;
+    z-index: 2;
+    transform-origin: top center;
+    animation: menuIn .14s ease-out;
+  }
+  @keyframes menuIn {
+    from { opacity: 0; transform: translateY(-4px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);   }
+  }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    font-size: 13px;
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .menu-item.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .menu-item .check {
+    color: var(--green);
+    font-size: 13px;
+  }
+
+  /* Toggle (a tweak that doesn't exist in the source but feels right) */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 8px;
+    transition: background .15s;
+  }
+  .toggle-row:hover { background: var(--surface); }
+  .toggle {
+    width: 32px; height: 18px;
+    border-radius: 20px;
+    background: var(--text);
+    position: relative;
+    transition: background .2s;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    inset: 2px auto 2px auto;
+    left: calc(100% - 16px);
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    transition: left .2s;
+  }
+  .toggle.off { background: var(--border2); }
+  .toggle.off::after { left: 2px; }
+
+  /* Pulse on the FOCUS field so it reads as the live one */
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(26, 24, 20, 0.06); }
+    50%      { box-shadow: 0 0 0 5px rgba(26, 24, 20, 0.04); }
+  }
+  .input.focused.live { animation: pulse 2.2s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid">
+
+    <!-- DEFAULT -->
+    <div class="field">
+      <div class="label"><span>Email</span><span class="state">Rest</span></div>
+      <input class="input" type="email" placeholder="you@workspace.com" />
+    </div>
+
+    <!-- FOCUSED with animated caret -->
+    <div class="field">
+      <div class="label"><span>Workspace name</span><span class="state">Focused</span></div>
+      <div class="caret-text">
+        <input class="input focused live" type="text" value="Meridian Labs" />
+      </div>
+    </div>
+
+    <!-- SELECT (open) -->
+    <div class="field">
+      <div class="label"><span>Stage</span><span class="state">Open</span></div>
+      <div class="select-wrap select-open">
+        <select class="input"><option>Proposal</option></select>
+        <div class="menu">
+          <div class="menu-item">Lead</div>
+          <div class="menu-item">Qualifying</div>
+          <div class="menu-item active"><span>Proposal</span><span class="check">✓</span></div>
+          <div class="menu-item">Closing</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ERROR -->
+    <div class="field">
+      <div class="label"><span>Deal value</span><span class="state" style="color:var(--red)">Error</span></div>
+      <input class="input error" type="text" value="abc" />
+      <div class="help-error">
+        <svg width="10" height="10" viewBox="0 0 15 15" fill="none"><path d="M7.5 1L1 13h13L7.5 1z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"/><path d="M7.5 6v3M7.5 11v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Must be a number
+      </div>
+    </div>
+
+    <!-- TEXTAREA with caret -->
+    <div class="field" style="grid-column: span 2">
+      <div class="label"><span>Notes</span><span class="state">Typing…</span></div>
+      <div class="caret-text">
+        <textarea class="input focused" rows="2" style="resize:vertical;font:13px var(--font-sans);min-height:60px;padding-right:20px">Intro call · ready to move forward pending legal review.</textarea>
+        <div class="caret" style="right:202px; top:34px"></div>
+      </div>
+    </div>
+
+    <!-- TOGGLE & DISABLED -->
+    <div class="field">
+      <div class="label"><span>Send weekly digest</span><span class="state">On</span></div>
+      <div class="toggle-row">
+        <span style="font-size:13px;color:var(--text)">Mondays · 9am</span>
+        <span class="toggle"></span>
+      </div>
+    </div>
+    <div class="field">
+      <div class="label"><span>API key</span><span class="state">Disabled</span></div>
+      <input class="input" type="text" value="vt_••••••••••••" disabled />
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

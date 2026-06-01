@@ -1,0 +1,74 @@
+/* Shared base for every preview card. Cards are ~700×variable, cropped flush
+   by the Design System tab — no title chrome inside. */
+@import url('../colors_and_type.css');
+
+html, body {
+  width: 700px;
+  min-height: 100%;
+  background: var(--bg);
+  font-family: var(--font-sans);
+  color: var(--text);
+  font-size: var(--fs-13);
+}
+
+.card {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+}
+
+.swatch {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.swatch .chip {
+  height: 56px;
+}
+.swatch .meta {
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.swatch .name {
+  font-size: var(--fs-12);
+  font-weight: 600;
+  color: var(--text);
+}
+.swatch .hex {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text3);
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: var(--fs-10);
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.spec {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text3);
+}

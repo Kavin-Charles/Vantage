@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Surfaces &amp; Neutrals</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  html, body { background: var(--bg); }
+  body { padding: 0; }
+  .card { padding: 18px 20px; gap: 0; }
+
+  .frame {
+    background: var(--bg);
+    border-radius: 22px;
+    padding: 24px 26px;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 26px;
+    align-items: stretch;
+  }
+
+  /* LEFT — surfaces in a real composition, generously rounded */
+  .scene {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 18px 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .scene .head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 6px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .scene .title {
+    font-family: var(--font-display);
+    font-size: 19px;
+    letter-spacing: -0.4px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .scene .count {
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 500;
+  }
+  .scene .rows { display: flex; flex-direction: column; gap: 4px; padding-top: 8px; }
+  .scene .row {
+    display: grid;
+    grid-template-columns: 30px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .scene .row.hover { background: var(--surface2); }
+  .scene .dot {
+    width: 30px; height: 30px;
+    border-radius: 999px;
+    background: var(--surface2);
+    color: var(--text2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600;
+  }
+  .scene .row.hover .dot {
+    background: var(--bg);
+    color: var(--text);
+  }
+  .scene .meta {
+    font-size: 11px; color: var(--text3);
+  }
+
+  /* RIGHT — swatch list, each one a pill-rounded card */
+  .stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+  }
+  .sw {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 10px 16px 10px 10px;
+  }
+  .chip {
+    width: 56px; height: 36px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+  }
+  .chip.outline {
+    background: var(--bg);
+    border-color: var(--border);
+  }
+  .chip.outline.b2 { border-color: var(--border2); border-width: 2px; }
+  .name {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.1px;
+  }
+  .role {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+  .hex {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text2);
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="frame">
+
+    <!-- Editorial scene -->
+    <div class="scene">
+      <div class="head">
+        <span class="title">Recent contacts</span>
+        <span class="count">3 of 12</span>
+      </div>
+      <div class="rows">
+        <div class="row">
+          <div class="dot">P</div>
+          <span>Priya Nair</span>
+          <span class="meta">customer</span>
+        </div>
+        <div class="row hover">
+          <div class="dot">A</div>
+          <span>Amir Hosseini</span>
+          <span class="meta">prospect</span>
+        </div>
+        <div class="row">
+          <div class="dot">R</div>
+          <span>Rachel Kim</span>
+          <span class="meta">customer</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plush swatch list -->
+    <div class="stack">
+      <div class="sw">
+        <span class="chip" style="background:#f7f6f2;border:1px solid var(--border)"></span>
+        <span><span class="name">--bg</span><div class="role">Page · the parchment plane</div></span>
+        <span class="hex">#F7F6F2</span>
+      </div>
+      <div class="sw">
+        <span class="chip" style="background:#ffffff;border:1px solid var(--border)"></span>
+        <span><span class="name">--surface</span><div class="role">Cards lifted off the page</div></span>
+        <span class="hex">#FFFFFF</span>
+      </div>
+      <div class="sw">
+        <span class="chip" style="background:#f0ede6"></span>
+        <span><span class="name">--surface2</span><div class="role">Row hover, avatar tile</div></span>
+        <span class="hex">#F0EDE6</span>
+      </div>
+      <div class="sw">
+        <span class="chip outline" style="border-color:#e4e0d8"></span>
+        <span><span class="name">--border</span><div class="role">Default 1px divider</div></span>
+        <span class="hex">#E4E0D8</span>
+      </div>
+      <div class="sw">
+        <span class="chip outline b2"></span>
+        <span><span class="name">--border2</span><div class="role">Stronger divider, focus rest</div></span>
+        <span class="hex">#D4CFC5</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

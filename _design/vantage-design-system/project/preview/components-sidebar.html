@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sidebar Nav</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 0; }
+  .card { padding: 18px 20px; gap: 16px; }
+
+  .side {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Brand */
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 16px 18px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand .mark {
+    width: 32px; height: 32px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .brand .mark img { width: 30px; height: 30px; object-fit: contain; }
+  .brand .name {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.4px;
+    color: var(--text);
+  }
+
+  .group {
+    padding: 12px 12px 4px;
+  }
+  .group + .group { padding-top: 4px; }
+  .group .head {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 0 10px;
+    margin-bottom: 6px;
+  }
+
+  .item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    color: var(--text2);
+    font-size: 13.5px;
+    font-weight: 400;
+    margin-bottom: 2px;
+    cursor: pointer;
+    transition: background .15s, color .15s, transform .15s;
+    position: relative;
+  }
+  .item .ico {
+    width: 16px; height: 16px;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0.75;
+  }
+  .item .ico img { width: 15px; height: 15px; }
+
+  /* Active — text-color fill, white label, scoot in */
+  .item.active {
+    background: var(--text);
+    color: #fff;
+    font-weight: 500;
+  }
+  .item.active .ico { opacity: 1; filter: invert(1) brightness(2); }
+
+  /* Hover — light surface fill, pull color toward primary */
+  .item.hover {
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .item.hover .ico { opacity: 1; }
+  .item:not(.active):not(.hover):hover {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  /* Badge dot + pulse */
+  .dot {
+    position: relative;
+    width: 7px; height: 7px;
+    border-radius: 999px;
+    background: var(--red);
+    margin-left: auto;
+  }
+  .dot::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 999px;
+    background: var(--red);
+    opacity: 0.35;
+    animation: pulse 1.6s ease-out infinite;
+  }
+  @keyframes pulse {
+    0%   { transform: scale(.8); opacity: .45; }
+    70%  { transform: scale(1.9); opacity: 0;   }
+    100% { transform: scale(1.9); opacity: 0;   }
+  }
+
+  /* Numeric badge */
+  .count {
+    margin-left: auto;
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+  }
+  .item.active .count {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+
+  /* State legend on the right */
+  .legend {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 4px 4px 0;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .legend .row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .legend .key {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text3);
+    width: 64px;
+    flex-shrink: 0;
+  }
+  .legend strong { color: var(--text); font-weight: 600; }
+
+  .wrap {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 18px;
+    align-items: stretch;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="wrap">
+
+    <!-- Sidebar specimen with multiple states + pulsing alert dot -->
+    <div class="side">
+      <div class="brand">
+        <span class="mark"><img src="../assets/logo-cloud-trimmed.png" alt=""></span>
+        <span class="name">Vantage</span>
+      </div>
+
+      <div class="group">
+        <div class="head">CRM</div>
+        <div class="item active">
+          <span class="ico"><img src="../assets/icons/pipeline.svg" alt=""></span>
+          Pipeline
+          <span class="count">9</span>
+        </div>
+        <div class="item hover">
+          <span class="ico"><img src="../assets/icons/contacts.svg" alt=""></span>
+          Contacts
+          <span class="count">12</span>
+        </div>
+        <div class="item">
+          <span class="ico"><img src="../assets/icons/companies.svg" alt=""></span>
+          Companies
+        </div>
+        <div class="item">
+          <span class="ico"><img src="../assets/icons/activity.svg" alt=""></span>
+          Activity
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="head">General</div>
+        <div class="item">
+          <span class="ico"><img src="../assets/icons/analytics.svg" alt=""></span>
+          Analytics
+        </div>
+        <div class="item">
+          <span class="ico"><img src="../assets/icons/alerts.svg" alt=""></span>
+          Alerts
+          <span class="dot" title="3 critical alerts"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend: every state called out -->
+    <div class="legend">
+      <div class="row">
+        <span class="key">active</span>
+        <span><strong>Pipeline</strong> — text-color fill, white label, 500 weight, count badge dims to translucent white</span>
+      </div>
+      <div class="row">
+        <span class="key">hover</span>
+        <span><strong>Contacts</strong> — surface2 fill, primary text, icons go full opacity</span>
+      </div>
+      <div class="row">
+        <span class="key">rest</span>
+        <span><strong>Companies, Activity, Analytics</strong> — transparent bg, text2 color, icon at 75%</span>
+      </div>
+      <div class="row">
+        <span class="key">alert</span>
+        <span><strong>Alerts</strong> — red dot with pulsing ring whenever unresolved criticals exist</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

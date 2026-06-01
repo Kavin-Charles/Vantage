@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Brand Mark</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 0; }
+  .card { padding: 18px 20px; gap: 14px; }
+
+  .hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 22px;
+    align-items: center;
+  }
+  .hero .art {
+    width: 200px; height: 158px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .hero .art img { width: 80%; height: auto; display: block; }
+  .hero .copy { display: flex; flex-direction: column; gap: 6px; }
+  .hero .wordmark {
+    font-family: var(--font-serif);
+    font-size: 28px;
+    letter-spacing: -0.4px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .hero .tagline {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+  .hero .desc {
+    font-size: 12px;
+    color: var(--text3);
+    margin-top: 6px;
+    line-height: 1.5;
+    max-width: 360px;
+  }
+
+  .uses {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .use {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .use .lockup {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .use .lockup .mark {
+    width: 28px; height: 28px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .use .lockup .mark img { width: 100%; height: 100%; object-fit: contain; padding: 2px; box-sizing: border-box; }
+  .use .lockup .name {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+  .use .caption {
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .palette {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .palette .sw {
+    flex: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .palette .sw .chip { height: 38px; }
+  .palette .sw .meta {
+    padding: 7px 10px;
+    display: flex; align-items: baseline; justify-content: space-between;
+    background: var(--surface);
+  }
+  .palette .sw .name { font-size: 11px; font-weight: 600; color: var(--text); }
+  .palette .sw .hex { font-family: var(--font-mono); font-size: 10px; color: var(--text3); }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Primary mark -->
+  <div class="hero">
+    <div class="art"><img src="../assets/logo-cloud-trimmed.png" alt="Vantage"></div>
+    <div class="copy">
+      <span class="wordmark">Vantage</span>
+      <span class="tagline">Build, sell, and ship — one place.</span>
+      <p class="desc">A cloud + ascending V — the platform under the team and the trajectory above it. Use this mark wherever Vantage appears: chrome, marketing, decks, exports, social.</p>
+    </div>
+  </div>
+
+  <!-- Lockups across surfaces -->
+  <div class="uses">
+    <div class="use">
+      <div class="lockup">
+        <span class="mark"><img src="../assets/logo-cloud-trimmed.png" alt=""></span>
+        <span class="name">Vantage</span>
+      </div>
+      <span class="caption">Sidebar — 28px mark + serif wordmark</span>
+    </div>
+    <div class="use" style="background:var(--text)">
+      <div class="lockup">
+        <span class="mark" style="background:#fff"><img src="../assets/logo-cloud-trimmed.png" alt=""></span>
+        <span class="name" style="color:#fff">Vantage</span>
+      </div>
+      <span class="caption" style="color:#9e998f">Dark surfaces — mark stays on its own white tile</span>
+    </div>
+    <div class="use">
+      <div class="lockup" style="flex-direction:column;gap:6px;align-items:center">
+        <span class="mark" style="width:48px;height:48px;border-radius:10px"><img src="../assets/logo-cloud-trimmed.png" alt=""></span>
+      </div>
+      <span class="caption">Favicon / app icon — mark only</span>
+    </div>
+  </div>
+
+  <!-- Brand palette derived from the logo -->
+  <div class="palette">
+    <div class="sw"><div class="chip" style="background:#0F1A6B"></div><div class="meta"><span class="name">Ink</span><span class="hex">#0F1A6B</span></div></div>
+    <div class="sw"><div class="chip" style="background:#1652F0"></div><div class="meta"><span class="name">Vantage Blue</span><span class="hex">#1652F0</span></div></div>
+    <div class="sw"><div class="chip" style="background:#2A8CFF"></div><div class="meta"><span class="name">Sky</span><span class="hex">#2A8CFF</span></div></div>
+    <div class="sw"><div class="chip" style="background:#67B6FF"></div><div class="meta"><span class="name">Air</span><span class="hex">#67B6FF</span></div></div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Text Ramp</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 0; }
+  .card { padding: 20px 22px; gap: 0; }
+
+  .frame {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 28px;
+    align-items: center;
+  }
+
+  /* LEFT: type ladder in real context on a warm paper background */
+  .ladder { display: flex; flex-direction: column; gap: 12px; }
+  .ladder .line {
+    display: flex; align-items: baseline; gap: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ladder .line:last-child { border-bottom: none; padding-bottom: 0; }
+  .ladder .text {
+    font-family: var(--font-sans);
+    letter-spacing: -0.2px;
+  }
+  .ladder .text.t1 { font-size: 22px; font-weight: 500; color: var(--text);  letter-spacing: -0.4px; }
+  .ladder .text.t2 { font-size: 14px; font-weight: 400; color: var(--text2); }
+  .ladder .text.t3 { font-size: 12px; font-weight: 400; color: var(--text3); }
+  .ladder .tag {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+
+  /* RIGHT: swatch tabs */
+  .stack { display: flex; flex-direction: column; gap: 10px; }
+  .sw {
+    display: grid;
+    grid-template-columns: 10px 1fr auto;
+    align-items: center;
+    gap: 14px;
+  }
+  .tab { height: 38px; border-radius: 2px 5px 5px 2px; }
+  .name { font-family: var(--font-sans); font-size: 13px; font-weight: 500; color: var(--text); letter-spacing: -0.1px; }
+  .role { font-family: var(--font-sans); font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .hex  { font-family: var(--font-mono); font-size: 11px; color: var(--text2); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="frame">
+
+    <!-- The ramp shown as conversational paragraphs of real product copy -->
+    <div class="ladder">
+      <div class="line">
+        <span class="text t1">Pipeline · $184.2K open</span>
+        <span class="tag">--text · #0B1330</span>
+      </div>
+      <div class="line">
+        <span class="text t2">9 items across 6 stages. Drag to move.</span>
+        <span class="tag">--text2 · #4A5677</span>
+      </div>
+      <div class="line">
+        <span class="text t3">Last refreshed 2 minutes ago</span>
+        <span class="tag">--text3 · #8E96AC</span>
+      </div>
+    </div>
+
+    <!-- Color tabs -->
+    <div class="stack">
+      <div class="sw">
+        <span class="tab" style="background:#0B1330"></span>
+        <span><span class="name">--text</span><div class="role">Primary, headings</div></span>
+        <span class="hex">#0B1330</span>
+      </div>
+      <div class="sw">
+        <span class="tab" style="background:#4A5677"></span>
+        <span><span class="name">--text2</span><div class="role">Secondary, labels</div></span>
+        <span class="hex">#4A5677</span>
+      </div>
+      <div class="sw">
+        <span class="tab" style="background:#8E96AC"></span>
+        <span><span class="name">--text3</span><div class="role">Muted, timestamps</div></span>
+        <span class="hex">#8E96AC</span>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Type Families</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 0; }
+  .card { padding: 20px 22px; gap: 0; }
+
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 18px;
+    align-items: center;
+  }
+
+  .meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .role {
+    font-family: var(--font-sans);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+  }
+  .family {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.1px;
+  }
+  .axis {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--text3);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .specimen { line-height: 1; color: var(--text); }
+
+  /* Display (Bricolage Grotesque) */
+  .specimen.display {
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+    font-size: 44px;
+    font-weight: 600;
+    letter-spacing: -1px;
+    font-stretch: 88%;
+    line-height: 1;
+  }
+  .specimen.display em {
+    font-style: normal;
+    color: var(--text2);
+    font-weight: 400;
+  }
+
+  /* Body (IBM Plex Sans) */
+  .specimen.body {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+    line-height: 1.35;
+  }
+  .specimen.body .weights {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    margin-top: 8px;
+    align-items: baseline;
+  }
+  .specimen.body .weights span {
+    font-size: 14px;
+    color: var(--text2);
+  }
+  .specimen.body .weights .w300 { font-weight: 300; }
+  .specimen.body .weights .w400 { font-weight: 400; }
+  .specimen.body .weights .w500 { font-weight: 500; }
+  .specimen.body .weights .w600 { font-weight: 600; color: var(--text); }
+  .specimen.body .weights .w700 { font-weight: 700; color: var(--text); }
+
+  /* Mono (IBM Plex Mono) */
+  .specimen.mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: block;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .specimen.mono .green { color: var(--green); }
+  .specimen.mono .muted { color: var(--text3); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="stack">
+
+    <div class="row">
+      <div class="meta">
+        <span class="role">Display</span>
+        <span class="family">Bricolage Grotesque</span>
+        <span class="axis">wght 300–800<br>wdth 75–100 (var)<br>opsz 12–96</span>
+      </div>
+      <div class="specimen display">
+        Build,&nbsp;sell,<br>
+        and ship — <em>one place.</em>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="meta">
+        <span class="role">UI &amp; Body</span>
+        <span class="family">IBM Plex Sans</span>
+        <span class="axis">wght 300/400/500<br>600/700</span>
+      </div>
+      <div>
+        <div class="specimen body">
+          Dev-led teams run sales out of spreadsheets and infra across four dashboards.
+        </div>
+        <div class="specimen body weights">
+          <span class="w300">Light</span>
+          <span class="w400">Regular</span>
+          <span class="w500">Medium</span>
+          <span class="w600">SemiBold</span>
+          <span class="w700">Bold</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="meta">
+        <span class="role">Mono &amp; Data</span>
+        <span class="family">IBM Plex Mono</span>
+        <span class="axis">wght 400/500/600</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <code class="specimen mono"><span class="muted">$</span> VANTAGE_TOKEN=v_7f3a npx <span class="green">@vantage/agent</span></code>
+        <code class="specimen mono">prod-worker-01<span class="muted"> · us-east-1 · :443</span></code>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

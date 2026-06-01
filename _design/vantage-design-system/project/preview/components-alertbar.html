@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Alert Bar</title>
+<link rel="stylesheet" href="_card.css"><style></style></head>
+<body><div class="card">
+<div style="display:flex;flex-direction:column;gap:14px">
+
+  <!-- 1. New treatment: a card that lives at the top of the page,
+       not an inset stripe. Severity dot + count + collapse arrow. -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(180deg,#fff7ed 0%,#fef3c7 100%)">
+      <span style="position:relative;width:8px;height:8px;border-radius:999px;background:var(--amber);flex-shrink:0">
+        <span style="position:absolute;inset:-4px;border-radius:999px;background:var(--amber);opacity:.3"></span>
+      </span>
+      <span style="font:600 13px var(--font-sans);color:var(--amber)">3 active alerts</span>
+      <span style="font:13px var(--font-sans);color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Highest severity · <strong style="font-weight:600">prod-worker-01 memory 91.7%</strong> above critical threshold</span>
+      <a href="#" style="font:500 12px var(--font-sans);color:var(--amber);text-decoration:none;white-space:nowrap;padding:4px 10px;border-radius:8px;background:rgba(146,64,14,0.08)">Open <img src="../assets/icons/arrow-right.svg" width="11" height="11" style="vertical-align:-1px;display:inline-block;margin-left:2px" alt=""/></a>
+    </div>
+
+    <!-- Severity strip -->
+    <div style="display:flex;align-items:stretch;padding:10px 12px;gap:6px;border-top:1px solid var(--border)">
+      
+        <div style="flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fee2e2;border-radius:10px">
+          <span style="width:6px;height:6px;border-radius:999px;background:var(--red)"></span>
+          <span style="font:600 11px var(--font-sans);color:var(--red);text-transform:uppercase;letter-spacing:.5px">critical</span>
+          <span style="margin-left:auto;font:600 14px var(--font-display);color:var(--red);letter-spacing:-0.3px">1</span>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fef3c7;border-radius:10px">
+          <span style="width:6px;height:6px;border-radius:999px;background:var(--amber)"></span>
+          <span style="font:600 11px var(--font-sans);color:var(--amber);text-transform:uppercase;letter-spacing:.5px">warning</span>
+          <span style="margin-left:auto;font:600 14px var(--font-display);color:var(--amber);letter-spacing:-0.3px">2</span>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;background:#dbeafe;border-radius:10px">
+          <span style="width:6px;height:6px;border-radius:999px;background:var(--blue)"></span>
+          <span style="font:600 11px var(--font-sans);color:var(--blue);text-transform:uppercase;letter-spacing:.5px">info</span>
+          <span style="margin-left:auto;font:600 14px var(--font-display);color:var(--blue);letter-spacing:-0.3px">0</span>
+        </div>
+    </div>
+  </div>
+
+  <!-- 2. Compact inline toast variant -->
+  <div style="display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;font:13px var(--font-sans)">
+    <span style="width:24px;height:24px;border-radius:999px;background:var(--green-bg);color:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <img src="../assets/icons/check.svg" width="13" height="13" alt=""/>
+    </span>
+    <span style="color:var(--text)">staging-01 recovered — memory back below 70%</span>
+    <span style="margin-left:auto;font-size:11px;color:var(--text3)">just now</span>
+    <button style="background:none;border:none;color:var(--text3);cursor:pointer;display:flex;padding:2px"><img src="../assets/icons/x.svg" width="12" height="12" alt="dismiss"/></button>
+  </div>
+
+  <div style="font:12px var(--font-sans);color:var(--text3);font-style:italic;line-height:1.5">
+    Floating card with severity breakdown replaces the inline amber stripe — stays visible without dominating the page.
+  </div>
+</div></div></body></html>

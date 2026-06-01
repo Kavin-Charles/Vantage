@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Voice & Microcopy</title>
+<link rel="stylesheet" href="_card.css"><style></style></head>
+<body><div class="card">
+<div style="display:flex;flex-direction:column;gap:14px">
+
+  <!-- Voice attributes as a pillar set -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+    
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px">
+        <div style="font:600 10px var(--font-sans);color:var(--text3);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:6px">Voice</div>
+        <div style="font:600 16px var(--font-display);color:var(--text);letter-spacing:-0.3px;margin-bottom:6px">Direct</div>
+        <p style="margin:0;font:12px var(--font-sans);color:var(--text2);line-height:1.5">Tells engineers exactly what changed, what to do, what to expect. No hype words.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px">
+        <div style="font:600 10px var(--font-sans);color:var(--text3);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:6px">Voice</div>
+        <div style="font:600 16px var(--font-display);color:var(--text);letter-spacing:-0.3px;margin-bottom:6px">Technical</div>
+        <p style="margin:0;font:12px var(--font-sans);color:var(--text2);line-height:1.5">Speaks in product nouns — pipeline, agent, threshold — not marketing nouns.</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px">
+        <div style="font:600 10px var(--font-sans);color:var(--text3);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:6px">Voice</div>
+        <div style="font:600 16px var(--font-display);color:var(--text);letter-spacing:-0.3px;margin-bottom:6px">Quiet</div>
+        <p style="margin:0;font:12px var(--font-sans);color:var(--text2);line-height:1.5">Uses the smallest sentence that does the job. Loudness lives in numbers, not exclamation points.</p>
+      </div>
+  </div>
+
+  <!-- Yes vs No copy comparison -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px 18px">
+    <div style="font:600 10px var(--font-sans);color:var(--text3);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:10px">Vantage · Not Vantage</div>
+    
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;padding:8px 0;border-top:1px solid var(--border)">
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <span style="width:18px;height:18px;border-radius:999px;background:var(--green-bg);color:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px"><img src="../assets/icons/check.svg" width="11" height="11" alt=""/></span>
+          <span style="font:13px var(--font-sans);color:var(--text)">Invalid email or password</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <span style="width:18px;height:18px;border-radius:999px;background:var(--red-bg);color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px"><img src="../assets/icons/x.svg" width="10" height="10" alt=""/></span>
+          <span style="font:13px var(--font-sans);color:var(--text3);text-decoration:line-through;text-decoration-color:rgba(142,150,172,.5)">Hmm, that didn’t look right ✨</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;padding:8px 0;border-top:1px solid var(--border)">
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <span style="width:18px;height:18px;border-radius:999px;background:var(--green-bg);color:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px"><img src="../assets/icons/check.svg" width="11" height="11" alt=""/></span>
+          <span style="font:13px var(--font-sans);color:var(--text)">No activity yet.</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <span style="width:18px;height:18px;border-radius:999px;background:var(--red-bg);color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px"><img src="../assets/icons/x.svg" width="10" height="10" alt=""/></span>
+          <span style="font:13px var(--font-sans);color:var(--text3);text-decoration:line-through;text-decoration-color:rgba(142,150,172,.5)">Nothing to see here — your timeline awaits!</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;padding:8px 0;border-top:1px solid var(--border)">
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <span style="width:18px;height:18px;border-radius:999px;background:var(--green-bg);color:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px"><img src="../assets/icons/check.svg" width="11" height="11" alt=""/></span>
+          <span style="font:13px var(--font-sans);color:var(--text)">prod-worker-01 memory 91.7% — above 90% threshold</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <span style="width:18px;height:18px;border-radius:999px;background:var(--red-bg);color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px"><img src="../assets/icons/x.svg" width="10" height="10" alt=""/></span>
+          <span style="font:13px var(--font-sans);color:var(--text3);text-decoration:line-through;text-decoration-color:rgba(142,150,172,.5)">Yikes! Your server is feeling the heat 🔥</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;padding:8px 0;border-top:1px solid var(--border)">
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <span style="width:18px;height:18px;border-radius:999px;background:var(--green-bg);color:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px"><img src="../assets/icons/check.svg" width="11" height="11" alt=""/></span>
+          <span style="font:13px var(--font-sans);color:var(--text)">Close 6/27/2026</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <span style="width:18px;height:18px;border-radius:999px;background:var(--red-bg);color:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px"><img src="../assets/icons/x.svg" width="10" height="10" alt=""/></span>
+          <span style="font:13px var(--font-sans);color:var(--text3);text-decoration:line-through;text-decoration-color:rgba(142,150,172,.5)">Closes in about a month, give or take</span>
+        </div>
+      </div>
+  </div>
+
+</div></div></body></html>
