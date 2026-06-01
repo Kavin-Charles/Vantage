@@ -50,6 +50,11 @@ export function createRequireAuth(db: Kysely<Database>, jwtSecret: string) {
       return;
     }
 
+    if (!user.is_active) {
+      res.status(401).json({ data: null, error: { code: 'ACCOUNT_DISABLED' } });
+      return;
+    }
+
     const workspace = await db
       .selectFrom('workspaces')
       .where('id', '=', user.workspace_id)

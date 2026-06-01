@@ -47,6 +47,27 @@ export async function resolvePermissions(
     }),
   );
 
+  // Union group permissions (after role defaults, before user overrides)
+  const userGroups = await db
+    .selectFrom('group_members')
+    .where('workspace_id', '=', workspaceId)
+    .where('user_id', '=', userId)
+    .select('group_id')
+    .execute();
+
+  if (userGroups.length > 0) {
+    const groupIds = userGroups.map(g => g.group_id);
+    const groupPerms = await db
+      .selectFrom('group_permissions')
+      .where('group_id', 'in', groupIds)
+      .select(['permission', 'granted'])
+      .execute();
+    for (const gp of groupPerms) {
+      if (gp.granted) defaults.add(gp.permission);
+      else defaults.delete(gp.permission);
+    }
+  }
+
   const overrides = await db
     .selectFrom('user_permissions')
     .select(['permission', 'granted'])
@@ -75,6 +96,23 @@ export function invalidateWorkspacePermissionCache(workspaceId: string): void {
 
 export function __clearPermCacheForTesting(): void {
   permCache.clear();
+}
+
+// Must be awaited — queries DB to find group members, then invalidates each
+export async function invalidateGroupMemberCaches(
+  db: Kysely<Database>,
+  workspaceId: string,
+  groupId: string,
+): Promise<void> {
+  const members = await db
+    .selectFrom('group_members')
+    .where('group_id', '=', groupId)
+    .where('workspace_id', '=', workspaceId)
+    .select('user_id')
+    .execute();
+  for (const m of members) {
+    invalidatePermissionCache(workspaceId, m.user_id);
+  }
 }
 
 export function createRequirePermission(db: Kysely<Database>) {
