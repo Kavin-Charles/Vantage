@@ -10,9 +10,11 @@ import { createDb } from '@vantage/db';
 import { errorHandler } from './middleware/errors';
 import { createRequireAuth, requireAdmin } from './middleware/auth';
 import { createRequireModule } from './middleware/module';
+import { createRequirePermission } from './middleware/permission';
 import { createWorkspaceModulesRouter } from './routes/workspace-modules';
 import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
+import { createUserPermissionsRouter } from './routes/user-permissions';
 import { createConfigRouter } from './routes/config';
 import { createSetupRouter } from './routes/setup';
 import { createMeRouter } from './routes/me';
@@ -47,6 +49,7 @@ import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
 import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
+import { loadPluginRouter } from './lib/plugin-loader';
 import { seedOnFirstBoot } from './lib/seed';
 import { seedDemo } from './lib/seed-demo';
 import { logger } from './lib/logger';
@@ -56,6 +59,7 @@ const config = readConfig();
 const db = createDb(env.DATABASE_URL);
 const requireAuth = createRequireAuth(db, env.JWT_SECRET);
 const requireModule = createRequireModule(db);
+const requirePermission = createRequirePermission(db);
 
 const app = express();
 
@@ -97,8 +101,19 @@ app.use('/api/webhooks', requireAuth, createWebhooksRouter(db));
 app.use('/api/api-keys', requireAuth, createApiKeysRouter(db));
 app.use('/api/plugins', requireAuth, createPluginsRouter(db));
 
+// Dynamic plugin route dispatcher — forwards /api/plugins/route/:pluginId/* to loaded bundle
+app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
+  const pluginId = req.params['pluginId']!;
+  const router = loadPluginRouter(pluginId, db);
+  if (!router) {
+    return res.status(404).json({ data: null, error: { code: 'PLUGIN_NOT_MOUNTED', message: 'Plugin has no server bundle' } });
+  }
+  return router(req, res, next);
+});
+
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
+app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
 
 // Infra routes
 app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db));
