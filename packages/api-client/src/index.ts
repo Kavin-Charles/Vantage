@@ -8,3 +8,4 @@ export * from './companies';
 export * from './me';
 export * from './servers';
 export * from './pipelines';
+export * from './user-permissions';
