@@ -112,8 +112,8 @@ app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
 });
 
 // Admin only — requireAuth + requireAdmin both applied
-app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
+app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 
 // Infra routes
 app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db, requirePermission));

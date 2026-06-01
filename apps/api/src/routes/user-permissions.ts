@@ -138,6 +138,12 @@ export function createUserPermissionsRouter(db: Kysely<Database>): Router {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { id: userId, permission } = req.params as { id: string; permission: string };
 
+      const moduleId = getModuleForPermission(permission);
+      if (!moduleId) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_PERMISSION' } });
+        return;
+      }
+
       await db
         .deleteFrom('user_permissions')
         .where('workspace_id', '=', workspace.id)
