@@ -24,7 +24,7 @@ describe('GET /api/tasks — pagination', () => {
     const db = buildMockDb(fakeTasks, 1);
     const { createTasksRouter } = await import('../routes/tasks');
     const router = createTasksRouter(db as never, () => (_req: unknown, _res: unknown, next: Function) => next());
-    const handler = (router as unknown as { stack: { route: { stack: { handle: Function }[] } }[] }).stack[0]?.route?.stack[0]?.handle;
+    const handler = (router as unknown as { stack: { route: { stack: { handle: Function }[] } }[] }).stack[0]?.route?.stack[1]?.handle;
     expect(handler).toBeDefined();
     const req = buildReq();
     const res = buildRes();
@@ -38,7 +38,7 @@ describe('GET /api/tasks — pagination', () => {
     const db = buildMockDb([], 0);
     const { createTasksRouter } = await import('../routes/tasks');
     const router = createTasksRouter(db as never, () => (_req: unknown, _res: unknown, next: Function) => next());
-    const handler = (router as unknown as { stack: { route: { stack: { handle: Function }[] } }[] }).stack[0]?.route?.stack[0]?.handle;
+    const handler = (router as unknown as { stack: { route: { stack: { handle: Function }[] } }[] }).stack[0]?.route?.stack[1]?.handle;
     const req = buildReq({ status: 'invalid_status' });
     const res = buildRes();
     await handler(req, res, vi.fn());
@@ -49,7 +49,7 @@ describe('GET /api/tasks — pagination', () => {
     const db = buildMockDb([], 0);
     const { createTasksRouter } = await import('../routes/tasks');
     const router = createTasksRouter(db as never, () => (_req: unknown, _res: unknown, next: Function) => next());
-    const handler = (router as unknown as { stack: { route: { stack: { handle: Function }[] } }[] }).stack[0]?.route?.stack[0]?.handle;
+    const handler = (router as unknown as { stack: { route: { stack: { handle: Function }[] } }[] }).stack[0]?.route?.stack[1]?.handle;
     const req = buildReq({ page: 'abc' });
     const res = buildRes();
     await handler(req, res, vi.fn());

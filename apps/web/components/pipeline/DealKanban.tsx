@@ -172,7 +172,6 @@ export function DealKanban({
             stageMap={stageMap}
             userMap={userMap}
             pipelineId={pipelineId}
-            contactId={selectedDeal.contact_id ?? undefined}
             onDone={() => {
               setSelectedDealId(null);
               void qc.invalidateQueries({ queryKey: ['deals', pipelineId] });
