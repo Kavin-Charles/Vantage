@@ -2,12 +2,16 @@
 
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useDispatch } from 'react-redux';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { setAuth } from '@/store/auth-slice';
+import type { AppDispatch } from '@/store';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const dispatch = useDispatch<AppDispatch>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -18,10 +22,22 @@ function LoginForm() {
     setError(null);
     setLoading(true);
     try {
-      await apiFetch('/api/auth/login', {
+      const res = await apiFetch<{
+        data: { id: string; name: string; email: string; role: 'admin' | 'member'; token: string };
+      }>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
+      dispatch(setAuth({
+        token: res.data.token,
+        user: {
+          id: res.data.id,
+          name: res.data.name,
+          email: res.data.email,
+          role: res.data.role,
+          workspace_id: '',
+        },
+      }));
       const raw = searchParams.get('from') ?? '';
       // Prevent open redirect — only allow same-origin relative paths
       const from = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/pipeline';

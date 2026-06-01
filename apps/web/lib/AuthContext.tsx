@@ -1,15 +1,11 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, type ReactNode } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { apiFetch } from './api';
-
-interface AuthUser {
-  id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'member';
-  workspace_id: string;
-}
+import { setUser, clearAuth } from '@/store/auth-slice';
+import type { RootState, AppDispatch } from '@/store';
+import type { AuthUser } from '@/store/auth-slice';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -21,31 +17,36 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch<AppDispatch>();
+  const token = useSelector((state: RootState) => state.auth.token);
+  const user = useSelector((state: RootState) => state.auth.user);
+
+  const isLoading = token !== null && user === null;
 
   const fetchUser = async () => {
-    setIsLoading(true);
+    if (!token) return;
     try {
-      const res = await apiFetch<{ data: AuthUser }>('/api/auth/me');
-      setUser(res.data);
+      const res = await apiFetch<{ data: AuthUser }>('/api/me', { token });
+      dispatch(setUser(res.data));
     } catch {
-      setUser(null);
-    } finally {
-      setIsLoading(false);
+      dispatch(clearAuth());
     }
   };
 
-  useEffect(() => { void fetchUser(); }, []);
+  useEffect(() => {
+    if (token && !user) {
+      void fetchUser();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const logout = async () => {
     try {
-      await apiFetch('/api/auth/logout', { method: 'POST' });
+      await apiFetch('/api/auth/logout', { method: 'POST', token: token ?? '' });
     } catch {
-      // If logout API fails, still clear local state and redirect
-      // The cookie will expire naturally or admin can revoke
+      // Ignore — clear local state regardless
     }
-    setUser(null);
+    dispatch(clearAuth());
     window.location.href = '/login';
   };
 

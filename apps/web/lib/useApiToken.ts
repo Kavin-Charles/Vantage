@@ -1,7 +1,9 @@
 'use client';
 
-// Auth is now cookie-based (vantage_token httpOnly cookie).
-// No bearer token needed — return empty string for API calls.
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store';
+
 export function useApiToken() {
-  return async () => '';
+  const token = useSelector((state: RootState) => state.auth.token);
+  return async () => token ?? '';
 }
