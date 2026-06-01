@@ -20,8 +20,10 @@
     "@vantage/plugin-runtime": "workspace:*",
     "@vantage/plugin-types": "workspace:*",
     "@vantage/types": "workspace:*",
+    "adm-zip": "^0.5.16",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
+    "multer": "^2.0.1",
     "cors": "^2.8.5",
     "expo-server-sdk": "^6.1.0",
     "express": "^4.19.0",
@@ -43,7 +45,9 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
     "@types/bcrypt": "^6.0.0",
+    "@types/multer": "^1.4.12",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",

@@ -587,6 +587,17 @@ export interface WorkspaceModuleTable {
   updated_by: string | null;
 }
 
+export interface WorkspacePluginTable {
+  id: Generated<string>;
+  workspace_id: string;
+  plugin_id: string;
+  name: string;
+  version: string;
+  manifest: Record<string, unknown>;
+  enabled: Generated<boolean>;
+  installed_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -633,6 +644,7 @@ export interface Database {
   system_settings: SystemSettingsTable;
   workspace_imap_config: WorkspaceImapConfigTable;
   workspace_modules: WorkspaceModuleTable;
+  workspace_plugins: WorkspacePluginTable;
 }
 
 // Convenience types
@@ -792,3 +804,7 @@ export type WorkspaceImapConfigUpdate = Updateable<WorkspaceImapConfigTable>;
 export type WorkspaceModule = Selectable<WorkspaceModuleTable>;
 export type NewWorkspaceModule = Insertable<WorkspaceModuleTable>;
 export type WorkspaceModuleUpdate = Updateable<WorkspaceModuleTable>;
+
+export type WorkspacePlugin = Selectable<WorkspacePluginTable>;
+export type NewWorkspacePlugin = Insertable<WorkspacePluginTable>;
+export type WorkspacePluginUpdate = Updateable<WorkspacePluginTable>;
