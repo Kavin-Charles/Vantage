@@ -134,6 +134,8 @@ dist
 # Misc
 .DS_Store
 Thumbs.db
+nul
+TODO.md
 
 # yarn v3
 .pnp.*
