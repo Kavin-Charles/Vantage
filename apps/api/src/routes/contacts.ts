@@ -39,11 +39,11 @@ const importContactSchema = z.object({
   })).min(1),
 });
 
-export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
+export function createContactsRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
   // GET /export — CSV download
-  router.get('/export', async (req, res, next) => {
+  router.get('/export', requirePermission('contacts:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const contacts = await db
@@ -60,7 +60,7 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // POST /import — bulk create from parsed CSV rows
-  router.post('/import', async (req, res, next) => {
+  router.post('/import', requirePermission('contacts:create'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
 
@@ -117,7 +117,7 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
     } catch (err) { next(err); }
   });
 
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('contacts:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { page, per_page, status, owner_id, q } = listQuerySchema.parse(req.query);
@@ -173,7 +173,7 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  router.get('/:id', async (req, res, next) => {
+  router.get('/:id', requirePermission('contacts:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const contact = await db
@@ -194,7 +194,7 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  router.post('/', async (req, res, next) => {
+  router.post('/', requirePermission('contacts:create'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
       const body = createContactSchema.parse(req.body);
@@ -235,7 +235,7 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  router.patch('/:id', async (req, res, next) => {
+  router.patch('/:id', requirePermission('contacts:edit'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
       const body = updateContactSchema.parse(req.body);
@@ -277,7 +277,7 @@ export function createContactsRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  router.delete('/:id', async (req, res, next) => {
+  router.delete('/:id', requirePermission('contacts:delete'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
 

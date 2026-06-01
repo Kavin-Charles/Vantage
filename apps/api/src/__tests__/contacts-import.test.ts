@@ -29,6 +29,8 @@ function buildMockDb() {
   };
 }
 
+const noopPermission = () => (_req: unknown, _res: unknown, next: Function) => next();
+
 describe('POST /api/contacts/import — bulk insert', () => {
   it('calls insertInto once (not per row) for valid rows', async () => {
     const rows = [
@@ -37,13 +39,13 @@ describe('POST /api/contacts/import — bulk insert', () => {
     ];
     const db = buildMockDb();
     const { createContactsRouter } = await import('../routes/contacts');
-    const router = createContactsRouter(db as never);
+    const router = createContactsRouter(db as never, noopPermission as never);
 
     const importRoute = (router as unknown as { stack: { route: { path: string; stack: { handle: Function }[] } }[] }).stack
       .find(s => s.route?.path === '/import');
     expect(importRoute).toBeDefined();
 
-    const handler = importRoute!.route.stack[0]!.handle;
+    const handler = importRoute!.route.stack[1]!.handle;
     const req = { body: { rows }, workspace: { id: 'ws1' }, user: { id: 'u1' } };
     const res = { json: vi.fn(), status: vi.fn().mockReturnThis() };
     await handler(req, res, vi.fn());
@@ -59,10 +61,10 @@ describe('POST /api/contacts/import — bulk insert', () => {
     const rows = [{ name: 'Alice', email: 'not-an-email', status: 'prospect' }];
     const db = buildMockDb();
     const { createContactsRouter } = await import('../routes/contacts');
-    const router = createContactsRouter(db as never);
+    const router = createContactsRouter(db as never, noopPermission as never);
     const importRoute = (router as unknown as { stack: { route: { path: string; stack: { handle: Function }[] } }[] }).stack
       .find(s => s.route?.path === '/import');
-    const handler = importRoute!.route.stack[0]!.handle;
+    const handler = importRoute!.route.stack[1]!.handle;
     const req = { body: { rows }, workspace: { id: 'ws1' }, user: { id: 'u1' } };
     const res = { json: vi.fn(), status: vi.fn().mockReturnThis() };
     await handler(req, res, vi.fn());

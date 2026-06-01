@@ -28,10 +28,10 @@ const importCompanySchema = z.object({
   })).min(1),
 });
 
-export function createCompaniesRouter(db: Kysely<Database>): ExpressRouter {
+export function createCompaniesRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
-  router.get('/export', async (req, res, next) => {
+  router.get('/export', requirePermission('companies:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const companies = await db
@@ -47,7 +47,7 @@ export function createCompaniesRouter(db: Kysely<Database>): ExpressRouter {
     } catch (err) { next(err); }
   });
 
-  router.post('/import', async (req, res, next) => {
+  router.post('/import', requirePermission('companies:create'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { rows } = importCompanySchema.parse(req.body);
@@ -67,7 +67,7 @@ export function createCompaniesRouter(db: Kysely<Database>): ExpressRouter {
     } catch (err) { next(err); }
   });
 
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('companies:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const page = Number(req.query['page'] ?? 1);
@@ -96,7 +96,7 @@ export function createCompaniesRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  router.get('/:id', async (req, res, next) => {
+  router.get('/:id', requirePermission('companies:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const company = await db
@@ -117,7 +117,7 @@ export function createCompaniesRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  router.post('/', async (req, res, next) => {
+  router.post('/', requirePermission('companies:create'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const body = createCompanySchema.parse(req.body);
@@ -134,7 +134,7 @@ export function createCompaniesRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  router.patch('/:id', async (req, res, next) => {
+  router.patch('/:id', requirePermission('companies:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const body = updateCompanySchema.parse(req.body);

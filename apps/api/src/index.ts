@@ -80,9 +80,9 @@ app.use('/api/setup', createSetupRouter(db));
 app.use('/api/me', requireAuth, createMeRouter());
 app.use('/api/me/push-token', requireAuth, createPushTokenRouter(db));
 app.use('/api/workspace/modules', requireAuth, createWorkspaceModulesRouter(db));
-app.use('/api/contacts', requireAuth, requireModule('contacts'), createContactsRouter(db));
-app.use('/api/companies', requireAuth, requireModule('companies'), createCompaniesRouter(db));
-app.use('/api/deals', requireAuth, requireModule('pipelines'), createDealsRouter());
+app.use('/api/contacts', requireAuth, requireModule('contacts'), createContactsRouter(db, requirePermission));
+app.use('/api/companies', requireAuth, requireModule('companies'), createCompaniesRouter(db, requirePermission));
+app.use('/api/deals', requireAuth, requireModule('pipelines'), createDealsRouter(requirePermission));
 app.use('/api/record-types', requireAuth, requireModule('pipelines'), createRecordTypesRouter(db));
 app.use('/api/records', requireAuth, requireModule('pipelines'), createRecordsRouter(db));
 // Agent — must come before the broad /api catch below
