@@ -598,6 +598,15 @@ export interface WorkspacePluginTable {
   installed_at: Generated<Date>;
 }
 
+export interface UserPermissionTable {
+  id: Generated<string>;
+  workspace_id: string;
+  user_id: string;
+  permission: string;
+  granted: Generated<boolean>;
+  created_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -645,6 +654,7 @@ export interface Database {
   workspace_imap_config: WorkspaceImapConfigTable;
   workspace_modules: WorkspaceModuleTable;
   workspace_plugins: WorkspacePluginTable;
+  user_permissions: UserPermissionTable;
 }
 
 // Convenience types
@@ -808,3 +818,7 @@ export type WorkspaceModuleUpdate = Updateable<WorkspaceModuleTable>;
 export type WorkspacePlugin = Selectable<WorkspacePluginTable>;
 export type NewWorkspacePlugin = Insertable<WorkspacePluginTable>;
 export type WorkspacePluginUpdate = Updateable<WorkspacePluginTable>;
+
+export type UserPermission = Selectable<UserPermissionTable>;
+export type NewUserPermission = Insertable<UserPermissionTable>;
+export type UserPermissionUpdate = Updateable<UserPermissionTable>;
