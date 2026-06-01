@@ -17,11 +17,11 @@ function getPeriodStart(period: '30d' | '90d' | '12m'): Date {
   return d;
 }
 
-export function createAnalyticsRouter(db: Kysely<Database>): ExpressRouter {
+export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
   // GET /api/analytics/revenue?period=30d|90d|12m
-  router.get('/revenue', async (req, res, next) => {
+  router.get('/revenue', requirePermission('analytics:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { period } = periodSchema.parse(req.query);
@@ -95,7 +95,7 @@ export function createAnalyticsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // GET /api/analytics/pipeline?period=
-  router.get('/pipeline', async (req, res, next) => {
+  router.get('/pipeline', requirePermission('analytics:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { period } = periodSchema.parse(req.query);
@@ -132,7 +132,7 @@ export function createAnalyticsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // GET /api/analytics/team?period=
-  router.get('/team', async (req, res, next) => {
+  router.get('/team', requirePermission('analytics:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { period } = periodSchema.parse(req.query);

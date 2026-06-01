@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response } from 'express';
 import { createRecordTypesRouter } from './record-types';
 
+const noopPermission = () => (_req: Request, _res: Response, next: import('express').NextFunction) => next();
+
 function buildMockDb(rows: unknown[] = [], single?: unknown) {
   const chain: Record<string, unknown> = {};
   const methods = ['selectFrom','insertInto','updateTable','deleteFrom','values','set',
@@ -46,7 +48,7 @@ function getHandler(router: ReturnType<typeof createRecordTypesRouter>, method: 
 describe('GET /', () => {
   it('returns record types for workspace', async () => {
     const db = buildMockDb([{ id: 'rt-1', name: 'Deal' }]);
-    const router = createRecordTypesRouter(db as never);
+    const router = createRecordTypesRouter(db as never, noopPermission);
     const handler = getHandler(router, 'get', '/');
     const req = mockReq();
     const res = mockRes();
@@ -58,7 +60,7 @@ describe('GET /', () => {
 describe('POST /', () => {
   it('creates record type with default permissions', async () => {
     const db = buildMockDb([], { id: 'rt-new', name: 'Enquiry' });
-    const router = createRecordTypesRouter(db as never);
+    const router = createRecordTypesRouter(db as never, noopPermission);
     const handler = getHandler(router, 'post', '/');
     const req = mockReq({ body: { name: 'Enquiry', icon: '📋', color: '#6b665c' } });
     const res = mockRes();
@@ -68,7 +70,7 @@ describe('POST /', () => {
 
   it('rejects missing name', async () => {
     const db = buildMockDb();
-    const router = createRecordTypesRouter(db as never);
+    const router = createRecordTypesRouter(db as never, noopPermission);
     const handler = getHandler(router, 'post', '/');
     const req = mockReq({ body: {} });
     const res = mockRes();
@@ -80,7 +82,7 @@ describe('POST /', () => {
 describe('DELETE /:id', () => {
   it('returns 409 when records exist', async () => {
     const db = buildMockDb([{ count: '1' }]);
-    const router = createRecordTypesRouter(db as never);
+    const router = createRecordTypesRouter(db as never, noopPermission);
     const handler = getHandler(router, 'delete', '/:id');
     const req = mockReq({ params: { id: 'rt-1' } });
     const res = mockRes();

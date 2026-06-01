@@ -3,6 +3,8 @@ import { createRecordsRouter } from './records';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 
+const noopPermission = () => (_req: import('express').Request, _res: import('express').Response, next: import('express').NextFunction) => next();
+
 function buildMockDb(rows: unknown[] = [], single?: unknown) {
   const chain: Record<string, unknown> = {};
   const methods = ['selectFrom','insertInto','updateTable','values','set','where','select',
@@ -50,7 +52,7 @@ describe('GET /', () => {
   it('returns records for workspace', async () => {
     const records = [{ id: 'rec-1', name: 'Test Record' }];
     const db = buildMockDb(records);
-    const router = createRecordsRouter(db as unknown as Kysely<Database>);
+    const router = createRecordsRouter(db as unknown as Kysely<Database>, noopPermission);
     const handler = getHandler(router, 'get', '/');
     const req = mockReq({ query: { record_type_id: '00000000-0000-0000-0000-000000000001' } });
     const res = mockRes();
@@ -62,7 +64,7 @@ describe('GET /', () => {
 describe('GET /:id', () => {
   it('returns 404 when not found', async () => {
     const db = buildMockDb([], undefined);
-    const router = createRecordsRouter(db as unknown as Kysely<Database>);
+    const router = createRecordsRouter(db as unknown as Kysely<Database>, noopPermission);
     const handler = getHandler(router, 'get', '/:id');
     const req = mockReq({ params: { id: 'missing' } });
     const res = mockRes();
@@ -75,7 +77,7 @@ describe('POST /', () => {
   it('creates record and returns it', async () => {
     const created = { id: 'rec-new', name: 'New Record', record_number: null };
     const db = buildMockDb([], created);
-    const router = createRecordsRouter(db as unknown as Kysely<Database>);
+    const router = createRecordsRouter(db as unknown as Kysely<Database>, noopPermission);
     const handler = getHandler(router, 'post', '/');
     const req = mockReq({
       body: {
@@ -93,7 +95,7 @@ describe('POST /', () => {
 
   it('rejects missing required fields', async () => {
     const db = buildMockDb();
-    const router = createRecordsRouter(db as unknown as Kysely<Database>);
+    const router = createRecordsRouter(db as unknown as Kysely<Database>, noopPermission);
     const handler = getHandler(router, 'post', '/');
     const req = mockReq({ body: { name: 'Missing type' } });
     const res = mockRes();
@@ -107,7 +109,7 @@ describe('PATCH /:id', () => {
     const existing = { id: 'rec-1', workspace_id: 'ws-1', stage_id: 'stage-1' };
     const updated = { ...existing, stage_id: '00000000-0000-0000-0000-000000000002', name: 'Updated' };
     const db = buildMockDb([], updated);
-    const router = createRecordsRouter(db as unknown as Kysely<Database>);
+    const router = createRecordsRouter(db as unknown as Kysely<Database>, noopPermission);
     const handler = getHandler(router, 'patch', '/:id');
     const req = mockReq({
       params: { id: 'rec-1' },
@@ -122,7 +124,7 @@ describe('PATCH /:id', () => {
 describe('DELETE /:id', () => {
   it('soft deletes record', async () => {
     const db = buildMockDb([], { id: 'rec-1' });
-    const router = createRecordsRouter(db as unknown as Kysely<Database>);
+    const router = createRecordsRouter(db as unknown as Kysely<Database>, noopPermission);
     const handler = getHandler(router, 'delete', '/:id');
     const req = mockReq({ params: { id: 'rec-1' } });
     const res = mockRes();

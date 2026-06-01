@@ -39,7 +39,7 @@ const permissionsSchema = z.object({
   }),
 });
 
-export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
+export function createRecordTypesRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
   async function requireRecordTypeOwnership(recordTypeId: string, workspaceId: string): Promise<boolean> {
@@ -53,7 +53,7 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   }
 
   // List
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const types = await db
@@ -67,7 +67,7 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Create
-  router.post('/', async (req, res, next) => {
+  router.post('/', requirePermission('pipelines:create'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = createTypeSchema.safeParse(req.body);
@@ -101,7 +101,7 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Update
-  router.patch('/:id', async (req, res, next) => {
+  router.patch('/:id', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = updateTypeSchema.safeParse(req.body);
@@ -125,7 +125,7 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Fields — Reorder (must be before /:id/fields/:fieldId to avoid Express treating "reorder" as :fieldId)
-  router.patch('/:id/fields/reorder', async (req, res, next) => {
+  router.patch('/:id/fields/reorder', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const owns = await requireRecordTypeOwnership(req.params['id']!, workspace.id);
@@ -153,7 +153,7 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Fields — Update
-  router.patch('/:id/fields/:fieldId', async (req, res, next) => {
+  router.patch('/:id/fields/:fieldId', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const owns = await requireRecordTypeOwnership(req.params['id']!, workspace.id);
@@ -186,7 +186,7 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Delete
-  router.delete('/:id', async (req, res, next) => {
+  router.delete('/:id', requirePermission('pipelines:delete'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       // Check for existing records
@@ -211,7 +211,7 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Fields — List
-  router.get('/:id/fields', async (req, res, next) => {
+  router.get('/:id/fields', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const owns = await requireRecordTypeOwnership(req.params['id']!, workspace.id);
@@ -230,7 +230,7 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Fields — Create
-  router.post('/:id/fields', async (req, res, next) => {
+  router.post('/:id/fields', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const owns = await requireRecordTypeOwnership(req.params['id']!, workspace.id);
@@ -257,7 +257,7 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Fields — Delete
-  router.delete('/:id/fields/:fieldId', async (req, res, next) => {
+  router.delete('/:id/fields/:fieldId', requirePermission('pipelines:delete'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const owns = await requireRecordTypeOwnership(req.params['id']!, workspace.id);
@@ -275,7 +275,7 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Permissions — Get
-  router.get('/:id/permissions', async (req, res, next) => {
+  router.get('/:id/permissions', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const perms = await db
         .selectFrom('record_type_permissions')
@@ -287,7 +287,7 @@ export function createRecordTypesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Permissions — Bulk update
-  router.put('/:id/permissions', async (req, res, next) => {
+  router.put('/:id/permissions', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const parsed = permissionsSchema.safeParse(req.body);
       if (!parsed.success) {

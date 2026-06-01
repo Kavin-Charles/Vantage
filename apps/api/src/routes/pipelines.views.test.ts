@@ -3,6 +3,8 @@ import { createPipelinesRouter } from './pipelines';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 
+const noopPermission = () => (_req: import('express').Request, _res: import('express').Response, next: import('express').NextFunction) => next();
+
 function buildMockDb(single?: unknown) {
   const chain: Record<string, unknown> = {};
   const methods = ['selectFrom','insertInto','updateTable','values','set','where','select','selectAll',
@@ -45,7 +47,7 @@ describe('PATCH /api/pipelines/:id — view + table_columns', () => {
   it('accepts view=table and returns updated pipeline', async () => {
     const pipeline = { id: 'p-1', workspace_id: 'ws-1', name: 'Test', view: 'table', table_columns: ['name', 'stage'] };
     const db = buildMockDb(pipeline);
-    const router = createPipelinesRouter(db as unknown as Kysely<Database>);
+    const router = createPipelinesRouter(db as unknown as Kysely<Database>, noopPermission);
     const handler = getHandler(router, 'patch', '/:id');
     const req = mockReq({ params: { id: 'p-1' }, body: { view: 'table', table_columns: ['name', 'stage'] } });
     const res = mockRes();
@@ -55,7 +57,7 @@ describe('PATCH /api/pipelines/:id — view + table_columns', () => {
 
   it('rejects invalid view value — calls next with ZodError', async () => {
     const db = buildMockDb({ id: 'p-1' });
-    const router = createPipelinesRouter(db as unknown as Kysely<Database>);
+    const router = createPipelinesRouter(db as unknown as Kysely<Database>, noopPermission);
     const handler = getHandler(router, 'patch', '/:id');
     const req = mockReq({ params: { id: 'p-1' }, body: { view: 'calendar' } });
     const res = mockRes();
@@ -68,7 +70,7 @@ describe('PATCH /api/pipelines/:id — view + table_columns', () => {
   it('accepts null table_columns to clear column config', async () => {
     const pipeline = { id: 'p-1', workspace_id: 'ws-1', name: 'Test', view: 'kanban', table_columns: null };
     const db = buildMockDb(pipeline);
-    const router = createPipelinesRouter(db as unknown as Kysely<Database>);
+    const router = createPipelinesRouter(db as unknown as Kysely<Database>, noopPermission);
     const handler = getHandler(router, 'patch', '/:id');
     const req = mockReq({ params: { id: 'p-1' }, body: { table_columns: null } });
     const res = mockRes();

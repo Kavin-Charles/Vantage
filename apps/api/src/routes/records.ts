@@ -26,11 +26,11 @@ const listQuerySchema = z.object({
   per_page: z.coerce.number().int().min(1).max(100).default(25),
 });
 
-export function createRecordsRouter(db: Kysely<Database>): ExpressRouter {
+export function createRecordsRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
   // List
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const query = listQuerySchema.parse(req.query);
@@ -54,7 +54,7 @@ export function createRecordsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Get one
-  router.get('/:id', async (req, res, next) => {
+  router.get('/:id', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const record = await db
@@ -80,7 +80,7 @@ export function createRecordsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Create
-  router.post('/', async (req, res, next) => {
+  router.post('/', requirePermission('pipelines:create'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = createRecordSchema.safeParse(req.body);
@@ -143,7 +143,7 @@ export function createRecordsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Update
-  router.patch('/:id', async (req, res, next) => {
+  router.patch('/:id', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = updateRecordSchema.safeParse(req.body);
@@ -223,7 +223,7 @@ export function createRecordsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Delete (soft)
-  router.delete('/:id', async (req, res, next) => {
+  router.delete('/:id', requirePermission('pipelines:delete'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const deleted = await db

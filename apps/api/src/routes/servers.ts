@@ -24,11 +24,11 @@ function deriveStatus(lastPingAt: string | null, storedStatus: string): 'online'
   return 'offline';
 }
 
-export function createServersRouter(db: Kysely<Database>): ExpressRouter {
+export function createServersRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
   // List servers
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('servers:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const servers = await db
@@ -44,7 +44,7 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Get one server with 24h snapshots
-  router.get('/:id', async (req, res, next) => {
+  router.get('/:id', requirePermission('servers:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const server = await db
@@ -73,7 +73,7 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Register server — generate token, return raw once
-  router.post('/', async (req, res, next) => {
+  router.post('/', requirePermission('servers:create'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const body = createServerSchema.parse(req.body);
@@ -101,7 +101,7 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Update server
-  router.patch('/:id', async (req, res, next) => {
+  router.patch('/:id', requirePermission('servers:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const body = updateServerSchema.parse(req.body);
@@ -123,7 +123,7 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Deregister server
-  router.delete('/:id', async (req, res, next) => {
+  router.delete('/:id', requirePermission('servers:delete'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const deleted = await db
@@ -142,7 +142,7 @@ export function createServersRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // Regenerate agent token — new token returned once, same one-time reveal as POST /
-  router.post('/:id/token-regen', async (req, res, next) => {
+  router.post('/:id/token-regen', requirePermission('servers:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
 

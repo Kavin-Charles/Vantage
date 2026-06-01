@@ -49,13 +49,13 @@ const updateFieldSchema = z.object({
   options: z.array(z.string()).optional(),
 });
 
-export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
+export function createItemGroupsRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
   // ── Groups ──────────────────────────────────────────────────────────────────
 
   // GET / — list groups for a pipeline with stages + fields (all authenticated)
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       const pipelineId = req.query['pipeline_id'] as string | undefined;
@@ -120,7 +120,7 @@ export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // GET /:id — single group with stages + fields
-  router.get('/:id', async (req, res, next) => {
+  router.get('/:id', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
 
@@ -157,7 +157,7 @@ export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // POST / — create group (admin)
-  router.post('/', async (req, res, next) => {
+  router.post('/', requirePermission('pipelines:create'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       if (!isAdmin(auth)) { res.status(403).json(FORBIDDEN); return; }
@@ -209,7 +209,7 @@ export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // PATCH /:id — update group (admin)
-  router.patch('/:id', async (req, res, next) => {
+  router.patch('/:id', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       if (!isAdmin(auth)) { res.status(403).json(FORBIDDEN); return; }
@@ -238,7 +238,7 @@ export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // DELETE /:id — delete group (admin, blocks if items exist)
-  router.delete('/:id', async (req, res, next) => {
+  router.delete('/:id', requirePermission('pipelines:delete'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       if (!isAdmin(auth)) { res.status(403).json(FORBIDDEN); return; }
@@ -273,7 +273,7 @@ export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
   // ── Stages ──────────────────────────────────────────────────────────────────
 
   // POST /:id/stages — add stage (admin)
-  router.post('/:id/stages', async (req, res, next) => {
+  router.post('/:id/stages', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       if (!isAdmin(auth)) { res.status(403).json(FORBIDDEN); return; }
@@ -308,7 +308,7 @@ export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // PATCH /:id/stages/:stageId — rename/recolor stage (admin, terminal stages allowed)
-  router.patch('/:id/stages/:stageId', async (req, res, next) => {
+  router.patch('/:id/stages/:stageId', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       if (!isAdmin(auth)) { res.status(403).json(FORBIDDEN); return; }
@@ -345,7 +345,7 @@ export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // DELETE /:id/stages/:stageId — delete stage (admin, blocks if items in stage, blocks terminal)
-  router.delete('/:id/stages/:stageId', async (req, res, next) => {
+  router.delete('/:id/stages/:stageId', requirePermission('pipelines:delete'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       if (!isAdmin(auth)) { res.status(403).json(FORBIDDEN); return; }
@@ -391,7 +391,7 @@ export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // POST /:id/stages/reorder — { ids: string[] } (admin)
-  router.post('/:id/stages/reorder', async (req, res, next) => {
+  router.post('/:id/stages/reorder', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       if (!isAdmin(auth)) { res.status(403).json(FORBIDDEN); return; }
@@ -415,7 +415,7 @@ export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
   // ── Fields ──────────────────────────────────────────────────────────────────
 
   // POST /:id/fields — add custom field (admin)
-  router.post('/:id/fields', async (req, res, next) => {
+  router.post('/:id/fields', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       if (!isAdmin(auth)) { res.status(403).json(FORBIDDEN); return; }
@@ -457,7 +457,7 @@ export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // PATCH /:id/fields/:fieldId — update field (admin)
-  router.patch('/:id/fields/:fieldId', async (req, res, next) => {
+  router.patch('/:id/fields/:fieldId', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       if (!isAdmin(auth)) { res.status(403).json(FORBIDDEN); return; }
@@ -491,7 +491,7 @@ export function createItemGroupsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // DELETE /:id/fields/:fieldId — delete field (admin)
-  router.delete('/:id/fields/:fieldId', async (req, res, next) => {
+  router.delete('/:id/fields/:fieldId', requirePermission('pipelines:delete'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       if (!isAdmin(auth)) { res.status(403).json(FORBIDDEN); return; }

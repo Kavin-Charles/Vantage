@@ -2,6 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 
+const noopPermission = () => (_req: import('express').Request, _res: import('express').Response, next: import('express').NextFunction) => next()
+
 describe('item-groups router — admin guard patterns', () => {
   it('creates router and exports function', async () => {
     const { createItemGroupsRouter } = await import('../routes/item-groups');
@@ -9,7 +11,7 @@ describe('item-groups router — admin guard patterns', () => {
       selectFrom: vi.fn(),
     } as unknown as Kysely<Database>;
 
-    const router = createItemGroupsRouter(mockDb);
+    const router = createItemGroupsRouter(mockDb, noopPermission);
     expect(router).toBeDefined();
     expect(typeof router.post).toBe('function');
     expect(typeof router.patch).toBe('function');
@@ -22,7 +24,7 @@ describe('item-groups router — admin guard patterns', () => {
       selectFrom: vi.fn(),
     } as unknown as Kysely<Database>;
 
-    const router = createItemGroupsRouter(mockDb);
+    const router = createItemGroupsRouter(mockDb, noopPermission);
     // Verify POST method exists on router
     expect(router.post).toBeDefined();
   });
@@ -33,7 +35,7 @@ describe('item-groups router — admin guard patterns', () => {
       selectFrom: vi.fn(),
     } as unknown as Kysely<Database>;
 
-    const router = createItemGroupsRouter(mockDb);
+    const router = createItemGroupsRouter(mockDb, noopPermission);
     // Verify PATCH method exists on router
     expect(router.patch).toBeDefined();
   });
@@ -44,7 +46,7 @@ describe('item-groups router — admin guard patterns', () => {
       selectFrom: vi.fn(),
     } as unknown as Kysely<Database>;
 
-    const router = createItemGroupsRouter(mockDb);
+    const router = createItemGroupsRouter(mockDb, noopPermission);
     // Verify DELETE method exists on router
     expect(router.delete).toBeDefined();
   });
@@ -68,7 +70,7 @@ describe('item-groups router — admin guard patterns', () => {
       selectFrom: vi.fn(),
     } as unknown as Kysely<Database>;
 
-    const router = createItemsRouter(mockDb);
+    const router = createItemsRouter(mockDb, noopPermission);
     expect(router).toBeDefined();
     expect(typeof router.get).toBe('function');
     expect(typeof router.post).toBe('function');
@@ -82,7 +84,7 @@ describe('item-groups router — admin guard patterns', () => {
       selectFrom: vi.fn(),
     } as unknown as Kysely<Database>;
 
-    const router = createItemsRouter(mockDb);
+    const router = createItemsRouter(mockDb, noopPermission);
     // Verify POST method exists
     expect(router.post).toBeDefined();
   });

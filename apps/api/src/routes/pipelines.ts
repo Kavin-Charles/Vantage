@@ -49,11 +49,11 @@ const updateFieldSchema = z.object({
 
 // ── Pipelines router ───────────────────────────────────────────────────────────
 
-export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
+export function createPipelinesRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
   // GET / — list all pipelines with stage_count
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
 
@@ -86,7 +86,7 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // POST / — create pipeline (auto-creates Won + Lost stages)
-  router.post('/', async (req, res, next) => {
+  router.post('/', requirePermission('pipelines:create'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = createPipelineSchema.parse(req.body);
@@ -112,7 +112,7 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // PATCH /:id — update name / is_default
-  router.patch('/:id', async (req, res, next) => {
+  router.patch('/:id', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = updatePipelineSchema.parse(req.body);
@@ -165,7 +165,7 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // DELETE /:id — blocks if pipeline has active deals or records
-  router.delete('/:id', async (req, res, next) => {
+  router.delete('/:id', requirePermission('pipelines:delete'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const id = req.params['id']!;
@@ -216,7 +216,7 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // GET /:id — get single pipeline with stages + fields
-  router.get('/:id', async (req, res, next) => {
+  router.get('/:id', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
 
@@ -263,7 +263,7 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // GET /:id/stages — list stages with fields attached
-  router.get('/:id/stages', async (req, res, next) => {
+  router.get('/:id/stages', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
 
@@ -311,7 +311,7 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // POST /:id/stages — create stage (not is_won/is_lost)
-  router.post('/:id/stages', async (req, res, next) => {
+  router.post('/:id/stages', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = createStageSchema.parse(req.body);
@@ -341,7 +341,7 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // PATCH /:id/stages/:stageId — update name/color/position (rename of won/lost allowed)
-  router.patch('/:id/stages/:stageId', async (req, res, next) => {
+  router.patch('/:id/stages/:stageId', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = updateStageSchema.parse(req.body);
@@ -385,7 +385,7 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // DELETE /:id/stages/:stageId
-  router.delete('/:id/stages/:stageId', async (req, res, next) => {
+  router.delete('/:id/stages/:stageId', requirePermission('pipelines:delete'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
 
@@ -452,7 +452,7 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // POST /:id/stages/reorder — { ids: string[] } sets position by index
-  router.post('/:id/stages/reorder', async (req, res, next) => {
+  router.post('/:id/stages/reorder', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = reorderSchema.parse(req.body);
@@ -487,7 +487,7 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // PUT /:id/stages/:stageId/required-fields — set which fields are required to enter this stage
-  router.put('/:id/stages/:stageId/required-fields', async (req, res, next) => {
+  router.put('/:id/stages/:stageId/required-fields', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { field_ids } = z.object({ field_ids: z.array(z.string().uuid()) }).parse(req.body);
@@ -521,11 +521,11 @@ export function createPipelinesRouter(db: Kysely<Database>): ExpressRouter {
 
 // ── Stage fields router ────────────────────────────────────────────────────────
 
-export function createStageFieldsRouter(db: Kysely<Database>): ExpressRouter {
+export function createStageFieldsRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router({ mergeParams: true });
 
   // GET /:stageId/fields
-  router.get('/:stageId/fields', async (req, res, next) => {
+  router.get('/:stageId/fields', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const fields = await db
         .selectFrom('stage_fields')
@@ -541,7 +541,7 @@ export function createStageFieldsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // POST /:stageId/fields
-  router.post('/:stageId/fields', async (req, res, next) => {
+  router.post('/:stageId/fields', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const parsed = createFieldSchema.parse(req.body);
 
@@ -576,7 +576,7 @@ export function createStageFieldsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // PATCH /:stageId/fields/:fieldId
-  router.patch('/:stageId/fields/:fieldId', async (req, res, next) => {
+  router.patch('/:stageId/fields/:fieldId', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const parsed = updateFieldSchema.parse(req.body);
 
@@ -614,7 +614,7 @@ export function createStageFieldsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // DELETE /:stageId/fields/:fieldId
-  router.delete('/:stageId/fields/:fieldId', async (req, res, next) => {
+  router.delete('/:stageId/fields/:fieldId', requirePermission('pipelines:delete'), async (req, res, next) => {
     try {
       const existing = await db
         .selectFrom('stage_fields')
@@ -640,7 +640,7 @@ export function createStageFieldsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // POST /:stageId/fields/reorder
-  router.post('/:stageId/fields/reorder', async (req, res, next) => {
+  router.post('/:stageId/fields/reorder', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const parsed = reorderSchema.parse(req.body);
 

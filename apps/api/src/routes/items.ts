@@ -30,11 +30,11 @@ const convertSchema = z.object({
   target_group_id: z.string().uuid(),
 });
 
-export function createItemsRouter(db: Kysely<Database>): ExpressRouter {
+export function createItemsRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
   // GET / — list items for a group with field_values
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('pipelines:view'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       const groupId = req.query['group_id'] as string | undefined;
@@ -89,7 +89,7 @@ export function createItemsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // POST / — create item
-  router.post('/', async (req, res, next) => {
+  router.post('/', requirePermission('pipelines:create'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       const parsed = createItemSchema.parse(req.body);
@@ -154,7 +154,7 @@ export function createItemsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // PATCH /:id — update item
-  router.patch('/:id', async (req, res, next) => {
+  router.patch('/:id', requirePermission('pipelines:edit'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       const parsed = updateItemSchema.parse(req.body);
@@ -218,7 +218,7 @@ export function createItemsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // DELETE /:id — soft delete
-  router.delete('/:id', async (req, res, next) => {
+  router.delete('/:id', requirePermission('pipelines:delete'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
 
@@ -247,7 +247,7 @@ export function createItemsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   // POST /:id/convert — convert item to another group
-  router.post('/:id/convert', async (req, res, next) => {
+  router.post('/:id/convert', requirePermission('pipelines:create'), async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
       const parsed = convertSchema.parse(req.body);

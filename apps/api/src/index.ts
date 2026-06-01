@@ -83,20 +83,20 @@ app.use('/api/workspace/modules', requireAuth, createWorkspaceModulesRouter(db))
 app.use('/api/contacts', requireAuth, requireModule('contacts'), createContactsRouter(db, requirePermission));
 app.use('/api/companies', requireAuth, requireModule('companies'), createCompaniesRouter(db, requirePermission));
 app.use('/api/deals', requireAuth, requireModule('pipelines'), createDealsRouter(requirePermission));
-app.use('/api/record-types', requireAuth, requireModule('pipelines'), createRecordTypesRouter(db));
-app.use('/api/records', requireAuth, requireModule('pipelines'), createRecordsRouter(db));
+app.use('/api/record-types', requireAuth, requireModule('pipelines'), createRecordTypesRouter(db, requirePermission));
+app.use('/api/records', requireAuth, requireModule('pipelines'), createRecordsRouter(db, requirePermission));
 // Agent — must come before the broad /api catch below
 app.use('/api/agent', createAgentRouter(db, config.smtp));
 app.use('/api', requireAuth, createConversionsRouter(db, requireModule('pipelines')));
-app.use('/api/pipelines', requireAuth, requireModule('pipelines'), createPipelinesRouter(db));
-app.use('/api/stages', requireAuth, requireModule('pipelines'), createStageFieldsRouter(db));
+app.use('/api/pipelines', requireAuth, requireModule('pipelines'), createPipelinesRouter(db, requirePermission));
+app.use('/api/stages', requireAuth, requireModule('pipelines'), createStageFieldsRouter(db, requirePermission));
 app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db, requirePermission));
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
 app.use('/api/alerts', requireAuth, createAlertsRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
-app.use('/api/item-groups', requireAuth, requireModule('pipelines'), createItemGroupsRouter(db));
-app.use('/api/items', requireAuth, requireModule('pipelines'), createItemsRouter(db));
-app.use('/api/analytics', requireAuth, requireModule('analytics'), createAnalyticsRouter(db));
+app.use('/api/item-groups', requireAuth, requireModule('pipelines'), createItemGroupsRouter(db, requirePermission));
+app.use('/api/items', requireAuth, requireModule('pipelines'), createItemsRouter(db, requirePermission));
+app.use('/api/analytics', requireAuth, requireModule('analytics'), createAnalyticsRouter(db, requirePermission));
 app.use('/api/webhooks', requireAuth, createWebhooksRouter(db));
 app.use('/api/api-keys', requireAuth, createApiKeysRouter(db));
 app.use('/api/plugins', requireAuth, createPluginsRouter(db));
@@ -116,7 +116,7 @@ app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
 
 // Infra routes
-app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db));
+app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db, requirePermission));
 app.use('/api/sse', requireAuth, createSseRouter(db));
 app.use('/api/databases', requireAuth, createInfraDatabasesRouter(db));
 app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesRouter(db, env.CRON_SECRET, requirePermission));
