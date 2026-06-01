@@ -1,6 +1,5 @@
 import type { Kysely } from 'kysely';
-import type { PluginPermission, HttpResponse } from '@vantage/plugin-types';
-import type { BridgeCall, BridgeResult } from '@vantage/plugin-sdk';
+import type { PluginPermission, HttpResponse, BridgeCall, BridgeResult } from '@vantage/plugin-types';
 import { checkPermission } from './permissions';
 import { dispatchTableCall } from './table-client';
 

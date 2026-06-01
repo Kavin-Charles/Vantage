@@ -1,0 +1,342 @@
+// ── Domain models (plugin-visible shape — no internal DB fields) ─────────────
+
+export interface ContactInput {
+  name: string;
+  email: string;
+  phone?: string;
+  status?: Contact['status'];
+  company_id?: string;
+}
+
+export interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  status: 'prospect' | 'customer' | 'cold' | 'churned';
+  company_id: string | null;
+  owner_id: string;
+  last_contacted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContactFilter {
+  status?: Contact['status'];
+  company_id?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface DealInput {
+  name: string;
+  value?: number;
+  stage_id?: string;
+  pipeline_id?: string;
+  probability?: number;
+  close_date?: string;
+  contact_id?: string;
+  company_id?: string;
+}
+
+export interface Deal {
+  id: string;
+  name: string;
+  value: number;
+  stage_id: string | null;
+  pipeline_id: string | null;
+  probability: number;
+  close_date: string | null;
+  contact_id: string | null;
+  company_id: string | null;
+  owner_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DealFilter {
+  stage_id?: string;
+  pipeline_id?: string;
+  contact_id?: string;
+  owner_id?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface CompanyInput {
+  name: string;
+  industry?: string;
+  location?: string;
+  employee_count?: number;
+  website?: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  industry: string | null;
+  location: string | null;
+  employee_count: number | null;
+  website: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CompanyFilter {
+  limit?: number;
+  offset?: number;
+}
+
+export interface TaskInput {
+  title: string;
+  due_date?: string;
+  assignee_id?: string;
+  contact_id?: string;
+  deal_id?: string;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  status: 'todo' | 'done';
+  due_date: string | null;
+  assignee_id: string;
+  contact_id: string | null;
+  deal_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskFilter {
+  status?: Task['status'];
+  assignee_id?: string;
+  contact_id?: string;
+  deal_id?: string;
+  limit?: number;
+}
+
+export interface ActivityInput {
+  type: ActivityRecord['type'];
+  body?: string;
+  meta?: Record<string, unknown>;
+  contact_id?: string;
+  deal_id?: string;
+}
+
+export interface ActivityRecord {
+  id: string;
+  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert';
+  body: string | null;
+  meta: Record<string, unknown> | null;
+  user_id: string;
+  contact_id: string | null;
+  deal_id: string | null;
+  created_at: string;
+}
+
+export interface ActivityFilter {
+  contact_id?: string;
+  deal_id?: string;
+  type?: ActivityRecord['type'];
+  limit?: number;
+}
+
+export interface Server {
+  id: string;
+  name: string;
+  region: string | null;
+  ip_address: string | null;
+  status: 'online' | 'degraded' | 'offline' | 'stopped';
+  cpu_pct: number | null;
+  mem_pct: number | null;
+  disk_pct: number | null;
+  uptime_seconds: number | null;
+  last_ping_at: string | null;
+}
+
+export interface ServerFilter {
+  status?: Server['status'];
+  limit?: number;
+}
+
+export interface Website {
+  id: string;
+  url: string;
+  label: string | null;
+  status: 'online' | 'degraded' | 'offline';
+  response_ms: number | null;
+  uptime_pct_30d: number | null;
+  ssl_expiry_date: string | null;
+  last_checked_at: string | null;
+}
+
+export interface WebsiteFilter {
+  status?: Website['status'];
+  limit?: number;
+}
+
+// ── Context (frontend only) ──────────────────────────────────────────────────
+
+export interface PluginContext {
+  workspace_id: string;
+  user_id: string;
+  page: 'contact-detail' | 'deal-detail' | 'dashboard-widget' | 'full-page' | string;
+  record_id: string | null;
+  record_type: 'contact' | 'deal' | null;
+}
+
+// ── Error + Result ───────────────────────────────────────────────────────────
+
+export interface PluginError {
+  code: string;
+  message: string;
+}
+
+export type PluginResult<T> =
+  | { data: T; error: null }
+  | { data: null; error: PluginError };
+
+// ── HTTP bridge types ────────────────────────────────────────────────────────
+
+export interface HttpFetchOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+  timeout?: number;
+}
+
+export interface HttpResponse {
+  status: number;
+  headers: Record<string, string>;
+  body: string;
+  ok: boolean;
+}
+
+// ── Bridge call / result ─────────────────────────────────────────────────────
+
+export interface BridgeCall {
+  method: string;
+  payload: unknown;
+}
+
+export type BridgeResult<T = unknown> =
+  | { data: T; error: null }
+  | { data: null; error: PluginError };
+
+export type BridgeFn = (call: BridgeCall) => Promise<BridgeResult>;
+
+// ── Plugin table schema (manifest) ──────────────────────────────────────────
+
+export type PluginColumnType =
+  | 'uuid' | 'text' | 'integer' | 'bigint' | 'boolean'
+  | 'decimal' | 'timestamptz' | 'jsonb';
+
+export interface PluginColumnDef {
+  name: string;
+  type: PluginColumnType;
+  nullable?: boolean;
+  primary?: boolean;
+  unique?: boolean;
+  default?: string;
+}
+
+export interface PluginIndexDef {
+  columns: string[];
+  unique?: boolean;
+}
+
+export interface PluginTableDef {
+  name: string;
+  columns: PluginColumnDef[];
+  indexes?: PluginIndexDef[];
+  drop_on_uninstall?: boolean;
+}
+
+export interface PluginMigration {
+  version: string;
+  up: string;
+  down?: string;
+}
+
+// ── Resource type map ────────────────────────────────────────────────────────
+
+export type ResourceTypeMap = {
+  contacts: { row: Contact; input: ContactInput; filter: ContactFilter };
+  companies: { row: Company; input: CompanyInput; filter: CompanyFilter };
+  deals: { row: Deal; input: DealInput; filter: DealFilter };
+  tasks: { row: Task; input: TaskInput; filter: TaskFilter };
+  activity: { row: ActivityRecord; input: ActivityInput; filter: ActivityFilter };
+  servers: { row: Server; input: never; filter: ServerFilter };
+  websites: { row: Website; input: never; filter: WebsiteFilter };
+};
+
+export type KnownResource = keyof ResourceTypeMap;
+
+export type ResourceRow<R extends string> =
+  R extends KnownResource ? ResourceTypeMap[R]['row'] : unknown;
+
+export type ResourceInput<R extends string> =
+  R extends KnownResource ? ResourceTypeMap[R]['input'] : Record<string, unknown>;
+
+export type ResourceFilter<R extends string> =
+  R extends KnownResource ? ResourceTypeMap[R]['filter'] : Record<string, unknown>;
+
+// ── PluginTableClient ────────────────────────────────────────────────────────
+
+export interface PluginTableClient {
+  list(opts?: {
+    where?: Record<string, unknown>;
+    orderBy?: string;
+    order?: 'asc' | 'desc';
+    limit?: number;
+    offset?: number;
+  }): Promise<Record<string, unknown>[]>;
+  get(id: string): Promise<Record<string, unknown>>;
+  insert(data: Record<string, unknown>): Promise<Record<string, unknown>>;
+  update(id: string, data: Record<string, unknown>): Promise<Record<string, unknown>>;
+  delete(id: string): Promise<void>;
+  upsert(
+    data: Record<string, unknown>,
+    opts: { on_conflict: string },
+  ): Promise<Record<string, unknown>>;
+  count(where?: Record<string, unknown>): Promise<number>;
+}
+
+// ── Permissions ──────────────────────────────────────────────────────────────
+
+export type PluginPermission =
+  | 'contacts:read' | 'contacts:write'
+  | 'companies:read' | 'companies:write'
+  | 'deals:read' | 'deals:write'
+  | 'tasks:read' | 'tasks:write'
+  | 'activity:read' | 'activity:write'
+  | 'servers:read'
+  | 'websites:read'
+  | 'storage:read' | 'storage:write'
+  | 'http:fetch';
+
+// ── Hook events ──────────────────────────────────────────────────────────────
+
+export type PluginHookEvent =
+  | 'contact.created' | 'contact.updated' | 'contact.deleted'
+  | 'deal.created' | 'deal.updated' | 'deal.deleted'
+  | 'task.created' | 'task.updated'
+  | (string & {});
+
+// ── Plugin manifest ──────────────────────────────────────────────────────────
+
+export interface PluginManifest<
+  Perms extends readonly PluginPermission[] = readonly PluginPermission[],
+> {
+  id: string;
+  name: string;
+  version: string;
+  description?: string;
+  permissions: Perms;
+  tables?: PluginTableDef[];
+  migrations?: PluginMigration[];
+  hooks?: PluginHookEvent[];
+  ui?: {
+    widgets?: Array<'contact-detail' | 'deal-detail' | 'dashboard-widget' | 'full-page'>;
+  };
+}
