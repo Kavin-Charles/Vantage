@@ -27,7 +27,7 @@ import { createAlertsRouter } from './routes/alerts';
 import { createInternalRouter } from './routes/internal';
 import { createAgentRouter } from './routes/agent';
 import { createServersRouter } from './routes/servers';
-import { createDeploymentsRouter } from './routes/deployments';
+import { createDeploymentsRouter, startStaleDeploymentsCleaner as startDeploymentsPlugin } from '@vantage/plugin-deployments';
 import { createSseRouter } from './routes/sse';
 import { createInfraDatabasesRouter } from './routes/infra-databases';
 import { createWebsitesRouter } from './routes/websites';
@@ -43,20 +43,22 @@ import { createRecordTypesRouter } from './routes/record-types';
 import { createRecordsRouter } from './routes/records';
 import { createConversionsRouter } from './routes/conversions';
 import { createNotificationsRouter } from './routes/notifications';
-import { createCalendarRouter } from './routes/calendar';
-import { createMailAccountsRouter, handleGmailCallback } from './routes/mail-accounts';
-import { createMailEmailsRouter } from './routes/mail-emails';
-import { createMailBodyRouter } from './routes/mail-body';
-import { createMailWebhookRouter } from './routes/mail-webhook';
-import { createMailConfigRouter } from './routes/mail-config';
-import { startMailSync } from './workers/mail-sync';
-import { startGmailWatchRenew } from './workers/gmail-watch-renew';
-import { startImapIdle } from './workers/imap-idle';
-import { handleMailWsUpgrade } from './ws/mail-ws';
+import { createCalendarRouter } from '@vantage/plugin-calendar';
+import {
+  createMailAccountsRouter,
+  handleGmailCallback,
+  createMailEmailsRouter,
+  createMailBodyRouter,
+  createMailWebhookRouter,
+  createMailConfigRouter,
+  startMailSync,
+  startGmailWatchRenew,
+  startImapIdle,
+} from '@vantage/plugin-mail';
+import { handleMailWsUpgrade } from '@vantage/plugin-mail';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
-import { startStaleDeploymentsCleaner } from './workers/stale-deployments';
 import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
 import { seedOnFirstBoot } from './lib/seed';
@@ -174,7 +176,7 @@ startGmailWatchRenew(db);
 startWebsiteChecker(db);
 
 // Start stale-deployments cleaner (runs every 1 h, cancels running deploys > 24 h old)
-startStaleDeploymentsCleaner(db);
+startDeploymentsPlugin(db);
 
 // Start task-due notifier (fires at midnight UTC daily)
 startTaskDueNotifier(db);

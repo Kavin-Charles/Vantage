@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { ApiKeyRequest } from '../../middleware/api-key-auth';
-import { createDeploymentSchema, updateDeploymentSchema } from '../deployments';
+import { createDeploymentSchema, updateDeploymentSchema } from '@vantage/plugin-deployments';
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

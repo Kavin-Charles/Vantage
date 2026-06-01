@@ -9,7 +9,7 @@ import { sendPush } from '../lib/push-notify';
 import { logger } from '../lib/logger';
 import { queueWebhook } from '../lib/queue-webhook';
 import { sseRegistry } from '../lib/sse-registry';
-import { createDeploymentSchema } from './deployments';
+import { createDeploymentSchema } from '@vantage/plugin-deployments';
 
 // Rate-limit snapshot writes: track last insert time per server (resets on restart, acceptable)
 const lastSnapshotAt = new Map<string, number>();
