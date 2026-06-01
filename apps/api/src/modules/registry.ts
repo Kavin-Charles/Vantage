@@ -1,26 +1,10 @@
-import {
-  CONTACTS_MODULE,
-  COMPANIES_MODULE,
-  PIPELINES_MODULE,
-  TASKS_MODULE,
-  WEBSITES_MODULE,
-  SERVERS_MODULE,
-  ANALYTICS_MODULE,
-  ACTIVITY_MODULE,
-  type ModuleManifest,
-} from './manifests';
+export {
+  MODULE_REGISTRY,
+  MODULE_IDS,
+  getDefaultPermissionsForRole,
+  getModuleForPermission,
+  getAllPermissions,
+  type ModuleDefinition,
+} from '@vantage/modules';
 
-export { type ModuleManifest };
-
-export const MODULE_REGISTRY: ModuleManifest[] = [
-  CONTACTS_MODULE,
-  COMPANIES_MODULE,
-  PIPELINES_MODULE,
-  TASKS_MODULE,
-  WEBSITES_MODULE,
-  SERVERS_MODULE,
-  ANALYTICS_MODULE,
-  ACTIVITY_MODULE,
-];
-
-export const MODULE_IDS = MODULE_REGISTRY.map(m => m.id);
+export type { ModuleDefinition as ModuleManifest } from '@vantage/modules';
