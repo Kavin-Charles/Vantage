@@ -24,7 +24,7 @@ export default function PluginsSettingsPage() {
 
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? '';
 
-  async function authHeaders() {
+  async function authHeaders(): Promise<Record<string, string>> {
     const token = await getToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
