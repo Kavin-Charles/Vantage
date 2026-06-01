@@ -1,3 +1,4 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  - '../vantage-plugin-sdk/packages/*'

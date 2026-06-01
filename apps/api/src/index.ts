@@ -57,6 +57,7 @@ import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
 import { startStaleDeploymentsCleaner } from './workers/stale-deployments';
+import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
 import { seedOnFirstBoot } from './lib/seed';
 import { seedDemo } from './lib/seed-demo';
@@ -119,6 +120,7 @@ app.use('/api/items', requireAuth, requireModule('pipelines'), createItemsRouter
 app.use('/api/analytics', requireAuth, requireModule('analytics'), createAnalyticsRouter(db));
 app.use('/api/webhooks', requireAuth, createWebhooksRouter(db));
 app.use('/api/api-keys', requireAuth, createApiKeysRouter(db));
+app.use('/api/plugins', requireAuth, createPluginsRouter(db));
 
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
