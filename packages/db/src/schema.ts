@@ -22,6 +22,7 @@ export interface UserTable {
   password_hash: string;
   password_reset_token: string | null;
   password_reset_expires_at: Date | null;
+  is_active: Generated<boolean>;
   last_login_at: Date | null;
   created_at: Generated<Date>;
 }
@@ -607,6 +608,45 @@ export interface UserPermissionTable {
   created_at: Generated<Date>;
 }
 
+export interface GroupTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  description: string | null;
+  color: Generated<string>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface GroupMemberTable {
+  id: Generated<string>;
+  workspace_id: string;
+  group_id: string;
+  user_id: string;
+  created_at: Generated<Date>;
+}
+
+export interface GroupPermissionTable {
+  id: Generated<string>;
+  workspace_id: string;
+  group_id: string;
+  permission: string;
+  granted: Generated<boolean>;
+  created_at: Generated<Date>;
+}
+
+export interface InviteTable {
+  id: Generated<string>;
+  workspace_id: string;
+  email: string;
+  token: string;
+  invited_by: string;
+  role: Generated<string>;
+  expires_at: Date;
+  accepted_at: Date | null;
+  created_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -655,6 +695,10 @@ export interface Database {
   workspace_modules: WorkspaceModuleTable;
   workspace_plugins: WorkspacePluginTable;
   user_permissions: UserPermissionTable;
+  groups: GroupTable;
+  group_members: GroupMemberTable;
+  group_permissions: GroupPermissionTable;
+  invites: InviteTable;
 }
 
 // Convenience types
@@ -822,3 +866,16 @@ export type WorkspacePluginUpdate = Updateable<WorkspacePluginTable>;
 export type UserPermission = Selectable<UserPermissionTable>;
 export type NewUserPermission = Insertable<UserPermissionTable>;
 export type UserPermissionUpdate = Updateable<UserPermissionTable>;
+
+export type Group = Selectable<GroupTable>;
+export type NewGroup = Insertable<GroupTable>;
+export type GroupUpdate = Updateable<GroupTable>;
+
+export type GroupMember = Selectable<GroupMemberTable>;
+export type NewGroupMember = Insertable<GroupMemberTable>;
+
+export type GroupPermission = Selectable<GroupPermissionTable>;
+export type NewGroupPermission = Insertable<GroupPermissionTable>;
+
+export type Invite = Selectable<InviteTable>;
+export type NewInvite = Insertable<InviteTable>;
