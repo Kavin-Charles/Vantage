@@ -27,7 +27,6 @@ import { createAlertsRouter } from './routes/alerts';
 import { createInternalRouter } from './routes/internal';
 import { createAgentRouter } from './routes/agent';
 import { createServersRouter } from './routes/servers';
-import { createDeploymentsRouter, startStaleDeploymentsCleaner as startDeploymentsPlugin } from '@vantage/plugin-deployments';
 import { createSseRouter } from './routes/sse';
 import { createInfraDatabasesRouter } from './routes/infra-databases';
 import { createWebsitesRouter } from './routes/websites';
@@ -43,19 +42,6 @@ import { createRecordTypesRouter } from './routes/record-types';
 import { createRecordsRouter } from './routes/records';
 import { createConversionsRouter } from './routes/conversions';
 import { createNotificationsRouter } from './routes/notifications';
-import { createCalendarRouter } from '@vantage/plugin-calendar';
-import {
-  createMailAccountsRouter,
-  handleGmailCallback,
-  createMailEmailsRouter,
-  createMailBodyRouter,
-  createMailWebhookRouter,
-  createMailConfigRouter,
-  startMailSync,
-  startGmailWatchRenew,
-  startImapIdle,
-} from '@vantage/plugin-mail';
-import { handleMailWsUpgrade } from '@vantage/plugin-mail';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
@@ -97,26 +83,13 @@ app.use('/api/record-types', requireAuth, requireModule('pipelines'), createReco
 app.use('/api/records', requireAuth, requireModule('pipelines'), createRecordsRouter(db));
 // Agent — must come before the broad /api catch below
 app.use('/api/agent', createAgentRouter(db, config.smtp));
-// Gmail OAuth callback — public, must come before the broad /api requireAuth catch below
-app.get('/api/mail/accounts/gmail/callback', (req, res, next) => {
-  void handleGmailCallback(db, req, res, next);
-});
-
 app.use('/api', requireAuth, createConversionsRouter(db, requireModule('pipelines')));
 app.use('/api/pipelines', requireAuth, requireModule('pipelines'), createPipelinesRouter(db));
 app.use('/api/stages', requireAuth, requireModule('pipelines'), createStageFieldsRouter(db));
 app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db));
-app.use('/api/calendar/events', requireAuth, createCalendarRouter(db));
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db));
 app.use('/api/alerts', requireAuth, createAlertsRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
-// Mail routes (authenticated)
-app.use('/api/mail/accounts', requireAuth, createMailAccountsRouter(db));
-app.use('/api/mail/emails', requireAuth, createMailEmailsRouter(db));
-app.use('/api/mail/emails', requireAuth, createMailBodyRouter(db));
-app.use('/api/mail/workspace-config', requireAuth, createMailConfigRouter(db));
-// Gmail Pub/Sub push webhook — public, verified by token header
-app.use('/api/mail/webhook', createMailWebhookRouter(db, env.GMAIL_PUBSUB_TOKEN ?? ''));
 app.use('/api/item-groups', requireAuth, requireModule('pipelines'), createItemGroupsRouter(db));
 app.use('/api/items', requireAuth, requireModule('pipelines'), createItemsRouter(db));
 app.use('/api/analytics', requireAuth, requireModule('analytics'), createAnalyticsRouter(db));
@@ -129,7 +102,6 @@ app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 
 // Infra routes
 app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db));
-app.use('/api/deployments', requireAuth, requireModule('servers'), createDeploymentsRouter(db));
 app.use('/api/sse', requireAuth, createSseRouter(db));
 app.use('/api/databases', requireAuth, createInfraDatabasesRouter(db));
 app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesRouter(db, env.CRON_SECRET));
@@ -161,22 +133,8 @@ if (process.env['DEMO_SEED'] === 'true') {
   });
 }
 
-// Start mail sync worker (polls every 5 min)
-startMailSync(db);
-
-// Start IMAP IDLE connections for real-time detection
-void startImapIdle(db).catch(err =>
-  logger.error({ err }, 'mail: IMAP IDLE startup failed'),
-);
-
-// Start Gmail watch renewal cron (renews every 6 h)
-startGmailWatchRenew(db);
-
 // Start website checker (polls every 60 s)
 startWebsiteChecker(db);
-
-// Start stale-deployments cleaner (runs every 1 h, cancels running deploys > 24 h old)
-startDeploymentsPlugin(db);
 
 // Start task-due notifier (fires at midnight UTC daily)
 startTaskDueNotifier(db);
@@ -200,10 +158,6 @@ httpServer.on('upgrade', (request, socket, head) => {
   } else if (/^\/api\/servers\/[^/]+\/ssh\/sftp/.test(url)) {
     wss.handleUpgrade(request, socket as import('net').Socket, head, (ws) => {
       void handleSftpUpgrade(ws, request, db, env.JWT_SECRET);
-    });
-  } else if (/^\/api\/mail\/ws/.test(url)) {
-    wss.handleUpgrade(request, socket as import('net').Socket, head, (ws) => {
-      void handleMailWsUpgrade(ws, request, db, env.JWT_SECRET);
     });
   } else {
     socket.destroy();

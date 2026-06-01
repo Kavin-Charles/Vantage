@@ -19,120 +19,6 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
-  ../vantage-plugin-calendar:
-    dependencies:
-      '@vantage/db':
-        specifier: workspace:*
-        version: link:../Vantage/packages/db
-      '@vantage/plugin-types':
-        specifier: workspace:*
-        version: link:../vantage-plugin-sdk/packages/plugin-types
-      express:
-        specifier: ^4.19.0
-        version: 4.22.1
-      kysely:
-        specifier: ^0.27.0
-        version: 0.27.6
-      zod:
-        specifier: ^3.23.0
-        version: 3.25.76
-    devDependencies:
-      '@types/express':
-        specifier: ^4.17.21
-        version: 4.17.25
-      '@types/node':
-        specifier: ^20.0.0
-        version: 20.19.40
-      typescript:
-        specifier: ^5.4.0
-        version: 5.9.3
-
-  ../vantage-plugin-deployments:
-    dependencies:
-      '@vantage/db':
-        specifier: workspace:*
-        version: link:../Vantage/packages/db
-      '@vantage/plugin-types':
-        specifier: workspace:*
-        version: link:../vantage-plugin-sdk/packages/plugin-types
-      express:
-        specifier: ^4.19.0
-        version: 4.22.1
-      kysely:
-        specifier: ^0.27.0
-        version: 0.27.6
-      zod:
-        specifier: ^3.23.0
-        version: 3.25.76
-    devDependencies:
-      '@types/express':
-        specifier: ^4.17.21
-        version: 4.17.25
-      '@types/node':
-        specifier: ^20.0.0
-        version: 20.19.40
-      typescript:
-        specifier: ^5.4.0
-        version: 5.9.3
-
-  ../vantage-plugin-mail:
-    dependencies:
-      '@vantage/db':
-        specifier: workspace:*
-        version: link:../Vantage/packages/db
-      '@vantage/plugin-types':
-        specifier: workspace:*
-        version: link:../vantage-plugin-sdk/packages/plugin-types
-      express:
-        specifier: ^4.19.0
-        version: 4.22.1
-      googleapis:
-        specifier: ^171.4.0
-        version: 171.4.0
-      imapflow:
-        specifier: ^1.3.3
-        version: 1.3.3
-      jsonwebtoken:
-        specifier: ^9.0.3
-        version: 9.0.3
-      kysely:
-        specifier: ^0.27.0
-        version: 0.27.6
-      mailparser:
-        specifier: ^3.9.9
-        version: 3.9.9
-      nodemailer:
-        specifier: ^8.0.7
-        version: 8.0.10
-      ws:
-        specifier: ^8.20.1
-        version: 8.20.1
-      zod:
-        specifier: ^3.23.0
-        version: 3.25.76
-    devDependencies:
-      '@types/express':
-        specifier: ^4.17.21
-        version: 4.17.25
-      '@types/jsonwebtoken':
-        specifier: ^9.0.10
-        version: 9.0.10
-      '@types/mailparser':
-        specifier: ^3.4.6
-        version: 3.4.6
-      '@types/node':
-        specifier: ^20.0.0
-        version: 20.19.40
-      '@types/nodemailer':
-        specifier: ^8.0.0
-        version: 8.0.0
-      '@types/ws':
-        specifier: ^8.18.1
-        version: 8.18.1
-      typescript:
-        specifier: ^5.4.0
-        version: 5.9.3
-
   ../vantage-plugin-sdk/packages/plugin-sdk:
     dependencies:
       '@vantage/plugin-types':
@@ -196,15 +82,6 @@ importers:
       '@vantage/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@vantage/plugin-calendar':
-        specifier: workspace:*
-        version: link:../../../vantage-plugin-calendar
-      '@vantage/plugin-deployments':
-        specifier: workspace:*
-        version: link:../../../vantage-plugin-deployments
-      '@vantage/plugin-mail':
-        specifier: workspace:*
-        version: link:../../../vantage-plugin-mail
       '@vantage/plugin-runtime':
         specifier: workspace:*
         version: link:../../packages/plugin-runtime

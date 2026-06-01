@@ -2,6 +2,3 @@ packages:
   - 'apps/*'
   - 'packages/*'
   - '../vantage-plugin-sdk/packages/*'
-  - '../vantage-plugin-calendar'
-  - '../vantage-plugin-deployments'
-  - '../vantage-plugin-mail'

@@ -3,7 +3,25 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { ApiKeyRequest } from '../../middleware/api-key-auth';
-import { createDeploymentSchema, updateDeploymentSchema } from '@vantage/plugin-deployments';
+const createDeploymentSchema = z.object({
+  name: z.string().optional(),
+  environment: z.string().optional(),
+  status: z.enum(['pending', 'running', 'success', 'failed', 'cancelled']),
+  source: z.enum(['webhook', 'agent', 'manual']),
+  server_id: z.string().uuid().optional(),
+  started_at: z.string().datetime().optional(),
+  git_commit: z.string().max(40).optional(),
+  git_branch: z.string().max(255).optional(),
+  git_tag: z.string().max(255).optional(),
+  git_message: z.string().optional(),
+  git_author: z.string().max(255).optional(),
+  meta: z.record(z.unknown()).optional(),
+});
+
+const updateDeploymentSchema = z.object({
+  status: z.enum(['pending', 'running', 'success', 'failed', 'cancelled']).optional(),
+  finished_at: z.string().datetime().optional(),
+});
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
