@@ -16,6 +16,7 @@ const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
   role: z.enum(['admin', 'member']).optional(),
+  is_active: z.boolean().optional(),
 });
 
 const resetPasswordSchema = z.object({
@@ -158,6 +159,28 @@ export function createUsersRouter(db: Kysely<Database>): Router {
         return;
       }
 
+      // Guard: must have at least one active admin after removal
+      const target = await db
+        .selectFrom('users')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .select(['role'])
+        .executeTakeFirst();
+
+      if (target?.role === 'admin') {
+        const countResult = await db
+          .selectFrom('users')
+          .where('workspace_id', '=', workspace.id)
+          .where('role', '=', 'admin')
+          .where('is_active', '=', true)
+          .select(db.fn.count<number>('id').as('count'))
+          .executeTakeFirstOrThrow();
+        if (Number(countResult.count) <= 1) {
+          res.status(400).json({ data: null, error: { code: 'LAST_ADMIN' } });
+          return;
+        }
+      }
+
       const deleted = await db
         .deleteFrom('users')
         .where('id', '=', req.params['id']!)
@@ -170,6 +193,23 @@ export function createUsersRouter(db: Kysely<Database>): Router {
         return;
       }
       res.json({ data: null, error: null });
+    } catch (err) {
+      res.status(500).json({ data: null, error: { code: 'INTERNAL_ERROR' } });
+    }
+  });
+
+  // GET /api/users/:id/groups — list groups user belongs to
+  router.get('/:id/groups', async (req, res) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const groups = await db
+        .selectFrom('group_members as gm')
+        .innerJoin('groups as g', 'g.id', 'gm.group_id')
+        .where('gm.user_id', '=', req.params['id']!)
+        .where('gm.workspace_id', '=', workspace.id)
+        .select(['g.id', 'g.name', 'g.color'])
+        .execute();
+      res.json({ data: groups, error: null });
     } catch (err) {
       res.status(500).json({ data: null, error: { code: 'INTERNAL_ERROR' } });
     }
