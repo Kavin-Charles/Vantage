@@ -13,6 +13,10 @@ export interface Contact {
   updated_at: string;
 }
 
+/**
+ * Fields for creating a contact.
+ * `owner_id` is omitted — the bridge injects the calling user's ID automatically.
+ */
 export interface ContactInput {
   name: string;
   email: string;
@@ -43,6 +47,10 @@ export interface Deal {
   updated_at: string;
 }
 
+/**
+ * Fields for creating a deal.
+ * `owner_id` is omitted — the bridge injects the calling user's ID automatically.
+ */
 export interface DealInput {
   name: string;
   value?: number;
@@ -99,6 +107,10 @@ export interface Task {
   updated_at: string;
 }
 
+/**
+ * Fields for creating a task.
+ * `assignee_id` defaults to the calling user when omitted; the bridge injects it.
+ */
 export interface TaskInput {
   title: string;
   due_date?: string;
@@ -202,6 +214,7 @@ export interface HttpFetchOptions {
   method?: string;
   headers?: Record<string, string>;
   body?: string;
+  /** Timeout in milliseconds */
   timeout?: number;
 }
 
@@ -224,6 +237,7 @@ export interface PluginColumnDef {
   nullable?: boolean;
   primary?: boolean;
   unique?: boolean;
+  /** Raw SQL expression, e.g. "gen_random_uuid()" or "now()" */
   default?: string;
 }
 
@@ -278,6 +292,7 @@ export interface PluginTableClient {
     limit?: number;
     offset?: number;
   }): Promise<Record<string, unknown>[]>;
+  /** @throws PluginError with code NOT_FOUND if row does not exist */
   get(id: string): Promise<Record<string, unknown>>;
   insert(data: Record<string, unknown>): Promise<Record<string, unknown>>;
   update(id: string, data: Record<string, unknown>): Promise<Record<string, unknown>>;
