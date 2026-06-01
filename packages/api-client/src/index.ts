@@ -9,3 +9,5 @@ export * from './me';
 export * from './servers';
 export * from './pipelines';
 export * from './user-permissions';
+export * from './groups';
+export * from './invites';
