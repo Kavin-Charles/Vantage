@@ -22,7 +22,6 @@ const NAV_GROUPS = [
       { href: '/companies', label: 'Companies', icon: 'companies', moduleId: 'companies' },
       { href: '/tasks',     label: 'Tasks',     icon: 'tasks',     moduleId: 'tasks'     },
       { href: '/activity',  label: 'Activity',  icon: 'activity',  moduleId: 'activity'  },
-      { href: '/mail',      label: 'Mail',      icon: 'mail'       },
     ],
   },
   {
@@ -32,7 +31,6 @@ const NAV_GROUPS = [
       { href: '/servers',     label: 'Servers',     icon: 'servers',   moduleId: 'servers'  },
       { href: '/databases',   label: 'Databases',   icon: 'databases'  },
       { href: '/websites',    label: 'Websites',    icon: 'websites',  moduleId: 'websites' },
-      { href: '/deployments', label: 'Deployments', icon: 'activity'   },
       { href: '/files',       label: 'Files',       icon: 'files',     featureKey: 'files' as const },
     ],
   },
@@ -96,11 +94,40 @@ function NavLink({ href, label, icon, dot }: { href: string; label: string; icon
   );
 }
 
+interface WorkspacePlugin {
+  id: string;
+  plugin_id: string;
+  name: string;
+  enabled: boolean;
+  manifest: {
+    nav?: { label: string; href: string; icon?: string; group?: 'crm' | 'infra' | 'general' };
+  };
+}
+
 export function Sidebar() {
   const getToken = useApiToken();
   const { user, logout } = useAuth();
   const { data: config } = useConfig();
   const { isEnabled } = useModules();
+  const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
+  const { data: pluginNavItems = [] } = useQuery({
+    queryKey: ['sidebar-plugins'],
+    queryFn: async (): Promise<WorkspacePlugin[]> => {
+      const token = await getToken();
+      const res = await fetch(`${apiUrl}/api/plugins`, {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`plugins fetch failed: ${res.status}`);
+      const json = await res.json() as { data: WorkspacePlugin[] };
+      console.log('[sidebar-plugins]', json.data);
+      return (json.data ?? []).filter(p => p.enabled && p.manifest?.nav);
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30_000,
+    retry: 3,
+  });
   const { data: alertData } = useQuery({
     queryKey: ['alerts-badge'],
     queryFn: async () => apiFetch<{ data: unknown[]; total: number; error: null }>('/api/alerts?resolved=false&severity=critical&limit=1', { token: await getToken() }),
@@ -145,6 +172,9 @@ export function Sidebar() {
       {NAV_GROUPS.map(group => {
         if (group.feature === 'crm' && !(config?.features.crm ?? true)) return null;
         if (group.feature === 'infra' && !(config?.features.infra ?? true)) return null;
+        const groupKey = group.label.toLowerCase() as 'crm' | 'infrastructure' | 'general';
+        const pluginGroup = groupKey === 'infrastructure' ? 'infra' : groupKey === 'crm' ? 'crm' : 'general';
+        const groupPlugins = pluginNavItems.filter(p => (p.manifest.nav?.group ?? 'general') === pluginGroup);
         return (
           <div key={group.label} style={{ padding: '12px 12px 4px' }}>
             <div style={{
@@ -168,6 +198,14 @@ export function Sidebar() {
                 />
               );
             })}
+            {groupPlugins.map(p => (
+              <NavLink
+                key={p.plugin_id}
+                href={p.manifest.nav!.href}
+                label={p.manifest.nav!.label}
+                icon={p.manifest.nav!.icon ?? 'plugin'}
+              />
+            ))}
           </div>
         );
       })}

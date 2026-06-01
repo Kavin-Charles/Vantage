@@ -8,6 +8,7 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
 import { dispatchBridgeCall, runMigrations } from '@vantage/plugin-runtime';
 import type { PluginPermission } from '@vantage/plugin-types';
+import { savePluginBundle } from '../lib/plugin-loader';
 
 // ── Multer — memory storage, 10 MB limit ─────────────────────────────────────
 
@@ -33,12 +34,21 @@ const bridgeCallSchema = z.object({
   payload: z.unknown(),
 });
 
+const navSchema = z.object({
+  label: z.string().min(1).max(64),
+  href: z.string().min(1).max(255),
+  icon: z.string().max(32).optional(),
+  group: z.enum(['crm', 'infra', 'general']).optional(),
+});
+
 const manifestSchema = z.object({
   id: z.string().min(1).max(128),
   name: z.string().min(1).max(255),
   version: z.string().min(1).max(32),
+  description: z.string().max(512).optional(),
   permissions: z.array(z.string()).default([]),
   tables: z.array(z.string()).default([]),
+  nav: navSchema.optional(),
   migrations: z
     .array(
       z.object({
@@ -156,8 +166,9 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         });
       }
 
-      // Extract manifest.json from zip
+      // Extract manifest.json (and optional server.cjs) from zip
       let manifestRaw: unknown;
+      let serverBundle: Buffer | null = null;
       try {
         const zip = new AdmZip(req.file.buffer);
         const entry = zip.getEntry('manifest.json');
@@ -169,6 +180,8 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         }
         const text = entry.getData().toString('utf8');
         manifestRaw = JSON.parse(text);
+        const bundleEntry = zip.getEntry('server.cjs');
+        if (bundleEntry) serverBundle = bundleEntry.getData();
       } catch {
         return res.status(400).json({
           data: null,
@@ -189,6 +202,9 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
 
       // Run plugin migrations
       await runMigrations(db as Kysely<any>, manifest.id, workspace.id, manifest.migrations);
+
+      // Save server bundle if present
+      if (serverBundle) savePluginBundle(manifest.id, serverBundle);
 
       // Upsert plugin record
       const plugin = await db

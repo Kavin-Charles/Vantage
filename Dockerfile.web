@@ -1,0 +1,31 @@
+FROM node:20-alpine
+RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
+WORKDIR /app
+ENV NODE_OPTIONS=--max-old-space-size=2048
+
+COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json turbo.json ./
+COPY packages/types/package.json ./packages/types/package.json
+COPY packages/db/package.json ./packages/db/package.json
+COPY packages/config/package.json ./packages/config/package.json
+COPY packages/api-client/package.json ./packages/api-client/package.json
+COPY packages/plugin-types/package.json ./packages/plugin-types/package.json
+COPY packages/plugin-runtime/package.json ./packages/plugin-runtime/package.json
+COPY apps/api/package.json ./apps/api/package.json
+COPY apps/web/package.json ./apps/web/package.json
+COPY apps/worker/package.json ./apps/worker/package.json
+RUN pnpm install --frozen-lockfile
+
+COPY packages/ ./packages/
+COPY apps/web/ ./apps/web/
+
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
+ARG NEXT_PUBLIC_API_URL=http://api:3001
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
+    NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+RUN pnpm --filter "@vantage/web..." build
+
+ENV NODE_ENV=production
+EXPOSE 3000
+WORKDIR /app/apps/web
+CMD ["node_modules/.bin/next", "start", "-p", "3000"]

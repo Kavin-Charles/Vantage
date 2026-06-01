@@ -16,7 +16,11 @@ export default function middleware(req: NextRequest) {
   }
 
   const isSetupPath = SETUP_PATHS.some(p => pathname.startsWith(p));
+  const isPublicPath = PUBLIC_PATHS.some(p => pathname.startsWith(p));
   const setupDone = req.cookies.get('vantage_setup_done')?.value === '1';
+
+  // Always allow public paths (login, auth, config) regardless of setup state
+  if (isPublicPath) return NextResponse.next();
 
   // Setup guard: redirect to /setup if not configured
   if (!setupDone && !isSetupPath) {

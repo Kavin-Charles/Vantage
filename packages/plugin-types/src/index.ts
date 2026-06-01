@@ -325,6 +325,13 @@ export type PluginHookEvent =
 
 // ── Plugin manifest ──────────────────────────────────────────────────────────
 
+export interface PluginNavEntry {
+  label: string;
+  href: string;
+  icon?: string;
+  group?: 'crm' | 'infra' | 'general';
+}
+
 export interface PluginManifest<
   Perms extends readonly PluginPermission[] = readonly PluginPermission[],
 > {
@@ -336,6 +343,7 @@ export interface PluginManifest<
   tables?: PluginTableDef[];
   migrations?: PluginMigration[];
   hooks?: PluginHookEvent[];
+  nav?: PluginNavEntry;
   ui?: {
     widgets?: Array<'contact-detail' | 'deal-detail' | 'dashboard-widget' | 'full-page'>;
   };

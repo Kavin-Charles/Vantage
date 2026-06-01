@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useApiToken } from '@/lib/useApiToken';
 
 interface WorkspacePlugin {
@@ -22,6 +23,7 @@ export default function PluginsSettingsPage() {
   const [removing, setRemoving] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const router = useRouter();
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? '';
 
   async function authHeaders(): Promise<Record<string, string>> {
@@ -182,7 +184,10 @@ export default function PluginsSettingsPage() {
                 opacity: plugin.enabled ? 1 : 0.6,
               }}
             >
-              <div style={{ minWidth: 0 }}>
+              <div
+                style={{ minWidth: 0, flex: 1, cursor: 'pointer' }}
+                onClick={() => router.push(`/plugins/${plugin.plugin_id}`)}
+              >
                 <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
                   {plugin.name}
                 </p>

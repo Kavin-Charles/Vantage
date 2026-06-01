@@ -17,8 +17,6 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-const API_URL = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
-
 export function StepReview({ state, onBack }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,7 +35,7 @@ export function StepReview({ state, onBack }: Props) {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/api/setup`, {
+      const res = await fetch(`/api/setup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -58,8 +56,8 @@ export function StepReview({ state, onBack }: Props) {
         return;
       }
 
-      // Redirect to login — cookie is set by the API
-      window.location.href = '/login';
+      // /api/setup/activate sets the setup_done cookie (works over HTTP) then redirects
+      window.location.href = '/api/setup/activate?from=/login';
     } catch {
       setError('Network error. Is the API running?');
     } finally {

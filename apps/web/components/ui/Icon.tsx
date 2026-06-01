@@ -69,6 +69,9 @@ const ICONS: Record<string, React.ReactNode> = {
   </>,
   filter: <><path d="M22 3H2l8 9.46V19l4 2V12.46L22 3z"/></>,
   grip: <><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></>,
+  calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></>,
+  deployments: <><path d="M12 3l1.8 5.4H20l-4.9 3.5 1.8 5.5L12 14l-4.9 3.4 1.8-5.5L4 8.4h6.2Z"/></>,
+  plugin: <><rect x="7" y="3" width="10" height="5" rx="1.5"/><path d="M7 8v13h10V8"/><path d="M3 12h4M17 12h4"/></>,
 };
 
 export function Icon({

@@ -96,7 +96,7 @@ export function createSetupRouter(db: Kysely<Database>): Router {
           .insertInto('workspaces')
           .values({
             name: branding.name,
-            domain: branding.domain ?? null,
+            domain: branding.domain ?? branding.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
           })
           .returning(['id'])
           .executeTakeFirstOrThrow();
@@ -144,8 +144,8 @@ export function createSetupRouter(db: Kysely<Database>): Router {
 
       res.cookie('vantage_setup_done', '1', {
         httpOnly: true,
-        secure: process.env['NODE_ENV'] === 'production',
-        sameSite: 'strict',
+        secure: process.env['NODE_ENV'] === 'production' && process.env['COOKIE_SECURE'] !== 'false',
+        sameSite: 'lax',
         maxAge: 365 * 24 * 60 * 60 * 1000,
         path: '/',
       });

@@ -1,7 +1,7 @@
-import type { Kysely } from 'kysely';
 import { configSchema, type VantageConfig } from './config-schema';
 
-export async function readConfigFromDb(db: Kysely<any>): Promise<VantageConfig | null> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function readConfigFromDb(db: any): Promise<VantageConfig | null> {
   const row = await db
     .selectFrom('system_settings')
     .where('key', '=', 'config')

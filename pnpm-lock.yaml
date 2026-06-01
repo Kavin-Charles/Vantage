@@ -45,6 +45,9 @@ importers:
       '@vantage/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@vantage/modules':
+        specifier: workspace:*
+        version: link:../../packages/modules
       '@vantage/plugin-runtime':
         specifier: workspace:*
         version: link:../../packages/plugin-runtime
@@ -275,6 +278,9 @@ importers:
       '@vantage/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@vantage/modules':
+        specifier: workspace:*
+        version: link:../../packages/modules
       '@vantage/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -412,6 +418,15 @@ importers:
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
+
+  packages/modules:
+    devDependencies:
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.0.0
+        version: 1.6.1(@types/node@25.6.2)(jsdom@25.0.1)(lightningcss@1.32.0)(terser@5.47.1)
 
   packages/plugin-runtime:
     dependencies:

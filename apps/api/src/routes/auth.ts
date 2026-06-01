@@ -70,7 +70,7 @@ export function createAuthRouter(
 
       res.cookie('vantage_token', token, {
         httpOnly: true,
-        secure: process.env['NODE_ENV'] === 'production',
+        secure: process.env['NODE_ENV'] === 'production' && process.env['COOKIE_SECURE'] !== 'false',
         sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000,
         path: '/',
@@ -110,7 +110,7 @@ export function createAuthRouter(
   router.post('/logout', (_req, res) => {
     res.clearCookie('vantage_token', {
       httpOnly: true,
-      secure: process.env['NODE_ENV'] === 'production',
+      secure: process.env['NODE_ENV'] === 'production' && process.env['COOKIE_SECURE'] !== 'false',
       sameSite: 'lax',
       path: '/',
     });
