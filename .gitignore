@@ -152,6 +152,5 @@ vite.config.ts.timestamp-*
 .vite/
 .worktrees
 .claude/
-docs/superpowers/
 AGENTS.md
 GEMINI.md
