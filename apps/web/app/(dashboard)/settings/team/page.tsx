@@ -14,6 +14,13 @@ export default function TeamPage() {
     queryFn: async () => apiFetch<{ data: { user: User; workspace: { name: string; plan: string; contact_count: number } }; error: null }>('/api/me', { token: await getToken() }),
   });
 
+  const { data: usersData } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () =>
+      apiFetch<{ data: User[]; error: null }>('/api/users', { token: await getToken() }),
+  });
+  const users = usersData?.data ?? [];
+
   const workspace = data?.data?.workspace;
   const currentUser = data?.data?.user;
 
@@ -70,9 +77,32 @@ export default function TeamPage() {
             </div>
           )}
 
-          <p style={{ fontSize: 12, color: 'var(--text3)' }}>
-            Team invitations and multi-seat management coming soon.
-          </p>
+          {users.length > 0 && (
+            <div style={card}>
+              <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>Team Members</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {users.map(u => (
+                  <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <span style={{ fontSize: 13, fontWeight: 500 }}>{u.name}</span>
+                      <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 8 }}>{u.email}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span style={{ fontSize: 12, color: 'var(--text3)', textTransform: 'capitalize' }}>{u.role}</span>
+                      {currentUser?.role === 'admin' && (
+                        <a
+                          href={`/settings/team/${u.id}/permissions`}
+                          style={{ fontSize: 12, color: 'var(--blue)', textDecoration: 'none' }}
+                        >
+                          Permissions
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
