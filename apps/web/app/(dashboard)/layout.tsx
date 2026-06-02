@@ -1,7 +1,7 @@
-import { Sidebar } from '@/components/Sidebar';
-import { AlertBar } from '@/components/AlertBar';
-import { ServerMetricsProvider } from '@/contexts/ServerMetricsContext';
-import { ModuleProvider } from '@/contexts/modules';
+import { Sidebar } from '@/modules/shared/components/Sidebar';
+import { AlertBar } from '@/modules/shared/components/AlertBar';
+import { ServerMetricsProvider } from '@/modules/shared/contexts/ServerMetricsContext';
+import { ModuleProvider } from '@/modules/shared/contexts/modules';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (

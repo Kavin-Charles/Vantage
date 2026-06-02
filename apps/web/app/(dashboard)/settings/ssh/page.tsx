@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/Button';
-import { FormField, Input } from '@/components/ui/FormField';
-import { useApiToken } from '@/lib/useApiToken';
-import { getSshKeypair, regenerateSshKeypair, updateSshUser } from '@/lib/ssh';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { FormField, Input } from '@/modules/shared/components/ui/FormField';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { getSshKeypair, regenerateSshKeypair, updateSshUser } from '@/modules/servers/lib/ssh';
 
 export default function SshSettingsPage() {
   const getToken = useApiToken();

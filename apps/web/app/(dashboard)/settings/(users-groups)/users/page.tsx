@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { useAuth } from '@/lib/AuthContext';
-import { apiFetch } from '@/lib/api';
-import { InviteUserModal } from '@/components/settings/InviteUserModal';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
+import { apiFetch } from '@/modules/shared/lib/api';
+import { InviteUserModal } from '@/modules/settings/components/InviteUserModal';
 import type { User } from '@vantage/types';
 
 interface UserWithActive extends User {

@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Badge, statusColor } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { FormField, Input } from '@/components/ui/FormField';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
+import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { Modal } from '@/modules/shared/components/ui/Modal';
+import { FormField, Input } from '@/modules/shared/components/ui/FormField';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
 import type { Task } from '@vantage/types';
 
 interface WorkspaceUser { id: string; name: string; email: string; role: string; }

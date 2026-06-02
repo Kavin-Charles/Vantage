@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { GroupPermissionsEditor } from '@/components/settings/GroupPermissionsEditor';
+import { GroupPermissionsEditor } from '@/modules/settings/components/GroupPermissionsEditor';
 import type { User } from '@vantage/types';
 
 export default function GroupDetailPage() {

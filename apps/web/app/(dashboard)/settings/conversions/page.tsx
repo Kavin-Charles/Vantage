@@ -10,8 +10,8 @@ import {
   deleteTemplate,
   type ConversionTemplate,
   type RawFieldMapping,
-} from '@/lib/conversions';
-import { TemplateFieldMapper, type MappableField } from '@/components/pipeline/TemplateFieldMapper';
+} from '@/modules/pipeline/lib/conversions';
+import { TemplateFieldMapper, type MappableField } from '@/modules/pipeline/components/TemplateFieldMapper';
 
 interface RecordType {
   id: string;

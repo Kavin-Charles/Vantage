@@ -1,12 +1,12 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import type { User } from '@vantage/types';
-import { UserPermissionsEditor } from '@/components/settings/UserPermissionsEditor';
+import { UserPermissionsEditor } from '@/modules/settings/components/UserPermissionsEditor';
 
 export default function UserPermissionsPage() {
   const { userId } = useParams<{ userId: string }>();

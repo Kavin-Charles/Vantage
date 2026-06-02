@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Topbar } from '@/components/Topbar';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { Badge, statusColor } from '@/components/ui/Badge';
-import { FormField, Input } from '@/components/ui/FormField';
-import { useApiToken } from '@/lib/useApiToken';
-import { listWebsites, createWebsite, deleteWebsite } from '@/lib/websites';
-import { ModuleGuard } from '@/components/ModuleGuard';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { Modal } from '@/modules/shared/components/ui/Modal';
+import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
+import { FormField, Input } from '@/modules/shared/components/ui/FormField';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listWebsites, createWebsite, deleteWebsite } from '@/modules/shared/lib/websites';
+import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
 import type { Website } from '@vantage/types';
 
 function sslColor(dateStr: string | null): string {

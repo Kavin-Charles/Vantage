@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useApiToken } from '@/lib/useApiToken';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
 
 interface WorkspacePlugin {
   id: string;

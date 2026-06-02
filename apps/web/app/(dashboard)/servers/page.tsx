@@ -3,16 +3,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Topbar } from '@/components/Topbar';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { Badge, statusColor } from '@/components/ui/Badge';
-import { FormField, Input } from '@/components/ui/FormField';
-import { useApiToken } from '@/lib/useApiToken';
-import { AgentInstallInstructions } from '@/components/ui/AgentInstallInstructions';
-import { listServers, createServer, deleteServer } from '@/lib/servers';
-import { useServerMetrics } from '@/contexts/ServerMetricsContext';
-import { ModuleGuard } from '@/components/ModuleGuard';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { Modal } from '@/modules/shared/components/ui/Modal';
+import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
+import { FormField, Input } from '@/modules/shared/components/ui/FormField';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { AgentInstallInstructions } from '@/modules/shared/components/ui/AgentInstallInstructions';
+import { listServers, createServer, deleteServer } from '@/modules/servers/lib/servers';
+import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
+import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
 import type { Server } from '@vantage/types';
 
 function timeAgo(dateStr: string | null): string {

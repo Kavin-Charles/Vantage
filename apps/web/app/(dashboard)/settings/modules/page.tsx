@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useModules } from '@/contexts/modules';
-import { useApiToken } from '@/lib/useApiToken';
+import { useModules } from '@/modules/shared/contexts/modules';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
 
 const MODULE_META = [
   { id: 'contacts',  name: 'Contacts',  description: 'Contact management, profiles, and history.'       },

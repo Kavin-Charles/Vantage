@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/api';
+import { apiFetch } from '@/modules/shared/lib/api';
 
 function ResetForm() {
   const searchParams = useSearchParams();

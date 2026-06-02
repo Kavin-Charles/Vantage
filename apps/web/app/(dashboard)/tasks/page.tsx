@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Topbar } from '@/components/Topbar';
-import { Badge, statusColor } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { FormField, Input } from '@/components/ui/FormField';
-import { Icon } from '@/components/ui/Icon';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
-import { useAuth } from '@/lib/AuthContext';
-import { ModuleGuard } from '@/components/ModuleGuard';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { Modal } from '@/modules/shared/components/ui/Modal';
+import { FormField, Input } from '@/modules/shared/components/ui/FormField';
+import { Icon } from '@/modules/shared/components/ui/Icon';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
+import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
 import type { Task } from '@vantage/types';
 
 interface WorkspaceUser { id: string; name: string; email: string; role: string; }

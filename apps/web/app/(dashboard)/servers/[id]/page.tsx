@@ -3,16 +3,16 @@
 import { use, useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Topbar } from '@/components/Topbar';
-import { Badge, statusColor } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { useApiToken } from '@/lib/useApiToken';
-import { getServer, updateServer, regenToken } from '@/lib/servers';
-import { useServerMetrics } from '@/contexts/ServerMetricsContext';
-import { openSshStream, getSshHistory } from '@/lib/ssh';
-import { openSftpSession, SftpClient } from '@/lib/sftp';
-import type { SftpEntry } from '@/lib/sftp';
-import { SshTerminal } from '@/components/servers/SshTerminal';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { getServer, updateServer, regenToken } from '@/modules/servers/lib/servers';
+import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
+import { openSshStream, getSshHistory } from '@/modules/servers/lib/ssh';
+import { openSftpSession, SftpClient } from '@/modules/servers/lib/sftp';
+import type { SftpEntry } from '@/modules/servers/lib/sftp';
+import { SshTerminal } from '@/modules/servers/components/SshTerminal';
 import type { Server, MetricsSnapshot, SshCommandLog } from '@vantage/types';
 
 function Sparkline({ data, color = '#2d6a4f' }: { data: number[]; color?: string }) {
