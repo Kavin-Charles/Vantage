@@ -25,7 +25,7 @@ export default function UsersPage() {
   });
 
   const { data: configData } = useQuery({
-    queryKey: ['config'],
+    queryKey: ['config', 'smtp'],
     queryFn: async () =>
       apiFetch<{ data: { smtp_configured: boolean } }>('/api/config'),
   });

@@ -154,7 +154,7 @@ export function Sidebar() {
           border: '1px solid var(--border)',
           borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0,
         }}>
-          {config?.app.logoUrl && config.app.logoUrl !== '/logo.png' ? (
+          {config?.app?.logoUrl && config.app.logoUrl !== '/logo.png' ? (
             <img src={config.app.logoUrl} alt="logo" style={{ width: 30, height: 30, objectFit: 'contain' }} />
           ) : (
             <Image src="/logo.png" alt="Vantage" width={30} height={30} style={{ objectFit: 'contain' }} />
@@ -164,7 +164,7 @@ export function Sidebar() {
           fontFamily: 'var(--font-display)', fontSize: 19,
           fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.4px',
         }}>
-          {config?.app.name ?? ''}
+          {config?.app?.name ?? ''}
         </span>
       </div>
 
