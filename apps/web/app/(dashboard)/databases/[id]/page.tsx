@@ -1,0 +1,1 @@
+export { default } from '@/modules/databases/pages/[id]/page';

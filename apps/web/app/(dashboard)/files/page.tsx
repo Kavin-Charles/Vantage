@@ -1,0 +1,1 @@
+export { default } from '@/modules/files/pages/page';
