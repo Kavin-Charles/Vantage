@@ -99,17 +99,17 @@ export async function up(db: Kysely<unknown>): Promise<void> {
   await sql`UPDATE tasks SET record_id = deal_id WHERE deal_id IS NOT NULL`.execute(db);
   await db.schema.alterTable('tasks').dropColumn('deal_id').execute();
 
-  // 8. activity.deal_id → activity.record_id
-  await db.schema.alterTable('activity')
+  // 8. activities.deal_id → activities.record_id
+  await db.schema.alterTable('activities')
     .addColumn('record_id', 'uuid', col => col.references('pipeline_records.id'))
     .execute();
-  await sql`UPDATE activity SET record_id = deal_id WHERE deal_id IS NOT NULL`.execute(db);
-  await db.schema.alterTable('activity').dropColumn('deal_id').execute();
+  await sql`UPDATE activities SET record_id = deal_id WHERE deal_id IS NOT NULL`.execute(db);
+  await db.schema.alterTable('activities').dropColumn('deal_id').execute();
 
-  // 9. Drop old tables
-  await db.schema.dropTable('deal_field_values').execute();
-  await db.schema.dropTable('stage_fields').execute();
-  await db.schema.dropTable('deals').execute();
+  // 9. Drop old tables (CASCADE to remove dependent FK constraints)
+  await sql`DROP TABLE IF EXISTS deal_field_values CASCADE`.execute(db);
+  await sql`DROP TABLE IF EXISTS stage_fields CASCADE`.execute(db);
+  await sql`DROP TABLE IF EXISTS deals CASCADE`.execute(db);
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
@@ -134,7 +134,7 @@ export async function down(db: Kysely<unknown>): Promise<void> {
   await db.schema.alterTable('tasks').addColumn('deal_id', 'uuid').execute();
   await sql`UPDATE tasks SET deal_id = record_id WHERE record_id IS NOT NULL`.execute(db);
   await db.schema.alterTable('tasks').dropColumn('record_id').execute();
-  await db.schema.alterTable('activity').addColumn('deal_id', 'uuid').execute();
-  await sql`UPDATE activity SET deal_id = record_id WHERE record_id IS NOT NULL`.execute(db);
-  await db.schema.alterTable('activity').dropColumn('record_id').execute();
+  await db.schema.alterTable('activities').addColumn('deal_id', 'uuid').execute();
+  await sql`UPDATE activities SET deal_id = record_id WHERE record_id IS NOT NULL`.execute(db);
+  await db.schema.alterTable('activities').dropColumn('record_id').execute();
 }
