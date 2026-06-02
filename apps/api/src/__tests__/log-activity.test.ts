@@ -43,7 +43,7 @@ describe('logActivity', () => {
       user_id: 'u1',
       type: 'deal_change',
       body: 'Deal moved to Closing',
-      deal_id: 'd1',
+      record_id: 'd1',
       meta: { old_stage: 'Qualifying', new_stage: 'Closing' },
     });
     expect(db.insertInto).toHaveBeenCalledWith('activities');

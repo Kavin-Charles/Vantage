@@ -8,7 +8,7 @@ const createActivitySchema = z.object({
   type: z.enum(['email', 'call', 'note', 'meeting', 'deal_change', 'infra_alert']),
   body: z.string().optional(),
   contact_id: z.string().uuid().optional(),
-  deal_id: z.string().uuid().optional(),
+  record_id: z.string().uuid().nullable().optional(),
   meta: z.record(z.unknown()).optional(),
 });
 
@@ -55,7 +55,7 @@ export function createActivityRouter(db: Kysely<Database>, requirePermission: (p
           type: body.type,
           body: body.body ?? null,
           contact_id: body.contact_id ?? null,
-          deal_id: body.deal_id ?? null,
+          record_id: body.record_id ?? null,
           meta: body.meta ?? null,
         })
         .returningAll()
