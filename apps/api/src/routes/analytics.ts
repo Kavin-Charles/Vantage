@@ -26,31 +26,38 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { period } = periodSchema.parse(req.query);
       const periodStart = getPeriodStart(period);
+      const periodEnd = new Date();
 
-      // Query 1: Won deals in period (for revenue KPIs)
+      // Query 1: Won records in period (for revenue KPIs)
       const wonRows = await db
-        .selectFrom('deals as d')
-        .innerJoin('pipeline_stages as ps', 'ps.id', 'd.stage_id')
-        .where('d.workspace_id', '=', workspace.id)
-        .where('d.deleted_at', 'is', null)
-        .where('ps.is_won', '=', true)
-        .where(sql<boolean>`d.close_date IS NOT NULL AND d.close_date >= ${periodStart.toISOString()}`)
+        .selectFrom('pipeline_records as pr')
+        .innerJoin('pipeline_stages as ps', 'ps.id', 'pr.stage_id')
+        .leftJoin('record_field_values as rfv', join => join.onRef('rfv.record_id', '=', 'pr.id'))
+        .leftJoin('record_type_fields as rtf', join =>
+          join.onRef('rtf.id', '=', 'rfv.field_id').on('rtf.label', '=', 'value')
+        )
         .select([
-          sql<string>`COUNT(*)`.as('deals_won'),
-          sql<string>`COALESCE(SUM(d.value), 0)`.as('total_revenue'),
-          sql<string>`COALESCE(AVG(d.value), 0)`.as('avg_deal_size'),
+          sql<string>`COUNT(DISTINCT pr.id)`.as('deals_won'),
+          sql<string>`COALESCE(SUM((rfv.value #>> '{}')::numeric), 0)`.as('total_revenue'),
+          sql<string>`COALESCE(AVG((rfv.value #>> '{}')::numeric), 0)`.as('avg_deal_size'),
         ])
+        .where('pr.workspace_id', '=', workspace.id)
+        .where('ps.is_won', '=', true)
+        .where('pr.deleted_at', 'is', null)
+        .where('pr.created_at', '>=', periodStart as never)
+        .where('pr.created_at', '<', periodEnd as never)
         .executeTakeFirstOrThrow();
 
-      // Query 2: Lost deals in period (for win rate denominator)
+      // Query 2: Lost records in period (for win rate denominator)
       const lostCount = await db
-        .selectFrom('deals as d')
-        .innerJoin('pipeline_stages as ps', 'ps.id', 'd.stage_id')
-        .where('d.workspace_id', '=', workspace.id)
-        .where('d.deleted_at', 'is', null)
-        .where('ps.is_lost', '=', true)
-        .where(sql<boolean>`d.close_date IS NOT NULL AND d.close_date >= ${periodStart.toISOString()}`)
+        .selectFrom('pipeline_records as pr')
+        .innerJoin('pipeline_stages as ps', 'ps.id', 'pr.stage_id')
         .select(sql<string>`COUNT(*)`.as('lost_count'))
+        .where('pr.workspace_id', '=', workspace.id)
+        .where('ps.is_lost', '=', true)
+        .where('pr.deleted_at', 'is', null)
+        .where('pr.created_at', '>=', periodStart as never)
+        .where('pr.created_at', '<', periodEnd as never)
         .executeTakeFirstOrThrow();
 
       const dealsWon = Number(wonRows.deals_won);
@@ -60,22 +67,27 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
       const avgDealSize = Number(wonRows.avg_deal_size);
       const winRate = totalClosed > 0 ? dealsWon / totalClosed : 0;
 
-      // Time series: bucket won deals by week (30d/90d) or month (12m)
+      // Time series: bucket won records by week (30d/90d) or month (12m)
       const bucketExpr = period === '12m'
-        ? sql<string>`DATE_TRUNC('month', d.close_date)`
-        : sql<string>`DATE_TRUNC('week', d.close_date)`;
+        ? sql<string>`DATE_TRUNC('month', pr.created_at)`
+        : sql<string>`DATE_TRUNC('week', pr.created_at)`;
 
       const seriesRows = await db
-        .selectFrom('deals as d')
-        .innerJoin('pipeline_stages as ps', 'ps.id', 'd.stage_id')
-        .where('d.workspace_id', '=', workspace.id)
-        .where('d.deleted_at', 'is', null)
+        .selectFrom('pipeline_records as pr')
+        .innerJoin('pipeline_stages as ps', 'ps.id', 'pr.stage_id')
+        .leftJoin('record_field_values as rfv', join => join.onRef('rfv.record_id', '=', 'pr.id'))
+        .leftJoin('record_type_fields as rtf', join =>
+          join.onRef('rtf.id', '=', 'rfv.field_id').on('rtf.label', '=', 'value')
+        )
+        .where('pr.workspace_id', '=', workspace.id)
         .where('ps.is_won', '=', true)
-        .where(sql<boolean>`d.close_date IS NOT NULL AND d.close_date >= ${periodStart.toISOString()}`)
+        .where('pr.deleted_at', 'is', null)
+        .where('pr.created_at', '>=', periodStart as never)
+        .where('pr.created_at', '<', periodEnd as never)
         .select([
           bucketExpr.as('bucket'),
-          sql<string>`COALESCE(SUM(d.value), 0)`.as('revenue'),
-          sql<string>`COUNT(*)`.as('count'),
+          sql<string>`COALESCE(SUM((rfv.value #>> '{}')::numeric), 0)`.as('revenue'),
+          sql<string>`COUNT(DISTINCT pr.id)`.as('count'),
         ])
         .groupBy(bucketExpr)
         .orderBy(bucketExpr)
@@ -102,20 +114,24 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
       const periodStart = getPeriodStart(period);
 
       const stageRows = await db
-        .selectFrom('deals as d')
-        .innerJoin('pipeline_stages as ps', 'ps.id', 'd.stage_id')
-        .where('d.workspace_id', '=', workspace.id)
-        .where('d.deleted_at', 'is', null)
-        .where(sql<boolean>`d.updated_at >= ${periodStart.toISOString()}`)
+        .selectFrom('pipeline_records as pr')
+        .innerJoin('pipeline_stages as ps', 'ps.id', 'pr.stage_id')
+        .leftJoin('record_field_values as rfv', join => join.onRef('rfv.record_id', '=', 'pr.id'))
+        .leftJoin('record_type_fields as rtf', join =>
+          join.onRef('rtf.id', '=', 'rfv.field_id').on('rtf.label', '=', 'value')
+        )
+        .where('pr.workspace_id', '=', workspace.id)
+        .where('pr.deleted_at', 'is', null)
+        .where('pr.updated_at', '>=', periodStart as never)
         .select([
-          'd.stage_id',
+          'pr.stage_id',
           'ps.name as stage_name',
           'ps.color as stage_color',
           'ps.position',
-          sql<string>`COUNT(*)`.as('count'),
-          sql<string>`COALESCE(SUM(d.value), 0)`.as('value'),
+          sql<string>`COUNT(DISTINCT pr.id)`.as('count'),
+          sql<string>`COALESCE(SUM((rfv.value #>> '{}')::numeric), 0)`.as('value'),
         ])
-        .groupBy(['d.stage_id', 'ps.name', 'ps.color', 'ps.position'])
+        .groupBy(['pr.stage_id', 'ps.name', 'ps.color', 'ps.position'])
         .orderBy('ps.position', 'asc')
         .execute();
 
@@ -137,35 +153,37 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { period } = periodSchema.parse(req.query);
       const periodStart = getPeriodStart(period);
+      const periodEnd = new Date();
 
-      const repRows = await db
-        .selectFrom('deals as d')
-        .innerJoin('pipeline_stages as ps', 'ps.id', 'd.stage_id')
-        .innerJoin('users as u', 'u.id', 'd.owner_id')
-        .where('d.workspace_id', '=', workspace.id)
-        .where('d.deleted_at', 'is', null)
-        .where(eb => eb.or([eb('ps.is_won', '=', true), eb('ps.is_lost', '=', true)]))
-        .where(sql<boolean>`d.updated_at >= ${periodStart.toISOString()}`)
-        .select([
-          'd.owner_id as user_id',
-          'u.name',
-          sql<string>`COUNT(*) FILTER (WHERE ps.is_won = true)`.as('deals_won'),
-          sql<string>`COALESCE(SUM(d.value) FILTER (WHERE ps.is_won = true), 0)`.as('revenue'),
-          sql<string>`COUNT(*)`.as('total_closed'),
-        ])
-        .groupBy(['d.owner_id', 'u.name'])
-        .orderBy(
-          sql<string>`COUNT(*) FILTER (WHERE ps.is_won = true)`,
-          'desc'
+      const teamRows = await db
+        .selectFrom('pipeline_records as pr')
+        .innerJoin('pipeline_stages as ps', 'ps.id', 'pr.stage_id')
+        .innerJoin('users as u', 'u.id', 'pr.owner_id')
+        .leftJoin('record_field_values as rfv', join => join.onRef('rfv.record_id', '=', 'pr.id'))
+        .leftJoin('record_type_fields as rtf', join =>
+          join.onRef('rtf.id', '=', 'rfv.field_id').on('rtf.label', '=', 'value')
         )
+        .select([
+          'u.id as owner_id',
+          'u.name as owner_name',
+          sql<string>`COUNT(DISTINCT pr.id)`.as('total_records'),
+          sql<string>`COUNT(DISTINCT pr.id) FILTER (WHERE ps.is_won)`.as('deals_won'),
+          sql<string>`COALESCE(SUM((rfv.value #>> '{}')::numeric) FILTER (WHERE ps.is_won), 0)`.as('total_revenue'),
+          sql<string>`COUNT(DISTINCT pr.id) FILTER (WHERE ps.is_lost)`.as('deals_lost'),
+        ])
+        .where('pr.workspace_id', '=', workspace.id)
+        .where('pr.deleted_at', 'is', null)
+        .where('pr.created_at', '>=', periodStart as never)
+        .where('pr.created_at', '<', periodEnd as never)
+        .groupBy(['u.id', 'u.name'])
         .execute();
 
-      const reps = repRows.map(r => ({
-        user_id: r.user_id,
-        name: r.name,
+      const reps = teamRows.map(r => ({
+        user_id: r.owner_id,
+        name: r.owner_name,
         deals_won: Number(r.deals_won),
-        revenue: Number(r.revenue),
-        win_rate: Number(r.total_closed) > 0 ? Number(r.deals_won) / Number(r.total_closed) : 0,
+        revenue: Number(r.total_revenue),
+        win_rate: Number(r.total_records) > 0 ? Number(r.deals_won) / Number(r.total_records) : 0,
       }));
 
       res.json({ data: { reps }, error: null });

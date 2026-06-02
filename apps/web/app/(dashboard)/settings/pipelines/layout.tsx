@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 const SECTIONS = [
   { href: '/settings/pipelines', label: 'Pipelines', exact: true },
   { href: '/settings/pipelines/record-types', label: 'Record Types' },
-  { href: '/settings/pipelines/conversions', label: 'Conversions' },
 ];
 
 export default function PipelinesSettingsLayout({ children }: { children: React.ReactNode }) {

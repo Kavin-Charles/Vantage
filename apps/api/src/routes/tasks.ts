@@ -19,7 +19,7 @@ const createTaskSchema = z.object({
   due_date: z.string().optional(),
   assignee_id: z.string().uuid().optional(),
   contact_id: z.string().uuid().optional(),
-  deal_id: z.string().uuid().optional(),
+  record_id: z.string().uuid().nullable().optional(),
 });
 
 const updateTaskSchema = z.object({
@@ -89,7 +89,7 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
           title: body.title,
           due_date: body.due_date ? new Date(body.due_date) : null,
           contact_id: body.contact_id ?? null,
-          deal_id: body.deal_id ?? null,
+          record_id: body.record_id ?? null,
         })
         .returningAll()
         .executeTakeFirstOrThrow();

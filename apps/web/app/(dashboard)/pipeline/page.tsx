@@ -1,11 +1,9 @@
 'use client';
-
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { listPipelines } from '@/lib/pipelines';
 import { useApiToken } from '@/lib/useApiToken';
-import { ModuleGuard } from '@/components/ModuleGuard';
+import { listPipelines } from '@/lib/pipelines';
 
 export default function PipelinePage() {
   const getToken = useApiToken();
@@ -17,18 +15,36 @@ export default function PipelinePage() {
   });
 
   useEffect(() => {
-    if (!isLoading && data?.data) {
-      const pipelines = data.data;
-      const target = pipelines.find(p => p.is_default) ?? pipelines[0];
-      if (target) router.replace(`/pipeline/${target.id}`);
-    }
-  }, [isLoading, data, router]);
+    if (!data) return;
+    const pipelines = data.data ?? [];
+    const def = pipelines.find(p => p.is_default) ?? pipelines[0];
+    if (def) router.replace(`/pipeline/${def.id}`);
+  }, [data, router]);
 
-  return (
-    <ModuleGuard moduleId="pipelines">
-      <div style={{ padding: 32, color: 'var(--text3)', fontSize: 13, fontFamily: 'var(--font-sans)' }}>
+  if (isLoading) {
+    return (
+      <div style={{ padding: 40, color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif', fontSize: 14 }}>
         Loading…
       </div>
-    </ModuleGuard>
+    );
+  }
+
+  return (
+    <div style={{ padding: 40, textAlign: 'center' }}>
+      <h2 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 24, color: 'var(--text)', marginBottom: 12 }}>
+        No pipelines yet
+      </h2>
+      <p style={{ color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif', marginBottom: 24, fontSize: 15 }}>
+        Create your first pipeline in settings.
+      </p>
+      <a
+        href="/settings/pipelines"
+        style={{
+          padding: '10px 20px', background: 'var(--text)', color: '#fff',
+          borderRadius: 8, textDecoration: 'none',
+          fontFamily: 'DM Sans, sans-serif', fontSize: 14,
+        }}
+      >Go to pipeline settings</a>
+    </div>
   );
 }

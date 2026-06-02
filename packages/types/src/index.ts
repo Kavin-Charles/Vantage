@@ -1,8 +1,6 @@
 export type UUID = string;
 
 export type ContactStatus = 'prospect' | 'customer' | 'cold' | 'churned';
-/** @deprecated pipeline stages are now dynamic — use stage_id on Deal */
-export type DealStage = 'lead' | 'qualifying' | 'proposal' | 'closing' | 'won' | 'lost';
 export type FieldType = 'text' | 'number' | 'date' | 'select' | 'boolean';
 export type TaskStatus = 'todo' | 'done';
 export type AlertSeverity = 'critical' | 'warning' | 'info';
@@ -67,33 +65,15 @@ export interface Company {
   updated_at: Date;
 }
 
-export interface Deal {
-  id: UUID;
-  workspace_id: UUID;
-  contact_id: UUID | null;
-  company_id: UUID | null;
-  owner_id: UUID;
-  name: string;
-  value: number;
-  pipeline_id: string | null;
-  stage_id: string | null;
-  probability: number;
-  close_date: Date | null;
-  deleted_at: Date | null;
-  created_at: Date;
-  updated_at: Date;
-  /** Field values keyed by stage_field.id, included when fetching single deals */
-  field_values?: Record<string, string>;
-}
-
 export interface Pipeline {
   id: string;
   workspace_id: string;
   name: string;
   is_default: boolean;
-  record_type_id: string | null;
-  view: string;                    // 'kanban' | 'table' | 'list'
-  table_columns: string[] | null;  // null = use default set
+  record_type_id: string;
+  view: 'kanban' | 'table' | 'list';
+  table_columns: string[] | null;
+  position: number;
   created_at: string;
   updated_at: string;
 }
@@ -108,22 +88,6 @@ export interface PipelineStage {
   is_lost: boolean;
   created_at: string;
   updated_at: string;
-}
-
-export interface StageField {
-  id: string;
-  stage_id: string;
-  name: string;
-  field_type: FieldType;
-  options: string[] | null;
-  is_required: boolean;
-  position: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface PipelineWithStages extends Pipeline {
-  stages: (PipelineStage & { fields: StageField[] })[];
 }
 
 export interface ItemGroup {
@@ -189,7 +153,7 @@ export interface Task {
   workspace_id: UUID;
   assignee_id: UUID;
   contact_id: UUID | null;
-  deal_id: UUID | null;
+  record_id: UUID | null;
   title: string;
   due_date: string | null;
   status: TaskStatus;
@@ -202,7 +166,7 @@ export interface Activity {
   workspace_id: UUID;
   user_id: UUID;
   contact_id: UUID | null;
-  deal_id: UUID | null;
+  record_id: UUID | null;
   type: ActivityType;
   body: string | null;
   meta: Record<string, unknown> | null;
@@ -493,4 +457,101 @@ export interface Deployment {
   git_author: string | null;
   meta: Record<string, unknown> | null;
   created_at: string;
+}
+
+export interface PipelineRecord {
+  id: string;
+  workspace_id: string;
+  record_type_id: string;
+  pipeline_id: string;
+  stage_id: string;
+  record_number: string | null;
+  name: string;
+  contact_id: string | null;
+  company_id: string | null;
+  owner_id: string;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecordFieldValue {
+  id: string;
+  record_id: string;
+  field_id: string;
+  value: unknown;
+}
+
+export interface PipelineRecordWithValues extends PipelineRecord {
+  field_values: RecordFieldValue[];
+}
+
+export interface RecordType {
+  id: string;
+  workspace_id: string;
+  name: string;
+  icon: string | null;
+  description: string | null;
+  auto_number_enabled: boolean;
+  auto_number_prefix: string | null;
+  auto_number_format: string;
+  auto_number_sequence: number;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecordTypeField {
+  id: string;
+  record_type_id: string;
+  label: string;
+  field_type: FieldType;
+  options: { label: string; value: string }[] | null;
+  is_required: boolean;
+  position: number;
+  created_at: string;
+}
+
+export interface RecordTypePermission {
+  id: string;
+  record_type_id: string;
+  role: UserRole;
+  can_view: boolean;
+  can_create: boolean;
+  can_edit: boolean;
+  can_delete: boolean;
+}
+
+export interface RecordTypeWithFields extends RecordType {
+  fields: RecordTypeField[];
+}
+
+export interface PipelineWithDetails extends Pipeline {
+  stages: PipelineStage[];
+  record_type: RecordTypeWithFields;
+}
+
+export interface ConversionTemplate {
+  id: string;
+  workspace_id: string;
+  name: string;
+  source_type_id: string;
+  target_type_id: string;
+  target_pipeline_id: string;
+  target_stage_id: string;
+  position: number;
+  created_at: string;
+}
+
+export interface ConversionFieldMapping {
+  id: string;
+  template_id: string;
+  source_field_id: string | null;
+  source_builtin: string | null;
+  target_field_id: string | null;
+  target_builtin: string | null;
+}
+
+export interface ConversionTemplateWithMappings extends ConversionTemplate {
+  field_mappings: ConversionFieldMapping[];
 }

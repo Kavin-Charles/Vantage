@@ -19,7 +19,7 @@ const createSchema = z.object({
   assignee_id: z.string().uuid(),
   due_date: z.string().optional(),
   contact_id: z.string().uuid().optional(),
-  deal_id: z.string().uuid().optional(),
+  record_id: z.string().uuid().nullable().optional(),
 });
 
 const updateSchema = z.object({
@@ -121,7 +121,7 @@ export function createV1TasksRouter(db: Kysely<Database>): ExpressRouter {
           assignee_id: parsed.data.assignee_id,
           due_date: parsed.data.due_date ? new Date(parsed.data.due_date) : null,
           contact_id: parsed.data.contact_id ?? null,
-          deal_id: parsed.data.deal_id ?? null,
+          record_id: parsed.data.record_id ?? null,
         })
         .returningAll()
         .executeTakeFirstOrThrow();

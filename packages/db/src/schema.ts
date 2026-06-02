@@ -77,7 +77,7 @@ export interface TaskTable {
   workspace_id: string;
   assignee_id: string;
   contact_id: string | null;
-  deal_id: string | null;
+  record_id: string | null;
   title: string;
   due_date: Date | null;
   status: Generated<'todo' | 'done'>;
@@ -90,7 +90,7 @@ export interface ActivityTable {
   workspace_id: string;
   user_id: string;
   contact_id: string | null;
-  deal_id: string | null;
+  record_id: string | null;
   type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert';
   body: string | null;
   meta: Record<string, unknown> | null;
