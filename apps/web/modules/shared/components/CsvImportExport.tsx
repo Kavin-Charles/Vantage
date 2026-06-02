@@ -1,10 +1,10 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
-import { parseCSV, downloadCSV } from '@/lib/csv';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
+import { parseCSV, downloadCSV } from '@/modules/shared/lib/csv';
 
 interface Props {
   /** e.g. 'contacts', 'companies', 'deals' */

@@ -2,8 +2,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { listPipelines } from '@/lib/pipelines';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listPipelines } from '@/modules/pipeline/lib/pipelines';
 
 export default function PipelinePage() {
   const getToken = useApiToken();

@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { getRecord, updateRecord, deleteRecord } from '@/lib/records';
-import { listConversions } from '@/lib/record-types';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { getRecord, updateRecord, deleteRecord } from '@/modules/pipeline/lib/records';
+import { listConversions } from '@/modules/pipeline/lib/record-types';
 import { ConversionWizard } from './ConversionWizard';
 import type { PipelineWithDetails, PipelineRecordWithValues, RecordTypeField } from '@vantage/types';
 

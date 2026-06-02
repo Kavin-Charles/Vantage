@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { listItemGroups } from '@/lib/item-groups';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listItemGroups } from '@/modules/pipeline/lib/item-groups';
 import type { ItemGroup } from '@vantage/types';
 
 interface Props {

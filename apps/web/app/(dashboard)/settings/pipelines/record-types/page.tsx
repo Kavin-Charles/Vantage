@@ -1,14 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import {
   listRecordTypes, createRecordType,
   listConversions, createConversion, deleteConversion,
-} from '@/lib/record-types';
-import { listPipelines } from '@/lib/pipelines';
-import { RecordTypeEditor } from '@/components/pipeline/RecordTypeEditor';
-import { FieldMappingEditor } from '@/components/pipeline/FieldMappingEditor';
+} from '@/modules/pipeline/lib/record-types';
+import { listPipelines } from '@/modules/pipeline/lib/pipelines';
+import { RecordTypeEditor } from '@/modules/pipeline/components/RecordTypeEditor';
+import { FieldMappingEditor } from '@/modules/pipeline/components/FieldMappingEditor';
 import type { RecordType, ConversionFieldMapping, PipelineWithDetails } from '@vantage/types';
 
 type Tab = 'fields' | 'conversions';

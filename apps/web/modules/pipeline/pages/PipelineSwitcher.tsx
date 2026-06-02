@@ -1,8 +1,8 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { useApiToken } from '@/lib/useApiToken';
-import { listPipelines } from '@/lib/pipelines';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listPipelines } from '@/modules/pipeline/lib/pipelines';
 
 export function PipelineSwitcher({ currentId }: { currentId: string }) {
   const getToken = useApiToken();

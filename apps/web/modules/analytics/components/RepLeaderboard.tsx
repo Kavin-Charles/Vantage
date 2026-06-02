@@ -1,4 +1,4 @@
-import type { RepData } from '@/lib/analytics';
+import type { RepData } from '@/modules/analytics/lib/analytics';
 
 interface Props {
   reps?: RepData[];

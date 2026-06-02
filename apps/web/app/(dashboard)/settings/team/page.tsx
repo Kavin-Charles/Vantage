@@ -1,9 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
-import { Badge, statusColor } from '@/components/ui/Badge';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
+import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
 import type { User } from '@vantage/types';
 
 export default function TeamPage() {

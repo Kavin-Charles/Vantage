@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { createRecord } from '@/lib/records';
-import { apiFetch } from '@/lib/api';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { createRecord } from '@/modules/pipeline/lib/records';
+import { apiFetch } from '@/modules/shared/lib/api';
 import type { PipelineWithDetails, RecordTypeField } from '@vantage/types';
 
 interface Props {

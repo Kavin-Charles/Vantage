@@ -1,4 +1,4 @@
-import type { SeriesPoint, Period } from '@/lib/analytics';
+import type { SeriesPoint, Period } from '@/modules/analytics/lib/analytics';
 
 interface Props {
   series: SeriesPoint[];

@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Topbar } from '@/components/Topbar';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { Badge } from '@/modules/shared/components/ui/Badge';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
 import type { Alert } from '@vantage/types';
 
 type FilterTab = 'all' | 'unresolved' | 'critical' | 'warning' | 'info';

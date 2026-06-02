@@ -1,8 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
 import { MODULE_REGISTRY } from '@vantage/modules';
 
 interface GroupPermEntry {

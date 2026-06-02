@@ -1,9 +1,9 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { listApiKeys, deleteApiKey } from '@/lib/api-keys';
-import { Button } from '@/components/ui/Button';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listApiKeys, deleteApiKey } from '@/modules/shared/lib/api-keys';
+import { Button } from '@/modules/shared/components/ui/Button';
 import type { ApiKey } from '@vantage/types';
 
 function formatDate(iso: string) {

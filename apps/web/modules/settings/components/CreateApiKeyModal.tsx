@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { createApiKey } from '@/lib/api-keys';
-import { Button } from '@/components/ui/Button';
-import { FormField, Input } from '@/components/ui/FormField';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { createApiKey } from '@/modules/shared/lib/api-keys';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { FormField, Input } from '@/modules/shared/components/ui/FormField';
 
 interface Props {
   onClose: () => void;

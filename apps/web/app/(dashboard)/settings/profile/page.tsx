@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/lib/AuthContext';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth();

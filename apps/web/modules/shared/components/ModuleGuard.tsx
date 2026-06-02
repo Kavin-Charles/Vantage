@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { useModules } from '@/contexts/modules';
+import { useModules } from '@/modules/shared/contexts/modules';
 
 interface ModuleGuardProps {
   moduleId: string;

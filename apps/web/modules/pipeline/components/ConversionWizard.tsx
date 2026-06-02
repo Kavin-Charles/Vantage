@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { convertRecord } from '@/lib/records';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { convertRecord } from '@/modules/pipeline/lib/records';
 import type { PipelineRecordWithValues, ConversionTemplateWithMappings, ConversionFieldMapping } from '@vantage/types';
 
 type Step = 'select' | 'preview' | 'confirm';

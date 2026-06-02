@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ConversionModal } from './ConversionModal';
-import { getRecordConversions, listTemplates, type EnrichedConversion } from '@/lib/conversions';
+import { getRecordConversions, listTemplates, type EnrichedConversion } from '@/modules/pipeline/lib/conversions';
 
 interface PipelineRecord {
   id: string;

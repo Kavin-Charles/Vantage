@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
 import Link from 'next/link';
 
 interface Group {

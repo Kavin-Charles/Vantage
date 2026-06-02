@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans, IBM_Plex_Mono, Bricolage_Grotesque } from 'next/font/google';
-import { AuthProvider } from '@/lib/AuthContext';
-import { Providers } from '@/components/Providers';
+import { AuthProvider } from '@/modules/shared/lib/AuthContext';
+import { Providers } from '@/modules/shared/components/Providers';
 import './globals.css';
 
 const ibmPlexSans = IBM_Plex_Sans({

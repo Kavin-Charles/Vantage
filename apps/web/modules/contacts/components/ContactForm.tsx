@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/Button';
-import { FormField, Input, Select } from '@/components/ui/FormField';
-import { useApiToken } from '@/lib/useApiToken';
-import { createContact, updateContact } from '@/lib/contacts';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { FormField, Input, Select } from '@/modules/shared/components/ui/FormField';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { createContact, updateContact } from '@/modules/contacts/lib/contacts';
 import type { Contact } from '@vantage/types';
 
 interface Props {

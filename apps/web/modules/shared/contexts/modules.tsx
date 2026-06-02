@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useApiToken } from '@/lib/useApiToken';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
 
 interface ModuleRow {
   module_id: string;

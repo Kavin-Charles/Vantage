@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Icon } from '@/components/ui/Icon';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
-import { useLastAlert } from '@/contexts/ServerMetricsContext';
+import { Icon } from '@/modules/shared/components/ui/Icon';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
+import { useLastAlert } from '@/modules/shared/contexts/ServerMetricsContext';
 import type { Alert } from '@vantage/types';
 
 export function AlertBar() {

@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/Button';
-import { FormField, Input } from '@/components/ui/FormField';
-import { useApiToken } from '@/lib/useApiToken';
-import { createCompany, updateCompany } from '@/lib/companies';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { FormField, Input } from '@/modules/shared/components/ui/FormField';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { createCompany, updateCompany } from '@/modules/companies/lib/companies';
 import type { Company } from '@vantage/types';
 
 export function CompanyForm({ company, onDone }: { company?: Company; onDone: () => void }) {

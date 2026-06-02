@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from '@/lib/api';
+import { apiFetch } from '@/modules/shared/lib/api';
 
 interface Notification {
   id: string;

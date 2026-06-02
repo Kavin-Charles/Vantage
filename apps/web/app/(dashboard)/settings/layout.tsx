@@ -3,8 +3,8 @@
 import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Topbar } from '@/components/Topbar';
-import { useAuth } from '@/lib/AuthContext';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
 
 interface Tab {
   href: string;

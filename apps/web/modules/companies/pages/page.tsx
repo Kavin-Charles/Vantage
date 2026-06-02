@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Topbar } from '@/components/Topbar';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { Icon } from '@/components/ui/Icon';
-import { CompanyForm } from '@/components/companies/CompanyForm';
-import { CsvImportExport } from '@/components/CsvImportExport';
-import { ModuleGuard } from '@/components/ModuleGuard';
-import { useApiToken } from '@/lib/useApiToken';
-import { listCompanies } from '@/lib/companies';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { Modal } from '@/modules/shared/components/ui/Modal';
+import { Icon } from '@/modules/shared/components/ui/Icon';
+import { CompanyForm } from '@/modules/companies/components/CompanyForm';
+import { CsvImportExport } from '@/modules/shared/components/CsvImportExport';
+import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listCompanies } from '@/modules/companies/lib/companies';
 import type { Company } from '@vantage/types';
 
 const COLS = '1.6fr 1.2fr 1.2fr 1fr 1.4fr auto';

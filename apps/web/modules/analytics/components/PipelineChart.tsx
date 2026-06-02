@@ -1,4 +1,4 @@
-import type { StageData } from '@/lib/analytics';
+import type { StageData } from '@/modules/analytics/lib/analytics';
 
 interface Props {
   stages: StageData[];

@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { getPipeline, addStage, updateStage, deleteStage, reorderStages } from '@/lib/pipelines';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { getPipeline, addStage, updateStage, deleteStage, reorderStages } from '@/modules/pipeline/lib/pipelines';
 import type { PipelineStage } from '@vantage/types';
 
 const COLORS = ['#6366f1','#8b5cf6','#a855f7','#ec4899','#22c55e','#ef4444','#f59e0b','#3b82f6'];

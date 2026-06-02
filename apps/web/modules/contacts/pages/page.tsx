@@ -1,10 +1,10 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { ModuleGuard } from '@/components/ModuleGuard';
-import { Topbar } from '@/components/Topbar';
-import { ContactsTable } from '@/components/contacts/ContactsTable';
-import { CsvImportExport } from '@/components/CsvImportExport';
+import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { ContactsTable } from '@/modules/contacts/components/ContactsTable';
+import { CsvImportExport } from '@/modules/shared/components/CsvImportExport';
 
 export default function ContactsPage() {
   const qc = useQueryClient();

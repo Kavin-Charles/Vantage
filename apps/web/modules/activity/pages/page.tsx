@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Topbar } from '@/components/Topbar';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { Icon } from '@/components/ui/Icon';
-import { FormField, Select, Textarea } from '@/components/ui/FormField';
-import { useApiToken } from '@/lib/useApiToken';
-import { listActivity, createActivity } from '@/lib/activity';
-import { ModuleGuard } from '@/components/ModuleGuard';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { Modal } from '@/modules/shared/components/ui/Modal';
+import { Icon } from '@/modules/shared/components/ui/Icon';
+import { FormField, Select, Textarea } from '@/modules/shared/components/ui/FormField';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listActivity, createActivity } from '@/modules/activity/lib/activity';
+import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
 import type { Activity, ActivityType } from '@vantage/types';
 
 const TYPE_ICONS: Record<string, string> = {

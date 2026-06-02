@@ -1,10 +1,10 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { listPipelines, createPipeline, deletePipeline } from '@/lib/pipelines';
-import { listRecordTypes } from '@/lib/record-types';
-import { PipelineEditor } from '@/components/pipeline/PipelineEditor';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listPipelines, createPipeline, deletePipeline } from '@/modules/pipeline/lib/pipelines';
+import { listRecordTypes } from '@/modules/pipeline/lib/record-types';
+import { PipelineEditor } from '@/modules/pipeline/components/PipelineEditor';
 import type { PipelineWithDetails } from '@vantage/types';
 
 export default function PipelinesSettingsPage() {

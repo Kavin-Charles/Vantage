@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Topbar } from '@/components/Topbar';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { Badge, statusColor } from '@/components/ui/Badge';
-import { FormField, Input, Select } from '@/components/ui/FormField';
-import { useApiToken } from '@/lib/useApiToken';
-import { listInfraDatabases, createInfraDatabase, deleteInfraDatabase } from '@/lib/infra-databases';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { Modal } from '@/modules/shared/components/ui/Modal';
+import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
+import { FormField, Input, Select } from '@/modules/shared/components/ui/FormField';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listInfraDatabases, createInfraDatabase, deleteInfraDatabase } from '@/modules/databases/lib/infra-databases';
 import type { InfraDatabase } from '@vantage/types';
 
 const ENGINES = ['postgres', 'mysql', 'redis', 'clickhouse', 'mongo', 'other'] as const;

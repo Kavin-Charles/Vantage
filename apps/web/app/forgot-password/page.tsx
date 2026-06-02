@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { apiFetch } from '@/lib/api';
+import { apiFetch } from '@/modules/shared/lib/api';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');

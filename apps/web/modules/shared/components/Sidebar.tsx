@@ -5,12 +5,12 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
-import { useAuth } from '@/lib/AuthContext';
-import { useConfig } from '@/lib/useConfig';
-import { useModules } from '@/contexts/modules';
-import { Icon } from '@/components/ui/Icon';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
+import { useConfig } from '@/modules/shared/lib/useConfig';
+import { useModules } from '@/modules/shared/contexts/modules';
+import { Icon } from '@/modules/shared/components/ui/Icon';
 
 const NAV_GROUPS = [
   {

@@ -9,7 +9,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import { useApiToken } from '@/lib/useApiToken';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
 
 export interface LiveServerMetrics {
   serverId: string;

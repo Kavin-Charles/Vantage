@@ -2,8 +2,8 @@
 
 import { use, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { Topbar } from '@/components/Topbar';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { Topbar } from '@/modules/shared/components/Topbar';
 
 interface WorkspacePlugin {
   id: string;

@@ -3,9 +3,9 @@ import { useState, useEffect, ComponentType } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { useApiToken } from '@/lib/useApiToken';
-import { getPipeline } from '@/lib/pipelines';
-import { ViewSwitcher } from '@/components/pipeline/ViewSwitcher';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { getPipeline } from '@/modules/pipeline/lib/pipelines';
+import { ViewSwitcher } from '@/modules/pipeline/components/ViewSwitcher';
 import { PipelineSwitcher } from '../PipelineSwitcher';
 import type { PipelineWithDetails } from '@vantage/types';
 

@@ -1,7 +1,7 @@
 'use client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { updatePipeline } from '@/lib/pipelines';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { updatePipeline } from '@/modules/pipeline/lib/pipelines';
 
 type View = 'kanban' | 'table' | 'list';
 

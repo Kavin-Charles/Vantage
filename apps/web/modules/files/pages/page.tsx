@@ -2,11 +2,11 @@
 
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Topbar } from '@/components/Topbar';
-import { Button } from '@/components/ui/Button';
-import { Icon } from '@/components/ui/Icon';
-import { useApiToken } from '@/lib/useApiToken';
-import { apiFetch } from '@/lib/api';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { Icon } from '@/modules/shared/components/ui/Icon';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
 
 interface FileObject {
   key: string;

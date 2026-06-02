@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import Link from 'next/link';
-import { apiFetch } from '@/lib/api';
+import { apiFetch } from '@/modules/shared/lib/api';
 import { setAuth } from '@/store/auth-slice';
 import type { AppDispatch } from '@/store';
 

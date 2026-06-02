@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Topbar } from '@/components/Topbar';
-import { useApiToken } from '@/lib/useApiToken';
-import { getRevenue, getPipeline, getTeam } from '@/lib/analytics';
-import type { Period } from '@/lib/analytics';
-import { KpiCards } from './KpiCards';
-import { RevenueChart } from './RevenueChart';
-import { PipelineChart } from './PipelineChart';
-import { RepLeaderboard } from './RepLeaderboard';
-import { ModuleGuard } from '@/components/ModuleGuard';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { getRevenue, getPipeline, getTeam } from '@/modules/analytics/lib/analytics';
+import type { Period } from '@/modules/analytics/lib/analytics';
+import { KpiCards } from '../components/KpiCards';
+import { RevenueChart } from '../components/RevenueChart';
+import { PipelineChart } from '../components/PipelineChart';
+import { RepLeaderboard } from '../components/RepLeaderboard';
+import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
 
 const PERIODS: { label: string; value: Period }[] = [
   { label: '30D', value: '30d' },

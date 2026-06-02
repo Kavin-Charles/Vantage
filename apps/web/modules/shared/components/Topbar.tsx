@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Icon } from '@/components/ui/Icon';
+import { Icon } from '@/modules/shared/components/ui/Icon';
 import { NotificationBell } from './NotificationBell';
 
 const PAGE_TITLES: Record<string, string> = {

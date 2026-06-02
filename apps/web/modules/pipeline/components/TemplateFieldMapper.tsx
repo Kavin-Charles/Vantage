@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { RawFieldMapping } from '@/lib/conversions';
+import type { RawFieldMapping } from '@/modules/pipeline/lib/conversions';
 
 export interface MappableField {
   id: string;

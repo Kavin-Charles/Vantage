@@ -3,13 +3,13 @@
 import { use, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Topbar } from '@/components/Topbar';
-import { Badge, statusColor } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { FormField, Input, Select, Textarea } from '@/components/ui/FormField';
-import { Modal } from '@/components/ui/Modal';
-import { useAuth } from '@/lib/AuthContext';
-import { useApiToken } from '@/lib/useApiToken';
+import { Topbar } from '@/modules/shared/components/Topbar';
+import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { FormField, Input, Select, Textarea } from '@/modules/shared/components/ui/FormField';
+import { Modal } from '@/modules/shared/components/ui/Modal';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import {
   getInfraDatabase,
   listInfraDatabaseRows,
@@ -19,7 +19,7 @@ import {
   testInfraDatabaseConnection,
   updateInfraDatabase,
   updateInfraDatabaseRow,
-} from '@/lib/infra-databases';
+} from '@/modules/databases/lib/infra-databases';
 import type { InfraDatabase, InfraDatabaseRows, InfraDatabaseSqlResult, InfraDatabaseTable } from '@vantage/types';
 
 const ENGINES = ['postgres', 'mysql', 'redis', 'clickhouse', 'mongo', 'other'] as const;

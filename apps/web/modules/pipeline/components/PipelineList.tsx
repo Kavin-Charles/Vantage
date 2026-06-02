@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { listRecords } from '@/lib/records';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listRecords } from '@/modules/pipeline/lib/records';
 import { RecordDetailPanel } from './RecordDetailPanel';
 import type { PipelineWithDetails, PipelineRecordWithValues } from '@vantage/types';
 

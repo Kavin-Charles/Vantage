@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiFetch } from '@/lib/api';
-import { useApiToken } from '@/lib/useApiToken';
+import { apiFetch } from '@/modules/shared/lib/api';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
 
 interface Props {
   hasSMTP: boolean;

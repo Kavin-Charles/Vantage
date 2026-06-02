@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/Button';
-import { FormField, Input, Select } from '@/components/ui/FormField';
-import { useApiToken } from '@/lib/useApiToken';
-import { createItem, updateItem, convertItem, listItemGroups } from '@/lib/item-groups';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { FormField, Input, Select } from '@/modules/shared/components/ui/FormField';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { createItem, updateItem, convertItem, listItemGroups } from '@/modules/pipeline/lib/item-groups';
 import type { Item, ItemGroupWithStages, GroupStage, ItemField } from '@vantage/types';
 
 interface Props {

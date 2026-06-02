@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Badge, statusColor } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
+import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
+import { Button } from '@/modules/shared/components/ui/Button';
+import { Modal } from '@/modules/shared/components/ui/Modal';
 import { ContactForm } from './ContactForm';
-import { useApiToken } from '@/lib/useApiToken';
-import { listContacts, deleteContact } from '@/lib/contacts';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listContacts, deleteContact } from '@/modules/contacts/lib/contacts';
 import type { Contact } from '@vantage/types';
 
 const COLS = '1.6fr 1.6fr 1.1fr .9fr 1fr auto';

@@ -1,7 +1,7 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import { useApiToken } from '@/lib/useApiToken';
-import { listFields } from '@/lib/record-types';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { listFields } from '@/modules/pipeline/lib/record-types';
 import type { ConversionFieldMapping } from '@vantage/types';
 
 type Mapping = Partial<ConversionFieldMapping>;

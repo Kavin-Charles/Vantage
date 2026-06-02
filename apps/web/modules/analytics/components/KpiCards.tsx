@@ -1,4 +1,4 @@
-import type { RevenueData } from '@/lib/analytics';
+import type { RevenueData } from '@/modules/analytics/lib/analytics';
 
 interface Props {
   data?: RevenueData;

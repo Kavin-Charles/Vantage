@@ -9,7 +9,7 @@ import {
   convertRecord,
   type ConversionTemplate,
   type ConversionTemplateWithMappings,
-} from '@/lib/conversions';
+} from '@/modules/pipeline/lib/conversions';
 
 interface SourceRecord {
   id: string;
