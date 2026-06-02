@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { listRecords } from '@/lib/records';
+import { RecordDetailPanel } from './RecordDetailPanel';
 import type { PipelineWithDetails, PipelineRecordWithValues } from '@vantage/types';
 
 export function PipelineList({
@@ -96,17 +97,12 @@ export function PipelineList({
         )}
       </div>
 
-      {/* TODO: replace with RecordDetailPanel in T7 */}
       {selectedId && (
-        <div style={{
-          position: 'fixed', bottom: 20, right: 20, padding: '10px 16px',
-          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8,
-          fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'var(--text2)',
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          Selected: {allRecords.find(r => r.id === selectedId)?.name}
-          <button onClick={() => setSelectedId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}>×</button>
-        </div>
+        <RecordDetailPanel
+          recordId={selectedId}
+          pipeline={pipeline}
+          onClose={() => setSelectedId(null)}
+        />
       )}
     </>
   );

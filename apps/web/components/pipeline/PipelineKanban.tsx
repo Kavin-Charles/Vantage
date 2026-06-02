@@ -5,6 +5,8 @@ import { useApiToken } from '@/lib/useApiToken';
 import { listRecords, updateRecord } from '@/lib/records';
 import { apiFetch } from '@/lib/api';
 import { RecordCard } from './RecordCard';
+import { RecordDetailPanel } from './RecordDetailPanel';
+import { RecordForm } from './RecordForm';
 import type { PipelineWithDetails, PipelineRecordWithValues, RecordTypeField } from '@vantage/types';
 
 interface WorkspaceUser { id: string; name: string; }
@@ -209,31 +211,24 @@ export function PipelineKanban({
         )}
       </div>
 
-      {/* TODO: wire up RecordDetailPanel when selectedId is set — built in T7 */}
       {selectedId && (
-        <div style={{
-          position: 'fixed', bottom: 20, right: 20, padding: '10px 16px',
-          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8,
-          fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'var(--text2)',
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          Record {selectedId.slice(0, 8)}… selected
-          <button onClick={() => setSelectedId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}>×</button>
-        </div>
+        <RecordDetailPanel
+          recordId={selectedId}
+          pipeline={pipeline}
+          onClose={() => setSelectedId(null)}
+        />
       )}
 
-      {/* TODO: wire up RecordForm when createStageId is set — built in T7 */}
       {createStageId && (
-        <div style={{
-          position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)',
-          padding: '10px 16px', background: 'var(--surface)',
-          border: '1px solid var(--border)', borderRadius: 8,
-          fontFamily: 'DM Sans, sans-serif', fontSize: 13, color: 'var(--text2)',
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          Create record in stage {createStageId.slice(0, 8)}…
-          <button onClick={() => setCreateStageId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)' }}>×</button>
-        </div>
+        <RecordForm
+          pipeline={pipeline}
+          defaultStageId={createStageId}
+          onClose={() => setCreateStageId(null)}
+          onSuccess={() => {
+            qc.invalidateQueries({ queryKey: ['records', pipeline.id] });
+            setCreateStageId(null);
+          }}
+        />
       )}
     </>
   );
