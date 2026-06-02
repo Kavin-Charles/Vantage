@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { getRecord, updateRecord, deleteRecord } from '@/lib/records';
 import { listConversions } from '@/lib/record-types';
+import { ConversionWizard } from './ConversionWizard';
 import type { PipelineWithDetails, PipelineRecordWithValues, RecordTypeField } from '@vantage/types';
 
 interface Props {
@@ -32,6 +33,7 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
   const fields: RecordTypeField[] = pipeline.record_type?.fields ?? [];
 
   const [name, setName] = useState('');
+  const [wizardTemplateId, setWizardTemplateId] = useState<string | null>(null);
 
   useEffect(() => {
     if (record) setName(record.name);
@@ -84,6 +86,19 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
   return (
     <>
       <div style={backdropStyle} onClick={onClose} />
+      {wizardTemplateId && record && (
+        <ConversionWizard
+          record={record}
+          templateId={wizardTemplateId}
+          templates={conversions}
+          onClose={() => setWizardTemplateId(null)}
+          onSuccess={() => {
+            setWizardTemplateId(null);
+            qc.invalidateQueries({ queryKey: ['records'] });
+            onClose();
+          }}
+        />
+      )}
       <div style={panelStyle}>
         {/* Header */}
         <div style={{
@@ -150,7 +165,7 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
               {conversions.map(tpl => (
                 <button
                   key={tpl.id}
-                  onClick={() => window.alert('wizard coming soon')}
+                  onClick={() => setWizardTemplateId(tpl.id)}
                   style={{
                     fontSize: 13, padding: '6px 14px',
                     background: 'var(--blue-bg)', color: 'var(--blue)',
