@@ -33,7 +33,7 @@ export function createUsersRouter(db: Kysely<Database>): Router {
       const users = await db
         .selectFrom('users')
         .where('workspace_id', '=', workspace.id)
-        .select(['id', 'name', 'email', 'role', 'last_login_at', 'created_at'])
+        .select(['id', 'name', 'email', 'role', 'is_active', 'last_login_at', 'created_at'])
         .orderBy('created_at', 'asc')
         .execute();
       res.json({ data: users, error: null });

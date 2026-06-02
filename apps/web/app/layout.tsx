@@ -35,9 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body suppressHydrationWarning>
-        <AuthProvider>
-          <Providers>{children}</Providers>
-        </AuthProvider>
+        <Providers>
+          <AuthProvider>{children}</AuthProvider>
+        </Providers>
       </body>
     </html>
   );

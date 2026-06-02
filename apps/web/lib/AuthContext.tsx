@@ -26,8 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUser = async () => {
     if (!token) return;
     try {
-      const res = await apiFetch<{ data: AuthUser }>('/api/me', { token });
-      dispatch(setUser(res.data));
+      const res = await apiFetch<{ data: { user: AuthUser } }>('/api/me', { token });
+      dispatch(setUser(res.data.user));
     } catch {
       dispatch(clearAuth());
     }

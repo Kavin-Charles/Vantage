@@ -219,7 +219,7 @@ export function Sidebar() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 12, fontWeight: 600, color: 'var(--text2)', flexShrink: 0,
           }}>
-            {user ? (user.name ?? user.email)[0].toUpperCase() : '?'}
+            {user ? ((user.name ?? user.email ?? '?')[0] ?? '?').toUpperCase() : '?'}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

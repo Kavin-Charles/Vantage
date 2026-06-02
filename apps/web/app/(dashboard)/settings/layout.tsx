@@ -56,7 +56,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         {/* Tab nav */}
         <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 24 }}>
           {TABS.map(tab => {
-            const active = pathname.startsWith(tab.href);
+            const active = pathname.startsWith(tab.href) || (tab.href === '/settings/users' && pathname.startsWith('/settings/groups'));
             return (
               <Link
                 key={tab.href}
