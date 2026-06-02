@@ -1,4 +1,4 @@
-import type { ModuleDefinition } from './types';
+import type { ModuleDefinition } from '../types';
 
 export const TASKS_MODULE: ModuleDefinition = {
   id: 'tasks',

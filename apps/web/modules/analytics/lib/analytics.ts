@@ -1,4 +1,4 @@
-import { apiFetch } from './api';
+import { apiFetch } from '@/modules/shared/lib/api';
 
 export type Period = '30d' | '90d' | '12m';
 

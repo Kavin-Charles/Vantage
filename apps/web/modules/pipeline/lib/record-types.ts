@@ -1,4 +1,4 @@
-import { apiFetch } from './api';
+import { apiFetch } from '@/modules/shared/lib/api';
 import type {
   RecordType,
   RecordTypeField,

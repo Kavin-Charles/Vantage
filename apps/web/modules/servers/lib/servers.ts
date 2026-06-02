@@ -1,4 +1,4 @@
-import { apiFetch } from './api';
+import { apiFetch } from '@/modules/shared/lib/api';
 import type { Server, MetricsSnapshot } from '@vantage/types';
 
 export async function listServers(token: string) {

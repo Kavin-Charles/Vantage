@@ -1,4 +1,4 @@
-import type { ModuleDefinition } from './types';
+import type { ModuleDefinition } from '../types';
 
 export const CONTACTS_MODULE: ModuleDefinition = {
   id: 'contacts',

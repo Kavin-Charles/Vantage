@@ -17,17 +17,17 @@ interface ListProps   { pipeline: PipelineWithDetails; search: string }
 
 // Lazy imports — components built in later tasks
 const PipelineKanban = dynamic(
-  () => import('@/components/pipeline/PipelineKanban').then(m => ({ default: m.PipelineKanban })),
+  () => import('@/modules/pipeline/components/PipelineKanban').then(m => ({ default: m.PipelineKanban })),
   { ssr: false }
 ) as ComponentType<KanbanProps>;
 
 const PipelineTable = dynamic(
-  () => import('@/components/pipeline/PipelineTable').then(m => ({ default: m.PipelineTable })),
+  () => import('@/modules/pipeline/components/PipelineTable').then(m => ({ default: m.PipelineTable })),
   { ssr: false }
 ) as ComponentType<TableProps>;
 
 const PipelineList = dynamic(
-  () => import('@/components/pipeline/PipelineList').then(m => ({ default: m.PipelineList })),
+  () => import('@/modules/pipeline/components/PipelineList').then(m => ({ default: m.PipelineList })),
   { ssr: false }
 ) as ComponentType<ListProps>;
 

@@ -1,5 +1,5 @@
 // apps/web/lib/item-groups.ts
-import { apiFetch } from './api';
+import { apiFetch } from '@/modules/shared/lib/api';
 import type { ItemGroup, ItemGroupWithStages, GroupStage, ItemField, Item } from '@vantage/types';
 
 // Item groups
