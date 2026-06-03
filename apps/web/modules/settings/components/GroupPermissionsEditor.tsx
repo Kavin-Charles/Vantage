@@ -3,11 +3,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
-import { MODULE_REGISTRY } from '@vantage/modules';
+import { PermissionBlock } from './PermissionBlock';
 
-interface GroupPermEntry {
-  permission: string;
+interface PermEntry {
+  key: string;
+  label: string;
   granted: boolean;
+}
+
+interface ModuleBlock {
+  id: string;
+  name: string;
+  permissions: PermEntry[];
+  moduleEnabled?: boolean;
+}
+
+interface PluginBlock {
+  id: string;
+  name: string;
+  icon: string | null;
+  permissions: PermEntry[];
 }
 
 interface Props {
@@ -21,7 +36,13 @@ export function GroupPermissionsEditor({ groupId }: Props) {
   const { data, isLoading } = useQuery({
     queryKey: ['group', groupId],
     queryFn: async () =>
-      apiFetch<{ data: { permissions: GroupPermEntry[]; members: unknown[] }; error: null }>(
+      apiFetch<{
+        data: {
+          permissions: { modules: ModuleBlock[]; plugins: PluginBlock[] };
+          members: unknown[];
+        };
+        error: null;
+      }>(
         `/api/groups/${groupId}`,
         { token: await getToken() },
       ),
@@ -43,46 +64,42 @@ export function GroupPermissionsEditor({ groupId }: Props) {
     return <div style={{ color: 'var(--text3)', fontSize: 13 }}>Loading permissions…</div>;
   }
 
-  const permMap = new Map(data.data.permissions.map(p => [p.permission, p.granted]));
+  const modules = data.data.permissions.modules ?? [];
+  const plugins = data.data.permissions.plugins ?? [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {MODULE_REGISTRY.map(mod => (
-        <div key={mod.id}>
-          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{mod.name}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {mod.permissions.map(p => {
-              const currentlyGranted = permMap.get(p.key) ?? false;
-              const isSet = permMap.has(p.key);
-              return (
-                <div
-                  key={p.key}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '8px 12px', background: 'var(--surface)',
-                    border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 13 }}>{p.label}</span>
-                    {isSet && (
-                      <span style={{ fontSize: 10, background: 'var(--amber-bg)', color: 'var(--amber)', padding: '1px 5px', borderRadius: 3 }}>
-                        Set
-                      </span>
-                    )}
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={currentlyGranted}
-                    disabled={mutation.isPending}
-                    onChange={e => mutation.mutate({ permission: p.key, granted: e.target.checked })}
-                  />
-                </div>
-              );
-            })}
+      {modules.map((mod) => (
+        <PermissionBlock
+          key={mod.id}
+          title={mod.name}
+          permissions={mod.permissions}
+          onToggle={(key, granted) => mutation.mutate({ permission: key, granted })}
+        />
+      ))}
+
+      {plugins.length > 0 && (
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20 }}>
+          <p
+            style={{
+              margin: '0 0 16px', fontSize: 12, fontWeight: 600, color: 'var(--text3)',
+              textTransform: 'uppercase', letterSpacing: '0.05em',
+            }}
+          >
+            Plugin Permissions
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {plugins.map((plugin) => (
+              <PermissionBlock
+                key={plugin.id}
+                title={plugin.name}
+                permissions={plugin.permissions}
+                onToggle={(key, granted) => mutation.mutate({ permission: key, granted })}
+              />
+            ))}
           </div>
         </div>
-      ))}
+      )}
     </div>
   );
 }
