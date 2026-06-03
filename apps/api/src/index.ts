@@ -62,6 +62,9 @@ import { registerWebsitesBridgeMethods } from './routes/websites';
 import { seedDemo } from './lib/seed-demo';
 import { logger } from './lib/logger';
 
+// Added our new route import here
+import { createMessagesRouter } from './routes/messages';
+
 const env = apiEnvSchema.parse(process.env);
 const config = readConfig();
 const db = createDb(env.DATABASE_URL);
@@ -214,6 +217,10 @@ app.use('/api/contacts', requireAuth, requireModule('contacts'), createContactsR
 app.use('/api/companies', requireAuth, requireModule('companies'), createCompaniesRouter(db, requirePermission));
 app.use('/api/record-types', requireAuth, requireModule('pipelines'), createRecordTypesRouter(db, requirePermission));
 app.use('/api/records', requireAuth, requireModule('pipelines'), createRecordsRouter(db, requirePermission));
+
+// Mounted our outbound messaging endpoint right under crm modules
+app.use('/api/messages', requireAuth, createMessagesRouter(db, requirePermission));
+
 // Agent — must come before the broad /api catch below
 app.use('/api/agent', createAgentRouter(db, config.smtp));
 app.use('/api/pipelines', requireAuth, requireModule('pipelines'), createPipelinesRouter(db, requirePermission));
@@ -258,8 +265,6 @@ app.use('/api/servers/:id/ssh', requireAuth, createSshActionsRouter(db));
 
 // Internal (cron) — protected by CRON_SECRET, no auth cookie
 app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));
-
-// (agent route registered above the /api catch-all)
 
 // Public API v1 — API key auth (no requireAuth cookie)
 app.use('/v1', createV1Router(db));
