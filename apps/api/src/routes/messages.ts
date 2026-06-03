@@ -5,8 +5,8 @@ import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { logActivity } from '../lib/log-activity';
 import { logger } from '../lib/logger';
+import twilio from 'twilio';
 
-// 1. Define our incoming payload requirements
 const sendMessageSchema = z.object({
   contactId: z.string().uuid(),
   type: z.enum(['sms', 'whatsapp']),
@@ -16,15 +16,25 @@ const sendMessageSchema = z.object({
 export function createMessagesRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
   const router = Router();
 
-  // POST /api/messages/send
   router.post('/send', requirePermission('contacts:edit'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
-      
-      // 2. Safely parse data from the frontend request body
       const { contactId, type, message } = sendMessageSchema.parse(req.body);
 
-      // 3. Find the contact inside the database to retrieve their number
+      // 1. Grab credentials out of process.env
+      const accountSid = process.env.TWILIO_ACCOUNT_SID;
+      const authToken = process.env.TWILIO_AUTH_TOKEN;
+      const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+
+      if (!accountSid || !authToken || !fromNumber) {
+        res.status(500).json({
+          data: null,
+          error: { code: 'TWILIO_NOT_CONFIGURED', message: 'Twilio integration credentials are missing on the server' }
+        });
+        return;
+      }
+
+      // 2. Fetch the target contact profile
       const contact = await db
         .selectFrom('contacts')
         .where('id', '=', contactId)
@@ -43,21 +53,40 @@ export function createMessagesRouter(db: Kysely<Database>, requirePermission: (p
         return;
       }
 
-      // TODO: Hook up the formal Twilio API Client here to dispatch the transmission!
-      logger.info({ contactId, type }, 'Message routed successfully to staging dispatch');
+      // 3. Initialize Twilio client runtime
+      const client = twilio(accountSid, authToken);
 
-      // 4. Log the interaction to the contact's activity feed history
+      // Format sender/receiver handles dynamically based on message medium type
+      const from = type === 'whatsapp' ? `whatsapp:${fromNumber}` : fromNumber;
+      const to = type === 'whatsapp' ? `whatsapp:${contact.phone}` : contact.phone;
+
+      // 4. Fire the message down the wire
+      logger.info({ contactId, type, to }, 'Initiating outbound API request to Twilio gateway');
+      
+      const twilioResponse = await client.messages.create({
+        body: message,
+        from,
+        to,
+      });
+
+      logger.info({ messageSid: twilioResponse.sid }, 'Twilio dispatch successful');
+
+      // 5. Append the message audit string directly inside the contact activity timeline view
       void logActivity(db, {
         workspace_id: workspace.id,
         user_id: user.id,
         type: 'note',
-        body: `Sent ${type.toUpperCase()} to ${contact.name}: "${message}"`,
+        body: `Sent ${type.toUpperCase()} via Twilio: "${message}"`,
         contact_id: contact.id,
       });
 
-      res.status(200).json({ data: { success: true, channel: type }, error: null });
-    } catch (err) { 
-      next(err); 
+      res.status(200).json({
+        data: { success: true, messageSid: twilioResponse.sid, channel: type },
+        error: null
+      });
+    } catch (err) {
+      logger.error({ err }, 'Twilio gateway transmission exception occurred');
+      next(err);
     }
   });
 
