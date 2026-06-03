@@ -51,7 +51,7 @@ export function loadPluginBackend(pluginId: string, db: Kysely<Database>): void 
     };
 
     const manifest = loadPluginManifest(pluginId);
-    const dataAccess = (manifest?.permissions ?? []) as PluginPermission[];
+    const dataAccess = (manifest?.data_access ?? []) as PluginPermission[];
     const tables = (manifest?.tables ?? []).map((t) => t.name);
 
     if (mod.default?.setup) {

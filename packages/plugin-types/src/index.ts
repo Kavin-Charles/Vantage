@@ -340,6 +340,7 @@ export interface PluginManifest<
   version: string;
   description?: string;
   permissions: Perms;
+  data_access?: PluginPermission[];
   tables?: PluginTableDef[];
   migrations?: PluginMigration[];
   hooks?: PluginHookEvent[];

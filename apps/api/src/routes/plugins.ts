@@ -7,7 +7,6 @@ import AdmZip from 'adm-zip';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
 import { dispatchBridgeCall, runMigrations } from '@vantage/plugin-runtime';
-import type { PluginPermission } from '@vantage/plugin-types';
 import { savePluginFile } from '../lib/plugin-loader';
 
 // ── Multer — memory storage, 10 MB limit ─────────────────────────────────────
@@ -28,8 +27,6 @@ const upload = multer({
 
 const bridgeCallSchema = z.object({
   plugin_id: z.string().min(1),
-  permissions: z.array(z.string()),
-  tables: z.array(z.string()).default([]),
   method: z.string().min(1),
   payload: z.unknown(),
 });
@@ -86,16 +83,25 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         });
       }
 
-      const { plugin_id, permissions, tables, method, payload } = parsed.data;
+      const { plugin_id, method, payload } = parsed.data;
+
+      const pluginRow = await db.selectFrom('workspace_plugins').select(['plugin_id', 'manifest', 'enabled'])
+        .where('workspace_id', '=', workspace.id)
+        .where('plugin_id', '=', plugin_id)
+        .where('enabled', '=', true)
+        .executeTakeFirst();
+
+      if (!pluginRow) {
+        return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found or disabled' } });
+      }
+
+      const manifest = pluginRow.manifest as unknown as import('@vantage/plugin-types').PluginManifest;
+      const dataAccess = (manifest.data_access ?? []) as readonly import('@vantage/plugin-types').PluginPermission[];
+      const tables = (manifest.tables ?? []).map((t) => t.name);
 
       const result = await dispatchBridgeCall(
         db as Kysely<any>,
-        {
-          workspaceId: workspace.id,
-          pluginSlug: plugin_id,
-          dataAccess: permissions as readonly PluginPermission[],
-          tables,
-        },
+        { workspaceId: workspace.id, pluginSlug: plugin_id, dataAccess, tables },
         { method, payload },
       );
 
