@@ -22,6 +22,11 @@ export const apiEnvSchema = z.object({
   MAIL_ENCRYPTION_KEY: z.string().length(64).optional(),
   GMAIL_PUBSUB_TOKEN: z.string().optional(),
   GOOGLE_PUBSUB_TOPIC: z.string().optional(),
+
+  // Twilio Configuration for Outbound Messages (Optional on boot)
+  TWILIO_ACCOUNT_SID: z.string().optional(),
+  TWILIO_AUTH_TOKEN: z.string().optional(),
+  TWILIO_PHONE_NUMBER: z.string().optional(),
 });
 
 // Web env
