@@ -332,18 +332,74 @@ export interface PluginNavEntry {
   group?: 'crm' | 'infra' | 'general';
 }
 
-export interface PluginManifest<
-  Perms extends readonly PluginPermission[] = readonly PluginPermission[],
-> {
+export interface PluginPermissionDef {
+  key: string;
+  label: string;
+  defaultRoles: Array<'admin' | 'member'>;
+}
+
+export type PluginSettingsFieldType = 'text' | 'boolean' | 'number' | 'select';
+
+export interface PluginSettingsFieldBase {
+  type: PluginSettingsFieldType;
+  key: string;
+  label: string;
+  secret?: boolean;
+}
+
+export interface PluginSettingsTextField extends PluginSettingsFieldBase {
+  type: 'text';
+  default?: string;
+}
+
+export interface PluginSettingsBooleanField extends PluginSettingsFieldBase {
+  type: 'boolean';
+  default?: boolean;
+}
+
+export interface PluginSettingsNumberField extends PluginSettingsFieldBase {
+  type: 'number';
+  default?: number;
+  min?: number;
+  max?: number;
+}
+
+export interface PluginSettingsSelectField extends PluginSettingsFieldBase {
+  type: 'select';
+  options: string[];
+  default?: string;
+}
+
+export type PluginSettingsField =
+  | PluginSettingsTextField
+  | PluginSettingsBooleanField
+  | PluginSettingsNumberField
+  | PluginSettingsSelectField;
+
+export interface PluginSurfaces {
+  nav?: Array<{ label: string; path: string; icon?: string; group?: 'crm' | 'infra' | 'general' }>;
+  pages?: Array<{ path: string; title: string }>;
+  widgets?: Array<{ id: string; label: string }>;
+  panels?: Array<{ record_type: string; id: string; label: string }>;
+}
+
+export interface PluginManifest {
   id: string;
   name: string;
   version: string;
   description?: string;
-  permissions: Perms;
+  icon?: string;
+  author?: string;
+  homepage?: string;
+  permissions?: PluginPermissionDef[];
   data_access?: PluginPermission[];
   tables?: PluginTableDef[];
   migrations?: PluginMigration[];
   hooks?: PluginHookEvent[];
+  emits?: string[];
+  surfaces?: PluginSurfaces;
+  settings_schema?: PluginSettingsField[];
+  build?: { server?: string; client?: string };
   nav?: PluginNavEntry;
   ui?: {
     widgets?: Array<'contact-detail' | 'deal-detail' | 'dashboard-widget' | 'full-page'>;

@@ -4,10 +4,14 @@ import type { Database } from '@vantage/db';
 import { z } from 'zod';
 import multer from 'multer';
 import AdmZip from 'adm-zip';
+import * as esbuild from 'esbuild';
+import * as os from 'os';
+import * as path from 'path';
+import * as fs from 'fs';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
 import { dispatchBridgeCall, runMigrations } from '@vantage/plugin-runtime';
-import { savePluginFile } from '../lib/plugin-loader';
+import { savePluginFile, loadPluginBackend, invalidatePlugin } from '../lib/plugin-loader';
 
 // ── Multer — memory storage, 10 MB limit ─────────────────────────────────────
 
@@ -31,35 +35,45 @@ const bridgeCallSchema = z.object({
   payload: z.unknown(),
 });
 
-const navSchema = z.object({
-  label: z.string().min(1).max(64),
-  href: z.string().min(1).max(255),
-  icon: z.string().max(32).optional(),
-  group: z.enum(['crm', 'infra', 'general']).optional(),
+const permissionDefSchema = z.object({
+  key: z.string().min(1),
+  label: z.string().min(1),
+  defaultRoles: z.array(z.enum(['admin', 'member'])),
 });
+
+const settingsFieldSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('text'), key: z.string(), label: z.string(), secret: z.boolean().optional(), default: z.string().optional() }),
+  z.object({ type: z.literal('boolean'), key: z.string(), label: z.string(), secret: z.boolean().optional(), default: z.boolean().optional() }),
+  z.object({ type: z.literal('number'), key: z.string(), label: z.string(), secret: z.boolean().optional(), default: z.number().optional(), min: z.number().optional(), max: z.number().optional() }),
+  z.object({ type: z.literal('select'), key: z.string(), label: z.string(), secret: z.boolean().optional(), options: z.array(z.string()), default: z.string().optional() }),
+]);
 
 const manifestSchema = z.object({
   id: z.string().min(1).max(128),
   name: z.string().min(1).max(255),
   version: z.string().min(1).max(32),
   description: z.string().max(512).optional(),
-  permissions: z.array(z.string()).default([]),
-  tables: z.array(z.string()).default([]),
-  nav: navSchema.optional(),
-  migrations: z
-    .array(
-      z.object({
-        version: z.string(),
-        up: z.string(),
-        down: z.string().optional(),
-      }),
-    )
-    .optional()
-    .default([]),
-});
-
-const installSchema = z.object({
-  manifest: manifestSchema,
+  icon: z.string().max(64).optional(),
+  author: z.string().max(255).optional(),
+  homepage: z.string().url().optional(),
+  permissions: z.array(permissionDefSchema).optional().default([]),
+  data_access: z.array(z.string()).optional().default([]),
+  tables: z.array(z.object({
+    name: z.string(),
+    columns: z.array(z.object({ name: z.string(), type: z.string(), nullable: z.boolean().optional(), primary: z.boolean().optional(), unique: z.boolean().optional(), default: z.string().optional() })),
+    drop_on_uninstall: z.boolean().optional(),
+  })).optional().default([]),
+  migrations: z.array(z.object({ version: z.string(), up: z.string(), down: z.string().optional() })).optional().default([]),
+  hooks: z.array(z.string()).optional().default([]),
+  emits: z.array(z.string()).optional().default([]),
+  surfaces: z.object({
+    nav: z.array(z.object({ label: z.string(), path: z.string(), icon: z.string().optional(), group: z.enum(['crm', 'infra', 'general']).optional() })).optional(),
+    pages: z.array(z.object({ path: z.string(), title: z.string() })).optional(),
+    widgets: z.array(z.object({ id: z.string(), label: z.string() })).optional(),
+    panels: z.array(z.object({ record_type: z.string(), id: z.string(), label: z.string() })).optional(),
+  }).optional(),
+  settings_schema: z.array(settingsFieldSchema).optional().default([]),
+  build: z.object({ server: z.string().optional(), client: z.string().optional() }).optional(),
 });
 
 // ── Router ────────────────────────────────────────────────────────────────────
@@ -112,30 +126,6 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   /**
-   * POST /api/plugins/install
-   * Runs migrations for a plugin manifest (programmatic install).
-   */
-  router.post('/install', requireAdmin, async (req, res, next) => {
-    try {
-      const { workspace } = req as unknown as AuthenticatedRequest;
-
-      const parsed = installSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({
-          data: null,
-          error: { code: 'INVALID_REQUEST', message: parsed.error.message },
-        });
-      }
-
-      const { manifest } = parsed.data;
-      await runMigrations(db as Kysely<any>, manifest.id, workspace.id, manifest.migrations);
-      return res.json({ data: { ok: true }, error: null });
-    } catch (err) {
-      return next(err);
-    }
-  });
-
-  /**
    * GET /api/plugins
    * Lists all plugins installed for the workspace.
    */
@@ -157,86 +147,247 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   /**
-   * POST /api/plugins/upload
-   * Accepts a .zip containing manifest.json. Extracts + validates the manifest,
-   * runs plugin migrations, then upserts the plugin record.
+   * GET /api/plugins/:id
+   * Returns a single plugin by row id.
    */
-  router.post('/upload', requireAdmin, upload.single('plugin'), async (req, res, next) => {
+  router.get('/:id', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
+      const plugin = await db.selectFrom('workspace_plugins').selectAll()
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .executeTakeFirst();
+      if (!plugin) {
+        return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
+      }
+      return res.json({ data: plugin, error: null });
+    } catch (err) {
+      return next(err);
+    }
+  });
 
-      if (!req.file) {
-        return res.status(400).json({
-          data: null,
-          error: { code: 'MISSING_FILE', message: 'No zip file uploaded' },
-        });
+  /**
+   * GET /api/plugins/:id/client.js
+   * Serves the compiled client bundle for a plugin.
+   */
+  router.get('/:id/client.js', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const plugin = await db.selectFrom('workspace_plugins').select(['plugin_id', 'enabled'])
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .executeTakeFirst();
+      if (!plugin || !plugin.enabled) {
+        return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
+      }
+      const storageDir = process.env['PLUGIN_STORAGE_DIR'] ?? path.join(process.cwd(), 'plugin-storage');
+      const filePath = path.join(storageDir, plugin.plugin_id, 'client.js');
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ data: null, error: { code: 'NO_CLIENT', message: 'No client bundle for this plugin' } });
+      }
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Cache-Control', 'no-cache');
+      return res.sendFile(filePath);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  /**
+   * GET /api/plugins/:id/settings
+   * Returns non-secret plugin settings for the workspace.
+   */
+  router.get('/:id/settings', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const plugin = await db.selectFrom('workspace_plugins').select(['plugin_id', 'manifest'])
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .executeTakeFirst();
+      if (!plugin) {
+        return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
       }
 
-      // Extract manifest.json (and optional server.cjs) from zip
-      let manifestRaw: unknown;
-      let serverBundle: Buffer | null = null;
-      try {
-        const zip = new AdmZip(req.file.buffer);
-        const entry = zip.getEntry('manifest.json');
-        if (!entry) {
-          return res.status(400).json({
-            data: null,
-            error: { code: 'MISSING_MANIFEST', message: 'manifest.json not found in zip' },
-          });
+      const manifest = plugin.manifest as unknown as import('@vantage/plugin-types').PluginManifest;
+      const schema = manifest.settings_schema ?? [];
+      const secretKeys = new Set(schema.filter((f) => f.secret).map((f) => f.key));
+
+      const rows = await (db as any).selectFrom('plugin_settings')
+        .select(['key', 'value'])
+        .where('workspace_id', '=', workspace.id)
+        .where('plugin_id', '=', plugin.plugin_id)
+        .execute() as Array<{ key: string; value: unknown }>;
+
+      const settings: Record<string, unknown> = {};
+      for (const row of rows) {
+        if (!secretKeys.has(row.key)) {
+          settings[row.key] = row.value;
         }
-        const text = entry.getData().toString('utf8');
-        manifestRaw = JSON.parse(text);
-        const bundleEntry = zip.getEntry('server.cjs');
-        if (bundleEntry) serverBundle = bundleEntry.getData();
-      } catch {
-        return res.status(400).json({
-          data: null,
-          error: { code: 'INVALID_ZIP', message: 'Failed to read or parse zip file' },
-        });
+      }
+      return res.json({ data: settings, error: null });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  /**
+   * PUT /api/plugins/:id/settings
+   * Upserts plugin settings for the workspace.
+   */
+  router.put('/:id/settings', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const plugin = await db.selectFrom('workspace_plugins').select(['plugin_id', 'manifest'])
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .executeTakeFirst();
+      if (!plugin) {
+        return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
       }
 
-      // Validate manifest shape
+      const manifest = plugin.manifest as unknown as import('@vantage/plugin-types').PluginManifest;
+      const schema = manifest.settings_schema ?? [];
+      const validKeys = new Set(schema.map((f) => f.key));
+      const secretKeys = new Set(schema.filter((f) => f.secret).map((f) => f.key));
+
+      const body = z.record(z.unknown()).parse(req.body);
+
+      for (const [key, value] of Object.entries(body)) {
+        if (!validKeys.has(key)) continue;
+        await (db as any).insertInto('plugin_settings')
+          .values({
+            workspace_id: workspace.id,
+            plugin_id: plugin.plugin_id,
+            key,
+            value: value as any,
+            encrypted: secretKeys.has(key),
+          })
+          .onConflict((oc: any) =>
+            oc.columns(['workspace_id', 'plugin_id', 'key']).doUpdateSet({ value: value as any, updated_at: new Date() })
+          )
+          .execute();
+      }
+      return res.json({ data: { ok: true }, error: null });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  /**
+   * POST /api/plugins/upload
+   * Accepts a .zip containing plugin.json. Extracts, validates, compiles with
+   * esbuild, saves bundles, runs migrations, then upserts the plugin record.
+   */
+  router.post('/upload', requireAdmin, upload.single('plugin'), async (req, res, next) => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vantage-plugin-'));
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      if (!req.file) {
+        return res.status(400).json({ data: null, error: { code: 'MISSING_FILE', message: 'No zip file uploaded' } });
+      }
+
+      // Extract zip to temp dir
+      const zip = new AdmZip(req.file.buffer);
+      zip.extractAllTo(tmpDir, true);
+
+      // Read plugin.json
+      const pluginJsonPath = path.join(tmpDir, 'plugin.json');
+      if (!fs.existsSync(pluginJsonPath)) {
+        return res.status(400).json({ data: null, error: { code: 'MISSING_PLUGIN_JSON', message: 'plugin.json not found in zip root' } });
+      }
+      let manifestRaw: unknown;
+      try {
+        manifestRaw = JSON.parse(fs.readFileSync(pluginJsonPath, 'utf8'));
+      } catch {
+        return res.status(400).json({ data: null, error: { code: 'INVALID_JSON', message: 'plugin.json is not valid JSON' } });
+      }
+
       const parsed = manifestSchema.safeParse(manifestRaw);
       if (!parsed.success) {
-        return res.status(400).json({
-          data: null,
-          error: { code: 'INVALID_MANIFEST', message: parsed.error.message },
+        return res.status(400).json({ data: null, error: { code: 'INVALID_MANIFEST', message: parsed.error.message } });
+      }
+      const mf = parsed.data;
+
+      // Compile server bundle
+      if (mf.build?.server) {
+        const entryPath = path.join(tmpDir, mf.build.server);
+        if (!fs.existsSync(entryPath)) {
+          return res.status(400).json({ data: null, error: { code: 'MISSING_ENTRY', message: `build.server entry not found: ${mf.build.server}` } });
+        }
+        const outfile = path.join(tmpDir, '_server_out.cjs');
+        const result = await esbuild.build({
+          entryPoints: [entryPath],
+          bundle: true,
+          platform: 'node',
+          format: 'cjs',
+          outfile,
+          external: ['@vantage/plugin-sdk', '@vantage/plugin-types'],
+          logLevel: 'silent',
         });
+        if (result.errors.length > 0) {
+          return res.status(400).json({ data: null, error: { code: 'BUILD_FAILED', message: result.errors.map((e) => e.text).join('\n') } });
+        }
+        savePluginFile(mf.id, 'server.cjs', fs.readFileSync(outfile));
       }
 
-      const manifest = parsed.data;
+      // Compile client bundle
+      if (mf.build?.client) {
+        const entryPath = path.join(tmpDir, mf.build.client);
+        if (!fs.existsSync(entryPath)) {
+          return res.status(400).json({ data: null, error: { code: 'MISSING_ENTRY', message: `build.client entry not found: ${mf.build.client}` } });
+        }
+        const outfile = path.join(tmpDir, '_client_out.js');
+        const result = await esbuild.build({
+          entryPoints: [entryPath],
+          bundle: true,
+          platform: 'browser',
+          format: 'esm',
+          outfile,
+          external: ['@vantage/plugin-sdk', '@vantage/plugin-sdk/react', 'react', 'react-dom'],
+          logLevel: 'silent',
+        });
+        if (result.errors.length > 0) {
+          return res.status(400).json({ data: null, error: { code: 'BUILD_FAILED', message: result.errors.map((e) => e.text).join('\n') } });
+        }
+        savePluginFile(mf.id, 'client.js', fs.readFileSync(outfile));
+      }
 
-      // Run plugin migrations
-      await runMigrations(db as Kysely<any>, manifest.id, workspace.id, manifest.migrations);
+      // Save plugin.json
+      savePluginFile(mf.id, 'plugin.json', Buffer.from(JSON.stringify(mf)));
 
-      // Save server bundle if present
-      if (serverBundle) savePluginFile(manifest.id, 'server.cjs', serverBundle);
+      // Run DB migrations
+      await runMigrations(db as Kysely<any>, mf.id, workspace.id, mf.migrations);
 
-      // Upsert plugin record
+      // Upsert workspace_plugins
       const plugin = await db
         .insertInto('workspace_plugins')
         .values({
           workspace_id: workspace.id,
-          plugin_id: manifest.id,
-          name: manifest.name,
-          version: manifest.version,
-          manifest: manifest as unknown as Record<string, unknown>,
+          plugin_id: mf.id,
+          name: mf.name,
+          version: mf.version,
+          manifest: mf as unknown as Record<string, unknown>,
           enabled: true,
         })
-        .onConflict(oc =>
+        .onConflict((oc) =>
           oc.constraint('workspace_plugins_workspace_plugin_unique').doUpdateSet({
-            name: manifest.name,
-            version: manifest.version,
-            manifest: manifest as unknown as Record<string, unknown>,
+            name: mf.name,
+            version: mf.version,
+            manifest: mf as unknown as Record<string, unknown>,
             enabled: true,
-          }),
+          })
         )
         .returningAll()
         .executeTakeFirstOrThrow();
 
+      // Load backend bundle
+      loadPluginBackend(mf.id, db);
+
       return res.status(201).json({ data: plugin, error: null });
     } catch (err) {
       return next(err);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
 
@@ -260,6 +411,8 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       if (!plugin) {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
       }
+
+      if (!enabled) invalidatePlugin(plugin.plugin_id);
 
       return res.json({ data: plugin, error: null });
     } catch (err) {
@@ -285,6 +438,8 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       if (!deleted) {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
       }
+
+      invalidatePlugin(deleted.plugin_id);
 
       return res.json({ data: { ok: true }, error: null });
     } catch (err) {
