@@ -5,6 +5,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getRecord, updateRecord, deleteRecord } from '@/modules/pipeline/lib/records';
 import { listConversions } from '@/modules/pipeline/lib/record-types';
 import { ConversionWizard } from './ConversionWizard';
+import { PluginPanelSlot } from '@/modules/shared/components/PluginPanelSlot';
 import type { PipelineWithDetails, PipelineRecordWithValues, RecordTypeField } from '@vantage/types';
 
 interface Props {
@@ -152,6 +153,10 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
           {fields.map(field => (
             <FieldRow key={field.id} field={field} value={getFieldValue(field.id)} onBlur={handleFieldBlur} />
           ))}
+          <PluginPanelSlot
+            recordType={pipeline.record_type.name.toLowerCase()}
+            recordId={recordId}
+          />
         </div>
 
         {/* Footer */}

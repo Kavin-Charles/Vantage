@@ -8,6 +8,7 @@ import { Modal } from '@/modules/shared/components/ui/Modal';
 import { ContactForm } from './ContactForm';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listContacts, deleteContact } from '@/modules/contacts/lib/contacts';
+import { PluginPanelSlot } from '@/modules/shared/components/PluginPanelSlot';
 import type { Contact } from '@vantage/types';
 
 const COLS = '1.6fr 1.6fr 1.1fr .9fr 1fr auto';
@@ -82,6 +83,9 @@ export function ContactsTable() {
             contact={modal === 'create' ? undefined : modal as Contact}
             onDone={() => setModal(null)}
           />
+          {modal !== 'create' && (modal as Contact).id && (
+            <PluginPanelSlot recordType="contact" recordId={(modal as Contact).id} />
+          )}
         </Modal>
       )}
     </>
