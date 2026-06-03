@@ -11,6 +11,7 @@ import { useAuth } from '@/modules/shared/lib/AuthContext';
 import { useConfig } from '@/modules/shared/lib/useConfig';
 import { useModules } from '@/modules/shared/contexts/modules';
 import { Icon } from '@/modules/shared/components/ui/Icon';
+import { useInstalledPlugins } from '@/modules/shared/hooks/useInstalledPlugins';
 
 const NAV_GROUPS = [
   {
@@ -128,6 +129,19 @@ export function Sidebar() {
     refetchInterval: 30_000,
     retry: 3,
   });
+  const { data: installedPlugins = [] } = useInstalledPlugins();
+
+  const surfaceNavItems = installedPlugins
+    .filter((p) => p.enabled && (p.manifest?.surfaces?.nav?.length ?? 0) > 0)
+    .flatMap((p) =>
+      (p.manifest?.surfaces?.nav ?? []).map((item) => ({
+        href: `/plugins/${p.plugin_id}${item.path}`,
+        label: item.label,
+        icon: item.icon ?? 'puzzle',
+        pluginId: p.plugin_id,
+      })),
+    );
+
   const { data: alertData } = useQuery({
     queryKey: ['alerts-badge'],
     queryFn: async () => apiFetch<{ data: unknown[]; total: number; error: null }>('/api/alerts?resolved=false&severity=critical&limit=1', { token: await getToken() }),
@@ -209,6 +223,27 @@ export function Sidebar() {
           </div>
         );
       })}
+
+      {/* Plugin nav items from surfaces.nav */}
+      {surfaceNavItems.length > 0 && (
+        <div style={{ padding: '12px 12px 4px' }}>
+          <div style={{
+            fontSize: 10, fontWeight: 600, color: 'var(--text3)',
+            textTransform: 'uppercase', letterSpacing: 1.4,
+            padding: '0 10px', marginBottom: 6,
+          }}>
+            Plugins
+          </div>
+          {surfaceNavItems.map((item) => (
+            <NavLink
+              key={`${item.pluginId}:${item.href}`}
+              href={item.href}
+              label={item.label}
+              icon={item.icon}
+            />
+          ))}
+        </div>
+      )}
 
       {/* User */}
       <div style={{ marginTop: 'auto', padding: 12, borderTop: '1px solid var(--border)' }}>
