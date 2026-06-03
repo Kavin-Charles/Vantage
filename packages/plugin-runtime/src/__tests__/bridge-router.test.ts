@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { dispatchBridgeCall } from '../bridge-router';
+import { bridgeRegistry } from '../bridge-registry';
 import type { BridgeContext } from '../bridge-router';
 import type { Kysely } from 'kysely';
 
@@ -7,7 +8,7 @@ function makeCtx(overrides: Partial<BridgeContext> = {}): BridgeContext {
   return {
     workspaceId: 'ws-1',
     pluginSlug: 'com.example.test',
-    permissions: ['contacts:read', 'contacts:write', 'storage:read', 'storage:write'],
+    dataAccess: ['contacts:read', 'contacts:write', 'storage:read', 'storage:write'],
     tables: ['my_cache'],
     ...overrides,
   };
@@ -26,18 +27,29 @@ function makeDb(selectResult: unknown[] = []): Kysely<any> {
   return chain as unknown as Kysely<any>;
 }
 
-describe('dispatchBridgeCall — permission gate', () => {
-  it('returns FORBIDDEN when permission missing', async () => {
+describe('dispatchBridgeCall — permission gate (registry-based)', () => {
+  it('returns FORBIDDEN when registered handler permission missing', async () => {
     const db = makeDb();
-    const ctx = makeCtx({ permissions: [] });
-    const result = await dispatchBridgeCall(db, ctx, { method: 'contacts.list', payload: {} });
+    // Register a contacts.list handler requiring contacts:read
+    bridgeRegistry.register('contacts.list.test_forbidden', 'contacts:read', async () => []);
+    const ctx = makeCtx({ dataAccess: [] });
+    const result = await dispatchBridgeCall(db, ctx, { method: 'contacts.list.test_forbidden', payload: {} });
     expect(result.error?.code).toBe('FORBIDDEN');
   });
 
-  it('returns data when permission satisfied', async () => {
+  it('returns data when registered handler permission satisfied', async () => {
     const db = makeDb([{ id: '1' }]);
-    const result = await dispatchBridgeCall(db, makeCtx(), { method: 'contacts.list', payload: { filter: {} } });
+    bridgeRegistry.register('contacts.list.test_ok', 'contacts:read', async () => [{ id: '1' }]);
+    const result = await dispatchBridgeCall(db, makeCtx(), { method: 'contacts.list.test_ok', payload: {} });
     expect(result.error).toBeNull();
+    expect(result.data).toEqual([{ id: '1' }]);
+  });
+
+  // Module methods (contacts.list, deals.get etc.) are registered at API startup (Task 9)
+  it('returns UNKNOWN_METHOD for unregistered module method', async () => {
+    const db = makeDb();
+    const result = await dispatchBridgeCall(db, makeCtx(), { method: 'contacts.list', payload: {} });
+    expect(result.error?.code).toBe('UNKNOWN_METHOD');
   });
 });
 
