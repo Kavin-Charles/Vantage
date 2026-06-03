@@ -8,7 +8,7 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
 import { dispatchBridgeCall, runMigrations } from '@vantage/plugin-runtime';
 import type { PluginPermission } from '@vantage/plugin-types';
-import { savePluginBundle } from '../lib/plugin-loader';
+import { savePluginFile } from '../lib/plugin-loader';
 
 // ── Multer — memory storage, 10 MB limit ─────────────────────────────────────
 
@@ -93,7 +93,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         {
           workspaceId: workspace.id,
           pluginSlug: plugin_id,
-          permissions: permissions as readonly PluginPermission[],
+          dataAccess: permissions as readonly PluginPermission[],
           tables,
         },
         { method, payload },
@@ -204,7 +204,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       await runMigrations(db as Kysely<any>, manifest.id, workspace.id, manifest.migrations);
 
       // Save server bundle if present
-      if (serverBundle) savePluginBundle(manifest.id, serverBundle);
+      if (serverBundle) savePluginFile(manifest.id, 'server.cjs', serverBundle);
 
       // Upsert plugin record
       const plugin = await db

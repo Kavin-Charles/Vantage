@@ -49,14 +49,144 @@ import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
 import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
-import { loadPluginRouter } from './lib/plugin-loader';
+import { loadPluginBackend, getPluginRouter } from './lib/plugin-loader';
 import { seedOnFirstBoot } from './lib/seed';
+import { bridgeRegistry, pluginEventBus } from '@vantage/plugin-runtime';
+import { registerContactsBridgeMethods } from './routes/contacts';
+import { registerCompaniesBridgeMethods } from './routes/companies';
+import { registerDealsBridgeMethods } from './routes/pipelines';
+import { registerTasksBridgeMethods } from './routes/tasks';
+import { registerActivityBridgeMethods } from './routes/activity';
+import { registerServersBridgeMethods } from './routes/servers';
+import { registerWebsitesBridgeMethods } from './routes/websites';
 import { seedDemo } from './lib/seed-demo';
 import { logger } from './lib/logger';
 
 const env = apiEnvSchema.parse(process.env);
 const config = readConfig();
 const db = createDb(env.DATABASE_URL);
+
+// Register all module bridge methods
+registerContactsBridgeMethods();
+registerCompaniesBridgeMethods();
+registerDealsBridgeMethods();
+registerTasksBridgeMethods();
+registerActivityBridgeMethods();
+registerServersBridgeMethods();
+registerWebsitesBridgeMethods();
+
+// Register built-in bridge methods
+bridgeRegistry
+  .register('storage.get', 'storage:read', async (ctx, p, db) => {
+    const key = `${ctx.pluginSlug}:${p.key as string}`;
+    const row = await (db as any).selectFrom('plugin_storage').select('value')
+      .where('workspace_id', '=', ctx.workspaceId)
+      .where('key', '=', key)
+      .executeTakeFirst();
+    return row ? row.value : null;
+  })
+  .register('storage.set', 'storage:write', async (ctx, p, db) => {
+    const key = `${ctx.pluginSlug}:${p.key as string}`;
+    await (db as any).insertInto('plugin_storage')
+      .values({ workspace_id: ctx.workspaceId, key, value: p.value })
+      .onConflict((oc: any) => oc.columns(['workspace_id', 'key']).doUpdateSet({ value: p.value }))
+      .execute();
+    return null;
+  })
+  .register('storage.delete', 'storage:write', async (ctx, p, db) => {
+    const key = `${ctx.pluginSlug}:${p.key as string}`;
+    await (db as any).deleteFrom('plugin_storage')
+      .where('workspace_id', '=', ctx.workspaceId)
+      .where('key', '=', key)
+      .execute();
+    return null;
+  })
+  .register('http.fetch', 'http:fetch', async (_ctx, p) => {
+    const url = p.url as string;
+    const timeoutMs = (p.timeout as number | undefined) ?? 30_000;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, {
+        method: (p.method as string | undefined) ?? 'GET',
+        headers: p.headers as Record<string, string> | undefined,
+        body: p.body as string | undefined,
+        signal: controller.signal,
+      });
+      const body = await res.text();
+      const headers: Record<string, string> = {};
+      res.headers.forEach((v: string, k: string) => { headers[k] = v; });
+      return { status: res.status, headers, body, ok: res.ok };
+    } catch (err) {
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      throw { code: isAbort ? 'TIMEOUT' : 'BRIDGE_ERROR', message: err instanceof Error ? err.message : String(err) };
+    } finally {
+      clearTimeout(timer);
+    }
+  })
+  .register('settings.get', null, async (ctx, p, db) => {
+    const row = await (db as any).selectFrom('plugin_settings').select('value')
+      .where('workspace_id', '=', ctx.workspaceId)
+      .where('plugin_id', '=', ctx.pluginSlug)
+      .where('key', '=', p.key as string)
+      .executeTakeFirst();
+    return row ? row.value : null;
+  })
+  .register('settings.set', null, async (ctx, p, db) => {
+    await (db as any).insertInto('plugin_settings')
+      .values({ workspace_id: ctx.workspaceId, plugin_id: ctx.pluginSlug, key: p.key as string, value: p.value })
+      .onConflict((oc: any) => oc.columns(['workspace_id', 'plugin_id', 'key']).doUpdateSet({ value: p.value, updated_at: new Date() }))
+      .execute();
+    return null;
+  })
+  .register('bus.emit', null, async (ctx, p) => {
+    const event = p.event as string;
+    if (!event.match(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/)) {
+      throw { code: 'INVALID_EVENT', message: 'Event name must use reverse-domain format' };
+    }
+    await pluginEventBus.forWorkspace(ctx.workspaceId).emit(event, p.payload);
+    return null;
+  })
+  .register('user.get', null, async (ctx, _p, db) => {
+    const row = await (db as any).selectFrom('users').select(['id', 'name', 'email', 'role'])
+      .where('workspace_id', '=', ctx.workspaceId)
+      .executeTakeFirst();
+    return row ?? null;
+  })
+  .register('workspace.get', null, async (ctx, _p, db) => {
+    const row = await (db as any).selectFrom('workspaces').select(['id', 'name', 'plan'])
+      .where('id', '=', ctx.workspaceId)
+      .executeTakeFirst();
+    return row ?? null;
+  })
+  .register('notify', null, async (ctx, p, db) => {
+    const users = await (db as any).selectFrom('users').select('id')
+      .where('workspace_id', '=', ctx.workspaceId)
+      .execute();
+    await Promise.all((users as Array<{ id: string }>).map((u) =>
+      (db as any).insertInto('plugin_notifications').values({
+        workspace_id: ctx.workspaceId,
+        user_id: u.id,
+        plugin_id: ctx.pluginSlug,
+        title: p.title as string,
+        body: (p.body as string | undefined) ?? null,
+        type: (p.type as string | undefined) ?? 'info',
+      }).execute()
+    ));
+    return null;
+  })
+  .register('permissions.check', null, async (ctx, p, db) => {
+    const { pluginPermissionKey } = await import('@vantage/plugin-runtime');
+    const fullKey = pluginPermissionKey(ctx.pluginSlug, p.permissionKey as string);
+    const row = await (db as any).selectFrom('user_permissions')
+      .select('granted')
+      .where('workspace_id', '=', ctx.workspaceId)
+      .where('user_id', '=', p.userId as string)
+      .where('permission', '=', fullKey)
+      .executeTakeFirst();
+    return row?.granted ?? false;
+  });
+
 const requireAuth = createRequireAuth(db, env.JWT_SECRET);
 const requireModule = createRequireModule(db);
 const requirePermission = createRequirePermission(db);
@@ -102,7 +232,7 @@ app.use('/api/plugins', requireAuth, createPluginsRouter(db));
 // Dynamic plugin route dispatcher — forwards /api/plugins/route/:pluginId/* to loaded bundle
 app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
   const pluginId = req.params['pluginId']!;
-  const router = loadPluginRouter(pluginId, db);
+  const router = getPluginRouter(pluginId);
   if (!router) {
     return res.status(404).json({ data: null, error: { code: 'PLUGIN_NOT_MOUNTED', message: 'Plugin has no server bundle' } });
   }
