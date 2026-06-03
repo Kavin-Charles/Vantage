@@ -5,6 +5,7 @@ import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { invalidatePermissionCache } from '../middleware/permission';
 import { MODULE_REGISTRY, getDefaultPermissionsForRole, getModuleForPermission } from '@vantage/modules';
+import { pluginPermissionKey } from '@vantage/plugin-runtime';
 
 const upsertSchema = z.object({
   permission: z.string().min(1),
@@ -50,7 +51,7 @@ export function createUserPermissionsRouter(db: Kysely<Database>): Router {
 
       const roleDefaults = new Set(getDefaultPermissionsForRole(targetUser.role));
 
-      const permissions = MODULE_REGISTRY.flatMap(mod =>
+      const modules = MODULE_REGISTRY.flatMap(mod =>
         mod.permissions.map(p => {
           const moduleEnabled = enabledModuleIds.has(mod.id);
           const roleDefault = roleDefaults.has(p.key);
@@ -74,7 +75,30 @@ export function createUserPermissionsRouter(db: Kysely<Database>): Router {
         }),
       );
 
-      res.json({ data: { permissions }, error: null });
+      const installedPlugins = await db
+        .selectFrom('workspace_plugins')
+        .select(['plugin_id', 'name', 'manifest'])
+        .where('workspace_id', '=', workspace.id)
+        .where('enabled', '=', true)
+        .execute();
+
+      const plugins = installedPlugins.map((p) => {
+        const manifest = p.manifest as unknown as import('@vantage/plugin-types').PluginManifest;
+        const perms = (manifest.permissions ?? []).map((perm) => {
+          const key = pluginPermissionKey(p.plugin_id, perm.key);
+          const override = overrideMap.get(key);
+          const granted =
+            targetUser.role === 'admin'
+              ? true
+              : override !== undefined
+              ? override
+              : perm.defaultRoles.includes(targetUser.role as any);
+          return { key, label: perm.label, granted };
+        });
+        return { id: p.plugin_id, name: p.name, icon: (manifest.icon ?? null), permissions: perms };
+      });
+
+      res.json({ data: { modules, plugins }, error: null });
     } catch (err) {
       next(err);
     }

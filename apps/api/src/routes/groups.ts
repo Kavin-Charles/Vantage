@@ -4,7 +4,8 @@ import { sql, type Kysely } from 'kysely';
 import type { Database } from '@vantage/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { invalidatePermissionCache, invalidateGroupMemberCaches } from '../middleware/permission';
-import { getModuleForPermission } from '@vantage/modules';
+import { getModuleForPermission, MODULE_REGISTRY } from '@vantage/modules';
+import { pluginPermissionKey } from '@vantage/plugin-runtime';
 
 const createGroupSchema = z.object({
   name: z.string().min(1).max(100),
@@ -88,12 +89,41 @@ export function createGroupsRouter(db: Kysely<Database>): Router {
         .where('gm.group_id', '=', group.id)
         .select(['u.id', 'u.name', 'u.email', 'u.role', 'gm.created_at as joined_at'])
         .execute();
-      const permissions = await db
+
+      const groupPermRows = await db
         .selectFrom('group_permissions')
         .where('group_id', '=', group.id)
         .select(['permission', 'granted'])
         .execute();
-      res.json({ data: { ...group, members, permissions }, error: null });
+      const grantMap = new Map(groupPermRows.map((r) => [r.permission, r.granted]));
+
+      const modulePermissions = MODULE_REGISTRY.flatMap((mod) =>
+        mod.permissions.map((p) => ({
+          key: p.key,
+          label: p.label,
+          moduleId: mod.id,
+          moduleName: mod.name,
+          granted: grantMap.get(p.key) ?? false,
+        })),
+      );
+
+      const installedPlugins = await db
+        .selectFrom('workspace_plugins')
+        .select(['plugin_id', 'name', 'manifest'])
+        .where('workspace_id', '=', workspace.id)
+        .where('enabled', '=', true)
+        .execute();
+
+      const pluginPermissions = installedPlugins.map((p) => {
+        const manifest = p.manifest as unknown as import('@vantage/plugin-types').PluginManifest;
+        const perms = (manifest.permissions ?? []).map((perm) => {
+          const key = pluginPermissionKey(p.plugin_id, perm.key);
+          return { key, label: perm.label, granted: grantMap.get(key) ?? false };
+        });
+        return { id: p.plugin_id, name: p.name, icon: (manifest.icon ?? null), permissions: perms };
+      });
+
+      res.json({ data: { ...group, members, permissions: { modules: modulePermissions, plugins: pluginPermissions } }, error: null });
     } catch (err) { next(err); }
   });
 
