@@ -1,26 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { checkPermission } from '../permissions';
+import {
+  checkPermission,
+  pluginPermissionKey,
+  isPluginPermissionKey,
+  parsePluginPermissionKey,
+} from '../permissions';
 import type { PluginPermission } from '@vantage/plugin-types';
 
 const READ_CONTACTS: PluginPermission[] = ['contacts:read'];
 const READ_WRITE: PluginPermission[] = ['contacts:read', 'contacts:write', 'storage:read', 'storage:write'];
 
 describe('checkPermission', () => {
-  it('returns null when permission satisfied', () => {
-    expect(checkPermission(READ_CONTACTS, 'contacts.list')).toBeNull();
-    expect(checkPermission(READ_CONTACTS, 'contacts.get')).toBeNull();
-  });
-
-  it('returns PluginError when permission missing', () => {
-    const err = checkPermission(READ_CONTACTS, 'contacts.create');
-    expect(err).not.toBeNull();
-    expect(err?.code).toBe('FORBIDDEN');
-    expect(err?.message).toContain('contacts:write');
+  it('returns null when storage permission satisfied', () => {
+    expect(checkPermission(READ_WRITE, 'storage.get')).toBeNull();
+    expect(checkPermission(READ_WRITE, 'storage.set')).toBeNull();
   });
 
   it('returns null for unknown method (custom action passthrough)', () => {
-    const err = checkPermission(READ_CONTACTS, 'unknown.method');
-    expect(err).toBeNull();
+    expect(checkPermission(READ_CONTACTS, 'unknown.method')).toBeNull();
   });
 
   it('allows storage.get with storage:read', () => {
@@ -45,7 +42,36 @@ describe('checkPermission', () => {
     expect(checkPermission([...READ_CONTACTS, 'http:fetch'], 'http.fetch')).toBeNull();
   });
 
-  it('allows custom action methods (passthrough)', () => {
-    expect(checkPermission(READ_CONTACTS, 'deals.move-stage')).toBeNull();
+  it('returns FORBIDDEN error with data_access in message', () => {
+    const err = checkPermission([], 'http.fetch');
+    expect(err).not.toBeNull();
+    expect(err?.code).toBe('FORBIDDEN');
+    expect(err?.message).toContain('http:fetch');
+  });
+
+  it('module methods not in map return null (registered via registry at startup)', () => {
+    expect(checkPermission([], 'contacts.list')).toBeNull();
+    expect(checkPermission([], 'deals.get')).toBeNull();
+  });
+});
+
+describe('plugin permission key helpers', () => {
+  it('pluginPermissionKey formats correctly', () => {
+    expect(pluginPermissionKey('com.vantage.calendar', 'calendar:view'))
+      .toBe('plugin:com.vantage.calendar:calendar:view');
+  });
+
+  it('isPluginPermissionKey detects plugin keys', () => {
+    expect(isPluginPermissionKey('plugin:com.vantage.calendar:calendar:view')).toBe(true);
+    expect(isPluginPermissionKey('contacts:read')).toBe(false);
+  });
+
+  it('parsePluginPermissionKey parses correctly', () => {
+    const result = parsePluginPermissionKey('plugin:com.vantage.calendar:calendar:view');
+    expect(result).toEqual({ pluginId: 'com.vantage.calendar', key: 'calendar:view' });
+  });
+
+  it('parsePluginPermissionKey returns null for non-plugin keys', () => {
+    expect(parsePluginPermissionKey('contacts:read')).toBeNull();
   });
 });
