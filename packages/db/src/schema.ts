@@ -599,6 +599,40 @@ export interface WorkspacePluginTable {
   installed_at: Generated<Date>;
 }
 
+export interface PluginSettingsTable {
+  id: Generated<string>;
+  workspace_id: string;
+  plugin_id: string;
+  key: string;
+  value: unknown;
+  encrypted: Generated<boolean>;
+  updated_at: Generated<Date>;
+}
+
+export interface PluginCronJobTable {
+  id: Generated<string>;
+  workspace_id: string;
+  plugin_id: string;
+  job_name: string;
+  schedule: string;
+  last_run_at: Date | null;
+  next_run_at: Date;
+  enabled: Generated<boolean>;
+  created_at: Generated<Date>;
+}
+
+export interface PluginNotificationTable {
+  id: Generated<string>;
+  workspace_id: string;
+  user_id: string;
+  plugin_id: string;
+  title: string;
+  body: string | null;
+  type: Generated<string>;
+  read: Generated<boolean>;
+  created_at: Generated<Date>;
+}
+
 export interface UserPermissionTable {
   id: Generated<string>;
   workspace_id: string;
@@ -694,6 +728,9 @@ export interface Database {
   workspace_imap_config: WorkspaceImapConfigTable;
   workspace_modules: WorkspaceModuleTable;
   workspace_plugins: WorkspacePluginTable;
+  plugin_settings: PluginSettingsTable;
+  plugin_cron_jobs: PluginCronJobTable;
+  plugin_notifications: PluginNotificationTable;
   user_permissions: UserPermissionTable;
   groups: GroupTable;
   group_members: GroupMemberTable;
