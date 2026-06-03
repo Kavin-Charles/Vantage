@@ -109,6 +109,7 @@ export function Sidebar() {
   const getToken = useApiToken();
   const { user, logout } = useAuth();
   const { data: config } = useConfig();
+  const [isDark, setIsDark] = useState(false);
   const { isEnabled } = useModules();
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
   const { data: pluginNavItems = [] } = useQuery({
@@ -264,6 +265,32 @@ export function Sidebar() {
               {user?.role ?? ''}
             </div>
           </div>
+          
+          {/* Dark Mode Toggle Button */}
+          <button
+            onClick={() => {
+              const nextDark = !isDark;
+              setIsDark(nextDark);
+              if (nextDark) {
+                document.documentElement.style.setProperty('--surface', '#121212');
+                document.documentElement.style.setProperty('--surface2', '#1e1e1e');
+                document.documentElement.style.setProperty('--text', '#ffffff');
+                document.documentElement.style.setProperty('--text2', '#aaaaaa');
+                document.documentElement.style.setProperty('--border', '#2d2d2d');
+              } else {
+                document.documentElement.style.removeProperty('--surface');
+                document.documentElement.style.removeProperty('--surface2');
+                document.documentElement.style.removeProperty('--text');
+                document.documentElement.style.removeProperty('--text2');
+                document.documentElement.style.removeProperty('--border');
+              }
+            }}
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center', marginRight: 4 }}
+          >
+            <Icon name={isDark ? "activity" : "settings"} size={15} />
+          </button>
+
           <button
             onClick={() => void logout()}
             title="Sign out"
