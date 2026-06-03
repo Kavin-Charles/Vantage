@@ -160,3 +160,48 @@ export function createCompaniesRouter(db: Kysely<Database>, requirePermission: (
 
   return router;
 }
+
+import { bridgeRegistry } from '@vantage/plugin-runtime';
+
+export function registerCompaniesBridgeMethods(): void {
+  bridgeRegistry
+    .register('companies.list', 'companies:read', async (ctx, p, db) => {
+      const filter = (p.filter ?? {}) as Record<string, unknown>;
+      let q = db.selectFrom('companies').selectAll().where('workspace_id', '=', ctx.workspaceId);
+      if (filter.limit) q = q.limit(Number(filter.limit));
+      if (filter.offset) q = q.offset(Number(filter.offset));
+      return q.execute();
+    })
+    .register('companies.get', 'companies:read', async (ctx, p, db) => {
+      const row = await db.selectFrom('companies').selectAll()
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .executeTakeFirst();
+      if (!row) throw { code: 'NOT_FOUND', message: 'Company not found' };
+      return row;
+    })
+    .register('companies.create', 'companies:write', async (ctx, p, db) => {
+      const data = p.data as Record<string, unknown>;
+      const [row] = await db.insertInto('companies')
+        .values({ ...data, workspace_id: ctx.workspaceId } as any)
+        .returningAll().execute();
+      return row;
+    })
+    .register('companies.update', 'companies:write', async (ctx, p, db) => {
+      const data = p.data as Record<string, unknown>;
+      const [row] = await db.updateTable('companies')
+        .set({ ...data, updated_at: new Date() } as any)
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .returningAll().execute();
+      if (!row) throw { code: 'NOT_FOUND', message: 'Company not found' };
+      return row;
+    })
+    .register('companies.delete', 'companies:write', async (ctx, p, db) => {
+      await db.deleteFrom('companies')
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .execute();
+      return null;
+    });
+}

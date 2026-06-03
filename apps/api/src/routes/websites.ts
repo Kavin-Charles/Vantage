@@ -97,3 +97,24 @@ export function createWebsitesRouter(db: Kysely<Database>, cronSecret: string, r
 
   return router;
 }
+
+import { bridgeRegistry } from '@vantage/plugin-runtime';
+
+export function registerWebsitesBridgeMethods(): void {
+  bridgeRegistry
+    .register('websites.list', 'websites:read', async (ctx, p, db) => {
+      const filter = (p.filter ?? {}) as Record<string, unknown>;
+      let q = db.selectFrom('websites').selectAll().where('workspace_id', '=', ctx.workspaceId);
+      if (filter.status) q = q.where('status', '=', filter.status as string);
+      if (filter.limit) q = q.limit(Number(filter.limit));
+      return q.execute();
+    })
+    .register('websites.get', 'websites:read', async (ctx, p, db) => {
+      const row = await db.selectFrom('websites').selectAll()
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .executeTakeFirst();
+      if (!row) throw { code: 'NOT_FOUND', message: 'Website not found' };
+      return row;
+    });
+}

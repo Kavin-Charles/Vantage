@@ -69,3 +69,25 @@ export function createActivityRouter(db: Kysely<Database>, requirePermission: (p
 
   return router;
 }
+
+import { bridgeRegistry } from '@vantage/plugin-runtime';
+
+export function registerActivityBridgeMethods(): void {
+  bridgeRegistry
+    .register('activity.list', 'activity:read', async (ctx, p, db) => {
+      const filter = (p.filter ?? {}) as Record<string, unknown>;
+      let q = db.selectFrom('activities').selectAll().where('workspace_id', '=', ctx.workspaceId);
+      if (filter.contact_id) q = q.where('contact_id', '=', filter.contact_id as string);
+      if (filter.deal_id) q = q.where('deal_id', '=', filter.deal_id as string);
+      if (filter.type) q = q.where('type', '=', filter.type as string);
+      if (filter.limit) q = q.limit(Number(filter.limit));
+      return q.orderBy('created_at', 'desc').execute();
+    })
+    .register('activity.create', 'activity:write', async (ctx, p, db) => {
+      const data = p.data as Record<string, unknown>;
+      const [row] = await db.insertInto('activities')
+        .values({ ...data, workspace_id: ctx.workspaceId } as any)
+        .returningAll().execute();
+      return row;
+    });
+}

@@ -263,3 +263,52 @@ export function createStageFieldsRouter(
 
   return router;
 }
+
+import { bridgeRegistry } from '@vantage/plugin-runtime';
+
+export function registerDealsBridgeMethods(): void {
+  bridgeRegistry
+    .register('deals.list', 'deals:read', async (ctx, p, db) => {
+      const filter = (p.filter ?? {}) as Record<string, unknown>;
+      let q = db.selectFrom('deals').selectAll().where('workspace_id', '=', ctx.workspaceId);
+      if (filter.stage_id) q = q.where('stage_id', '=', filter.stage_id as string);
+      if (filter.pipeline_id) q = q.where('pipeline_id', '=', filter.pipeline_id as string);
+      if (filter.contact_id) q = q.where('contact_id', '=', filter.contact_id as string);
+      if (filter.owner_id) q = q.where('owner_id', '=', filter.owner_id as string);
+      if (filter.limit) q = q.limit(Number(filter.limit));
+      if (filter.offset) q = q.offset(Number(filter.offset));
+      return q.execute();
+    })
+    .register('deals.get', 'deals:read', async (ctx, p, db) => {
+      const row = await db.selectFrom('deals').selectAll()
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .executeTakeFirst();
+      if (!row) throw { code: 'NOT_FOUND', message: 'Deal not found' };
+      return row;
+    })
+    .register('deals.create', 'deals:write', async (ctx, p, db) => {
+      const data = p.data as Record<string, unknown>;
+      const [row] = await db.insertInto('deals')
+        .values({ ...data, workspace_id: ctx.workspaceId } as any)
+        .returningAll().execute();
+      return row;
+    })
+    .register('deals.update', 'deals:write', async (ctx, p, db) => {
+      const data = p.data as Record<string, unknown>;
+      const [row] = await db.updateTable('deals')
+        .set({ ...data, updated_at: new Date() } as any)
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .returningAll().execute();
+      if (!row) throw { code: 'NOT_FOUND', message: 'Deal not found' };
+      return row;
+    })
+    .register('deals.delete', 'deals:write', async (ctx, p, db) => {
+      await db.deleteFrom('deals')
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .execute();
+      return null;
+    });
+}

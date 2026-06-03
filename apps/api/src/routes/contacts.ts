@@ -310,3 +310,50 @@ export function createContactsRouter(db: Kysely<Database>, requirePermission: (p
 
   return router;
 }
+
+import { bridgeRegistry } from '@vantage/plugin-runtime';
+
+export function registerContactsBridgeMethods(): void {
+  bridgeRegistry
+    .register('contacts.list', 'contacts:read', async (ctx, p, db) => {
+      const filter = (p.filter ?? {}) as Record<string, unknown>;
+      let q = db.selectFrom('contacts').selectAll().where('workspace_id', '=', ctx.workspaceId);
+      if (filter.status) q = q.where('status', '=', filter.status as string);
+      if (filter.company_id) q = q.where('company_id', '=', filter.company_id as string);
+      if (filter.limit) q = q.limit(Number(filter.limit));
+      if (filter.offset) q = q.offset(Number(filter.offset));
+      return q.execute();
+    })
+    .register('contacts.get', 'contacts:read', async (ctx, p, db) => {
+      const row = await db.selectFrom('contacts').selectAll()
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .executeTakeFirst();
+      if (!row) throw { code: 'NOT_FOUND', message: 'Contact not found' };
+      return row;
+    })
+    .register('contacts.create', 'contacts:write', async (ctx, p, db) => {
+      const data = p.data as Record<string, unknown>;
+      const [row] = await db.insertInto('contacts')
+        .values({ ...data, workspace_id: ctx.workspaceId } as any)
+        .returningAll().execute();
+      return row;
+    })
+    .register('contacts.update', 'contacts:write', async (ctx, p, db) => {
+      const data = p.data as Record<string, unknown>;
+      const [row] = await db.updateTable('contacts')
+        .set({ ...data, updated_at: new Date() } as any)
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .returningAll().execute();
+      if (!row) throw { code: 'NOT_FOUND', message: 'Contact not found' };
+      return row;
+    })
+    .register('contacts.delete', 'contacts:write', async (ctx, p, db) => {
+      await db.deleteFrom('contacts')
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .execute();
+      return null;
+    });
+}

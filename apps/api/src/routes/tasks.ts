@@ -154,3 +154,44 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
 
   return router;
 }
+
+import { bridgeRegistry } from '@vantage/plugin-runtime';
+
+export function registerTasksBridgeMethods(): void {
+  bridgeRegistry
+    .register('tasks.list', 'tasks:read', async (ctx, p, db) => {
+      const filter = (p.filter ?? {}) as Record<string, unknown>;
+      let q = db.selectFrom('tasks').selectAll().where('workspace_id', '=', ctx.workspaceId);
+      if (filter.status) q = q.where('status', '=', filter.status as string);
+      if (filter.assignee_id) q = q.where('assignee_id', '=', filter.assignee_id as string);
+      if (filter.contact_id) q = q.where('contact_id', '=', filter.contact_id as string);
+      if (filter.deal_id) q = q.where('deal_id', '=', filter.deal_id as string);
+      if (filter.limit) q = q.limit(Number(filter.limit));
+      return q.execute();
+    })
+    .register('tasks.get', 'tasks:read', async (ctx, p, db) => {
+      const row = await db.selectFrom('tasks').selectAll()
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .executeTakeFirst();
+      if (!row) throw { code: 'NOT_FOUND', message: 'Task not found' };
+      return row;
+    })
+    .register('tasks.create', 'tasks:write', async (ctx, p, db) => {
+      const data = p.data as Record<string, unknown>;
+      const [row] = await db.insertInto('tasks')
+        .values({ ...data, workspace_id: ctx.workspaceId } as any)
+        .returningAll().execute();
+      return row;
+    })
+    .register('tasks.update', 'tasks:write', async (ctx, p, db) => {
+      const data = p.data as Record<string, unknown>;
+      const [row] = await db.updateTable('tasks')
+        .set({ ...data, updated_at: new Date() } as any)
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('id', '=', p.id as string)
+        .returningAll().execute();
+      if (!row) throw { code: 'NOT_FOUND', message: 'Task not found' };
+      return row;
+    });
+}
