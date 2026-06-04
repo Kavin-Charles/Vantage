@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { invalidatePermissionCache } from '../middleware/permission';
-import { MODULE_REGISTRY, getDefaultPermissionsForRole, getModuleForPermission } from '@vantage/modules';
-import { pluginPermissionKey } from '@vantage/plugin-runtime';
+import { MODULE_REGISTRY, getDefaultPermissionsForRole, getModuleForPermission } from '@vencore/modules';
+import { pluginPermissionKey } from '@vencore/plugin-runtime';
 
 const upsertSchema = z.object({
   permission: z.string().min(1),
@@ -83,7 +83,7 @@ export function createUserPermissionsRouter(db: Kysely<Database>): Router {
         .execute();
 
       const plugins = installedPlugins.map((p) => {
-        const manifest = p.manifest as unknown as import('@vantage/plugin-types').PluginManifest;
+        const manifest = p.manifest as unknown as import('@vencore/plugin-types').PluginManifest;
         const perms = (manifest.permissions ?? []).map((perm) => {
           const key = pluginPermissionKey(p.plugin_id, perm.key);
           const override = overrideMap.get(key);

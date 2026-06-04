@@ -7,7 +7,7 @@ import { Client } from 'ssh2';
 import type { SFTPWrapper, FileEntryWithStats } from 'ssh2';
 import type { WebSocket } from 'ws';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { decryptPrivateKey } from '../lib/ssh-crypto';
 import { logger } from '../lib/logger';
 
@@ -170,7 +170,7 @@ export async function handleSftpUpgrade(
   // Also accept ?token= query param — browser can't send custom headers on WS, and
   // SameSite=Strict blocks cross-origin cookies (e.g. vercel.app → railway.app)
   const urlParams = new URL(url, 'http://localhost').searchParams;
-  const token = cookies['vantage_token'] ?? urlParams.get('token') ?? '';
+  const token = cookies['vencore_token'] ?? urlParams.get('token') ?? '';
   if (!token) { ws.close(4001, 'Unauthorized'); return; }
 
   let payload: JwtPayload;

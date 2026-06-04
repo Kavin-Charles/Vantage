@@ -12,7 +12,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
-import type { Task } from '@vantage/types';
+import type { Task } from '@vencore/types';
 
 interface WorkspaceUser { id: string; name: string; email: string; role: string; }
 

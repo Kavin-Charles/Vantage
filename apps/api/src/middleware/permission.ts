@@ -1,8 +1,8 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from './auth';
-import { getDefaultPermissionsForRole, getModuleForPermission } from '@vantage/modules';
+import { getDefaultPermissionsForRole, getModuleForPermission } from '@vencore/modules';
 
 const ADMIN_SENTINEL = new Proxy(new Set<string>(), {
   get(target, prop) {

@@ -1,7 +1,7 @@
 // apps/api/src/middleware/module.ts
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from './auth';
 
 // In-memory cache: key = `{workspaceId}:{moduleId}`, value = { enabled, expiresAt }

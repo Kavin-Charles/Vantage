@@ -1,6 +1,6 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { createRequireApiKey } from '../../middleware/api-key-auth';
 import { createV1ContactsRouter } from './contacts';
 import { createV1CompaniesRouter } from './companies';

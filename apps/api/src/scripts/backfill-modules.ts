@@ -1,5 +1,5 @@
 // apps/api/src/scripts/backfill-modules.ts
-import { createDb } from '@vantage/db';
+import { createDb } from '@vencore/db';
 import { seedWorkspaceModules } from '../lib/seed-modules';
 
 async function main() {

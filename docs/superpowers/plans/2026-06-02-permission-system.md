@@ -6,7 +6,7 @@
 
 **Architecture:** A new `packages/modules` shared package defines all modules and their permissions. A `user_permissions` DB table stores per-user overrides over role defaults. Express middleware resolves effective permissions (admin bypass → role defaults → filter by enabled modules → apply overrides) and gates individual API routes. An admin UI in settings lets workspace admins toggle per-user permissions.
 
-**Tech Stack:** TypeScript strict, Node.js/Express, Kysely (PostgreSQL), Vitest, Next.js App Router, React Query, `@vantage/api-client` pattern (`apiFetch`).
+**Tech Stack:** TypeScript strict, Node.js/Express, Kysely (PostgreSQL), Vitest, Next.js App Router, React Query, `@vencore/api-client` pattern (`apiFetch`).
 
 ---
 
@@ -35,8 +35,8 @@
 
 **Modify:**
 - `packages/db/src/schema.ts` — add `UserPermissionTable`, add to `Database`
-- `apps/api/src/modules/manifests.ts` — re-export from `@vantage/modules`
-- `apps/api/src/modules/registry.ts` — re-export from `@vantage/modules`
+- `apps/api/src/modules/manifests.ts` — re-export from `@vencore/modules`
+- `apps/api/src/modules/registry.ts` — re-export from `@vencore/modules`
 - `apps/api/src/routes/contacts.ts` — add `requirePermission` param + per-route gates
 - `apps/api/src/routes/companies.ts` — same
 - `apps/api/src/routes/deals.ts` — same
@@ -46,8 +46,8 @@
 - `apps/api/src/routes/servers.ts` — same
 - `apps/api/src/routes/analytics.ts` — same
 - `apps/api/src/index.ts` — create `requirePermission`, pass to routers, add user-permissions route
-- `apps/api/package.json` — add `@vantage/modules: workspace:*`
-- `apps/web/package.json` — add `@vantage/modules: workspace:*`
+- `apps/api/package.json` — add `@vencore/modules: workspace:*`
+- `apps/web/package.json` — add `@vencore/modules: workspace:*`
 - `packages/api-client/src/index.ts` — export user-permissions
 - `apps/web/app/(dashboard)/settings/team/page.tsx` — add user list with links to permissions
 
@@ -73,7 +73,7 @@
 
 ```json
 {
-  "name": "@vantage/modules",
+  "name": "@vencore/modules",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -435,7 +435,7 @@ Expected: all tests PASS.
 
 ```bash
 git add packages/modules
-git commit -m "feat: add @vantage/modules shared package with permission definitions"
+git commit -m "feat: add @vencore/modules shared package with permission definitions"
 ```
 
 ---
@@ -528,25 +528,25 @@ git commit -m "feat: add user_permissions table migration and schema"
 
 ---
 
-## Task 3: Update Manifests + Registry to Re-export from `@vantage/modules`
+## Task 3: Update Manifests + Registry to Re-export from `@vencore/modules`
 
 **Files:**
 - Modify: `apps/api/package.json`
 - Modify: `apps/api/src/modules/manifests.ts`
 - Modify: `apps/api/src/modules/registry.ts`
 
-- [ ] **Step 1: Add `@vantage/modules` to `apps/api/package.json`**
+- [ ] **Step 1: Add `@vencore/modules` to `apps/api/package.json`**
 
 In `apps/api/package.json`, add to `dependencies`:
 ```json
-"@vantage/modules": "workspace:*",
+"@vencore/modules": "workspace:*",
 ```
 
 - [ ] **Step 2: Replace `apps/api/src/modules/manifests.ts`**
 
 Replace the entire file content:
 ```typescript
-export type { ModuleDefinition as ModuleManifest, ModuleDefinition, PermissionDef, NavItem, UserRole } from '@vantage/modules';
+export type { ModuleDefinition as ModuleManifest, ModuleDefinition, PermissionDef, NavItem, UserRole } from '@vencore/modules';
 export {
   CONTACTS_MODULE,
   COMPANIES_MODULE,
@@ -556,7 +556,7 @@ export {
   SERVERS_MODULE,
   ANALYTICS_MODULE,
   ACTIVITY_MODULE,
-} from '@vantage/modules';
+} from '@vencore/modules';
 ```
 
 - [ ] **Step 3: Replace `apps/api/src/modules/registry.ts`**
@@ -571,10 +571,10 @@ export {
   getAllPermissions,
   type ModuleDefinition,
   type ModuleDefinition as ModuleManifest,
-} from '@vantage/modules';
+} from '@vencore/modules';
 ```
 
-- [ ] **Step 4: Build `@vantage/modules` so it can be imported**
+- [ ] **Step 4: Build `@vencore/modules` so it can be imported**
 
 ```bash
 cd packages/modules && npm run build
@@ -594,7 +594,7 @@ Expected: no errors.
 
 ```bash
 git add apps/api/package.json apps/api/src/modules/manifests.ts apps/api/src/modules/registry.ts packages/modules/dist
-git commit -m "feat: wire manifests and registry to re-export from @vantage/modules"
+git commit -m "feat: wire manifests and registry to re-export from @vencore/modules"
 ```
 
 ---
@@ -612,7 +612,7 @@ Create `apps/api/src/middleware/permission.test.ts`:
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { resolvePermissions, __clearPermCacheForTesting } from './permission';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 
 function buildMockDb(overrides: { permission: string; granted: boolean }[]) {
   const chain: Record<string, unknown> = {};
@@ -681,9 +681,9 @@ Expected: FAIL — `./permission` module not found.
 ```typescript
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from './auth';
-import { getDefaultPermissionsForRole, getModuleForPermission, MODULE_IDS } from '@vantage/modules';
+import { getDefaultPermissionsForRole, getModuleForPermission, MODULE_IDS } from '@vencore/modules';
 
 const ADMIN_SENTINEL = new Proxy(new Set<string>(), {
   get(target, prop) {
@@ -811,10 +811,10 @@ git commit -m "feat: add permission resolution middleware with role defaults, mo
 import { Router } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { invalidatePermissionCache } from '../middleware/permission';
-import { MODULE_REGISTRY, getDefaultPermissionsForRole, getModuleForPermission } from '@vantage/modules';
+import { MODULE_REGISTRY, getDefaultPermissionsForRole, getModuleForPermission } from '@vencore/modules';
 
 const upsertSchema = z.object({
   permission: z.string().min(1),
@@ -1304,7 +1304,7 @@ git commit -m "feat: wire requirePermission into servers, analytics, pipelines m
 
 ---
 
-## Task 9: `@vantage/api-client` — User Permissions Functions
+## Task 9: `@vencore/api-client` — User Permissions Functions
 
 **Files:**
 - Create: `packages/api-client/src/user-permissions.ts`
@@ -1394,11 +1394,11 @@ git commit -m "feat: add user-permissions API client functions"
 - Modify: `apps/web/app/(dashboard)/settings/team/page.tsx`
 - Modify: `apps/web/package.json`
 
-- [ ] **Step 1: Add `@vantage/modules` to `apps/web/package.json`**
+- [ ] **Step 1: Add `@vencore/modules` to `apps/web/package.json`**
 
 Add to `dependencies`:
 ```json
-"@vantage/modules": "workspace:*",
+"@vencore/modules": "workspace:*",
 ```
 
 - [ ] **Step 2: Create `apps/web/components/settings/UserPermissionsEditor.tsx`**
@@ -1409,8 +1409,8 @@ Add to `dependencies`:
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { apiFetch } from '@/lib/api';
-import type { PermissionEntry } from '@vantage/api-client';
-import { MODULE_REGISTRY } from '@vantage/modules';
+import type { PermissionEntry } from '@vencore/api-client';
+import { MODULE_REGISTRY } from '@vencore/modules';
 
 interface Props {
   userId: string;
@@ -1532,7 +1532,7 @@ import { useApiToken } from '@/lib/useApiToken';
 import { apiFetch } from '@/lib/api';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import type { User } from '@vantage/types';
+import type { User } from '@vencore/types';
 import { UserPermissionsEditor } from '@/components/settings/UserPermissionsEditor';
 
 export default function UserPermissionsPage() {

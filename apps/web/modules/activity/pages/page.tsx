@@ -10,7 +10,7 @@ import { FormField, Select, Textarea } from '@/modules/shared/components/ui/Form
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listActivity, createActivity } from '@/modules/activity/lib/activity';
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
-import type { Activity, ActivityType } from '@vantage/types';
+import type { Activity, ActivityType } from '@vencore/types';
 
 const TYPE_ICONS: Record<string, string> = {
   email:           'mail',

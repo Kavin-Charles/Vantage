@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { sseRegistry } from '../lib/sse-registry';
 import type { AuthenticatedRequest } from '../middleware/auth';
 

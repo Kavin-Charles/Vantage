@@ -12,7 +12,7 @@ import { Avatar } from '@/components/Avatar';
 import { Badge } from '@/components/Badge';
 import { Colors } from '@/constants/colors';
 import { Font } from '@/constants/fonts';
-import type { ActivityType } from '@vantage/types';
+import type { ActivityType } from '@vencore/types';
 
 type DealStage = 'lead' | 'qualifying' | 'proposal' | 'closing' | 'won' | 'lost';
 

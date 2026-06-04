@@ -47,9 +47,9 @@ describe('webhook delivery worker — HTTP delivery', () => {
       expect.objectContaining({
         method: 'POST',
         headers: expect.objectContaining({
-          'X-Vantage-Signature': expectedSig,
-          'X-Vantage-Event': 'deal.stage_changed',
-          'X-Vantage-Delivery': 'del-1',
+          'X-Vencore-Signature': expectedSig,
+          'X-Vencore-Event': 'deal.stage_changed',
+          'X-Vencore-Delivery': 'del-1',
         }),
         body: FAKE_PAYLOAD,
       }),

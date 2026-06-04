@@ -20,11 +20,11 @@ Implement the plugin runtime from the existing spec. Convert the 6 non-module fe
 
 | Repo | Purpose |
 |---|---|
-| `Kavin-Charles/vantage-types` | Shared TS types: manifest, permissions, bridge protocol |
-| `Kavin-Charles/vantage-plugin-sdk` | `@vantage/plugin-sdk` backend + frontend SDK |
-| `Kavin-Charles/vantage-runtime` | V8 isolate runtime service (Node.js + isolated-vm) |
-| `Kavin-Charles/vantage-platform` | Marketplace + developer portal (future) |
-| `Kavin-Charles/Vantage` | Main app: DB migrations, API bridge, web iframe renderer |
+| `Kavin-Charles/vencore-types` | Shared TS types: manifest, permissions, bridge protocol |
+| `Kavin-Charles/vencore-plugin-sdk` | `@vencore/plugin-sdk` backend + frontend SDK |
+| `Kavin-Charles/vencore-runtime` | V8 isolate runtime service (Node.js + isolated-vm) |
+| `Kavin-Charles/vencore-platform` | Marketplace + developer portal (future) |
+| `Kavin-Charles/Vencore` | Main app: DB migrations, API bridge, web iframe renderer |
 | per-plugin repos | Each first-party plugin (calendar, alerts, etc.) in own repo |
 
 ---
@@ -137,6 +137,6 @@ Phases 2+3 add: `alerts.*`, `deployments.*`, `databases.*`, `files.*`, `mail.*`
 
 ## Calendar Page Migration
 
-`apps/web/app/(dashboard)/calendar/page.tsx` → `<PluginPage pluginId="com.vantage.calendar" />`
+`apps/web/app/(dashboard)/calendar/page.tsx` → `<PluginPage pluginId="com.vencore.calendar" />`
 
 The existing calendar components (`apps/web/components/calendar/*`) and API route (`/api/calendar/events`) remain — the calendar plugin frontend (separate repo) calls the bridge endpoint, which proxies to the same Kysely queries.

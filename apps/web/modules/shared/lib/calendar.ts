@@ -1,5 +1,5 @@
 import { apiFetch } from './api';
-import type { CalendarEvent } from '@vantage/types';
+import type { CalendarEvent } from '@vencore/types';
 
 export type { CalendarEvent };
 

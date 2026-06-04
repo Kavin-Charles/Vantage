@@ -7,7 +7,7 @@
 
 ## Overview
 
-Vantage is refactored into a two-tier architecture:
+Vencore is refactored into a two-tier architecture:
 
 - **Module Registry** — first-party, trusted, free. Eight built-in feature modules workspace admins can enable/disable. No sandboxing. Code runs in-process.
 - **Plugin Runtime** — third-party, sandboxed V8 isolates (see `2026-05-31-plugin-runtime-design.md`). Paid or free plugins from the marketplace.

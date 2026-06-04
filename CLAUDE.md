@@ -1,12 +1,12 @@
-# Vantage — Project Brief
+# Vencore — Project Brief
 
-## What is Vantage?
+## What is Vencore?
 
-Vantage is an all-in-one platform for developer-led teams. It brings together everything a technical business needs: a full CRM (contacts, deals, pipeline, tasks, activity), infrastructure monitoring (servers, databases, websites), team collaboration, and billing — in a single product. No switching between five tools.
+Vencore is a modular company management solution. It brings together everything a business needs to operate: CRM (contacts, deals, pipeline, tasks, activity), infrastructure monitoring (servers, databases, websites), team collaboration, analytics, and billing — in a single platform. Add the modules you need, skip the ones you don't.
 
-**Tagline:** Build, sell, and ship — one place.
+**Tagline:** One Platform to Run Your Entire Business
 
-**Target user:** Technical founders, small dev agencies, dev-led SaaS teams (2–20 people) who build their own products and run their own infrastructure.
+**Target user:** Businesses of all sizes that want to consolidate their operations tooling into one platform — from technical founders and dev agencies to growing teams replacing fragmented SaaS stacks.
 
 ---
 
@@ -30,7 +30,7 @@ Vantage is an all-in-one platform for developer-led teams. It brings together ev
 
 ## Design System
 
-The UI reference file is `vantage-full.html` in the project root. **Match it exactly.** Do not invent new components or deviate from the established patterns.
+The UI reference file is `vencore-full.html` in the project root. **Match it exactly.** Do not invent new components or deviate from the established patterns.
 
 Key design tokens:
 - `--bg: #f7f6f2` — warm off-white page background
@@ -281,7 +281,7 @@ created_at: timestamp
 
 - **Multi-tenant by workspace_id.** Every query must be scoped to `workspace_id`. Never return data across workspaces. Apply this as middleware on all API routes.
 - **Soft deletes.** Add `deleted_at: timestamp` to Contact, Company, Deal. Never hard delete CRM records.
-- **Infra agent is pull-based.** The agent on customer servers sends metrics to Vantage API every 30 seconds via HTTPS POST. Vantage does not SSH into servers.
+- **Infra agent is pull-based.** The agent on customer servers sends metrics to Vencore API every 30 seconds via HTTPS POST. Vencore does not SSH into servers.
 - **Website monitoring is a cron job.** Every 60 seconds, a worker pings all monitored URLs and records response time + status code. SSL expiry is checked daily.
 - **Alerts are event-driven.** When a metric crosses a threshold (CPU > 85%, replication lag > 10s, site down), the alert service creates an Alert record and triggers the notification service.
 - **Usage metering is daily snapshots.** Every night at midnight UTC, a cron job records peak usage counts for each workspace and updates the UsageMeter for the current billing period.
@@ -414,5 +414,5 @@ CRON_SECRET=            # Protects cron endpoints
 
 ## File Reference
 
-- `vantage-full.html` — Complete UI reference. All pages, all components. Match this exactly.
+- `vencore-full.html` — Complete UI reference. All pages, all components. Match this exactly.
 - `CLAUDE.md` — This file. Read it at the start of every session.

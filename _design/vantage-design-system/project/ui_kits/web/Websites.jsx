@@ -1,11 +1,11 @@
 /* Websites — uptime monitoring table. SSL date colored by days remaining. */
 
 const SEED_SITES = [
-  { id: 'w1', label: 'Marketing site',        url: 'https://vantage.dev',           status: 'online',   response: 142, uptime: 99.98, ssl: '2026-09-21' },
-  { id: 'w2', label: 'API gateway',           url: 'https://api.vantage.dev',       status: 'online',   response: 86,  uptime: 99.99, ssl: '2026-06-10' },
-  { id: 'w3', label: 'Status page',           url: 'https://status.vantage.dev',    status: 'online',   response: 64,  uptime: 100,   ssl: '2026-07-04' },
+  { id: 'w1', label: 'Marketing site',        url: 'https://vencore.dev',           status: 'online',   response: 142, uptime: 99.98, ssl: '2026-09-21' },
+  { id: 'w2', label: 'API gateway',           url: 'https://api.vencore.dev',       status: 'online',   response: 86,  uptime: 99.99, ssl: '2026-06-10' },
+  { id: 'w3', label: 'Status page',           url: 'https://status.vencore.dev',    status: 'online',   response: 64,  uptime: 100,   ssl: '2026-07-04' },
   { id: 'w4', label: 'Cobalt dashboard',      url: 'https://app.cobaltsystems.com', status: 'degraded', response: 1247, uptime: 97.40, ssl: '2026-05-19' },
-  { id: 'w5', label: null,                    url: 'https://docs.vantage.dev',      status: 'online',   response: 188, uptime: 99.90, ssl: '2026-08-15' },
+  { id: 'w5', label: null,                    url: 'https://docs.vencore.dev',      status: 'online',   response: 188, uptime: 99.90, ssl: '2026-08-15' },
   { id: 'w6', label: 'Orbit legacy',          url: 'https://legacy.orbitcloud.io',  status: 'offline',  response: null, uptime: 88.13, ssl: '2026-05-15' },
 ];
 

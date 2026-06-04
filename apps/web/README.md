@@ -1,6 +1,6 @@
 # apps/web
 
-Next.js 14 (App Router) frontend for Vantage.
+Next.js 14 (App Router) frontend for Vencore.
 
 See the [root README](../../README.md) for setup and architecture overview.
 

@@ -1,22 +1,22 @@
-# vantage-agent
+# vencore-agent
 
-Lightweight monitoring agent for [Vantage](https://vantage.app). Runs on your servers and reports CPU, memory, disk, load average, network I/O, and database connectivity to your Vantage workspace every 30 seconds.
+Lightweight monitoring agent for [Vencore](https://vencore.app). Runs on your servers and reports CPU, memory, disk, load average, network I/O, and database connectivity to your Vencore workspace every 30 seconds.
 
 ## Prerequisites
 
 - Node.js 18 or later
-- A Vantage account with at least one server registered (to get your agent token)
+- A Vencore account with at least one server registered (to get your agent token)
 
 ## Install
 
 ```bash
-npm install -g vantage-agent
+npm install -g vencore-agent
 ```
 
 ## Quick test (foreground)
 
 ```bash
-VANTAGE_TOKEN=your_token_here vantage-agent
+VENCORE_TOKEN=your_token_here vencore-agent
 ```
 
 The agent will log each tick to stdout. Press Ctrl+C to stop.
@@ -25,28 +25,28 @@ The agent will log each tick to stdout. Press Ctrl+C to stop.
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `VANTAGE_TOKEN` | ✅ | — | Agent token from the Vantage dashboard |
-| `VANTAGE_API_URL` | ❌ | `https://api.vantage.app` | API endpoint (self-hosted only) |
-| `VANTAGE_INTERVAL_MS` | ❌ | `30000` | Reporting interval in milliseconds |
+| `VENCORE_TOKEN` | ✅ | — | Agent token from the Vencore dashboard |
+| `VENCORE_API_URL` | ❌ | `https://api.vencore.app` | API endpoint (self-hosted only) |
+| `VENCORE_INTERVAL_MS` | ❌ | `30000` | Reporting interval in milliseconds |
 
-Get your token from the Vantage dashboard: **Servers → Add Server** (or **Servers → [server name] → Regenerate token**).
+Get your token from the Vencore dashboard: **Servers → Add Server** (or **Servers → [server name] → Regenerate token**).
 
 ## Production setup (systemd)
 
 Create the service file:
 
 ```bash
-sudo tee /etc/systemd/system/vantage-agent.service > /dev/null << 'EOF'
+sudo tee /etc/systemd/system/vencore-agent.service > /dev/null << 'EOF'
 [Unit]
-Description=Vantage Monitoring Agent
+Description=Vencore Monitoring Agent
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/vantage-agent
+ExecStart=/usr/bin/vencore-agent
 Restart=always
 RestartSec=10
-Environment=VANTAGE_TOKEN=your_token_here
-Environment=VANTAGE_API_URL=https://api.vantage.app
+Environment=VENCORE_TOKEN=your_token_here
+Environment=VENCORE_API_URL=https://api.vencore.app
 
 [Install]
 WantedBy=multi-user.target
@@ -57,14 +57,14 @@ Enable and start:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now vantage-agent
-sudo systemctl status vantage-agent
+sudo systemctl enable --now vencore-agent
+sudo systemctl status vencore-agent
 ```
 
 To view logs:
 
 ```bash
-journalctl -u vantage-agent -f
+journalctl -u vencore-agent -f
 ```
 
 ## Platform notes
@@ -92,7 +92,7 @@ The agent automatically checks for databases running on well-known local ports:
 | ClickHouse | 9000 |
 | MongoDB | 27017 |
 
-Results (including failures) are included in each ping payload so Vantage can alert when a local database goes down.
+Results (including failures) are included in each ping payload so Vencore can alert when a local database goes down.
 
 ## License
 

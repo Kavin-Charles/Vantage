@@ -11,7 +11,7 @@ import { CsvImportExport } from '@/modules/shared/components/CsvImportExport';
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listCompanies } from '@/modules/companies/lib/companies';
-import type { Company } from '@vantage/types';
+import type { Company } from '@vencore/types';
 
 const COLS = '1.6fr 1.2fr 1.2fr 1fr 1.4fr auto';
 

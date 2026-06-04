@@ -5,13 +5,13 @@ services:
     image: timescale/timescaledb:latest-pg15
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:-vantage}
+      POSTGRES_USER: ${DB_USER:-vencore}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME:-vantage}
+      POSTGRES_DB: ${DB_NAME:-vencore}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-vantage}']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-vencore}']
       interval: 10s
       timeout: 5s
       retries: 10
@@ -36,7 +36,7 @@ services:
       - '3001:3001'
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${DB_USER:-vantage}:${DB_PASSWORD}@db:5432/${DB_NAME:-vantage}
+      DATABASE_URL: postgresql://${DB_USER:-vencore}:${DB_PASSWORD}@db:5432/${DB_NAME:-vencore}
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
       SSH_ENCRYPTION_KEY: ${SSH_ENCRYPTION_KEY}
@@ -46,9 +46,9 @@ services:
       APP_URL: http://${VM_IP:-localhost}:3000
       PORT: 3001
       COOKIE_SECURE: 'false'
-      CONFIG_PATH: /app/vantage.config.json
+      CONFIG_PATH: /app/vencore.config.json
     volumes:
-      - ./vantage.config.json:/app/vantage.config.json:ro
+      - ./vencore.config.json:/app/vencore.config.json:ro
     depends_on:
       db:
         condition: service_healthy
@@ -62,15 +62,15 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${DB_USER:-vantage}:${DB_PASSWORD}@db:5432/${DB_NAME:-vantage}
+      DATABASE_URL: postgresql://${DB_USER:-vencore}:${DB_PASSWORD}@db:5432/${DB_NAME:-vencore}
       REDIS_URL: redis://redis:6379
       API_URL: http://api:3001
       JWT_SECRET: ${JWT_SECRET}
       CRON_SECRET: ${CRON_SECRET}
       SSH_ENCRYPTION_KEY: ${SSH_ENCRYPTION_KEY}
-      CONFIG_PATH: /app/vantage.config.json
+      CONFIG_PATH: /app/vencore.config.json
     volumes:
-      - ./vantage.config.json:/app/vantage.config.json:ro
+      - ./vencore.config.json:/app/vencore.config.json:ro
     depends_on:
       db:
         condition: service_healthy

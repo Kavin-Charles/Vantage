@@ -5,7 +5,7 @@ import type {
   ConversionTemplateWithMappings,
   ConversionTemplate,
   ConversionFieldMapping,
-} from '@vantage/types';
+} from '@vencore/types';
 
 export function listRecordTypes(token: string) {
   return apiFetch<{ data: RecordType[] }>('/api/record-types', { token });

@@ -10,7 +10,7 @@ import { useApiToken } from '@/hooks/useApiToken';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Colors } from '@/constants/colors';
 import { Font } from '@/constants/fonts';
-import type { Activity, ActivityType } from '@vantage/types';
+import type { Activity, ActivityType } from '@vencore/types';
 
 const ACTIVITY_ICON: Record<ActivityType, keyof typeof Ionicons.glyphMap> = {
   email:       'mail-outline',

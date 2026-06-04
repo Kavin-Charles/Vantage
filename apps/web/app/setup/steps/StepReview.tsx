@@ -129,7 +129,7 @@ export function StepReview({ state, onBack }: Props) {
           disabled={loading}
           style={{ ...btnBase, background: 'var(--green)', color: '#fff', opacity: loading ? 0.7 : 1 }}
         >
-          {loading ? 'Launching…' : 'Launch Vantage'}
+          {loading ? 'Launching…' : 'Launch Vencore'}
         </button>
       </div>
     </div>

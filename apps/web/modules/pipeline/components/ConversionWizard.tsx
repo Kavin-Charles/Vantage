@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { convertRecord } from '@/modules/pipeline/lib/records';
-import type { PipelineRecordWithValues, ConversionTemplateWithMappings, ConversionFieldMapping } from '@vantage/types';
+import type { PipelineRecordWithValues, ConversionTemplateWithMappings, ConversionFieldMapping } from '@vencore/types';
 
 type Step = 'select' | 'preview' | 'confirm';
 

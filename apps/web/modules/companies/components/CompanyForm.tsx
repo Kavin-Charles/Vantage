@@ -6,7 +6,7 @@ import { Button } from '@/modules/shared/components/ui/Button';
 import { FormField, Input } from '@/modules/shared/components/ui/FormField';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { createCompany, updateCompany } from '@/modules/companies/lib/companies';
-import type { Company } from '@vantage/types';
+import type { Company } from '@vencore/types';
 
 export function CompanyForm({ company, onDone }: { company?: Company; onDone: () => void }) {
   const getToken = useApiToken();

@@ -93,8 +93,8 @@ export type WorkspaceImapConfigUpdate = Updateable<WorkspaceImapConfigTable>;
 - [ ] **Step 3: Verify TypeScript compiles**
 
 ```bash
-cd D:/Projects/Vantage
-pnpm --filter @vantage/db tsc --noEmit
+cd D:/Projects/Vencore
+pnpm --filter @vencore/db tsc --noEmit
 ```
 
 Expected: no errors.
@@ -218,7 +218,7 @@ describe('PUT /api/mail/workspace-config', () => {
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-cd D:/Projects/Vantage
+cd D:/Projects/Vencore
 pnpm --filter api test -- mail-config --run
 ```
 
@@ -231,7 +231,7 @@ Expected: FAIL — `Cannot find module '../routes/mail-config'`
 import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
 
@@ -686,7 +686,7 @@ export default function MailSettingsPage() {
     <div style={{ maxWidth: 600 }}>
       <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 4px' }}>Mail Accounts</h2>
       <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 24px' }}>
-        Connect your Gmail or company mail to view and send emails inside Vantage.
+        Connect your Gmail or company mail to view and send emails inside Vencore.
       </p>
 
       {successMsg && (
@@ -803,7 +803,7 @@ export default function MailSettingsPage() {
 - [ ] **Step 2: Verify TypeScript compiles**
 
 ```bash
-cd D:/Projects/Vantage
+cd D:/Projects/Vencore
 pnpm --filter web tsc --noEmit
 ```
 
@@ -1119,7 +1119,7 @@ export default function ConnectAccountModal({ workspaceConfig, userRole, onClose
 - [ ] **Step 2: Verify TypeScript compiles**
 
 ```bash
-cd D:/Projects/Vantage
+cd D:/Projects/Vencore
 pnpm --filter web tsc --noEmit
 ```
 
@@ -1129,7 +1129,7 @@ Expected: no errors.
 
 Start the dev server:
 ```bash
-cd D:/Projects/Vantage
+cd D:/Projects/Vencore
 npm run dev
 ```
 

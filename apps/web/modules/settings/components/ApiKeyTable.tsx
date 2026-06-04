@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listApiKeys, deleteApiKey } from '@/modules/shared/lib/api-keys';
 import { Button } from '@/modules/shared/components/ui/Button';
-import type { ApiKey } from '@vantage/types';
+import type { ApiKey } from '@vencore/types';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -36,7 +36,7 @@ export function ApiKeyTable({ onCreateClick }: Props) {
         <div>
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>API Keys</h2>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text2)' }}>
-            Use API keys to access Vantage from external tools and scripts.
+            Use API keys to access Vencore from external tools and scripts.
           </p>
         </div>
         <Button variant="primary" onClick={onCreateClick}>Create API Key</Button>

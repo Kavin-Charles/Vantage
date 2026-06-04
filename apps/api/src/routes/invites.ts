@@ -3,8 +3,8 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
-import type { SmtpConfig } from '@vantage/config';
+import type { Database } from '@vencore/db';
+import type { SmtpConfig } from '@vencore/config';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 const createInviteSchema = z.object({
@@ -82,9 +82,9 @@ export function createInvitesRouter(
           await transporter.sendMail({
             from: smtp.from,
             to: parsed.data.email,
-            subject: `You've been invited to ${workspace.name} on Vantage`,
+            subject: `You've been invited to ${workspace.name} on Vencore`,
             text: [
-              `${inviter.name} has invited you to join ${workspace.name} on Vantage.`,
+              `${inviter.name} has invited you to join ${workspace.name} on Vencore.`,
               '',
               `Accept your invitation: ${appUrl}/invite/${token}`,
               '',

@@ -24,7 +24,7 @@ _[tool: read_file]_
 
 _[tool: questions_v2]_
 
-I've got the Vantage system in hand — warm parchment + cool ink, three feature pillars (CRM / Infra / General), no emoji, stroke icons, Bricolage + Plex. Before I start designing, a few questions to scope this right — a mobile app is a very different surface than the dense desktop dashboard, so the choices we make up front matter.
+I've got the Vencore system in hand — warm parchment + cool ink, three feature pillars (CRM / Infra / General), no emoji, stroke icons, Bricolage + Plex. Before I start designing, a few questions to scope this right — a mobile app is a very different surface than the dense desktop dashboard, so the choices we make up front matter.
 
 ## User
 
@@ -37,7 +37,7 @@ Questions answered:
 - alerts_emphasis: Decide for me
 - interactivity: Clickable prototype — tap nav, drill into details, work like an app
 - darkmode: Decide for me
-- tweaks: Accent color (Vantage Blue / Ink / Sky), Light / dark mode, Decide for me
+- tweaks: Accent color (Vencore Blue / Ink / Sky), Light / dark mode, Decide for me
 
 ## Assistant
 
@@ -148,7 +148,7 @@ _[tool: sleep]_
 
 _[tool: fork_verifier_agent]_
 
-I built the Vantage mobile app — a clickable prototype with iOS (iPhone 16) and Android (Pixel 9) frames sitting side by side on a design canvas. Both run the same React app and navigate independently.
+I built the Vencore mobile app — a clickable prototype with iOS (iPhone 16) and Android (Pixel 9) frames sitting side by side on a design canvas. Both run the same React app and navigate independently.
 
 **What's there (12 screens, 5-tab nav):**
 - **Home** — alert hero card, KPI grid, today's tasks, recent activity
@@ -159,7 +159,7 @@ I built the Vantage mobile app — a clickable prototype with iOS (iPhone 16) an
 - **Contacts** + **Contact detail** with a bottom-sheet "log activity"
 - **Analytics**, **More**, **Settings**
 
-**Tweaks (top-right):** accent (Vantage Blue / Ink / Sky) + dark mode. Dark mode applies to both frames at once, swapping the warm parchment for a deep-ink palette while keeping the same component shapes.
+**Tweaks (top-right):** accent (Vencore Blue / Ink / Sky) + dark mode. Dark mode applies to both frames at once, swapping the warm parchment for a deep-ink palette while keeping the same component shapes.
 
 **Design choices kept consistent with desktop:** Bricolage display + Plex Sans/Mono, the 24×24 stroke icon set, color-pair badges, no emoji, the cloud mark in the home header. Mobile-specific moves: 5-tab bottom nav, larger title pattern (eyebrow + 28px display), bottom sheets for compose actions, status-dot summary in the Servers eyebrow.
 

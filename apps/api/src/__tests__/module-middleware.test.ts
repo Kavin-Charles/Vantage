@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { createRequireModule, __clearModuleCacheForTesting } from '../middleware/module';
 import type { AuthenticatedRequest } from '../middleware/auth';
 

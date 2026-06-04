@@ -5,7 +5,7 @@ import type {
   InfraDatabaseRows,
   InfraDatabaseSqlResult,
   InfraDatabaseTable,
-} from '@vantage/types';
+} from '@vencore/types';
 
 export interface InfraDatabaseInput {
   name: string;

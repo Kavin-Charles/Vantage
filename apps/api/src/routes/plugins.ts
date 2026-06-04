@@ -1,6 +1,6 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { z } from 'zod';
 import multer from 'multer';
 import AdmZip from 'adm-zip';
@@ -10,7 +10,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
-import { dispatchBridgeCall, runMigrations } from '@vantage/plugin-runtime';
+import { dispatchBridgeCall, runMigrations } from '@vencore/plugin-runtime';
 import { savePluginFile, loadPluginBackend, invalidatePlugin } from '../lib/plugin-loader';
 
 // ── Multer — memory storage, 10 MB limit ─────────────────────────────────────
@@ -109,8 +109,8 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found or disabled' } });
       }
 
-      const manifest = pluginRow.manifest as unknown as import('@vantage/plugin-types').PluginManifest;
-      const dataAccess = (manifest.data_access ?? []) as readonly import('@vantage/plugin-types').PluginPermission[];
+      const manifest = pluginRow.manifest as unknown as import('@vencore/plugin-types').PluginManifest;
+      const dataAccess = (manifest.data_access ?? []) as readonly import('@vencore/plugin-types').PluginPermission[];
       const tables = (manifest.tables ?? []).map((t) => t.name);
 
       const result = await dispatchBridgeCall(
@@ -208,7 +208,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
       }
 
-      const manifest = plugin.manifest as unknown as import('@vantage/plugin-types').PluginManifest;
+      const manifest = plugin.manifest as unknown as import('@vencore/plugin-types').PluginManifest;
       const schema = manifest.settings_schema ?? [];
       const secretKeys = new Set(schema.filter((f) => f.secret).map((f) => f.key));
 
@@ -245,7 +245,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
       }
 
-      const manifest = plugin.manifest as unknown as import('@vantage/plugin-types').PluginManifest;
+      const manifest = plugin.manifest as unknown as import('@vencore/plugin-types').PluginManifest;
       const schema = manifest.settings_schema ?? [];
       const validKeys = new Set(schema.map((f) => f.key));
       const secretKeys = new Set(schema.filter((f) => f.secret).map((f) => f.key));
@@ -279,7 +279,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
    * esbuild, saves bundles, runs migrations, then upserts the plugin record.
    */
   router.post('/upload', requireAdmin, upload.single('plugin'), async (req, res, next) => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vantage-plugin-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vencore-plugin-'));
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       if (!req.file) {
@@ -321,7 +321,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           platform: 'node',
           format: 'cjs',
           outfile,
-          external: ['@vantage/plugin-sdk', '@vantage/plugin-types'],
+          external: ['@vencore/plugin-sdk', '@vencore/plugin-types'],
           logLevel: 'silent',
         });
         if (result.errors.length > 0) {
@@ -343,7 +343,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           platform: 'browser',
           format: 'esm',
           outfile,
-          external: ['@vantage/plugin-sdk', '@vantage/plugin-sdk/react', 'react', 'react-dom'],
+          external: ['@vencore/plugin-sdk', '@vencore/plugin-sdk/react', 'react', 'react-dom'],
           logLevel: 'silent',
         });
         if (result.errors.length > 0) {

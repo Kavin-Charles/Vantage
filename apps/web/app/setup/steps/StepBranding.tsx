@@ -46,7 +46,7 @@ export function StepBranding({ value, onChange, onNext }: Props) {
         Branding
       </h2>
       <p style={{ margin: '0 0 24px', color: 'var(--text2)', fontSize: 14 }}>
-        Customize how your Vantage instance appears.
+        Customize how your Vencore instance appears.
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

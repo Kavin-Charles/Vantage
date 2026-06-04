@@ -1,4 +1,4 @@
-# Contributing to Vantage
+# Contributing to Vencore
 
 Thanks for looking at this. Contributions are welcome — bug fixes, new features, documentation improvements, anything that makes the project more useful.
 
@@ -11,8 +11,8 @@ A few things upfront: PRs without a linked issue may still get merged if the cha
 You'll need Node.js ≥ 20, pnpm ≥ 9, and Docker.
 
 ```bash
-git clone https://github.com/your-org/vantage.git
-cd vantage
+git clone https://github.com/your-org/vencore.git
+cd vencore
 pnpm install
 
 # Start Postgres + Redis
@@ -21,7 +21,7 @@ docker compose up -d
 # Copy and configure env files
 cp .env.example apps/api/.env
 cp .env.example apps/web/.env.local
-cp vantage.config.example.json vantage.config.json
+cp vencore.config.example.json vencore.config.json
 
 # Set a JWT secret in apps/api/.env:
 # JWT_SECRET=$(openssl rand -hex 32)
@@ -49,7 +49,7 @@ apps/
 packages/
   db/       Kysely client and generated types
   types/    Shared TypeScript types
-  config/   Config file loader (vantage.config.json)
+  config/   Config file loader (vencore.config.json)
 ```
 
 Most feature work touches `apps/api/src/routes/` (data + validation) and `apps/web/app/(dashboard)/` (UI) together. The shared types in `packages/types/` are what connect them.
@@ -71,7 +71,7 @@ Most feature work touches `apps/api/src/routes/` (data + validation) and `apps/w
 - New DB tables need a migration file in `apps/api/src/migrations/` — never modify existing migration files
 
 **UI conventions:**
-- Match the design system in `vantage-full.html` (project root). The design tokens (`--bg`, `--surface`, `--border`, etc.) are defined in the root layout CSS.
+- Match the design system in `vencore-full.html` (project root). The design tokens (`--bg`, `--surface`, `--border`, etc.) are defined in the root layout CSS.
 - Inline styles are used throughout — this is intentional, not an oversight.
 - Data fetching via TanStack Query; mutations should invalidate the relevant query key on success.
 

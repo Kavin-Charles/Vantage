@@ -5,6 +5,6 @@ export {
   getModuleForPermission,
   getAllPermissions,
   type ModuleDefinition,
-} from '@vantage/modules';
+} from '@vencore/modules';
 
-export type { ModuleDefinition as ModuleManifest } from '@vantage/modules';
+export type { ModuleDefinition as ModuleManifest } from '@vencore/modules';

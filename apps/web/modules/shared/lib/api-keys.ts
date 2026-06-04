@@ -1,5 +1,5 @@
 import { apiFetch } from './api';
-import type { ApiKey } from '@vantage/types';
+import type { ApiKey } from '@vencore/types';
 
 export async function listApiKeys(token: string) {
   return apiFetch<{ data: ApiKey[]; error: null }>('/api/api-keys', { token });

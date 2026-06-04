@@ -1,5 +1,5 @@
 import { apiFetch } from '@/modules/shared/lib/api';
-import type { Pipeline, PipelineWithDetails, PipelineStage } from '@vantage/types';
+import type { Pipeline, PipelineWithDetails, PipelineStage } from '@vencore/types';
 
 export function listPipelines(token: string) {
   return apiFetch<{ data: PipelineWithDetails[] }>('/api/pipelines', { token });

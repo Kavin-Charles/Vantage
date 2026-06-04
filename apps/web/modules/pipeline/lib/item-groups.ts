@@ -1,6 +1,6 @@
 // apps/web/lib/item-groups.ts
 import { apiFetch } from '@/modules/shared/lib/api';
-import type { ItemGroup, ItemGroupWithStages, GroupStage, ItemField, Item } from '@vantage/types';
+import type { ItemGroup, ItemGroupWithStages, GroupStage, ItemField, Item } from '@vencore/types';
 
 // Item groups
 export async function listItemGroups(token: string, pipelineId: string) {

@@ -63,7 +63,7 @@ export default function SshSettingsPage() {
     <div style={{ maxWidth: 720 }}>
       <h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 600 }}>SSH Keys</h2>
       <p style={{ margin: '0 0 24px', fontSize: 13, color: 'var(--text2)' }}>
-        Vantage uses a single workspace SSH keypair to connect to your servers. Add the public key to{' '}
+        Vencore uses a single workspace SSH keypair to connect to your servers. Add the public key to{' '}
         <code style={{ fontFamily: 'monospace', fontSize: 12 }}>~/.ssh/authorized_keys</code> on each server you want to manage.
       </p>
 
@@ -92,7 +92,7 @@ export default function SshSettingsPage() {
           <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 20px', marginBottom: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>SSH Username</div>
             <p style={{ fontSize: 13, color: 'var(--text2)', margin: '0 0 12px' }}>
-              The user Vantage SSH-es in as. Common values:{' '}
+              The user Vencore SSH-es in as. Common values:{' '}
               <code style={{ fontFamily: 'monospace', fontSize: 12 }}>root</code>,{' '}
               <code style={{ fontFamily: 'monospace', fontSize: 12 }}>ubuntu</code>,{' '}
               <code style={{ fontFamily: 'monospace', fontSize: 12 }}>ec2-user</code>.

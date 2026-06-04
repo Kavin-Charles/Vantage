@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Refactor Vantage into a two-tier architecture where 8 built-in feature modules can be enabled/disabled per workspace by admins, with backend route gating and frontend UI gating.
+**Goal:** Refactor Vencore into a two-tier architecture where 8 built-in feature modules can be enabled/disabled per workspace by admins, with backend route gating and frontend UI gating.
 
 **Architecture:** A `workspace_modules` table tracks enabled state per workspace per module. A `requireModule(moduleId)` middleware (with in-memory cache, 60s TTL) gates API routes. The frontend reads enabled modules via `GET /api/workspace/modules` and renders the sidebar + pages conditionally via `ModuleProvider` and `ModuleGuard`.
 
@@ -327,7 +327,7 @@ git commit -m "feat(modules): add module manifests and registry"
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { createRequireModule } from '../middleware/module';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
@@ -413,7 +413,7 @@ Expected: FAIL — `createRequireModule` not found.
 // apps/api/src/middleware/module.ts
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from './auth';
 
 // In-memory cache: key = `{workspaceId}:{moduleId}`, value = { enabled, expiresAt }
@@ -503,7 +503,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { createWorkspaceModulesRouter } from '../routes/workspace-modules';
 
 function buildApp(db: Partial<Kysely<Database>>, role: 'admin' | 'member' = 'admin') {
@@ -590,7 +590,7 @@ Expected: FAIL.
 import { Router } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { MODULE_IDS } from '../modules/registry';
 import { invalidateModuleCache } from '../middleware/module';
@@ -778,7 +778,7 @@ git commit -m "feat(api): wire requireModule guards into route registrations"
 ```typescript
 // apps/api/src/lib/seed-modules.ts
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { MODULE_REGISTRY } from '../modules/registry';
 
 export async function seedWorkspaceModules(
@@ -806,7 +806,7 @@ export async function seedWorkspaceModules(
 
 ```typescript
 // apps/api/src/scripts/backfill-modules.ts
-import { createDb } from '@vantage/db';
+import { createDb } from '@vencore/db';
 import { seedWorkspaceModules } from '../lib/seed-modules';
 
 async function main() {

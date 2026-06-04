@@ -7,7 +7,7 @@
  * Run ONCE after schema migration. Safe to re-run (uses INSERT ... ON CONFLICT DO NOTHING).
  * Usage: DATABASE_URL=postgres://... npx tsx apps/api/src/scripts/backfill-pipeline-engine.ts
  */
-import { createDb } from '@vantage/db';
+import { createDb } from '@vencore/db';
 
 const DATABASE_URL = process.env['DATABASE_URL'];
 if (!DATABASE_URL) throw new Error('DATABASE_URL env var required');

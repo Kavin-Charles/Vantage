@@ -3,7 +3,7 @@ _Date: 2026-05-31_
 
 ## Overview
 
-Add deployment tracking to Vantage's Infra section. Users can log deployments from three sources (CI webhooks, monitoring agent, manual curl), view a global feed with filters, and drill into per-deploy git + duration details.
+Add deployment tracking to Vencore's Infra section. Users can log deployments from three sources (CI webhooks, monitoring agent, manual curl), view a global feed with filters, and drill into per-deploy git + duration details.
 
 ---
 
@@ -129,8 +129,8 @@ After creation: shows curl one-liner + GitHub Actions snippet pre-filled with th
 
 **Curl (manual):**
 ```bash
-curl -X POST https://app.vantage.dev/api/deployments \
-  -H "Authorization: Bearer $VANTAGE_API_KEY" \
+curl -X POST https://app.vencore.dev/api/deployments \
+  -H "Authorization: Bearer $VENCORE_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "api",
@@ -144,18 +144,18 @@ curl -X POST https://app.vantage.dev/api/deployments \
 
 **GitHub Actions step:**
 ```yaml
-- name: Notify Vantage
+- name: Notify Vencore
   if: always()
   env:
-    VANTAGE_STATUS: ${{ job.status == 'success' && 'success' || 'failed' }}
+    VENCORE_STATUS: ${{ job.status == 'success' && 'success' || 'failed' }}
   run: |
-    curl -X POST https://app.vantage.dev/api/deployments \
-      -H "Authorization: Bearer ${{ secrets.VANTAGE_API_KEY }}" \
+    curl -X POST https://app.vencore.dev/api/deployments \
+      -H "Authorization: Bearer ${{ secrets.VENCORE_API_KEY }}" \
       -H "Content-Type: application/json" \
       -d "{
         \"name\": \"${{ github.repository }}\",
         \"environment\": \"production\",
-        \"status\": \"$VANTAGE_STATUS\",
+        \"status\": \"$VENCORE_STATUS\",
         \"git_branch\": \"${{ github.ref_name }}\",
         \"git_commit\": \"${{ github.sha }}\",
         \"git_message\": \"${{ github.event.head_commit.message }}\",
@@ -163,15 +163,15 @@ curl -X POST https://app.vantage.dev/api/deployments \
         \"source\": \"webhook\"
       }"
   # Note: job.status returns "success", "failure", or "cancelled".
-  # The env expression maps "failure" → "failed" to match Vantage enum.
+  # The env expression maps "failure" → "failed" to match Vencore enum.
 ```
 
 **GitLab CI after_script:**
 ```yaml
 after_script:
   - |
-    curl -X POST https://app.vantage.dev/api/deployments \
-      -H "Authorization: Bearer $VANTAGE_API_KEY" \
+    curl -X POST https://app.vencore.dev/api/deployments \
+      -H "Authorization: Bearer $VENCORE_API_KEY" \
       -H "Content-Type: application/json" \
       -d "{
         \"name\": \"$CI_PROJECT_NAME\",

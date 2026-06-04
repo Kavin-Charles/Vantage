@@ -2,7 +2,7 @@
 import { createHmac } from 'node:crypto';
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { logger } from '../lib/logger';
 
 const INTERVAL_MS = 10_000;
@@ -43,9 +43,9 @@ export async function deliverOne(db: Kysely<Database>, delivery: DeliveryRow): P
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Vantage-Signature': signature,
-        'X-Vantage-Event': event,
-        'X-Vantage-Delivery': id,
+        'X-Vencore-Signature': signature,
+        'X-Vencore-Event': event,
+        'X-Vencore-Delivery': id,
       },
       body: payload,
       signal: controller.signal,

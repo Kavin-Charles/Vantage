@@ -6,7 +6,7 @@ import { Button } from '@/modules/shared/components/ui/Button';
 import { FormField, Input, Select } from '@/modules/shared/components/ui/FormField';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { createItem, updateItem, convertItem, listItemGroups } from '@/modules/pipeline/lib/item-groups';
-import type { Item, ItemGroupWithStages, GroupStage, ItemField } from '@vantage/types';
+import type { Item, ItemGroupWithStages, GroupStage, ItemField } from '@vencore/types';
 
 interface Props {
   item?: Item;

@@ -12,7 +12,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { Badge } from '@/components/Badge';
 import { Colors } from '@/constants/colors';
 import { Font } from '@/constants/fonts';
-import type { Alert } from '@vantage/types';
+import type { Alert } from '@vencore/types';
 
 type AlertTab = 'unresolved' | 'critical' | 'warning' | 'all';
 

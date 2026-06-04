@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement `@vantage/plugin-types`, `@vantage/plugin-sdk` (backend + frontend + react), `@vantage/plugin-runtime` (bridge dispatch + table client + migration runner), and the API bridge route.
+**Goal:** Implement `@vencore/plugin-types`, `@vencore/plugin-sdk` (backend + frontend + react), `@vencore/plugin-runtime` (bridge dispatch + table client + migration runner), and the API bridge route.
 
-**Architecture:** Plugin authors call `createPlugin()` which wraps a typed manifest + setup fn. The runtime provides a `BridgeFn` (a function that maps method calls to DB operations); the SDK calls it when plugin code calls `vantage.list()` etc. Permissions are enforced at compile time via conditional generics and again at runtime in the bridge dispatcher.
+**Architecture:** Plugin authors call `createPlugin()` which wraps a typed manifest + setup fn. The runtime provides a `BridgeFn` (a function that maps method calls to DB operations); the SDK calls it when plugin code calls `vencore.list()` etc. Permissions are enforced at compile time via conditional generics and again at runtime in the bridge dispatcher.
 
 **Tech Stack:** TypeScript 5.4 strict, Kysely (DB queries), Zod (API validation), Vitest (tests), pnpm workspaces, Turbo
 
@@ -17,14 +17,14 @@ packages/plugin-types/
   src/index.ts              — all domain types, bridge protocol types, manifest + permission types
 
 packages/plugin-sdk/
-  src/permissions.ts        — PermittedVantage<Perms>, PermittedResource, SafePermittedVantage
+  src/permissions.ts        — PermittedVencore<Perms>, PermittedResource, SafePermittedVencore
   src/bridge.ts             — BridgeFn, BridgeCall, BridgeResult, createPostMessageBridge()
-  src/backend.ts            — VantageBackendImpl, createVantageBackend(), createPlugin() backend
-  src/_store.ts             — module-level VantageFrontend singleton (shared by frontend + react)
-  src/frontend.ts           — VantageFrontendImpl, createPlugin() frontend, sdk:init listener
+  src/backend.ts            — VencoreBackendImpl, createVencoreBackend(), createPlugin() backend
+  src/_store.ts             — module-level VencoreFrontend singleton (shared by frontend + react)
+  src/frontend.ts           — VencoreFrontendImpl, createPlugin() frontend, sdk:init listener
   src/react.ts              — useList, useGet, useCreate, useUpdate, useDelete, useAction,
                               usePluginContext, usePluginTable
-  src/index.ts              — re-exports: createPlugin, createVantageBackend, BridgeFn, types
+  src/index.ts              — re-exports: createPlugin, createVencoreBackend, BridgeFn, types
   package.json              — exports map: "." / "./frontend" / "./react"
   tsconfig.json
   vitest.config.ts
@@ -46,7 +46,7 @@ turbo.json                       — add "test" task (modify existing)
 
 ---
 
-## Task 1: `@vantage/plugin-types` — scaffold + all types
+## Task 1: `@vencore/plugin-types` — scaffold + all types
 
 **Files:**
 - Create: `packages/plugin-types/package.json`
@@ -57,7 +57,7 @@ turbo.json                       — add "test" task (modify existing)
 
 ```json
 {
-  "name": "@vantage/plugin-types",
+  "name": "@vencore/plugin-types",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -439,12 +439,12 @@ Expected: exit 0, no errors.
 
 ```bash
 git add packages/plugin-types/
-git commit -m "feat(plugin-types): add @vantage/plugin-types package with all domain types"
+git commit -m "feat(plugin-types): add @vencore/plugin-types package with all domain types"
 ```
 
 ---
 
-## Task 2: `@vantage/plugin-sdk` — scaffold + conditional permission types
+## Task 2: `@vencore/plugin-sdk` — scaffold + conditional permission types
 
 **Files:**
 - Create: `packages/plugin-sdk/package.json`
@@ -457,7 +457,7 @@ git commit -m "feat(plugin-types): add @vantage/plugin-types package with all do
 
 ```json
 {
-  "name": "@vantage/plugin-sdk",
+  "name": "@vencore/plugin-sdk",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -483,7 +483,7 @@ git commit -m "feat(plugin-types): add @vantage/plugin-types package with all do
     "test": "vitest run"
   },
   "dependencies": {
-    "@vantage/plugin-types": "workspace:*"
+    "@vencore/plugin-types": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18.0.0"
@@ -572,8 +572,8 @@ Create `packages/plugin-sdk/src/__tests__/permissions.test.ts`:
 
 ```typescript
 import { describe, it, expectTypeOf } from 'vitest';
-import type { PermittedVantage, PermittedResource } from '../permissions';
-import type { PluginPermission } from '@vantage/plugin-types';
+import type { PermittedVencore, PermittedResource } from '../permissions';
+import type { PluginPermission } from '@vencore/plugin-types';
 
 describe('PermittedResource', () => {
   it('extracts readable resources from permission list', () => {
@@ -608,7 +608,7 @@ import type {
   PluginContext,
   HttpFetchOptions,
   HttpResponse,
-} from '@vantage/plugin-types';
+} from '@vencore/plugin-types';
 
 // ── Compile-time permission helpers ─────────────────────────────────────────
 
@@ -649,7 +649,7 @@ export interface ModalNamespace {
 
 // ── Safe wrapper type ────────────────────────────────────────────────────────
 
-export type SafePermittedVantage<Perms extends readonly PluginPermission[]> = {
+export type SafePermittedVencore<Perms extends readonly PluginPermission[]> = {
   list<R extends PermittedResource<Perms>>(
     resource: R,
     filter?: ResourceFilter<R>,
@@ -678,9 +678,9 @@ export type SafePermittedVantage<Perms extends readonly PluginPermission[]> = {
   ): Promise<PluginResult<T>>;
 };
 
-// ── PermittedVantage — backend ───────────────────────────────────────────────
+// ── PermittedVencore — backend ───────────────────────────────────────────────
 
-export type PermittedVantage<Perms extends readonly PluginPermission[]> = {
+export type PermittedVencore<Perms extends readonly PluginPermission[]> = {
   list<R extends PermittedResource<Perms>>(
     resource: R,
     filter?: ResourceFilter<R>,
@@ -704,13 +704,13 @@ export type PermittedVantage<Perms extends readonly PluginPermission[]> = {
   on(event: PluginHookEvent, handler: (payload: unknown) => Promise<void> | void): void;
   storage: HasPerm<Perms, 'storage:read'> extends true ? StorageNamespace : never;
   http: HasPerm<Perms, 'http:fetch'> extends true ? HttpNamespace : never;
-  safe: SafePermittedVantage<Perms>;
+  safe: SafePermittedVencore<Perms>;
 };
 
-// ── PermittedVantageFrontend — adds frontend-only methods ────────────────────
+// ── PermittedVencoreFrontend — adds frontend-only methods ────────────────────
 
-export type PermittedVantageFrontend<Perms extends readonly PluginPermission[]> =
-  Omit<PermittedVantage<Perms>, 'on'> & {
+export type PermittedVencoreFrontend<Perms extends readonly PluginPermission[]> =
+  Omit<PermittedVencore<Perms>, 'on'> & {
     getContext(): Promise<PluginContext>;
     navigate(path: string): void;
     modal: ModalNamespace;
@@ -719,16 +719,16 @@ export type PermittedVantageFrontend<Perms extends readonly PluginPermission[]> 
 
 // ── Plugin definition types ──────────────────────────────────────────────────
 
-import type { PluginManifest } from '@vantage/plugin-types';
+import type { PluginManifest } from '@vencore/plugin-types';
 
 export interface PluginDefinition<Perms extends readonly PluginPermission[]> {
   manifest: PluginManifest<Perms>;
-  setup(vantage: PermittedVantage<Perms>): void | Promise<void>;
+  setup(vencore: PermittedVencore<Perms>): void | Promise<void>;
 }
 
 export interface FrontendPluginDefinition<Perms extends readonly PluginPermission[]> {
   manifest: PluginManifest<Perms>;
-  setup(vantage: PermittedVantageFrontend<Perms>): void | Promise<void>;
+  setup(vencore: PermittedVencoreFrontend<Perms>): void | Promise<void>;
 }
 ```
 
@@ -751,7 +751,7 @@ git commit -m "feat(plugin-sdk): scaffold package + conditional permission types
 
 ---
 
-## Task 3: Backend SDK — bridge + VantageBackendImpl + createPlugin()
+## Task 3: Backend SDK — bridge + VencoreBackendImpl + createPlugin()
 
 **Files:**
 - Create: `packages/plugin-sdk/src/bridge.ts`
@@ -765,7 +765,7 @@ Create `packages/plugin-sdk/src/__tests__/backend.test.ts`:
 
 ```typescript
 import { describe, it, expect, vi } from 'vitest';
-import { createVantageBackend } from '../backend';
+import { createVencoreBackend } from '../backend';
 import type { BridgeFn } from '../bridge';
 
 function makeBridge(data: unknown = {}): BridgeFn {
@@ -776,81 +776,81 @@ function makeErrorBridge(code: string, message: string): BridgeFn {
   return vi.fn().mockResolvedValue({ data: null, error: { code, message } });
 }
 
-describe('VantageBackend.list', () => {
+describe('VencoreBackend.list', () => {
   it('calls bridge with {resource}.list method', async () => {
     const bridge = makeBridge([{ id: '1' }]);
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     const result = await v.list('contacts', { limit: 10 });
     expect(bridge).toHaveBeenCalledWith({ method: 'contacts.list', payload: { filter: { limit: 10 } } });
     expect(result).toEqual([{ id: '1' }]);
   });
 });
 
-describe('VantageBackend.get', () => {
+describe('VencoreBackend.get', () => {
   it('calls bridge with {resource}.get method', async () => {
     const bridge = makeBridge({ id: 'abc' });
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     const result = await v.get('deals', 'abc');
     expect(bridge).toHaveBeenCalledWith({ method: 'deals.get', payload: { id: 'abc' } });
     expect(result).toEqual({ id: 'abc' });
   });
 });
 
-describe('VantageBackend.create', () => {
+describe('VencoreBackend.create', () => {
   it('calls bridge with {resource}.create method', async () => {
     const bridge = makeBridge({ id: 'new' });
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     await v.create('tasks', { title: 'Test' });
     expect(bridge).toHaveBeenCalledWith({ method: 'tasks.create', payload: { data: { title: 'Test' } } });
   });
 });
 
-describe('VantageBackend.update', () => {
+describe('VencoreBackend.update', () => {
   it('calls bridge with {resource}.update method', async () => {
     const bridge = makeBridge({ id: 'x' });
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     await v.update('contacts', 'x', { name: 'New' });
     expect(bridge).toHaveBeenCalledWith({ method: 'contacts.update', payload: { id: 'x', data: { name: 'New' } } });
   });
 });
 
-describe('VantageBackend.delete', () => {
+describe('VencoreBackend.delete', () => {
   it('calls bridge with {resource}.delete method', async () => {
     const bridge = makeBridge(undefined);
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     await v.delete('contacts', 'x');
     expect(bridge).toHaveBeenCalledWith({ method: 'contacts.delete', payload: { id: 'x' } });
   });
 });
 
-describe('VantageBackend error handling', () => {
+describe('VencoreBackend error handling', () => {
   it('throws PluginError when bridge returns error', async () => {
     const bridge = makeErrorBridge('NOT_FOUND', 'Contact not found');
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     await expect(v.get('contacts', 'x')).rejects.toEqual({ code: 'NOT_FOUND', message: 'Contact not found' });
   });
 });
 
-describe('VantageBackend.safe', () => {
+describe('VencoreBackend.safe', () => {
   it('returns PluginResult instead of throwing', async () => {
     const bridge = makeErrorBridge('NOT_FOUND', 'Not found');
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     const result = await v.safe.get('contacts', 'x');
     expect(result).toEqual({ data: null, error: { code: 'NOT_FOUND', message: 'Not found' } });
   });
 
   it('returns {data, error: null} on success', async () => {
     const bridge = makeBridge([{ id: '1' }]);
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     const result = await v.safe.list('contacts');
     expect(result).toEqual({ data: [{ id: '1' }], error: null });
   });
 });
 
-describe('VantageBackend.storage', () => {
+describe('VencoreBackend.storage', () => {
   it('dispatches storage.get', async () => {
     const bridge = makeBridge('stored-value');
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     const val = await v.storage.get('my-key');
     expect(bridge).toHaveBeenCalledWith({ method: 'storage.get', payload: { key: 'my-key' } });
     expect(val).toBe('stored-value');
@@ -858,16 +858,16 @@ describe('VantageBackend.storage', () => {
 
   it('dispatches storage.set', async () => {
     const bridge = makeBridge(null);
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     await v.storage.set('my-key', { foo: 1 });
     expect(bridge).toHaveBeenCalledWith({ method: 'storage.set', payload: { key: 'my-key', value: { foo: 1 } } });
   });
 });
 
-describe('VantageBackend.on + _dispatchEvent', () => {
+describe('VencoreBackend.on + _dispatchEvent', () => {
   it('registers and dispatches event handlers', async () => {
     const bridge = makeBridge([]);
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     const handler = vi.fn();
     v.on('contact.created', handler);
     await v._dispatchEvent('contact.created', { id: 'c1' });
@@ -876,7 +876,7 @@ describe('VantageBackend.on + _dispatchEvent', () => {
 
   it('dispatches to multiple handlers for same event', async () => {
     const bridge = makeBridge([]);
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     const h1 = vi.fn();
     const h2 = vi.fn();
     v.on('deal.created', h1);
@@ -888,7 +888,7 @@ describe('VantageBackend.on + _dispatchEvent', () => {
 
   it('does not dispatch to wrong event', async () => {
     const bridge = makeBridge([]);
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     const handler = vi.fn();
     v.on('contact.created', handler);
     await v._dispatchEvent('deal.created', { id: 'd1' });
@@ -896,10 +896,10 @@ describe('VantageBackend.on + _dispatchEvent', () => {
   });
 });
 
-describe('VantageBackend.table', () => {
+describe('VencoreBackend.table', () => {
   it('dispatches table.list with name', async () => {
     const bridge = makeBridge([]);
-    const v = createVantageBackend(bridge);
+    const v = createVencoreBackend(bridge);
     await v.table('cache').list({ limit: 5 });
     expect(bridge).toHaveBeenCalledWith({
       method: 'table.list',
@@ -920,7 +920,7 @@ Expected: FAIL — `Cannot find module '../backend'`.
 - [ ] **Step 3: Create src/bridge.ts**
 
 ```typescript
-import type { PluginError } from '@vantage/plugin-types';
+import type { PluginError } from '@vencore/plugin-types';
 
 export interface BridgeCall {
   method: string;   // e.g. "contacts.list", "table.insert", "storage.get"
@@ -931,7 +931,7 @@ export type BridgeResult<T = unknown> =
   | { data: T; error: null }
   | { data: null; error: PluginError };
 
-/** Function injected by the runtime to handle all vantage.* calls */
+/** Function injected by the runtime to handle all vencore.* calls */
 export type BridgeFn = (call: BridgeCall) => Promise<BridgeResult>;
 
 /**
@@ -982,22 +982,22 @@ import type {
   ResourceRow,
   ResourceInput,
   ResourceFilter,
-} from '@vantage/plugin-types';
+} from '@vencore/plugin-types';
 import type { BridgeFn, BridgeResult } from './bridge';
 import type {
-  PermittedVantage,
-  SafePermittedVantage,
+  PermittedVencore,
+  SafePermittedVencore,
   StorageNamespace,
   HttpNamespace,
   PluginDefinition,
 } from './permissions';
 
 /**
- * VantageBackendImpl — runtime implementation of the vantage API surface.
- * Type-safe at call sites via PermittedVantage<Perms>; all methods dispatch
+ * VencoreBackendImpl — runtime implementation of the vencore API surface.
+ * Type-safe at call sites via PermittedVencore<Perms>; all methods dispatch
  * through BridgeFn, which the runtime provides (fully opaque to plugin authors).
  */
-export class VantageBackendImpl {
+export class VencoreBackendImpl {
   protected _bridge: BridgeFn;
   private _handlers = new Map<string, Array<(p: unknown) => Promise<void> | void>>();
   readonly storage: StorageNamespace;
@@ -1074,7 +1074,7 @@ export class VantageBackendImpl {
     await Promise.all(handlers.map((h) => h(payload)));
   }
 
-  get safe(): SafePermittedVantage<readonly PluginPermission[]> {
+  get safe(): SafePermittedVencore<readonly PluginPermission[]> {
     const wrap = <T>(fn: () => Promise<T>): Promise<PluginResult<T>> =>
       fn()
         .then((data) => ({ data, error: null } as PluginResult<T>))
@@ -1096,11 +1096,11 @@ export class VantageBackendImpl {
 }
 
 /**
- * createVantageBackend — factory for the runtime to instantiate a vantage object.
+ * createVencoreBackend — factory for the runtime to instantiate a vencore object.
  * The runtime provides a BridgeFn scoped to the current plugin + workspace.
  */
-export function createVantageBackend(bridge: BridgeFn): VantageBackendImpl {
-  return new VantageBackendImpl(bridge);
+export function createVencoreBackend(bridge: BridgeFn): VencoreBackendImpl {
+  return new VencoreBackendImpl(bridge);
 }
 
 /**
@@ -1110,7 +1110,7 @@ export function createVantageBackend(bridge: BridgeFn): VantageBackendImpl {
  */
 export function createPlugin<Perms extends readonly PluginPermission[]>(config: {
   manifest: PluginManifest<Perms>;
-  setup(vantage: PermittedVantage<Perms>): void | Promise<void>;
+  setup(vencore: PermittedVencore<Perms>): void | Promise<void>;
 }): PluginDefinition<Perms> {
   return config;
 }
@@ -1121,15 +1121,15 @@ Save to `packages/plugin-sdk/src/backend.ts`.
 - [ ] **Step 5: Create src/index.ts**
 
 ```typescript
-export { createPlugin, createVantageBackend, VantageBackendImpl } from './backend';
+export { createPlugin, createVencoreBackend, VencoreBackendImpl } from './backend';
 export { createPostMessageBridge } from './bridge';
 export type { BridgeFn, BridgeCall, BridgeResult } from './bridge';
 export type {
-  PermittedVantage,
-  PermittedVantageFrontend,
+  PermittedVencore,
+  PermittedVencoreFrontend,
   PermittedResource,
   PermittedWriteResource,
-  SafePermittedVantage,
+  SafePermittedVencore,
   StorageNamespace,
   HttpNamespace,
   ModalNamespace,
@@ -1137,7 +1137,7 @@ export type {
   FrontendPluginDefinition,
 } from './permissions';
 // Re-export all plugin-types for convenience
-export type * from '@vantage/plugin-types';
+export type * from '@vencore/plugin-types';
 ```
 
 Save to `packages/plugin-sdk/src/index.ts`.
@@ -1162,12 +1162,12 @@ Expected: exit 0.
 
 ```bash
 git add packages/plugin-sdk/src/bridge.ts packages/plugin-sdk/src/backend.ts packages/plugin-sdk/src/index.ts packages/plugin-sdk/src/__tests__/backend.test.ts
-git commit -m "feat(plugin-sdk): backend SDK — VantageBackendImpl, createPlugin, createVantageBackend"
+git commit -m "feat(plugin-sdk): backend SDK — VencoreBackendImpl, createPlugin, createVencoreBackend"
 ```
 
 ---
 
-## Task 4: Frontend SDK — VantageFrontendImpl + sdk:init + createPlugin()
+## Task 4: Frontend SDK — VencoreFrontendImpl + sdk:init + createPlugin()
 
 **Files:**
 - Create: `packages/plugin-sdk/src/_store.ts`
@@ -1178,21 +1178,21 @@ git commit -m "feat(plugin-sdk): backend SDK — VantageBackendImpl, createPlugi
 ```typescript
 /**
  * Module-level singleton — set by frontend createPlugin(), read by React hooks.
- * One VantageFrontendImpl per iframe (one plugin per iframe).
+ * One VencoreFrontendImpl per iframe (one plugin per iframe).
  */
-import type { VantageFrontendImpl } from './frontend';
+import type { VencoreFrontendImpl } from './frontend';
 
-let _instance: VantageFrontendImpl | null = null;
+let _instance: VencoreFrontendImpl | null = null;
 
-export function setVantageInstance(v: VantageFrontendImpl): void {
+export function setVencoreInstance(v: VencoreFrontendImpl): void {
   _instance = v;
 }
 
-export function getVantageInstance(): VantageFrontendImpl {
+export function getVencoreInstance(): VencoreFrontendImpl {
   if (!_instance) {
     throw new Error(
       '[plugin-sdk] SDK not initialized. ' +
-      'Import createPlugin from @vantage/plugin-sdk/frontend and call it before using hooks.',
+      'Import createPlugin from @vencore/plugin-sdk/frontend and call it before using hooks.',
     );
   }
   return _instance;
@@ -1210,17 +1210,17 @@ import type {
   PluginContext,
   HttpFetchOptions,
   HttpResponse,
-} from '@vantage/plugin-types';
-import { VantageBackendImpl } from './backend';
+} from '@vencore/plugin-types';
+import { VencoreBackendImpl } from './backend';
 import { createPostMessageBridge } from './bridge';
-import { setVantageInstance } from './_store';
+import { setVencoreInstance } from './_store';
 import type {
-  PermittedVantageFrontend,
+  PermittedVencoreFrontend,
   ModalNamespace,
   FrontendPluginDefinition,
 } from './permissions';
 
-export class VantageFrontendImpl extends VantageBackendImpl {
+export class VencoreFrontendImpl extends VencoreBackendImpl {
   private _context: PluginContext | null = null;
   private _contextResolvers: Array<(ctx: PluginContext) => void> = [];
   private _contextRejectors: Array<(err: Error) => void> = [];
@@ -1303,17 +1303,17 @@ export class VantageFrontendImpl extends VantageBackendImpl {
 
 /**
  * createPlugin (frontend) — runs in the plugin iframe on load.
- * Creates the vantage instance, registers it as the singleton for hooks,
+ * Creates the vencore instance, registers it as the singleton for hooks,
  * then calls setup(). Side-effectful by design.
  */
 export function createPlugin<Perms extends readonly PluginPermission[]>(config: {
   manifest: PluginManifest<Perms>;
-  setup(vantage: PermittedVantageFrontend<Perms>): void | Promise<void>;
+  setup(vencore: PermittedVencoreFrontend<Perms>): void | Promise<void>;
 }): void {
-  const vantage = new VantageFrontendImpl();
-  setVantageInstance(vantage);
+  const vencore = new VencoreFrontendImpl();
+  setVencoreInstance(vencore);
   Promise.resolve(
-    config.setup(vantage as unknown as PermittedVantageFrontend<Perms>),
+    config.setup(vencore as unknown as PermittedVencoreFrontend<Perms>),
   ).catch((err: unknown) => {
     console.error('[plugin-sdk] setup() error:', err);
   });
@@ -1334,12 +1334,12 @@ Expected: exit 0.
 
 ```bash
 git add packages/plugin-sdk/src/_store.ts packages/plugin-sdk/src/frontend.ts
-git commit -m "feat(plugin-sdk): frontend SDK — VantageFrontendImpl, sdk:init handler, getContext"
+git commit -m "feat(plugin-sdk): frontend SDK — VencoreFrontendImpl, sdk:init handler, getContext"
 ```
 
 ---
 
-## Task 5: React hooks (`@vantage/plugin-sdk/react`)
+## Task 5: React hooks (`@vencore/plugin-sdk/react`)
 
 **Files:**
 - Create: `packages/plugin-sdk/src/react.ts`
@@ -1353,9 +1353,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useList, useGet, useCreate, useDelete, useAction, usePluginTable } from '../react';
 import * as store from '../_store';
-import type { VantageBackendImpl } from '../backend';
+import type { VencoreBackendImpl } from '../backend';
 
-function makeVantage(overrides: Partial<VantageBackendImpl> = {}): VantageBackendImpl {
+function makeVencore(overrides: Partial<VencoreBackendImpl> = {}): VencoreBackendImpl {
   return {
     list: vi.fn().mockResolvedValue([{ id: '1' }]),
     get: vi.fn().mockResolvedValue({ id: '1' }),
@@ -1372,11 +1372,11 @@ function makeVantage(overrides: Partial<VantageBackendImpl> = {}): VantageBacken
     on: vi.fn(),
     _dispatchEvent: vi.fn(),
     ...overrides,
-  } as unknown as VantageBackendImpl;
+  } as unknown as VencoreBackendImpl;
 }
 
 beforeEach(() => {
-  vi.spyOn(store, 'getVantageInstance').mockReturnValue(makeVantage());
+  vi.spyOn(store, 'getVencoreInstance').mockReturnValue(makeVencore());
 });
 
 describe('useList', () => {
@@ -1392,7 +1392,7 @@ describe('useList', () => {
   it('skips fetch when opts.skip is true', () => {
     const { result } = renderHook(() => useList('contacts', undefined, { skip: true }));
     expect(result.current.loading).toBe(false);
-    expect(store.getVantageInstance().list).not.toHaveBeenCalled();
+    expect(store.getVencoreInstance().list).not.toHaveBeenCalled();
   });
 });
 
@@ -1406,7 +1406,7 @@ describe('useGet', () => {
   it('skips fetch when id is null', () => {
     const { result } = renderHook(() => useGet('contacts', null));
     expect(result.current.loading).toBe(false);
-    expect(store.getVantageInstance().get).not.toHaveBeenCalled();
+    expect(store.getVencoreInstance().get).not.toHaveBeenCalled();
   });
 });
 
@@ -1427,7 +1427,7 @@ describe('useDelete', () => {
   it('mutate(id) calls delete', async () => {
     const { result } = renderHook(() => useDelete('contacts'));
     await act(async () => { await result.current.mutate('x'); });
-    expect(store.getVantageInstance().delete).toHaveBeenCalledWith('contacts', 'x');
+    expect(store.getVencoreInstance().delete).toHaveBeenCalledWith('contacts', 'x');
     expect(result.current.loading).toBe(false);
   });
 });
@@ -1436,7 +1436,7 @@ describe('useAction', () => {
   it('mutate(payload) calls action with resource + action name', async () => {
     const { result } = renderHook(() => useAction('alerts', 'acknowledge'));
     await act(async () => { await result.current.mutate({ id: 'a1' }); });
-    expect(store.getVantageInstance().action).toHaveBeenCalledWith('alerts', 'acknowledge', { id: 'a1' });
+    expect(store.getVencoreInstance().action).toHaveBeenCalledWith('alerts', 'acknowledge', { id: 'a1' });
   });
 });
 
@@ -1444,7 +1444,7 @@ describe('usePluginTable', () => {
   it('fetches from plugin-owned table', async () => {
     const { result } = renderHook(() => usePluginTable('issues'));
     await act(async () => {});
-    expect(store.getVantageInstance().table).toHaveBeenCalledWith('issues');
+    expect(store.getVencoreInstance().table).toHaveBeenCalledWith('issues');
     expect(result.current.data).toEqual([{ id: 'r1' }]);
   });
 });
@@ -1498,8 +1498,8 @@ import type {
   ResourceFilter,
   PluginError,
   KnownResource,
-} from '@vantage/plugin-types';
-import { getVantageInstance } from './_store';
+} from '@vencore/plugin-types';
+import { getVencoreInstance } from './_store';
 
 // ── usePluginContext — suspends until sdk:init received ───────────────────────
 
@@ -1513,7 +1513,7 @@ let _resolvedContext: PluginContext | null = null;
 export function usePluginContext(): PluginContext {
   if (_resolvedContext) return _resolvedContext;
   if (!_contextPromise) {
-    _contextPromise = getVantageInstance()
+    _contextPromise = getVencoreInstance()
       .getContext()
       .then((ctx) => {
         _resolvedContext = ctx;
@@ -1548,7 +1548,7 @@ export function useList<R extends KnownResource>(
     if (opts?.skip) return;
     let cancelled = false;
     setState((s) => ({ ...s, loading: true, error: null }));
-    (getVantageInstance().list(resource, filter) as Promise<ResourceRow<R>[]>)
+    (getVencoreInstance().list(resource, filter) as Promise<ResourceRow<R>[]>)
       .then((data) => {
         if (!cancelled) setState({ data, loading: false, error: null });
       })
@@ -1580,7 +1580,7 @@ export function useGet<R extends KnownResource>(
     if (!id) return;
     let cancelled = false;
     setState((s) => ({ ...s, loading: true, error: null }));
-    (getVantageInstance().get(resource, id) as Promise<ResourceRow<R>>)
+    (getVencoreInstance().get(resource, id) as Promise<ResourceRow<R>>)
       .then((data) => {
         if (!cancelled) setState({ data, loading: false, error: null });
       })
@@ -1608,7 +1608,7 @@ export function useCreate<R extends KnownResource>(
     async (data: ResourceInput<R>): Promise<ResourceRow<R>> => {
       setState({ loading: true, error: null, data: null });
       try {
-        const result = await (getVantageInstance().create(resource, data) as Promise<ResourceRow<R>>);
+        const result = await (getVencoreInstance().create(resource, data) as Promise<ResourceRow<R>>);
         setState({ loading: false, error: null, data: result });
         return result;
       } catch (error) {
@@ -1639,7 +1639,7 @@ export function useUpdate<R extends KnownResource>(
     async (id: string, data: Partial<ResourceInput<R>>): Promise<ResourceRow<R>> => {
       setState({ loading: true, error: null, data: null });
       try {
-        const result = await (getVantageInstance().update(resource, id, data) as Promise<ResourceRow<R>>);
+        const result = await (getVencoreInstance().update(resource, id, data) as Promise<ResourceRow<R>>);
         setState({ loading: false, error: null, data: result });
         return result;
       } catch (error) {
@@ -1664,7 +1664,7 @@ export function useDelete<R extends KnownResource>(
     async (id: string): Promise<void> => {
       setState({ loading: true, error: null });
       try {
-        await getVantageInstance().delete(resource, id);
+        await getVencoreInstance().delete(resource, id);
         setState({ loading: false, error: null });
       } catch (error) {
         setState({ loading: false, error: error as PluginError });
@@ -1693,7 +1693,7 @@ export function useAction<T = unknown>(
     async (payload?: unknown): Promise<T> => {
       setState({ loading: true, error: null, data: null });
       try {
-        const result = await getVantageInstance().action<T>(resource, action, payload);
+        const result = await getVencoreInstance().action<T>(resource, action, payload);
         setState({ loading: false, error: null, data: result });
         return result;
       } catch (error) {
@@ -1732,7 +1732,7 @@ export function usePluginTable(
   useEffect(() => {
     let cancelled = false;
     setState((s) => ({ ...s, loading: true, error: null }));
-    getVantageInstance()
+    getVencoreInstance()
       .table(tableName)
       .list(query)
       .then((data) => {
@@ -1777,7 +1777,7 @@ git commit -m "feat(plugin-sdk): React hooks — useList/useGet/useCreate/useUpd
 
 ---
 
-## Task 6: `@vantage/plugin-runtime` — scaffold + permission validator + bridge-router
+## Task 6: `@vencore/plugin-runtime` — scaffold + permission validator + bridge-router
 
 **Files:**
 - Create: `packages/plugin-runtime/package.json`
@@ -1792,7 +1792,7 @@ git commit -m "feat(plugin-sdk): React hooks — useList/useGet/useCreate/useUpd
 
 ```json
 {
-  "name": "@vantage/plugin-runtime",
+  "name": "@vencore/plugin-runtime",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -1804,8 +1804,8 @@ git commit -m "feat(plugin-sdk): React hooks — useList/useGet/useCreate/useUpd
     "test": "vitest run"
   },
   "dependencies": {
-    "@vantage/db": "workspace:*",
-    "@vantage/plugin-types": "workspace:*",
+    "@vencore/db": "workspace:*",
+    "@vencore/plugin-types": "workspace:*",
     "kysely": "^0.27.0"
   },
   "devDependencies": {
@@ -1854,7 +1854,7 @@ Create `packages/plugin-runtime/src/__tests__/permissions.test.ts`:
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { checkPermission } from '../permissions';
-import type { PluginPermission } from '@vantage/plugin-types';
+import type { PluginPermission } from '@vencore/plugin-types';
 
 const READ_CONTACTS: PluginPermission[] = ['contacts:read'];
 const READ_WRITE: PluginPermission[] = ['contacts:read', 'contacts:write', 'storage:read', 'storage:write'];
@@ -1912,7 +1912,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { dispatchBridgeCall } from '../bridge-router';
 import type { BridgeContext } from '../bridge-router';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 
 function makeCtx(overrides: Partial<BridgeContext> = {}): BridgeContext {
   return {
@@ -1976,7 +1976,7 @@ Expected: FAIL — `Cannot find module '../permissions'` and `Cannot find module
 - [ ] **Step 6: Create src/permissions.ts**
 
 ```typescript
-import type { PluginPermission, PluginError } from '@vantage/plugin-types';
+import type { PluginPermission, PluginError } from '@vencore/plugin-types';
 
 /** Maps bridge method → required PluginPermission. null = table.* (validated by table-client). */
 const METHOD_PERMISSION_MAP: Record<string, PluginPermission | null> = {
@@ -2053,9 +2053,9 @@ Save to `packages/plugin-runtime/src/permissions.ts`.
 
 ```typescript
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
-import type { PluginPermission, HttpFetchOptions, HttpResponse } from '@vantage/plugin-types';
-import type { BridgeCall, BridgeResult } from '@vantage/plugin-sdk';
+import type { Database } from '@vencore/db';
+import type { PluginPermission, HttpFetchOptions, HttpResponse } from '@vencore/plugin-types';
+import type { BridgeCall, BridgeResult } from '@vencore/plugin-sdk';
 import { checkPermission } from './permissions';
 import { dispatchTableCall, ensurePluginStorage } from './table-client';
 
@@ -2391,8 +2391,8 @@ Expected: FAIL — `Cannot find module '../table-client'`.
 ```typescript
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
-import type { BridgeResult } from '@vantage/plugin-sdk';
+import type { Database } from '@vencore/db';
+import type { BridgeResult } from '@vencore/plugin-sdk';
 import type { BridgeContext } from './bridge-router';
 
 /** Converts a plugin id to a safe SQL identifier fragment. */
@@ -2577,9 +2577,9 @@ Create `packages/plugin-runtime/src/__tests__/migration-runner.test.ts`:
 ```typescript
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runMigrations } from '../migration-runner';
-import type { PluginMigration } from '@vantage/plugin-types';
+import type { PluginMigration } from '@vencore/plugin-types';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 
 const MIGRATIONS: PluginMigration[] = [
   { version: '1.0.0', up: 'CREATE TABLE plugin_test_t1 (id uuid PRIMARY KEY)' },
@@ -2666,8 +2666,8 @@ Expected: FAIL — `Cannot find module '../migration-runner'`.
 ```typescript
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
-import type { PluginMigration } from '@vantage/plugin-types';
+import type { Database } from '@vencore/db';
+import type { PluginMigration } from '@vencore/plugin-types';
 
 /** plugin_migration_log tracks which migrations have been applied per plugin+workspace. */
 const MIGRATION_LOG_TABLE = 'plugin_migration_log';
@@ -2828,8 +2828,8 @@ Expected: `dist/` created in each package with no TS errors.
 
 Read `apps/api/package.json`. Add to `dependencies`:
 ```json
-"@vantage/plugin-runtime": "workspace:*",
-"@vantage/plugin-types": "workspace:*"
+"@vencore/plugin-runtime": "workspace:*",
+"@vencore/plugin-types": "workspace:*"
 ```
 
 Then run: `pnpm install` (from repo root).
@@ -2843,9 +2843,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import { createPluginsRouter } from '../routes/plugins';
-import * as runtime from '@vantage/plugin-runtime';
+import * as runtime from '@vencore/plugin-runtime';
 
-vi.mock('@vantage/plugin-runtime', () => ({
+vi.mock('@vencore/plugin-runtime', () => ({
   dispatchBridgeCall: vi.fn().mockResolvedValue({ data: [{ id: '1' }], error: null }),
   runMigrations: vi.fn().mockResolvedValue(undefined),
 }));
@@ -2928,10 +2928,10 @@ Expected: FAIL — `Cannot find module '../routes/plugins'`.
 import { Router } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
-import { dispatchBridgeCall, runMigrations } from '@vantage/plugin-runtime';
-import type { PluginPermission } from '@vantage/plugin-types';
+import { dispatchBridgeCall, runMigrations } from '@vencore/plugin-runtime';
+import type { PluginPermission } from '@vencore/plugin-types';
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
 
@@ -3087,35 +3087,35 @@ git commit -m "feat(api): add plugin bridge route — POST /api/plugins/bridge a
 
 | Spec requirement | Task |
 |---|---|
-| `@vantage/plugin-types` — all domain types | Task 1 |
+| `@vencore/plugin-types` — all domain types | Task 1 |
 | `ResourceTypeMap` / `ResourceRow<R>` generics | Task 1 |
 | `PluginPermission`, `PluginManifest`, `PluginMigration` | Task 1 |
 | `PluginTableClient` interface | Task 1 |
-| `PermittedVantage<Perms>` compile-time narrowing | Task 2 |
+| `PermittedVencore<Perms>` compile-time narrowing | Task 2 |
 | `safe.*` wrapper returning `PluginResult<T>` | Task 2 + Task 3 |
 | `createPlugin()` backend — enforces perms at compile time | Task 3 |
-| `createVantageBackend(bridgeFn)` for runtime use | Task 3 |
+| `createVencoreBackend(bridgeFn)` for runtime use | Task 3 |
 | Bridge method naming: `{resource}.{verb}` | Task 3, 6 |
-| `vantage.table(name)` — PluginTableClient API | Task 3, 7 |
-| `vantage.storage.*` | Task 3, 6 |
-| `vantage.http.fetch` | Task 3, 6 |
+| `vencore.table(name)` — PluginTableClient API | Task 3, 7 |
+| `vencore.storage.*` | Task 3, 6 |
+| `vencore.http.fetch` | Task 3, 6 |
 | `createPlugin()` frontend | Task 4 |
 | `sdk:init` postMessage — 3s timeout | Task 4 |
-| `vantage.getContext()` | Task 4 |
-| `vantage.navigate()` / `vantage.modal.*` | Task 4 |
+| `vencore.getContext()` | Task 4 |
+| `vencore.navigate()` / `vencore.modal.*` | Task 4 |
 | React hooks — all 8 listed | Task 5 |
 | `usePluginContext()` uses Suspense | Task 5 |
 | Bridge dispatcher — permission re-check at runtime | Task 6 |
 | `table.*` dispatch — validates declared table names | Task 7 |
 | Physical table name: `plugin_{slug}_{name}` | Task 7 |
 | `workspace_id` injected automatically on table ops | Task 7 |
-| `plugin_storage` table for `vantage.storage.*` | Task 7 |
+| `plugin_storage` table for `vencore.storage.*` | Task 7 |
 | Migration runner — `plugin_migration_log` | Task 8 |
 | `runMigrations` — idempotent, sorted, skips applied | Task 8 |
 | `rollbackMigrations` — reverse order, no-op without `down` | Task 8 |
 | API bridge route — `POST /api/plugins/bridge` | Task 9 |
 | API install route — `POST /api/plugins/install` | Task 9 |
-| `vantage.action(resource, action, payload)` | Task 3, 6 |
+| `vencore.action(resource, action, payload)` | Task 3, 6 |
 
 ### Placeholder scan
 No TBD, TODO, or "similar to task N" patterns present. All steps contain complete code.
@@ -3123,7 +3123,7 @@ No TBD, TODO, or "similar to task N" patterns present. All steps contain complet
 ### Type consistency check
 - `BridgeCall` defined in `plugin-sdk/src/bridge.ts`, imported in `plugin-runtime/src/bridge-router.ts` ✓
 - `BridgeContext` defined in `bridge-router.ts`, exported from `index.ts`, imported in `table-client.ts` ✓
-- `VantageFrontendImpl` imported by `_store.ts` via type import (no circular dep — `_store.ts` uses type-only import) ✓
+- `VencoreFrontendImpl` imported by `_store.ts` via type import (no circular dep — `_store.ts` uses type-only import) ✓
 - `dispatchTableCall` called from `bridge-router.ts`, defined in `table-client.ts`, both imported from same package ✓
 - `ensurePluginStorage` used in `bridge-router.ts` storage handler — imported from `table-client.ts` ✓
-- `PermittedResource` / `PermittedWriteResource` / `PermittedVantage` all in `permissions.ts` — consistent names throughout ✓
+- `PermittedResource` / `PermittedWriteResource` / `PermittedVencore` all in `permissions.ts` — consistent names throughout ✓

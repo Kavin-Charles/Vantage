@@ -23,7 +23,7 @@ ARG NEXT_PUBLIC_API_URL=http://api:3001
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
     NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
-RUN pnpm --filter "@vantage/web..." build
+RUN pnpm --filter "@vencore/web..." build
 
 ENV NODE_ENV=production
 EXPOSE 3000

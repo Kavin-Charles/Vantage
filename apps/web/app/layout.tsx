@@ -23,7 +23,7 @@ const bricolageGrotesque = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: 'Vantage — Build, sell, and ship in one place',
+  title: 'Vencore — Build, sell, and ship in one place',
   description: 'Build, sell, and ship — one place. CRM, infra monitoring, and team tools for developer-led teams.',
 };
 

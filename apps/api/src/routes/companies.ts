@@ -1,7 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { csvEscape, toCSV } from '../lib/csv';
 
@@ -161,7 +161,7 @@ export function createCompaniesRouter(db: Kysely<Database>, requirePermission: (
   return router;
 }
 
-import { bridgeRegistry } from '@vantage/plugin-runtime';
+import { bridgeRegistry } from '@vencore/plugin-runtime';
 
 export function registerCompaniesBridgeMethods(): void {
   bridgeRegistry

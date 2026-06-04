@@ -2,7 +2,7 @@
 import { Router, type Router as ExpressRouter, type Request, type Response } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { decryptPrivateKey } from '../lib/ssh-crypto';
 import { sseStart, sseWrite, withSshSession, runCommand } from '../lib/ssh-exec';

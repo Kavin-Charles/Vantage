@@ -1,1 +1,1 @@
-export { listActivity, createActivity } from '@vantage/api-client';
+export { listActivity, createActivity } from '@vencore/api-client';

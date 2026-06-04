@@ -11,7 +11,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { Badge } from '@/components/Badge';
 import { Colors } from '@/constants/colors';
 import { Font } from '@/constants/fonts';
-import type { Server } from '@vantage/types';
+import type { Server } from '@vencore/types';
 
 const STATUS_BADGE: Record<string, string> = {
   online: 'green', degraded: 'amber', offline: 'red', stopped: 'gray',

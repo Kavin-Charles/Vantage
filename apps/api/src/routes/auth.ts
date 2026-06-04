@@ -3,8 +3,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
-import type { SmtpConfig } from '@vantage/config';
+import type { Database } from '@vencore/db';
+import type { SmtpConfig } from '@vencore/config';
 import { z } from 'zod';
 import { logger } from '../lib/logger';
 
@@ -68,7 +68,7 @@ export function createAuthRouter(
         { expiresIn: '24h' },
       );
 
-      res.cookie('vantage_token', token, {
+      res.cookie('vencore_token', token, {
         httpOnly: true,
         secure: process.env['NODE_ENV'] === 'production' && process.env['COOKIE_SECURE'] !== 'false',
         sameSite: 'lax',
@@ -86,7 +86,7 @@ export function createAuthRouter(
   // GET /api/auth/ws-token — exchange session cookie for a short-lived WS-only token
   // Used by browser when opening cross-origin WebSocket (cookie SameSite blocks cross-site send)
   router.get('/ws-token', (req, res) => {
-    const cookieToken = req.cookies['vantage_token'] as string | undefined;
+    const cookieToken = req.cookies['vencore_token'] as string | undefined;
     if (!cookieToken) {
       res.status(401).json({ data: null, error: { code: 'UNAUTHORIZED' } });
       return;
@@ -108,7 +108,7 @@ export function createAuthRouter(
 
   // POST /api/auth/logout
   router.post('/logout', (_req, res) => {
-    res.clearCookie('vantage_token', {
+    res.clearCookie('vencore_token', {
       httpOnly: true,
       secure: process.env['NODE_ENV'] === 'production' && process.env['COOKIE_SECURE'] !== 'false',
       sameSite: 'lax',
@@ -119,7 +119,7 @@ export function createAuthRouter(
 
   // GET /api/auth/me
   router.get('/me', async (req, res) => {
-    const token = req.cookies['vantage_token'] as string | undefined;
+    const token = req.cookies['vencore_token'] as string | undefined;
     if (!token) {
       res.status(401).json({ data: null, error: { code: 'UNAUTHORIZED' } });
       return;

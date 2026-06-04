@@ -4,25 +4,25 @@ interface AgentInstallInstructionsProps {
 
 export function AgentInstallInstructions({ token }: AgentInstallInstructionsProps) {
   const serviceFile = `[Unit]
-Description=Vantage Monitoring Agent
+Description=Vencore Monitoring Agent
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/vantage-agent
+ExecStart=/usr/bin/vencore-agent
 Restart=always
 RestartSec=10
-Environment=VANTAGE_TOKEN=${token}
-Environment=VANTAGE_API_URL=https://api.vantage.app
+Environment=VENCORE_TOKEN=${token}
+Environment=VENCORE_API_URL=https://api.vencore.app
 
 [Install]
 WantedBy=multi-user.target`;
 
-  const createServiceCmd = `sudo tee /etc/systemd/system/vantage-agent.service > /dev/null << 'EOF'\n${serviceFile}\nEOF`;
+  const createServiceCmd = `sudo tee /etc/systemd/system/vencore-agent.service > /dev/null << 'EOF'\n${serviceFile}\nEOF`;
 
   const steps: { label: string; code: string }[] = [
     {
       label: 'Install the agent',
-      code: 'npm install -g vantage-agent',
+      code: 'npm install -g vencore-agent',
     },
     {
       label: 'Create the systemd service',
@@ -30,7 +30,7 @@ WantedBy=multi-user.target`;
     },
     {
       label: 'Enable and start',
-      code: 'sudo systemctl daemon-reload && sudo systemctl enable --now vantage-agent',
+      code: 'sudo systemctl daemon-reload && sudo systemctl enable --now vencore-agent',
     },
   ];
 

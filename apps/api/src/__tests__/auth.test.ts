@@ -29,7 +29,7 @@ describe('createRequireAuth', () => {
   it('returns 401 if token invalid', async () => {
     const { createRequireAuth } = await import('../middleware/auth');
     const mw = createRequireAuth(mockDb as never, JWT_SECRET);
-    const req = { cookies: { vantage_token: 'bad-token' }, headers: {} } as unknown as Request;
+    const req = { cookies: { vencore_token: 'bad-token' }, headers: {} } as unknown as Request;
     await mw(req, mockRes as never, next);
     expect(mockRes.status).toHaveBeenCalledWith(401);
   });
@@ -54,7 +54,7 @@ describe('createRequireAuth', () => {
 
     const { createRequireAuth } = await import('../middleware/auth');
     const mw = createRequireAuth(mockDb as never, JWT_SECRET);
-    const req = { cookies: { vantage_token: token }, headers: {} } as unknown as Request;
+    const req = { cookies: { vencore_token: token }, headers: {} } as unknown as Request;
     await mw(req, mockRes as never, next);
     expect(next).toHaveBeenCalled();
   });
@@ -67,7 +67,7 @@ describe('createRequireAuth', () => {
     );
     const { createRequireAuth } = await import('../middleware/auth');
     const mw = createRequireAuth(mockDb as never, JWT_SECRET);
-    const req = { cookies: { vantage_token: token }, headers: {} } as unknown as Request;
+    const req = { cookies: { vencore_token: token }, headers: {} } as unknown as Request;
     await mw(req, mockRes as never, next);
     expect(mockRes.status).toHaveBeenCalledWith(401);
     expect(next).not.toHaveBeenCalled();
@@ -88,7 +88,7 @@ describe('createRequireAuth', () => {
 
     const { createRequireAuth } = await import('../middleware/auth');
     const mw = createRequireAuth(mockDb as never, JWT_SECRET);
-    const req = { cookies: { vantage_token: token }, headers: {} } as unknown as Request;
+    const req = { cookies: { vencore_token: token }, headers: {} } as unknown as Request;
     await mw(req, mockRes as never, next);
     expect(mockRes.status).toHaveBeenCalledWith(401);
     expect(next).not.toHaveBeenCalled();

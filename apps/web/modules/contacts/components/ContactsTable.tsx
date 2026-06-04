@@ -9,7 +9,7 @@ import { ContactForm } from './ContactForm';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listContacts, deleteContact } from '@/modules/contacts/lib/contacts';
 import { PluginPanelSlot } from '@/modules/shared/components/PluginPanelSlot';
-import type { Contact } from '@vantage/types';
+import type { Contact } from '@vencore/types';
 
 const COLS = '1.6fr 1.6fr 1.1fr .9fr 1fr auto';
 

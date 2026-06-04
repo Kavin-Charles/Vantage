@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { logger } from './logger';
 
 const DEFAULT_STAGES = [
@@ -36,5 +36,5 @@ export async function seedDefaultPipeline(
     )
     .execute();
 
-  logger.info({ pipelineId: pipeline.id }, '[Vantage] Default pipeline seeded');
+  logger.info({ pipelineId: pipeline.id }, '[Vencore] Default pipeline seeded');
 }

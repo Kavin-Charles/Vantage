@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely';
-import type { Database, InfraDatabaseUpdate } from '@vantage/db';
+import type { Database, InfraDatabaseUpdate } from '@vencore/db';
 import { logger } from '../lib/logger';
 
 async function checkPostgres(

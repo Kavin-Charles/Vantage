@@ -1,6 +1,6 @@
 // apps/api/src/lib/seed-modules.ts
 import type { Kysely, Transaction } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { MODULE_REGISTRY } from '../modules/registry';
 
 // Maps installer feature flags → module IDs they control

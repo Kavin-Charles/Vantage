@@ -170,7 +170,7 @@ export default function MoreScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.footerApp}>VANTAGE</Text>
+          <Text style={styles.footerApp}>VENCORE</Text>
           <Text style={styles.footerVersion}>mobile build</Text>
         </View>
 

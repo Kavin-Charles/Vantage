@@ -1,4 +1,4 @@
-import type { PipelineRecordWithValues, RecordTypeField } from '@vantage/types';
+import type { PipelineRecordWithValues, RecordTypeField } from '@vencore/types';
 
 function getFieldValue(record: PipelineRecordWithValues, fields: RecordTypeField[], label: string): unknown {
   const field = fields.find(f => f.label.toLowerCase() === label.toLowerCase());

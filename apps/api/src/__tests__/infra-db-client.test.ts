@@ -42,7 +42,7 @@ describe('infra db client helpers', () => {
     expect(classifySqlStatement('drop table customers')).toEqual({
       kind: 'blocked',
       code: 'BLOCKED_SQL',
-      message: 'Schema-changing SQL is not allowed from Vantage.',
+      message: 'Schema-changing SQL is not allowed from Vencore.',
     });
     expect(classifySqlStatement('select 1; select 2')).toEqual({
       kind: 'blocked',

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { createRecord } from '@/modules/pipeline/lib/records';
 import { apiFetch } from '@/modules/shared/lib/api';
-import type { PipelineWithDetails, RecordTypeField } from '@vantage/types';
+import type { PipelineWithDetails, RecordTypeField } from '@vencore/types';
 
 interface Props {
   pipeline: PipelineWithDetails;

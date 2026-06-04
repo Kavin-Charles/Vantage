@@ -158,7 +158,7 @@ function MoreScreen({ nav }) {
           <div style={{
             fontSize: 10, fontWeight: 600, color: 'var(--text3)',
             textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 4,
-          }}>Vantage</div>
+          }}>Vencore</div>
           <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--font-mono)' }}>
             v2.4.1 · build 18293
           </div>
@@ -191,7 +191,7 @@ function SettingsScreen({ nav }) {
         <Section eyebrow="Account">
           <ListGroup>
             <ListRow icon="contacts"  title="Profile"       subtitle="Name, email, avatar"     onClick={() => {}} />
-            <ListRow icon="companies" title="Workspace"     subtitle="Vantage · 8 members"     onClick={() => {}} />
+            <ListRow icon="companies" title="Workspace"     subtitle="Vencore · 8 members"     onClick={() => {}} />
             <ListRow icon="settings"  title="API & tokens"  subtitle="Personal access tokens"  onClick={() => {}} last />
           </ListGroup>
         </Section>
@@ -228,7 +228,7 @@ function SettingsScreen({ nav }) {
           <div style={{
             fontSize: 10, fontWeight: 600, color: 'var(--text3)',
             textTransform: 'uppercase', letterSpacing: 1.4, marginTop: 6,
-          }}>Vantage Mobile</div>
+          }}>Vencore Mobile</div>
           <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: 'var(--font-mono)' }}>v2.4.1</div>
         </div>
       </ScreenBody>

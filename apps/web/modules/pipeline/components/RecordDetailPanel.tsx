@@ -6,7 +6,7 @@ import { getRecord, updateRecord, deleteRecord } from '@/modules/pipeline/lib/re
 import { listConversions } from '@/modules/pipeline/lib/record-types';
 import { ConversionWizard } from './ConversionWizard';
 import { PluginPanelSlot } from '@/modules/shared/components/PluginPanelSlot';
-import type { PipelineWithDetails, PipelineRecordWithValues, RecordTypeField } from '@vantage/types';
+import type { PipelineWithDetails, PipelineRecordWithValues, RecordTypeField } from '@vencore/types';
 
 interface Props {
   recordId: string;

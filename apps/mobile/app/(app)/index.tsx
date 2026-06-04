@@ -11,7 +11,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { Badge } from '@/components/Badge';
 import { Colors } from '@/constants/colors';
 import { Font } from '@/constants/fonts';
-import type { Alert, Task, Activity, ActivityType } from '@vantage/types';
+import type { Alert, Task, Activity, ActivityType } from '@vencore/types';
 
 const ACTIVITY_ICON: Record<ActivityType, string> = {
   email:       'mail-outline',

@@ -1,5 +1,5 @@
 // apps/mobile/constants/fonts.ts
-// Vantage font families — loaded via @expo-google-fonts in app/_layout.tsx
+// Vencore font families — loaded via @expo-google-fonts in app/_layout.tsx
 export const Font = {
   display:      'BricolageGrotesque_600SemiBold',
   displayMd:    'BricolageGrotesque_500Medium',

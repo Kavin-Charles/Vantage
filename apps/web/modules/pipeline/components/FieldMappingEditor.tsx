@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listFields } from '@/modules/pipeline/lib/record-types';
-import type { ConversionFieldMapping } from '@vantage/types';
+import type { ConversionFieldMapping } from '@vencore/types';
 
 type Mapping = Partial<ConversionFieldMapping>;
 const BUILTINS = ['name', 'contact_id', 'company_id', 'owner_id'];

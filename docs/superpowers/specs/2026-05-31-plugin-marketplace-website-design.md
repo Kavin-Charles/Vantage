@@ -2,38 +2,38 @@
 
 **Date:** 2026-05-31
 **Status:** Approved
-**Scope:** `market.vantage.dev` — standalone platform, zero changes to main Vantage repo
+**Scope:** `market.vencore.dev` — standalone platform, zero changes to main Vencore repo
 
 ---
 
 ## Overview
 
-A standalone website and API for the Vantage plugin ecosystem. Handles public plugin discovery, developer publishing tools, and internal review/moderation. The main Vantage app only reads from this system via a single public catalog endpoint.
+A standalone website and API for the Vencore plugin ecosystem. Handles public plugin discovery, developer publishing tools, and internal review/moderation. The main Vencore app only reads from this system via a single public catalog endpoint.
 
 **Surfaces:**
 
 | Surface | URL | Auth |
 |---|---|---|
-| Public marketplace | `market.vantage.dev/browse` | None |
-| Developer portal | `market.vantage.dev/developer` | Clerk (developer) |
-| Admin panel | `market.vantage.dev/admin` | Clerk (admin role) |
+| Public marketplace | `market.vencore.dev/browse` | None |
+| Developer portal | `market.vencore.dev/developer` | Clerk (developer) |
+| Admin panel | `market.vencore.dev/admin` | Clerk (admin role) |
 
 ---
 
 ## Infrastructure
 
 ```
-market.vantage.dev          Next.js 14 (App Router) — Vercel
-market-api.vantage.dev      Express + TypeScript — Railway
+market.vencore.dev          Next.js 14 (App Router) — Vercel
+market-api.vencore.dev      Express + TypeScript — Railway
 market-db                   PostgreSQL (own instance) — Railway
 market-storage              Backblaze B2 (plugin bundles, screenshots, icons)
-auth                        Clerk (separate instance from main Vantage app)
+auth                        Clerk (separate instance from main Vencore app)
 payments                    Stripe Connect (20% platform cut, monthly payouts)
 ```
 
-**Main Vantage app coupling — read-only, one endpoint:**
+**Main Vencore app coupling — read-only, one endpoint:**
 ```
-GET https://market-api.vantage.dev/catalog
+GET https://market-api.vencore.dev/catalog
 ```
 No auth. Rate-limited by IP. Returns listed plugins for the main app's `/api/marketplace/plugins` proxy. No other coupling between this system and the main repo.
 
@@ -88,12 +88,12 @@ plugin_versions
   reviewed_at           timestamp (nullable)
   reviewed_by           string (nullable)    -- admin Clerk user ID
 
--- Ratings and reviews (submitted by Vantage workspace admins via main app)
+-- Ratings and reviews (submitted by Vencore workspace admins via main app)
 plugin_reviews
   id                    uuid PK
   plugin_id             uuid FK → plugins
-  workspace_id          uuid                 -- main Vantage workspace, stored as reference
-  reviewer_clerk_id     string               -- Vantage Clerk user ID (different instance)
+  workspace_id          uuid                 -- main Vencore workspace, stored as reference
+  reviewer_clerk_id     string               -- Vencore Clerk user ID (different instance)
   rating                smallint             -- 1–5
   body                  text (nullable)
   helpful_count         int default 0
@@ -116,7 +116,7 @@ plugin_revenue
 
 ---
 
-## API (`market-api.vantage.dev`)
+## API (`market-api.vencore.dev`)
 
 ### Public (no auth)
 
@@ -153,7 +153,7 @@ GET    /admin/plugins                          All plugins, filterable by status
 GET    /admin/plugins/:id                      Plugin audit log — all status transitions + reviewer notes
 ```
 
-### Cross-system (main Vantage app → marketplace API)
+### Cross-system (main Vencore app → marketplace API)
 
 ```
 POST   /reviews/:slug          Submit rating + review
@@ -174,7 +174,7 @@ POST   /webhooks/stripe        Stripe Connect events (transfer.created, payout.p
 
 ---
 
-## Frontend Pages (`market.vantage.dev`)
+## Frontend Pages (`market.vencore.dev`)
 
 ### Public (SSR — Next.js, indexed by search engines)
 
@@ -249,7 +249,7 @@ Admin opens /admin/review/:versionId
 ### Stripe Connect Payout (monthly cron)
 
 ```
-Main Vantage app charges workspace for plugin install
+Main Vencore app charges workspace for plugin install
 → POST /revenue { pluginId, workspaceId, stripeChargeId, amountUsdCents }
 → plugin_revenue row created:
     platform_cut_cents = amount * 0.20
@@ -263,10 +263,10 @@ Main Vantage app charges workspace for plugin install
 → Developers without Connect onboarding: revenue accrues, paid when they onboard
 ```
 
-### Review Submission (from main Vantage app)
+### Review Submission (from main Vencore app)
 
 ```
-Workspace admin clicks "Write a review" in main Vantage app Settings → Plugins
+Workspace admin clicks "Write a review" in main Vencore app Settings → Plugins
 → Main app checks: installed_at < now - 7 days (enforced locally)
 → Main app POST /reviews/:slug {workspaceId, reviewerClerkId, rating, body, installedDays}
     with HMAC-SHA256 signature header
@@ -313,7 +313,7 @@ STRIPE_WEBHOOK_SECRET=
 STRIPE_PLATFORM_ACCOUNT_ID=
 
 # Cross-system shared secrets
-MAIN_APP_HMAC_SECRET=    # Shared with main Vantage app for /reviews + /revenue auth
+MAIN_APP_HMAC_SECRET=    # Shared with main Vencore app for /reviews + /revenue auth
 
 # Email
 RESEND_API_KEY=
@@ -329,7 +329,7 @@ CRON_SECRET=
 
 ## UI Design Tokens
 
-Match Vantage design system exactly:
+Match Vencore design system exactly:
 
 ```css
 --bg: #f7f6f2

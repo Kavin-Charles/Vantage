@@ -13,7 +13,7 @@ const mockSmtp = {
   secure: false,
   user: 'noreply@example.com',
   password: 'secret',
-  from: 'Vantage <noreply@example.com>',
+  from: 'Vencore <noreply@example.com>',
 };
 
 describe('sendAlertEmail', () => {

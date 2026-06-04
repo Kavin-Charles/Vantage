@@ -1,5 +1,5 @@
-import { readConfig } from '@vantage/config';
-import { createDb } from '@vantage/db';
+import { readConfig } from '@vencore/config';
+import { createDb } from '@vencore/db';
 import { logger } from './lib/logger';
 import { runWebsitePing } from './jobs/website-ping';
 import { runAlertEval } from './jobs/alert-eval';

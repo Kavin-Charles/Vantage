@@ -24,15 +24,15 @@ export async function report(
 
     if (!res.ok) {
       const text = await res.text();
-      console.error(`[vantage-agent] ping failed ${res.status}: ${text}`);
+      console.error(`[vencore-agent] ping failed ${res.status}: ${text}`);
     }
   } catch (err) {
     const delay = Math.min(1000 * Math.pow(2, attempt), 30_000);
     if (attempt < 5) {
-      console.error(`[vantage-agent] network error, retrying in ${delay}ms...`);
+      console.error(`[vencore-agent] network error, retrying in ${delay}ms...`);
       await new Promise(r => setTimeout(r, delay));
       return report(config, metrics, dbChecks, attempt + 1);
     }
-    console.error('[vantage-agent] giving up after 5 retries:', err);
+    console.error('[vencore-agent] giving up after 5 retries:', err);
   }
 }

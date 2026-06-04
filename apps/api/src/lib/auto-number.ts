@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 
 /**
  * Format a record number from a format string.

@@ -6,7 +6,7 @@ import { Button } from '@/modules/shared/components/ui/Button';
 import { FormField, Input, Select } from '@/modules/shared/components/ui/FormField';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { createContact, updateContact } from '@/modules/contacts/lib/contacts';
-import type { Contact } from '@vantage/types';
+import type { Contact } from '@vencore/types';
 
 interface Props {
   contact?: Contact;

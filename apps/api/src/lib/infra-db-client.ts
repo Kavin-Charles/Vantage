@@ -1,4 +1,4 @@
-import type { InfraDatabase } from '@vantage/db';
+import type { InfraDatabase } from '@vencore/db';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 type SupportedDialect = 'postgres' | 'mysql';
@@ -85,7 +85,7 @@ export function classifySqlStatement(sql: string): SqlClassification {
     return {
       kind: 'blocked',
       code: 'BLOCKED_SQL',
-      message: 'Schema-changing SQL is not allowed from Vantage.',
+      message: 'Schema-changing SQL is not allowed from Vencore.',
     };
   }
 
@@ -94,7 +94,7 @@ export function classifySqlStatement(sql: string): SqlClassification {
       return {
         kind: 'blocked',
         code: 'BLOCKED_SQL',
-        message: 'Schema-changing SQL is not allowed from Vantage.',
+        message: 'Schema-changing SQL is not allowed from Vencore.',
       };
     }
     if (verb === 'with' && /\b(insert|update|delete)\b/i.test(withoutTrailingSemicolon)) {
@@ -489,7 +489,7 @@ export async function runTargetDatabaseSql(
   if (row.engine === 'postgres') {
     return withPostgresClient(row, undefined, async client => {
       if (classification.kind === 'select') {
-        const result = await client.query<DataRow>(`SELECT * FROM (${normalized}) vantage_sql_result LIMIT 100`);
+        const result = await client.query<DataRow>(`SELECT * FROM (${normalized}) vencore_sql_result LIMIT 100`);
         return {
           kind: 'select',
           columns: result.fields.map(field => field.name),
@@ -504,7 +504,7 @@ export async function runTargetDatabaseSql(
 
   return withMysqlClient(row, undefined, async client => {
     if (classification.kind === 'select') {
-      const [rows, fields] = await client.query<RowDataPacket[]>(`SELECT * FROM (${normalized}) AS vantage_sql_result LIMIT 100`);
+      const [rows, fields] = await client.query<RowDataPacket[]>(`SELECT * FROM (${normalized}) AS vencore_sql_result LIMIT 100`);
       return {
         kind: 'select',
         columns: fields.map(field => field.name),

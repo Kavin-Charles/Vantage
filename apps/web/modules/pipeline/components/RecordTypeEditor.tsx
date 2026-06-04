@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listFields, addField, updateField, deleteField, reorderFields } from '@/modules/pipeline/lib/record-types';
-import type { RecordTypeField } from '@vantage/types';
+import type { RecordTypeField } from '@vencore/types';
 
 const FIELD_TYPES = ['text', 'number', 'date', 'select', 'boolean'] as const;
 

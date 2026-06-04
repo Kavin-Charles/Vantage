@@ -1,11 +1,11 @@
 {
-  "name": "vantage-agent",
+  "name": "vencore-agent",
   "version": "1.0.0",
-  "description": "Vantage infrastructure monitoring agent",
+  "description": "Vencore infrastructure monitoring agent",
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {
-    "vantage-agent": "dist/index.js"
+    "vencore-agent": "dist/index.js"
   },
   "files": [
     "dist/",

@@ -17,7 +17,7 @@ export default function middleware(req: NextRequest) {
 
   const isSetupPath = SETUP_PATHS.some(p => pathname.startsWith(p));
   const isPublicPath = PUBLIC_PATHS.some(p => pathname.startsWith(p));
-  const setupDone = req.cookies.get('vantage_setup_done')?.value === '1';
+  const setupDone = req.cookies.get('vencore_setup_done')?.value === '1';
 
   // Always allow public paths (login, auth, config) regardless of setup state
   if (isPublicPath) return NextResponse.next();
@@ -40,7 +40,7 @@ export default function middleware(req: NextRequest) {
   }
 
   // Check for auth cookie
-  const token = req.cookies.get('vantage_token');
+  const token = req.cookies.get('vencore_token');
   if (!token) {
     const loginUrl = new URL('/login', req.url);
     loginUrl.searchParams.set('from', pathname);

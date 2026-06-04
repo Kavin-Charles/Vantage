@@ -1,5 +1,5 @@
 import { apiFetch } from '@/modules/shared/lib/api';
-import type { PipelineRecordWithValues, PipelineRecord } from '@vantage/types';
+import type { PipelineRecordWithValues, PipelineRecord } from '@vencore/types';
 
 export function listRecords(token: string, params: {
   pipeline_id?: string; stage_id?: string; record_type_id?: string;

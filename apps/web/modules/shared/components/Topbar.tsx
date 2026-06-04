@@ -22,7 +22,7 @@ const PAGE_TITLES: Record<string, string> = {
 export function Topbar({ action, left }: { action?: React.ReactNode; left?: React.ReactNode }) {
   const pathname = usePathname();
   const segment = '/' + (pathname.split('/')[1] ?? '');
-  const title = PAGE_TITLES[segment] ?? 'Vantage';
+  const title = PAGE_TITLES[segment] ?? 'Vencore';
 
   return (
     <div style={{

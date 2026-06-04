@@ -6,4 +6,4 @@ export {
   deleteContact,
   type ContactsResponse,
   type ContactResponse,
-} from '@vantage/api-client';
+} from '@vencore/api-client';

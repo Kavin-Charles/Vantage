@@ -14,13 +14,13 @@ Current date is now May 22, 2026
 <pasted_text name="Create design system">
 We will create a design system in this project.
 
-**Company description:** Vantage: Build, sell, and ship — one place.
+**Company description:** Vencore: Build, sell, and ship — one place.
 
-Dev-led teams run their sales out of spreadsheets and their infra across four dashboards. Vantage replaces all of it: CRM with a customizable pipeline, server and database monitoring, website uptime, team tasks, and billing — one product, nothing missing.
+Dev-led teams run their sales out of spreadsheets and their infra across four dashboards. Vencore replaces all of it: CRM with a customizable pipeline, server and database monitoring, website uptime, team tasks, and billing — one product, nothing missing.
 
 **Design system repos:** The user attached the following. Browse on demand with `github_get_tree` (returns the importable files — text, images, and fonts) and pull in the ones you actually need with `github_import_files` (narrow `path_prefix` — don't import the whole tree). If GitHub isn't connected yet, call `connect_github` and stop; once they connect, these tools become available on the next turn. Nothing from these repos is pre-loaded — read only what you need.
 When creating your README.md, you should reference the URLs of the GitHub projects you used as input, and suggest to the reader that they can explore these repositories further to do a better job of building designs based on this product.
-- Kavin-Charles/Vantage
+- Kavin-Charles/Vencore
 
 **Additional notes:**
 CRM
@@ -387,12 +387,12 @@ The kit is solid. Let me finish by surfacing the kit and reviewing for any final
 
 _[tool: fork_verifier_agent]_
 
-The Vantage design system is built — README, `colors_and_type.css`, 21 review cards across Colors/Type/Spacing/Components/Brand, an icon set, and a click-through dashboard kit (default list view; board view available via toggle). All design tokens (warm parchment surfaces, cool ink text, plush radii, Bricolage Grotesque + IBM Plex pairing, 24px stroke icon set, cloud-mark wordmark) live in one foundational CSS file.
+The Vencore design system is built — README, `colors_and_type.css`, 21 review cards across Colors/Type/Spacing/Components/Brand, an icon set, and a click-through dashboard kit (default list view; board view available via toggle). All design tokens (warm parchment surfaces, cool ink text, plush radii, Bricolage Grotesque + IBM Plex pairing, 24px stroke icon set, cloud-mark wordmark) live in one foundational CSS file.
 
 ### Caveats
 - **The list view is the new primary** — kanban now sits behind the List/Board segmented toggle in the top-right of the Pipeline screen.
 - **Fonts come from Google.** No `.woff2` files are shipped; the system relies on the `@import` in `colors_and_type.css`. For an offline build, host them yourself.
-- **`vantage-full.html`** (referenced in the source repo's `CLAUDE.md`) was not committed, so anything not captured in the live components or screenshots was reasoned from context — flag anything that doesn't match your internal reference.
+- **`vencore-full.html`** (referenced in the source repo's `CLAUDE.md`) was not committed, so anything not captured in the live components or screenshots was reasoned from context — flag anything that doesn't match your internal reference.
 - **`logo-cloud-trimmed.png`** was hand-cropped from the master `logo.png`. If you have a vector / transparent version, swap it in and it'll automatically flow everywhere the mark is used.
 - **Mail / Files / Settings screens** are placeholders in the kit — they exist in the source codebase but weren't central to the visual story.
 
@@ -400,7 +400,7 @@ The Vantage design system is built — README, `colors_and_type.css`, 21 review 
 **Please walk through the Design System tab and the UI kit (`ui_kits/web/index.html`) and flag anything that doesn't feel right.** Specifically:
 
 1. The **warm parchment + cool ink** combination — is this the right contrast for the brand, or should I shift the backgrounds cooler too?
-2. The **Bricolage Grotesque + IBM Plex Sans** pairing — does that read as Vantage to you, or should we explore another direction?
+2. The **Bricolage Grotesque + IBM Plex Sans** pairing — does that read as Vencore to you, or should we explore another direction?
 3. The **stroke icon set** — anything in there feel off-style, or any glyph missing that you reach for often?
 4. The **Pipeline list view** column set and default sort — what's actually in your day-to-day mental model?
 
@@ -601,7 +601,7 @@ Server detail and Analytics are both built out from the source. Highlights:
 **Server detail (click any row in Servers)**
 - **Overview** — 4 sparkline metric cards (CPU/Mem/Disk/Load), details panel (uptime, IP, SSH port, region, net I/O), and an Agent install card with the actual npm command + Copy/Regenerate buttons
 - **Terminal** — Type `df`, `free`, `ps aux`, or `uptime` and get real-looking output; blinking cursor, colored prompt (`nina@prod-web-01:~$`), exit codes for unknown commands
-- **Services** — systemd-style table (nginx, postgres, redis, vantage-agent…) with start/stop/restart buttons that toggle the active state live
+- **Services** — systemd-style table (nginx, postgres, redis, vencore-agent…) with start/stop/restart buttons that toggle the active state live
 - **Logs** — journalctl/file source selector + service filter + line count + auto-refresh toggle; output is color-coded (INFO blue, WARN amber, ERROR red)
 - **Files** — breadcrumb navigation, click directories to drill in (`/etc/nginx` sample tree wired up), filled with stroke-icon file/folder glyphs
 

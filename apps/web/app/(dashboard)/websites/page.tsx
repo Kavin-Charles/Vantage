@@ -10,7 +10,7 @@ import { FormField, Input } from '@/modules/shared/components/ui/FormField';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listWebsites, createWebsite, deleteWebsite } from '@/modules/shared/lib/websites';
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
-import type { Website } from '@vantage/types';
+import type { Website } from '@vencore/types';
 
 function sslColor(dateStr: string | null): string {
   if (!dateStr) return 'var(--text3)';

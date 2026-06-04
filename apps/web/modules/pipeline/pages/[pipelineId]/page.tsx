@@ -7,7 +7,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getPipeline } from '@/modules/pipeline/lib/pipelines';
 import { ViewSwitcher } from '@/modules/pipeline/components/ViewSwitcher';
 import { PipelineSwitcher } from '../PipelineSwitcher';
-import type { PipelineWithDetails } from '@vantage/types';
+import type { PipelineWithDetails } from '@vencore/types';
 
 type View = 'kanban' | 'table' | 'list';
 

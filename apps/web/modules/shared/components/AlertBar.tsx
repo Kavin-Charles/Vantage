@@ -7,7 +7,7 @@ import { Icon } from '@/modules/shared/components/ui/Icon';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { useLastAlert } from '@/modules/shared/contexts/ServerMetricsContext';
-import type { Alert } from '@vantage/types';
+import type { Alert } from '@vencore/types';
 
 export function AlertBar() {
   const getToken = useApiToken();

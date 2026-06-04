@@ -13,7 +13,7 @@ import { OfflineBanner } from '@/components/OfflineBanner';
 import { Badge } from '@/components/Badge';
 import { Colors } from '@/constants/colors';
 import { Font } from '@/constants/fonts';
-import type { Company } from '@vantage/types';
+import type { Company } from '@vencore/types';
 
 export default function CompaniesScreen() {
   const token = useApiToken();

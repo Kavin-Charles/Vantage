@@ -79,11 +79,11 @@ function ProfilePanel() {
           <Avatar name="Nina" size={56} />
           <div>
             <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>Nina Park</div>
-            <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 2 }}>nina@vantage.dev</div>
+            <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 2 }}>nina@vencore.dev</div>
           </div>
         </div>
         <FieldRow label="Full name" value="Nina Park" />
-        <FieldRow label="Email" value="nina@vantage.dev" />
+        <FieldRow label="Email" value="nina@vencore.dev" />
         <FieldRow label="Role" value={<Badge label="admin" color="purple" />} />
         <FieldRow label="User ID" value={<span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>usr_7f3a8c2d…</span>} />
       </SettingsCard>
@@ -98,7 +98,7 @@ function TeamPanel() {
       <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 18 }}>Your workspace details and role.</p>
 
       <SettingsCard eyebrow="Workspace">
-        <FieldRow label="Name" value="Vantage Internal" />
+        <FieldRow label="Name" value="Vencore Internal" />
         <FieldRow label="Plan" value={<Badge label="active" color="green" />} />
         <FieldRow label="Contacts" value="12 / 1,000" />
         <FieldRow label="Servers" value="4 / 5" />
@@ -107,9 +107,9 @@ function TeamPanel() {
 
       <SettingsCard eyebrow="Members">
         {[
-          { name: 'Nina Park', email: 'nina@vantage.dev', role: 'admin' },
-          { name: 'James Okafor', email: 'james@vantage.dev', role: 'admin' },
-          { name: 'Tom Weston', email: 'tom@vantage.dev', role: 'member' },
+          { name: 'Nina Park', email: 'nina@vencore.dev', role: 'admin' },
+          { name: 'James Okafor', email: 'james@vencore.dev', role: 'admin' },
+          { name: 'Tom Weston', email: 'tom@vencore.dev', role: 'member' },
         ].map((m, i) => (
           <div key={m.email} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: i === 0 ? 'none' : '1px solid var(--border)' }}>
             <Avatar name={m.name} size={30} dark={false} />
@@ -138,7 +138,7 @@ function MailSettingsPanel() {
             <Icon name="mail" size={16} />
           </span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>nina@vantage.dev</div>
+            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>nina@vencore.dev</div>
             <div style={{ fontSize: 11, color: 'var(--text3)' }}>Gmail · synced 2m ago</div>
           </div>
           <Badge label="connected" color="green" />
@@ -219,7 +219,7 @@ function ApiKeysPanel() {
   return (
     <>
       <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 500, letterSpacing: '-0.4px', color: 'var(--text)', marginBottom: 4 }}>API keys</h2>
-      <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 18 }}>Workspace-scoped keys for the public Vantage REST API.</p>
+      <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 18 }}>Workspace-scoped keys for the public Vencore REST API.</p>
       <SettingsCard>
         {[
           { name: 'CI deploy',      preview: 'vt_••••••••••••4b9c', last: '5m ago',  scope: 'write' },

@@ -105,7 +105,7 @@ const KPIS = {
   uptime:     { value: '99.92%',  delta: '−0.04%', deltaTone: 'red', spark: [99.99,99.99,99.98,99.97,99.96,99.95,99.95,99.94,99.93,99.93,99.92,99.92,99.92] },
 };
 
-const ACTIVE_USER = { name: 'Nina Park', role: 'Admin', email: 'nina@vantage.dev' };
+const ACTIVE_USER = { name: 'Nina Park', role: 'Admin', email: 'nina@vencore.dev' };
 
 Object.assign(window, {
   STAGES, DEALS, CONTACTS, ACTIVITIES, ACTIVITY_TYPE,

@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { sql, type Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { invalidatePermissionCache, invalidateGroupMemberCaches } from '../middleware/permission';
-import { getModuleForPermission, MODULE_REGISTRY } from '@vantage/modules';
-import { pluginPermissionKey } from '@vantage/plugin-runtime';
+import { getModuleForPermission, MODULE_REGISTRY } from '@vencore/modules';
+import { pluginPermissionKey } from '@vencore/plugin-runtime';
 
 const createGroupSchema = z.object({
   name: z.string().min(1).max(100),
@@ -115,7 +115,7 @@ export function createGroupsRouter(db: Kysely<Database>): Router {
         .execute();
 
       const pluginPermissions = installedPlugins.map((p) => {
-        const manifest = p.manifest as unknown as import('@vantage/plugin-types').PluginManifest;
+        const manifest = p.manifest as unknown as import('@vencore/plugin-types').PluginManifest;
         const perms = (manifest.permissions ?? []).map((perm) => {
           const key = pluginPermissionKey(p.plugin_id, perm.key);
           return { key, label: perm.label, granted: grantMap.get(key) ?? false };

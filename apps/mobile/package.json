@@ -1,5 +1,5 @@
 {
-  "name": "@vantage/mobile",
+  "name": "@vencore/mobile",
   "version": "0.0.1",
   "private": true,
   "main": "expo-router/entry",
@@ -21,8 +21,8 @@
     "@tanstack/query-async-storage-persister": "^5.51.0",
     "@tanstack/react-query": "^5.51.0",
     "@tanstack/react-query-persist-client": "^5.51.0",
-    "@vantage/api-client": "workspace:*",
-    "@vantage/types": "workspace:*",
+    "@vencore/api-client": "workspace:*",
+    "@vencore/types": "workspace:*",
     "expo": "~54.0.0",
     "expo-constants": "~17.1.8",
     "expo-notifications": "~0.32.17",

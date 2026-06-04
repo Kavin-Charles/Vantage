@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
-import type { User } from '@vantage/types';
+import type { User } from '@vencore/types';
 
 export default function TeamPage() {
   const getToken = useApiToken();

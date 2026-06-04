@@ -1,7 +1,7 @@
 // apps/api/src/lib/ssh-exec.ts
 import { Client, type ConnectConfig } from 'ssh2';
 import type { Response } from 'express';
-import type { SshStreamEvent } from '@vantage/types';
+import type { SshStreamEvent } from '@vencore/types';
 
 export interface SshSessionConfig {
   host: string;
