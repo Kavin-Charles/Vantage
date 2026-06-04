@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 
 export type PermissionAction = 'can_view' | 'can_create' | 'can_edit' | 'can_delete';
 

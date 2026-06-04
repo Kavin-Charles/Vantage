@@ -14,7 +14,7 @@ import { Avatar } from '@/components/Avatar';
 import { Badge } from '@/components/Badge';
 import { Colors } from '@/constants/colors';
 import { Font } from '@/constants/fonts';
-import type { Contact } from '@vantage/types';
+import type { Contact } from '@vencore/types';
 
 const STATUS_BADGE: Record<string, string> = {
   customer: 'green', prospect: 'blue', cold: 'gray', churned: 'red',

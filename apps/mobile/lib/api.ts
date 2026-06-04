@@ -1,10 +1,10 @@
 // apps/mobile/lib/api.ts
-import { configure, apiFetch } from '@vantage/api-client';
-import type { Deal } from '@vantage/types';
+import { configure, apiFetch } from '@vencore/api-client';
+import type { Deal } from '@vencore/types';
 
 configure(process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001');
 
-export * from '@vantage/api-client';
+export * from '@vencore/api-client';
 
 /**
  * Fetch all deals as a flat list without requiring a pipeline_id.

@@ -1,14 +1,14 @@
 <p align="center">
-  <img src="logo.png" alt="Vantage" width="120" />
+  <img src="logo.png" alt="Vencore" width="120" />
 </p>
 
-# Vantage
+# Vencore
 
-**Build, sell, and ship — one place.**
+**One Platform to Run Your Entire Business**
 
-Dev-led teams run their sales out of spreadsheets and their infra across four dashboards. Vantage replaces all of it: CRM with a customizable pipeline, server and database monitoring, website uptime, team tasks, and billing — one product, nothing missing.
+Vencore is a modular company management solution. Bring together your CRM, infrastructure monitoring, team tasks, analytics, and billing — all in one self-hosted platform. Add the modules your business needs, skip the ones you don't.
 
-It's self-hosted, config-file driven, and has no external service dependencies beyond a Postgres database and Redis.
+Self-hosted, config-file driven, no external service dependencies beyond Postgres and Redis.
 
 <p align="center">
   <img src="screenshots/pipeline.png" alt="Pipeline kanban" width="49%" />
@@ -73,7 +73,7 @@ apps/
 packages/
   db/       Kysely database client + schema types
   types/    Shared TypeScript types across apps
-  config/   Config file schema and loader (vantage.config.json)
+  config/   Config file schema and loader (vencore.config.json)
 ```
 
 **Data flow:** The agent on each server POSTs metrics to `/api/agent/ping` every 30 seconds using a per-server token. The worker runs every 60 seconds, evaluates thresholds, and creates alert records in the database. The frontend polls `/api/alerts` every 60 seconds to show the alert bar.
@@ -108,8 +108,8 @@ packages/
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/Kavin-Charles/vantage.git
-cd vantage
+git clone https://github.com/Kavin-Charles/vencore.git
+cd vencore
 pnpm install
 ```
 
@@ -140,7 +140,7 @@ openssl rand -hex 32
 
 ### 4. Configure the app
 
-Copy `vantage.config.example.json` to `vantage.config.json` and update it:
+Copy `vencore.config.example.json` to `vencore.config.json` and update it:
 
 ```json
 {
@@ -169,7 +169,7 @@ pnpm dev
 The web app runs at [http://localhost:3000](http://localhost:3000). On first boot, the API prints the admin credentials to its console output:
 
 ```
-[VANTAGE] First boot admin: admin@localhost / <generated-password>
+[VENCORE] First boot admin: admin@localhost / <generated-password>
 ```
 
 ### 6. (Optional) Install the server agent
@@ -178,9 +178,9 @@ On any server you want to monitor:
 
 ```bash
 # Register the server in the dashboard first to get a token, then:
-VANTAGE_TOKEN=<your-token> \
-VANTAGE_API_URL=https://your-vantage-instance.com \
-npx @vantage/agent
+VENCORE_TOKEN=<your-token> \
+VENCORE_API_URL=https://your-vencore-instance.com \
+npx @vencore/agent
 ```
 
 Or run it as a systemd service — see [`apps/agent/`](apps/agent/) for a sample unit file.
@@ -189,7 +189,7 @@ Or run it as a systemd service — see [`apps/agent/`](apps/agent/) for a sample
 
 ## Configuration
 
-`vantage.config.json` is the single source of truth for instance-level settings. The API and worker both read from it at startup.
+`vencore.config.json` is the single source of truth for instance-level settings. The API and worker both read from it at startup.
 
 | Key | Description |
 |---|---|
@@ -255,7 +255,7 @@ apps/worker/src/jobs/
 apps/agent/src/
   collect.ts      OS metrics via systeminformation
   db-checks.ts    Database connectivity checks
-  reporter.ts     HTTP POST to Vantage API
+  reporter.ts     HTTP POST to Vencore API
 ```
 
 ---

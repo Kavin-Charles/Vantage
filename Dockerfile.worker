@@ -17,7 +17,7 @@ RUN pnpm install --frozen-lockfile
 
 COPY packages/ ./packages/
 COPY apps/worker/ ./apps/worker/
-RUN pnpm --filter "@vantage/worker..." build
+RUN pnpm --filter "@vencore/worker..." build
 
 ENV NODE_ENV=production
 CMD ["node", "apps/worker/dist/index.js"]

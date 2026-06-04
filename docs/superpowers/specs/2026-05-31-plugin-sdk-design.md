@@ -1,7 +1,7 @@
 # Plugin SDK Design
 
 **Date:** 2026-05-31  
-**Scope:** `@vantage/plugin-types`, `@vantage/plugin-sdk` (backend + frontend + react entry points)  
+**Scope:** `@vencore/plugin-types`, `@vencore/plugin-sdk` (backend + frontend + react entry points)  
 **Status:** Approved
 
 ---
@@ -10,35 +10,35 @@
 
 The existing SDK scaffolding has three critical gaps:
 
-1. **All return types are `unknown`** — `vantage.contacts.list()` returns `unknown[]`. Zero type safety for plugin developers.
+1. **All return types are `unknown`** — `vencore.contacts.list()` returns `unknown[]`. Zero type safety for plugin developers.
 2. **Backend ≠ Frontend** — backend has `deals`, `activity`, `storage`, `http`; frontend only has a bare `contacts` and `calendar`. Large surface inconsistency.
-3. **Hardcoded optional namespaces** — `vantage.calendar.*` is a first-class SDK method even though Calendar is an optional plugin. If Calendar isn't installed, calls fail silently at runtime with no compile-time warning.
+3. **Hardcoded optional namespaces** — `vencore.calendar.*` is a first-class SDK method even though Calendar is an optional plugin. If Calendar isn't installed, calls fail silently at runtime with no compile-time warning.
 
 ---
 
 ## Decisions
 
 - SDK exposes data access for **existing modules only**: contacts, companies, deals (pipelines), tasks, activity, servers, websites, analytics. No calendar, alerts, deployments — those are plugins and wire their own bridge methods.
-- Data access uses a **generic keyed API** (`vantage.list("contacts")`) with typed overloads per known resource. Unknown resources fall back to `unknown`.
+- Data access uses a **generic keyed API** (`vencore.list("contacts")`) with typed overloads per known resource. Unknown resources fall back to `unknown`.
 - `createPlugin()` enforces permissions at **compile time** via conditional types.
 - Plugins can declare **owned tables** in their manifest; the bridge enforces access boundaries.
-- React hooks ship as a separate `@vantage/plugin-sdk/react` entry point.
-- Errors throw by default; `vantage.safe.*` mirrors every method returning `PluginResult<T>`.
+- React hooks ship as a separate `@vencore/plugin-sdk/react` entry point.
+- Errors throw by default; `vencore.safe.*` mirrors every method returning `PluginResult<T>`.
 
 ---
 
 ## Package Structure
 
 ```
-@vantage/plugin-types    — shared types (domain models, bridge protocol, manifest)
-@vantage/plugin-sdk      — backend SDK (runs in V8 isolate)
-@vantage/plugin-sdk/frontend — frontend SDK (runs in iframe)
-@vantage/plugin-sdk/react   — React hooks (frontend only)
+@vencore/plugin-types    — shared types (domain models, bridge protocol, manifest)
+@vencore/plugin-sdk      — backend SDK (runs in V8 isolate)
+@vencore/plugin-sdk/frontend — frontend SDK (runs in iframe)
+@vencore/plugin-sdk/react   — React hooks (frontend only)
 ```
 
 ---
 
-## Section 1: `@vantage/plugin-types` — Domain Types
+## Section 1: `@vencore/plugin-types` — Domain Types
 
 Adds concrete types that the SDK uses as return types. These are plugin-visible shapes — no internal DB fields (`workspace_id`, `password_hash`, etc.).
 
@@ -312,38 +312,38 @@ Both backend and frontend SDKs expose the same data surface via generic keyed me
 
 ```typescript
 // Data operations — both backend (isolate) and frontend (iframe)
-vantage.list<R extends string>(resource: R, filter?: ResourceFilter<R>): Promise<ResourceRow<R>[]>
-vantage.get<R extends string>(resource: R, id: string): Promise<ResourceRow<R>>
-vantage.create<R extends string>(resource: R, data: ResourceInput<R>): Promise<ResourceRow<R>>
-vantage.update<R extends string>(resource: R, id: string, data: Partial<ResourceInput<R>>): Promise<ResourceRow<R>>
-vantage.delete(resource: string, id: string): Promise<void>
+vencore.list<R extends string>(resource: R, filter?: ResourceFilter<R>): Promise<ResourceRow<R>[]>
+vencore.get<R extends string>(resource: R, id: string): Promise<ResourceRow<R>>
+vencore.create<R extends string>(resource: R, data: ResourceInput<R>): Promise<ResourceRow<R>>
+vencore.update<R extends string>(resource: R, id: string, data: Partial<ResourceInput<R>>): Promise<ResourceRow<R>>
+vencore.delete(resource: string, id: string): Promise<void>
 
 // Non-CRUD actions (acknowledge, resolve, stage moves, etc.)
-vantage.action<T = unknown>(resource: string, action: string, payload?: unknown): Promise<T>
+vencore.action<T = unknown>(resource: string, action: string, payload?: unknown): Promise<T>
 
 // Plugin-owned table CRUD
-vantage.table(name: string): PluginTableClient
+vencore.table(name: string): PluginTableClient
 
 // Always-available — both backends
-vantage.storage.get<T = unknown>(key: string): Promise<T | null>
-vantage.storage.set(key: string, value: unknown): Promise<void>
-vantage.storage.delete(key: string): Promise<void>
+vencore.storage.get<T = unknown>(key: string): Promise<T | null>
+vencore.storage.set(key: string, value: unknown): Promise<void>
+vencore.storage.delete(key: string): Promise<void>
 
-vantage.http.fetch(url: string, options?: HttpFetchOptions): Promise<HttpResponse>
+vencore.http.fetch(url: string, options?: HttpFetchOptions): Promise<HttpResponse>
 
 // Frontend-only
-vantage.getContext(): Promise<PluginContext>
-vantage.navigate(path: string): void
-vantage.modal.open(opts: { title: string; content?: string }): Promise<void>
-vantage.modal.close(): Promise<void>
-vantage.on(event: string, handler: (payload: unknown) => void): void
+vencore.getContext(): Promise<PluginContext>
+vencore.navigate(path: string): void
+vencore.modal.open(opts: { title: string; content?: string }): Promise<void>
+vencore.modal.close(): Promise<void>
+vencore.on(event: string, handler: (payload: unknown) => void): void
 
 // Backend-only
-vantage.on(event: PluginHookEvent, handler: (payload: unknown) => Promise<void> | void): void
+vencore.on(event: PluginHookEvent, handler: (payload: unknown) => Promise<void> | void): void
 
 // Safe wrapper — mirrors every method, returns PluginResult<T> instead of throwing
-vantage.safe.list(...)    → Promise<PluginResult<ResourceRow<R>[]>>
-vantage.safe.get(...)     → Promise<PluginResult<ResourceRow<R>>>
+vencore.safe.list(...)    → Promise<PluginResult<ResourceRow<R>[]>>
+vencore.safe.get(...)     → Promise<PluginResult<ResourceRow<R>>>
 // ... etc.
 ```
 
@@ -367,11 +367,11 @@ Bridge validates that `name` is in plugin's declared `tables` before executing. 
 
 ## Section 3: `createPlugin()` — Manifest Validation
 
-Entry point function that type-checks at compile time: `setup()` receives a `vantage` constrained to methods covered by declared permissions. Calling `vantage.list("contacts")` without `contacts:read` in the manifest is a TypeScript error.
+Entry point function that type-checks at compile time: `setup()` receives a `vencore` constrained to methods covered by declared permissions. Calling `vencore.list("contacts")` without `contacts:read` in the manifest is a TypeScript error.
 
 ```typescript
 // Backend
-import { createPlugin } from '@vantage/plugin-sdk';
+import { createPlugin } from '@vencore/plugin-sdk';
 
 export default createPlugin({
   manifest: {
@@ -397,12 +397,12 @@ export default createPlugin({
     ],
     hooks: ['contact.created', 'deal.created'],
   },
-  setup(vantage) {
-    // vantage typed: only contacts:read, deals:read, storage:* compile
-    // vantage.list("tasks") → TypeScript error: tasks:read not declared
-    vantage.on('contact.created', async (contact) => {
-      const deals = await vantage.list('deals', { contact_id: contact.id });
-      await vantage.table('enrichment_cache').upsert(
+  setup(vencore) {
+    // vencore typed: only contacts:read, deals:read, storage:* compile
+    // vencore.list("tasks") → TypeScript error: tasks:read not declared
+    vencore.on('contact.created', async (contact) => {
+      const deals = await vencore.list('deals', { contact_id: contact.id });
+      await vencore.table('enrichment_cache').upsert(
         { contact_id: contact.id, deal_count: deals.length },
         { on_conflict: 'contact_id' },
       );
@@ -411,20 +411,20 @@ export default createPlugin({
 });
 
 // Frontend
-import { createPlugin } from '@vantage/plugin-sdk/frontend';
+import { createPlugin } from '@vencore/plugin-sdk/frontend';
 
 export default createPlugin({
   manifest: { /* same manifest */ },
-  async setup(vantage) {
-    const ctx = await vantage.getContext();
-    // render UI using ctx.record_id, vantage.list("contacts"), etc.
+  async setup(vencore) {
+    const ctx = await vencore.getContext();
+    // render UI using ctx.record_id, vencore.list("contacts"), etc.
   },
 });
 ```
 
-The constrained `vantage` type is derived via:
+The constrained `vencore` type is derived via:
 ```typescript
-type PermittedVantage<P extends readonly PluginPermission[]> = {
+type PermittedVencore<P extends readonly PluginPermission[]> = {
   list: <R extends PermittedResource<P>>(resource: R, filter?: ...) => ...
   // ... narrowed per permission
 }
@@ -443,7 +443,7 @@ When a plugin renders as a sidebar widget (inside contact-detail or deal-detail)
 { type: 'sdk:init', payload: { context: PluginContext } }
 
 // Plugin calls:
-const ctx = await vantage.getContext();
+const ctx = await vencore.getContext();
 // ctx.page = 'contact-detail'
 // ctx.record_id = 'abc-123'
 // ctx.record_type = 'contact'
@@ -453,7 +453,7 @@ const ctx = await vantage.getContext();
 
 ---
 
-## Section 5: React Hooks (`@vantage/plugin-sdk/react`)
+## Section 5: React Hooks (`@vencore/plugin-sdk/react`)
 
 Thin wrappers over the core SDK. Frontend iframe only.
 
@@ -461,7 +461,7 @@ Thin wrappers over the core SDK. Frontend iframe only.
 import {
   useList, useGet, useCreate, useUpdate, useDelete, useAction,
   usePluginContext, usePluginTable
-} from '@vantage/plugin-sdk/react';
+} from '@vencore/plugin-sdk/react';
 
 function ContactWidget() {
   const ctx = usePluginContext();
@@ -529,15 +529,15 @@ Standardized to `{namespace}.{verb}` pattern throughout. Bridge router updated t
 
 | SDK call | Bridge method |
 |---|---|
-| `vantage.list("contacts")` | `contacts.list` |
-| `vantage.get("contacts", id)` | `contacts.get` |
-| `vantage.create("contacts", data)` | `contacts.create` |
-| `vantage.update("contacts", id, data)` | `contacts.update` |
-| `vantage.delete("contacts", id)` | `contacts.delete` |
-| `vantage.action("deals", "move-stage", p)` | `deals.move-stage` |
-| `vantage.table("issues").list(q)` | `table.list` (with table name in payload) |
-| `vantage.storage.get(key)` | `storage.get` |
-| `vantage.http.fetch(url, opts)` | `http.fetch` |
+| `vencore.list("contacts")` | `contacts.list` |
+| `vencore.get("contacts", id)` | `contacts.get` |
+| `vencore.create("contacts", data)` | `contacts.create` |
+| `vencore.update("contacts", id, data)` | `contacts.update` |
+| `vencore.delete("contacts", id)` | `contacts.delete` |
+| `vencore.action("deals", "move-stage", p)` | `deals.move-stage` |
+| `vencore.table("issues").list(q)` | `table.list` (with table name in payload) |
+| `vencore.storage.get(key)` | `storage.get` |
+| `vencore.http.fetch(url, opts)` | `http.fetch` |
 
 ---
 
@@ -545,10 +545,10 @@ Standardized to `{namespace}.{verb}` pattern throughout. Bridge router updated t
 
 Default: methods throw a `PluginError` (`{ code, message }`) on failure. Callers use `try/catch`.
 
-Safe wrapper: `vantage.safe.*` mirrors the entire surface returning `PluginResult<T>` instead:
+Safe wrapper: `vencore.safe.*` mirrors the entire surface returning `PluginResult<T>` instead:
 
 ```typescript
-const result = await vantage.safe.list('contacts');
+const result = await vencore.safe.list('contacts');
 if (result.error) {
   console.error(result.error.message);
 } else {
@@ -564,12 +564,12 @@ React hooks always return `{ data, loading, error }` — error is `PluginError |
 
 | Package | Changes |
 |---|---|
-| `@vantage/plugin-types` | Add domain types, ResourceTypeMap, PluginContext, PluginResult, table schema types |
-| `@vantage/plugin-sdk` (backend) | Rewrite index.ts with generic API, createPlugin(), PermittedVantage type |
-| `@vantage/plugin-sdk/frontend` | Rewrite frontend.ts with parity + getContext(), sdk:init handler |
-| `@vantage/plugin-sdk/react` | New entry point: hooks |
-| `vantage-runtime` | PluginTableClient bridge impl, migration runner |
-| `Vantage API` (bridge-router) | Standardize method names, add table.* dispatch |
+| `@vencore/plugin-types` | Add domain types, ResourceTypeMap, PluginContext, PluginResult, table schema types |
+| `@vencore/plugin-sdk` (backend) | Rewrite index.ts with generic API, createPlugin(), PermittedVencore type |
+| `@vencore/plugin-sdk/frontend` | Rewrite frontend.ts with parity + getContext(), sdk:init handler |
+| `@vencore/plugin-sdk/react` | New entry point: hooks |
+| `vencore-runtime` | PluginTableClient bridge impl, migration runner |
+| `Vencore API` (bridge-router) | Standardize method names, add table.* dispatch |
 
 ---
 
@@ -579,4 +579,4 @@ React hooks always return `{ data, loading, error }` — error is `PluginError |
 - Plugin OAuth flow (`sdk:oauth.start`)
 - Plugin-to-plugin communication
 - Analytics namespace (read-only aggregate data — deferred)
-- `vantage.realtime.*` subscriptions (SSE/WebSocket from plugins)
+- `vencore.realtime.*` subscriptions (SSE/WebSocket from plugins)

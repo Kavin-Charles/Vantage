@@ -20,7 +20,7 @@ import {
   updateInfraDatabase,
   updateInfraDatabaseRow,
 } from '@/modules/databases/lib/infra-databases';
-import type { InfraDatabase, InfraDatabaseRows, InfraDatabaseSqlResult, InfraDatabaseTable } from '@vantage/types';
+import type { InfraDatabase, InfraDatabaseRows, InfraDatabaseSqlResult, InfraDatabaseTable } from '@vencore/types';
 
 const ENGINES = ['postgres', 'mysql', 'redis', 'clickhouse', 'mongo', 'other'] as const;
 const ENGINE_COLOR: Record<string, 'blue' | 'green' | 'red' | 'amber' | 'purple' | 'gray'> = {

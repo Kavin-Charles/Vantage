@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { runMigrations } from '../migration-runner';
-import type { PluginMigration } from '@vantage/plugin-types';
+import type { PluginMigration } from '@vencore/plugin-types';
 import type { Kysely } from 'kysely';
 
 // Mock kysely's sql tag so sql.raw(...).execute() is a no-op in unit tests

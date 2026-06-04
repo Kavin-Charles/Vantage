@@ -1,15 +1,15 @@
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
-import type { VantageConfig } from '@vantage/config';
+import type { Database } from '@vencore/db';
+import type { VencoreConfig } from '@vencore/config';
 import { logger } from './logger';
 import { seedDefaultPipeline } from './seed-pipeline';
 import { seedWorkspaceModules } from './seed-modules';
 
 export async function seedOnFirstBoot(
   db: Kysely<Database>,
-  config: VantageConfig,
+  config: VencoreConfig,
 ): Promise<void> {
   // Workspace
   let workspace = await db
@@ -23,7 +23,7 @@ export async function seedOnFirstBoot(
       .values({ name: config.app.name, domain: config.app.domain ?? null })
       .returning(['id'])
       .executeTakeFirstOrThrow();
-    logger.info({ workspaceId: workspace.id }, '[Vantage] Workspace seeded');
+    logger.info({ workspaceId: workspace.id }, '[Vencore] Workspace seeded');
   }
 
   // Seed module toggles (idempotent)
@@ -60,8 +60,8 @@ export async function seedOnFirstBoot(
       })
       .execute();
 
-    console.log(`\n[VANTAGE] First boot admin: ${adminEmail} / ${password}\n`);
-    logger.info({ email: adminEmail }, '[Vantage] Admin user seeded');
+    console.log(`\n[VENCORE] First boot admin: ${adminEmail} / ${password}\n`);
+    logger.info({ email: adminEmail }, '[Vencore] Admin user seeded');
   }
 
   // Seed databases from config (idempotent — skips if host+port already exists)
@@ -88,7 +88,7 @@ export async function seedOnFirstBoot(
           use_ssl: dbSeed.use_ssl,
         })
         .execute();
-      logger.info({ name: dbSeed.name }, '[Vantage] DB seeded from config');
+      logger.info({ name: dbSeed.name }, '[Vencore] DB seeded from config');
     }
   }
 }

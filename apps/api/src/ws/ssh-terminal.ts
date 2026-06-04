@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { Client } from 'ssh2';
 import type { WebSocket } from 'ws';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { decryptPrivateKey } from '../lib/ssh-crypto';
 import { logger } from '../lib/logger';
 
@@ -40,7 +40,7 @@ export async function handleTerminalUpgrade(
       return [c.slice(0, idx).trim(), c.slice(idx + 1).trim()];
     }),
   );
-  const token = cookies['vantage_token'];
+  const token = cookies['vencore_token'];
 
   if (!token) {
     ws.close(4001, 'Unauthorized');

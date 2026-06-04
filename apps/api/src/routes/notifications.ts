@@ -1,7 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 const listQuerySchema = z.object({

@@ -6,7 +6,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { InviteUserModal } from '@/modules/settings/components/InviteUserModal';
-import type { User } from '@vantage/types';
+import type { User } from '@vencore/types';
 
 interface UserWithActive extends User {
   is_active: boolean;

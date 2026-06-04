@@ -13,7 +13,7 @@ import { useOffline } from '@/hooks/useOffline';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Colors } from '@/constants/colors';
 import { Font } from '@/constants/fonts';
-import type { Task } from '@vantage/types';
+import type { Task } from '@vencore/types';
 
 type FilterTab = 'open' | 'done' | 'all';
 

@@ -1,5 +1,5 @@
 import { apiFetch } from '@/modules/shared/lib/api';
-import type { WorkspaceSshKeypair, SshCommandLog, SshStreamEvent, SshFileEntry } from '@vantage/types';
+import type { WorkspaceSshKeypair, SshCommandLog, SshStreamEvent, SshFileEntry } from '@vencore/types';
 
 // ── Keypair ──────────────────────────────────────────────────────────────────
 

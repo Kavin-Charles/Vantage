@@ -1,4 +1,4 @@
-/* Vantage icon set — 24×24 viewBox, 1.75 stroke, rounded caps, currentColor.
+/* Vencore icon set — 24×24 viewBox, 1.75 stroke, rounded caps, currentColor.
    Ported verbatim from ui_kits/web/ui.jsx. */
 
 const ICON_STROKE = {

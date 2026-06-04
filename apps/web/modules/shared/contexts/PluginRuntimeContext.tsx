@@ -74,7 +74,7 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
 
             const code = await res.text();
 
-            const makeVantage = () => ({
+            const makeVencore = () => ({
               registerPage: (path: string, component: AnyComponent) => {
                 registry.pages.set(path, component);
               },
@@ -85,14 +85,14 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
                 registry.panels.set(`${recordType}:${id}`, { recordType, id, label: id, component });
               },
               toast: (message: string, type?: string) => {
-                window.dispatchEvent(new CustomEvent('vantage:toast', { detail: { message, type } }));
+                window.dispatchEvent(new CustomEvent('vencore:toast', { detail: { message, type } }));
               },
               navigate: (path: string) => {
-                window.dispatchEvent(new CustomEvent('vantage:navigate', { detail: { path } }));
+                window.dispatchEvent(new CustomEvent('vencore:navigate', { detail: { path } }));
               },
               modal: {
-                open: (opts: unknown) => window.dispatchEvent(new CustomEvent('vantage:modal:open', { detail: opts })),
-                close: () => window.dispatchEvent(new CustomEvent('vantage:modal:close')),
+                open: (opts: unknown) => window.dispatchEvent(new CustomEvent('vencore:modal:open', { detail: opts })),
+                close: () => window.dispatchEvent(new CustomEvent('vencore:modal:close')),
               },
               settings: {
                 get: async (key: string) => {
@@ -184,14 +184,14 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
             try {
               const mod = await (eval(`import("${url}")`) as Promise<{ default?: { setup: (v: unknown) => void | Promise<void> } }>);
               if (mod.default?.setup) {
-                await Promise.resolve(mod.default.setup(makeVantage()));
+                await Promise.resolve(mod.default.setup(makeVencore()));
               }
               loadedRef.current.add(plugin.plugin_id);
             } finally {
               URL.revokeObjectURL(url);
             }
           } catch (err) {
-            console.warn(`[vantage] Failed to load plugin ${plugin.plugin_id}:`, err);
+            console.warn(`[vencore] Failed to load plugin ${plugin.plugin_id}:`, err);
           }
         }),
       );

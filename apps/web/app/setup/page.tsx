@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { SetupWizard } from './SetupWizard';
 
-export const metadata = { title: 'Setup — Vantage' };
+export const metadata = { title: 'Setup — Vencore' };
 
 async function getSetupStatus(): Promise<boolean> {
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
@@ -45,7 +45,7 @@ export default async function SetupPage({ searchParams }: PageProps) {
             color: 'var(--text)',
             margin: '0 0 8px',
           }}>
-            Welcome to Vantage
+            Welcome to Vencore
           </h1>
           <p style={{ color: 'var(--text2)', margin: 0 }}>
             Let's get your instance set up.

@@ -3,9 +3,9 @@ import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { z } from 'zod';
-import { smtpSchema } from '@vantage/config';
+import { smtpSchema } from '@vencore/config';
 import { encryptSmtpPassword } from '../lib/setup-crypto';
 import { isConfigured } from '../lib/setup-db';
 import { seedWorkspaceModules } from '../lib/seed-modules';
@@ -142,7 +142,7 @@ export function createSetupRouter(db: Kysely<Database>): Router {
         `.execute(trx);
       });
 
-      res.cookie('vantage_setup_done', '1', {
+      res.cookie('vencore_setup_done', '1', {
         httpOnly: true,
         secure: process.env['NODE_ENV'] === 'production' && process.env['COOKIE_SECURE'] !== 'false',
         sameSite: 'lax',

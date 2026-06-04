@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listItemGroups } from '@/modules/pipeline/lib/item-groups';
-import type { ItemGroup } from '@vantage/types';
+import type { ItemGroup } from '@vencore/types';
 
 interface Props {
   pipelineId: string | null;

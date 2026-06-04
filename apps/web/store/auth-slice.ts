@@ -13,7 +13,7 @@ interface AuthState {
   user: AuthUser | null;
 }
 
-const TOKEN_KEY = 'vantage_token';
+const TOKEN_KEY = 'vencore_token';
 
 function loadToken(): string | null {
   if (typeof window === 'undefined') return null;

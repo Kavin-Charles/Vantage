@@ -13,7 +13,7 @@ import { Avatar } from '@/components/Avatar';
 import { Badge } from '@/components/Badge';
 import { Colors } from '@/constants/colors';
 import { Font } from '@/constants/fonts';
-import type { Deal } from '@vantage/types';
+import type { Deal } from '@vencore/types';
 
 type DealStage = 'lead' | 'qualifying' | 'proposal' | 'closing' | 'won' | 'lost';
 

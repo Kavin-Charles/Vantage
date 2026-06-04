@@ -1,5 +1,5 @@
 import { apiFetch } from './api';
-import type { Deployment, DeploymentStatus, DeploymentSource } from '@vantage/types';
+import type { Deployment, DeploymentStatus, DeploymentSource } from '@vencore/types';
 
 export interface ListDeploymentsParams {
   name?: string;

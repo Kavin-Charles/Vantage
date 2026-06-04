@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const target = from.startsWith('/') && !from.startsWith('//') ? from : '/';
 
   const response = NextResponse.redirect(new URL(target, request.url));
-  response.cookies.set('vantage_setup_done', '1', {
+  response.cookies.set('vencore_setup_done', '1', {
     path: '/',
     sameSite: 'lax',
     httpOnly: true,

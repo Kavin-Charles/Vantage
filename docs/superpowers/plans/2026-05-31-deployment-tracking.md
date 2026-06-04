@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add deployment tracking to Vantage — users log deploys from CI webhooks, the monitoring agent, or manual curl; view a filterable global feed in the dashboard.
+**Goal:** Add deployment tracking to Vencore — users log deploys from CI webhooks, the monitoring agent, or manual curl; view a filterable global feed in the dashboard.
 
 **Architecture:** New `deployments` table in PostgreSQL. Internal dashboard routes use JWT auth (`/api/deployments`). CI/webhook callers use API key auth via the existing `/v1` router. The monitoring agent calls a new `/api/agent/deployment` endpoint. A background worker clears stale `running` records hourly.
 
@@ -80,7 +80,7 @@ export async function down(db: Kysely<unknown>): Promise<void> {
 - [ ] **Step 2: Run the migration**
 
 ```bash
-pnpm --filter @vantage/db db:migrate
+pnpm --filter @vencore/db db:migrate
 ```
 
 Expected output: `✓ 20260531_001_deployments`
@@ -103,7 +103,7 @@ git commit -m "feat(db): add deployments table migration"
 - [ ] **Step 1: Write the failing type check**
 
 ```bash
-pnpm --filter @vantage/db lint
+pnpm --filter @vencore/db lint
 ```
 
 Expected: passes (no `deployments` key yet in `Database` — this is our baseline).
@@ -181,8 +181,8 @@ export interface Deployment {
 - [ ] **Step 4: Verify types compile**
 
 ```bash
-pnpm --filter @vantage/db lint
-pnpm --filter @vantage/types lint
+pnpm --filter @vencore/db lint
+pnpm --filter @vencore/types lint
 ```
 
 Expected: both pass with no errors.
@@ -289,7 +289,7 @@ describe('PATCH /api/deployments/:id — 404 on missing', () => {
 - [ ] **Step 2: Run test to confirm it fails**
 
 ```bash
-pnpm --filter @vantage/api test -- --reporter=verbose src/__tests__/deployments.test.ts
+pnpm --filter @vencore/api test -- --reporter=verbose src/__tests__/deployments.test.ts
 ```
 
 Expected: FAIL — `Cannot find module '../routes/deployments'`
@@ -300,7 +300,7 @@ Expected: FAIL — `Cannot find module '../routes/deployments'`
 import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import type { ApiKeyRequest } from '../middleware/api-key-auth';
 
@@ -481,7 +481,7 @@ export function createDeploymentsRouter(db: Kysely<Database>): ExpressRouter {
 - [ ] **Step 4: Run test to confirm it passes**
 
 ```bash
-pnpm --filter @vantage/api test -- --reporter=verbose src/__tests__/deployments.test.ts
+pnpm --filter @vencore/api test -- --reporter=verbose src/__tests__/deployments.test.ts
 ```
 
 Expected: 3 tests pass.
@@ -507,7 +507,7 @@ app.use('/api/deployments', requireAuth, createDeploymentsRouter(db));
 - [ ] **Step 6: Verify TypeScript compiles**
 
 ```bash
-pnpm --filter @vantage/api lint
+pnpm --filter @vencore/api lint
 ```
 
 Expected: no errors.
@@ -552,7 +552,7 @@ describe('POST /api/agent/deployment', () => {
 - [ ] **Step 2: Run to confirm it fails**
 
 ```bash
-pnpm --filter @vantage/api test -- --reporter=verbose src/__tests__/deployments.test.ts
+pnpm --filter @vencore/api test -- --reporter=verbose src/__tests__/deployments.test.ts
 ```
 
 Expected: FAIL — `createAgentDeploymentHandler is not exported`
@@ -639,7 +639,7 @@ export function createAgentDeploymentHandler(db: Kysely<Database>) {
 - [ ] **Step 4: Run tests**
 
 ```bash
-pnpm --filter @vantage/api test -- --reporter=verbose src/__tests__/deployments.test.ts
+pnpm --filter @vencore/api test -- --reporter=verbose src/__tests__/deployments.test.ts
 ```
 
 Expected: 4 tests pass.
@@ -747,7 +747,7 @@ At the end of `createV1InfraRouter`, before `return router;`, add:
 - [ ] **Step 2: Verify types**
 
 ```bash
-pnpm --filter @vantage/api lint
+pnpm --filter @vencore/api lint
 ```
 
 Expected: no errors.
@@ -773,7 +773,7 @@ git commit -m "feat(api): add POST/PATCH /v1/deployments for CI webhook integrat
 // Marks 'running' deployments older than 24 h as 'cancelled'.
 // Prevents zombie records from staying in the running state if CI never calls PATCH.
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { logger } from '../lib/logger';
 
 const INTERVAL_MS = 60 * 60 * 1_000; // 1 hour
@@ -821,7 +821,7 @@ startStaleDeploymentsCleaner(db);
 - [ ] **Step 3: Verify**
 
 ```bash
-pnpm --filter @vantage/api lint
+pnpm --filter @vencore/api lint
 ```
 
 Expected: no errors.
@@ -844,7 +844,7 @@ git commit -m "feat(api): add stale-deployments worker — cancels running deplo
 
 ```typescript
 import { apiFetch } from './api';
-import type { Deployment } from '@vantage/types';
+import type { Deployment } from '@vencore/types';
 
 export interface ListDeploymentsParams {
   name?: string;
@@ -908,7 +908,7 @@ export async function deleteDeployment(token: string, id: string) {
 - [ ] **Step 2: Verify TypeScript**
 
 ```bash
-pnpm --filter @vantage/web lint
+pnpm --filter @vencore/web lint
 ```
 
 Expected: no errors.
@@ -958,7 +958,7 @@ Add the Deployments entry after Websites (before Files):
 Create the directory first:
 
 ```bash
-mkdir "D:/Projects/Vantage/apps/web/app/(dashboard)/deployments"
+mkdir "D:/Projects/Vencore/apps/web/app/(dashboard)/deployments"
 ```
 
 Create `apps/web/app/(dashboard)/deployments/page.tsx`:
@@ -975,7 +975,7 @@ import { Badge } from '@/components/ui/Badge';
 import { FormField, Input } from '@/components/ui/FormField';
 import { useApiToken } from '@/lib/useApiToken';
 import { listDeployments, createDeployment, deleteDeployment } from '@/lib/deployments';
-import type { Deployment } from '@vantage/types';
+import type { Deployment } from '@vencore/types';
 import type { CreateDeploymentBody } from '@/lib/deployments';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -1016,7 +1016,7 @@ const EMPTY_FORM: CreateDeploymentBody = {
   git_commit: '',
 };
 
-const SETUP_CURL = `curl -X POST https://your-vantage-url/v1/deployments \\
+const SETUP_CURL = `curl -X POST https://your-vencore-url/v1/deployments \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -1028,15 +1028,15 @@ const SETUP_CURL = `curl -X POST https://your-vantage-url/v1/deployments \\
     "source": "webhook"
   }'`;
 
-const SETUP_GHA = `- name: Notify Vantage
+const SETUP_GHA = `- name: Notify Vencore
   if: always()
   env:
-    VANTAGE_STATUS: \${{ job.status == 'success' && 'success' || 'failed' }}
+    VENCORE_STATUS: \${{ job.status == 'success' && 'success' || 'failed' }}
   run: |
-    curl -X POST https://your-vantage-url/v1/deployments \\
-      -H "Authorization: Bearer \${{ secrets.VANTAGE_API_KEY }}" \\
+    curl -X POST https://your-vencore-url/v1/deployments \\
+      -H "Authorization: Bearer \${{ secrets.VENCORE_API_KEY }}" \\
       -H "Content-Type: application/json" \\
-      -d "{\\"name\\":\\"${{ github.repository }}\\",\\"environment\\":\\"production\\",\\"status\\":\\"$VANTAGE_STATUS\\",\\"git_branch\\":\\"${{ github.ref_name }}\\",\\"git_commit\\":\\"${{ github.sha }}\\",\\"source\\":\\"webhook\\"}"`;
+      -d "{\\"name\\":\\"${{ github.repository }}\\",\\"environment\\":\\"production\\",\\"status\\":\\"$VENCORE_STATUS\\",\\"git_branch\\":\\"${{ github.ref_name }}\\",\\"git_commit\\":\\"${{ github.sha }}\\",\\"source\\":\\"webhook\\"}"`;
 
 // ── Components ────────────────────────────────────────────────────────────────
 
@@ -1356,7 +1356,7 @@ function DeploymentRow({ dep, last, onClick, onDelete }: {
 - [ ] **Step 3: Verify TypeScript compiles**
 
 ```bash
-pnpm --filter @vantage/web lint
+pnpm --filter @vencore/web lint
 ```
 
 Expected: no errors. If `Button` doesn't accept `variant="secondary"`, check `apps/web/components/ui/Button.tsx` for the correct prop name and update accordingly.
@@ -1375,7 +1375,7 @@ git commit -m "feat(web): add Deployments page and sidebar nav entry"
 - [ ] **Step 1: Run all API tests**
 
 ```bash
-pnpm --filter @vantage/api test
+pnpm --filter @vencore/api test
 ```
 
 Expected: all existing tests pass + new deployment tests pass. No regressions.

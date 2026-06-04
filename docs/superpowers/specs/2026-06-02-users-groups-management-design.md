@@ -276,7 +276,7 @@ apps/web/components/settings/GroupPermissionsEditor.tsx  Permission toggles back
 - Form: name + password + confirm password
 - On submit: `POST /api/invites/accept/:token` → redirects to `/login`
 
-### `@vantage/api-client` additions
+### `@vencore/api-client` additions
 
 - `packages/api-client/src/groups.ts` — `listGroups`, `getGroup`, `createGroup`, `updateGroup`, `deleteGroup`, `addGroupMember`, `removeGroupMember`, `setGroupPermission`, `deleteGroupPermission`
 - `packages/api-client/src/invites.ts` — `createInvite`, `getInviteInfo`, `acceptInvite`

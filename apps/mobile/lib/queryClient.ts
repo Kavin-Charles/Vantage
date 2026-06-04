@@ -16,5 +16,5 @@ export const queryClient = new QueryClient({
 
 export const asyncStoragePersister = createAsyncStoragePersister({
   storage: AsyncStorage,
-  key: 'VANTAGE_QUERY_CACHE',
+  key: 'VENCORE_QUERY_CACHE',
 });

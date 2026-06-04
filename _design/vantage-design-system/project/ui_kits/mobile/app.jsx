@@ -97,7 +97,7 @@ function App() {
   return (
     <>
       <DesignCanvas>
-        <DCSection id="phones" title="Vantage Mobile"
+        <DCSection id="phones" title="Vencore Mobile"
           subtitle="Tap into either device — both run the full clickable prototype. Bottom tabs switch sections; drill into any list row for details.">
           <DCArtboard id="ios" label="iOS · iPhone 16"
             width={402} height={874} style={transparentArtboard}>

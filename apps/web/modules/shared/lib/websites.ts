@@ -1,5 +1,5 @@
 import { apiFetch } from './api';
-import type { Website } from '@vantage/types';
+import type { Website } from '@vencore/types';
 
 export async function listWebsites(token: string) {
   return apiFetch<{ data: Website[]; total: number; error: null }>('/api/websites', { token });

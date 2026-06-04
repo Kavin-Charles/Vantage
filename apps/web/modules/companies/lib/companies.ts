@@ -1,1 +1,1 @@
-export { listCompanies, createCompany, updateCompany } from '@vantage/api-client';
+export { listCompanies, createCompany, updateCompany } from '@vencore/api-client';

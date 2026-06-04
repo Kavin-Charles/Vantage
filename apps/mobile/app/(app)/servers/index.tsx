@@ -10,7 +10,7 @@ import { useApiToken } from '@/hooks/useApiToken';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { Colors } from '@/constants/colors';
 import { Font } from '@/constants/fonts';
-import type { Server } from '@vantage/types';
+import type { Server } from '@vencore/types';
 
 type StatusFilter = 'all' | 'online' | 'degraded' | 'offline';
 

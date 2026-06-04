@@ -1,4 +1,4 @@
-import type { SmtpConfig } from '@vantage/config';
+import type { SmtpConfig } from '@vencore/config';
 import { logger } from './logger';
 
 interface AlertInfo {
@@ -30,13 +30,13 @@ export async function sendAlertEmail(
     await transporter.sendMail({
       from: smtp.from,
       to: adminEmails.join(', '),
-      subject: `[Vantage ${alert.severity}] ${alert.resource_type} alert`,
+      subject: `[Vencore ${alert.severity}] ${alert.resource_type} alert`,
       text: [
         `A ${alert.severity} alert was triggered:`,
         '',
         alert.message,
         '',
-        'Log in to Vantage to acknowledge or resolve this alert.',
+        'Log in to Vencore to acknowledge or resolve this alert.',
       ].join('\n'),
     });
   } catch (err) {

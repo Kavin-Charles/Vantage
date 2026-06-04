@@ -3,7 +3,7 @@ import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { ApiKeyRequest } from '../../middleware/api-key-auth';
 import { requireScope } from '../../middleware/api-key-auth';
 import { logger } from '../../lib/logger';

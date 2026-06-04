@@ -6,7 +6,7 @@
 
 import { createHash, randomBytes } from 'crypto';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { logger } from './logger';
 
 function sha256(token: string) {
@@ -286,7 +286,7 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
         version: '15.4',
         host: null,
         port: null,
-        db_user: 'vantage_ro',
+        db_user: 'vencore_ro',
         db_password: null,
         database_name: 'production',
         use_ssl: true,

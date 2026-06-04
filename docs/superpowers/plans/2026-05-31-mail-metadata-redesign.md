@@ -23,8 +23,8 @@
 | Create | `apps/api/src/routes/mail-body.ts` | GET /api/mail/emails/:id/body live fetch |
 | Modify | `apps/api/src/routes/mail-emails.ts` | Remove body_html/body_text from sent email insert |
 | Modify | `apps/api/src/index.ts` | Register mail-body router |
-| Modify | `apps/api/src/routes/auth.ts` | Change sameSite: 'strict' → 'lax' on vantage_token |
-| Create | `apps/web/app/api/setup/activate/route.ts` | Set vantage_setup_done cookie + redirect |
+| Modify | `apps/api/src/routes/auth.ts` | Change sameSite: 'strict' → 'lax' on vencore_token |
+| Create | `apps/web/app/api/setup/activate/route.ts` | Set vencore_setup_done cookie + redirect |
 | Modify | `apps/web/app/setup/page.tsx` | Redirect to /api/setup/activate instead of / |
 | Modify | `apps/web/middleware.ts` | Pass `from` param when redirecting to /setup |
 | Modify | `apps/web/hooks/useMailSocket.ts` | Remove body_html/body_text from MailSocketEmail |
@@ -630,7 +630,7 @@ Expected: FAIL — `createMailBodyRouter` not found.
 // apps/api/src/routes/mail-body.ts
 import { Router, type Router as ExpressRouter } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { decryptSecret } from '../lib/mail-crypto';
 import { createGmailProvider } from '../lib/gmail-provider';
@@ -1026,14 +1026,14 @@ git commit -m "feat(mail): EmailDetail fetches body live on open"
 This task fixes all three reported bugs in one commit:
 
 **Bug A: Too many redirects**
-Cause: `middleware.ts` redirects to `/setup` when `vantage_setup_done` cookie is missing. `SetupPage` detects setup is configured and calls `redirect('/')`. Middleware redirects to `/setup` again → infinite loop.
+Cause: `middleware.ts` redirects to `/setup` when `vencore_setup_done` cookie is missing. `SetupPage` detects setup is configured and calls `redirect('/')`. Middleware redirects to `/setup` again → infinite loop.
 
 Fix: Create a route handler `/api/setup/activate` (inside `SETUP_PATHS`) that sets the cookie and redirects to the destination.
 
 **Bug B: Gmail callback → login page**
-Cause: `vantage_token` cookie is set with `sameSite: 'strict'`. When Google redirects to the API callback, then the API redirects to the web app — this is a cross-site navigation. Browsers don't send `SameSite=Strict` cookies on cross-site top-level navigations, so the middleware sees no token and redirects to login.
+Cause: `vencore_token` cookie is set with `sameSite: 'strict'`. When Google redirects to the API callback, then the API redirects to the web app — this is a cross-site navigation. Browsers don't send `SameSite=Strict` cookies on cross-site top-level navigations, so the middleware sees no token and redirects to login.
 
-Fix: Change `sameSite: 'strict'` → `'lax'` on `vantage_token`. `SameSite=Lax` sends cookies on top-level cross-site navigations (exactly what OAuth needs).
+Fix: Change `sameSite: 'strict'` → `'lax'` on `vencore_token`. `SameSite=Lax` sends cookies on top-level cross-site navigations (exactly what OAuth needs).
 
 **Bug C: Gmail JSON syntax error on sync**
 Already fixed in Task 2 (`JSON.stringify` on JSONB arrays).
@@ -1059,7 +1059,7 @@ export async function GET(request: NextRequest) {
 
   // Redirect first, set cookie on the response so middleware sees it immediately
   const response = NextResponse.redirect(new URL(target, request.url));
-  response.cookies.set('vantage_setup_done', '1', {
+  response.cookies.set('vencore_setup_done', '1', {
     path: '/',
     sameSite: 'lax',
     httpOnly: true,
@@ -1082,7 +1082,7 @@ Change it to accept `searchParams` and pass `from` through to the activate route
 import { redirect } from 'next/navigation';
 import { SetupWizard } from './SetupWizard';
 
-export const metadata = { title: 'Setup — Vantage' };
+export const metadata = { title: 'Setup — Vencore' };
 
 async function getSetupStatus(): Promise<boolean> {
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
@@ -1126,7 +1126,7 @@ export default async function SetupPage({ searchParams }: PageProps) {
             color: 'var(--text)',
             margin: '0 0 8px',
           }}>
-            Welcome to Vantage
+            Welcome to Vencore
           </h1>
           <p style={{ color: 'var(--text2)', margin: 0 }}>
             Let's get your instance set up.
@@ -1159,15 +1159,15 @@ if (!setupDone && !isSetupPath) {
 }
 ```
 
-- [ ] **Step 4: Fix sameSite on vantage_token in auth.ts**
+- [ ] **Step 4: Fix sameSite on vencore_token in auth.ts**
 
-In `apps/api/src/routes/auth.ts`, find ALL `res.cookie('vantage_token', ...)` calls (there are two — one in the login route, one in a setup route). Change `sameSite: 'strict'` to `sameSite: 'lax'` in both:
+In `apps/api/src/routes/auth.ts`, find ALL `res.cookie('vencore_token', ...)` calls (there are two — one in the login route, one in a setup route). Change `sameSite: 'strict'` to `sameSite: 'lax'` in both:
 
 Search for `'strict'` in the cookie options and replace with `'lax'`:
 
 ```typescript
 // Before:
-res.cookie('vantage_token', token, {
+res.cookie('vencore_token', token, {
   httpOnly: true,
   secure: process.env['NODE_ENV'] === 'production',
   sameSite: 'strict',   // <-- change this
@@ -1175,7 +1175,7 @@ res.cookie('vantage_token', token, {
 });
 
 // After:
-res.cookie('vantage_token', token, {
+res.cookie('vencore_token', token, {
   httpOnly: true,
   secure: process.env['NODE_ENV'] === 'production',
   sameSite: 'lax',      // allows cross-site top-level navigations (OAuth callbacks)

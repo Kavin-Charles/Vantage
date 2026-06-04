@@ -1,6 +1,6 @@
 import { db } from '../lib/db';
 import { logger } from '../lib/logger';
-import { apiEnvSchema } from '@vantage/config';
+import { apiEnvSchema } from '@vencore/config';
 
 const env = apiEnvSchema.parse(process.env);
 const API_URL = process.env['API_URL'] ?? 'http://localhost:3001';

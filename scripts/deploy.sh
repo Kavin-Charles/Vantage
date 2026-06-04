@@ -1,14 +1,14 @@
 #!/bin/bash
-# Deploy Vantage to GCP VM
+# Deploy Vencore to GCP VM
 # Usage: ./scripts/deploy.sh <zone>
 # Example: ./scripts/deploy.sh us-central1-a
 
 set -e
 
 PROJECT=stone-outpost-472905-f8
-VM=vantage-test
+VM=vencore-test
 ZONE=${1:?Usage: deploy.sh <zone>}
-REMOTE=/opt/vantage
+REMOTE=/opt/vencore
 
 echo "==> Getting VM IP..."
 VM_IP=$(gcloud compute instances describe "$VM" \
@@ -17,12 +17,12 @@ VM_IP=$(gcloud compute instances describe "$VM" \
 echo "    VM IP: $VM_IP"
 
 echo "==> Ensuring firewall rules for ports 3000 and 3001..."
-gcloud compute firewall-rules describe vantage-web --project="$PROJECT" &>/dev/null || \
-  gcloud compute firewall-rules create vantage-web \
+gcloud compute firewall-rules describe vencore-web --project="$PROJECT" &>/dev/null || \
+  gcloud compute firewall-rules create vencore-web \
     --project="$PROJECT" \
     --allow=tcp:3000,tcp:3001 \
     --source-ranges=0.0.0.0/0 \
-    --description="Vantage web and API ports"
+    --description="Vencore web and API ports"
 
 echo "==> Checking Docker on VM..."
 gcloud compute ssh "$VM" --project="$PROJECT" --zone="$ZONE" --command="
@@ -38,7 +38,7 @@ gcloud compute ssh "$VM" --project="$PROJECT" --zone="$ZONE" --command="
 "
 
 echo "==> Packaging source (excluding node_modules, dist, .next)..."
-ARCHIVE=/tmp/vantage-deploy.tar.gz
+ARCHIVE=/tmp/vencore-deploy.tar.gz
 tar -czf "$ARCHIVE" \
   --exclude='./node_modules' \
   --exclude='./.git' \
@@ -58,9 +58,9 @@ echo "==> Uploading to $VM..."
 gcloud compute ssh "$VM" --project="$PROJECT" --zone="$ZONE" \
   --command="sudo mkdir -p $REMOTE && sudo chown \$USER:\$USER $REMOTE"
 gcloud compute scp --project="$PROJECT" --zone="$ZONE" \
-  "$ARCHIVE" "$VM:/tmp/vantage-deploy.tar.gz"
+  "$ARCHIVE" "$VM:/tmp/vencore-deploy.tar.gz"
 gcloud compute ssh "$VM" --project="$PROJECT" --zone="$ZONE" \
-  --command="tar -xzf /tmp/vantage-deploy.tar.gz -C $REMOTE && rm /tmp/vantage-deploy.tar.gz"
+  --command="tar -xzf /tmp/vencore-deploy.tar.gz -C $REMOTE && rm /tmp/vencore-deploy.tar.gz"
 rm -f "$ARCHIVE"
 
 echo "==> Checking .env.prod on VM..."
@@ -76,14 +76,14 @@ gcloud compute ssh "$VM" --project="$PROJECT" --zone="$ZONE" --command="
   fi
 "
 
-echo "==> Checking vantage.config.json on VM..."
+echo "==> Checking vencore.config.json on VM..."
 gcloud compute ssh "$VM" --project="$PROJECT" --zone="$ZONE" --command="
-  if [ ! -f $REMOTE/vantage.config.json ]; then
-    cp $REMOTE/vantage.config.example.json $REMOTE/vantage.config.json
+  if [ ! -f $REMOTE/vencore.config.json ]; then
+    cp $REMOTE/vencore.config.example.json $REMOTE/vencore.config.json
     echo ''
-    echo 'ACTION REQUIRED: Edit vantage.config.json before re-running:'
+    echo 'ACTION REQUIRED: Edit vencore.config.json before re-running:'
     echo '  gcloud compute ssh $VM --zone=$ZONE'
-    echo '  nano $REMOTE/vantage.config.json'
+    echo '  nano $REMOTE/vencore.config.json'
     echo ''
     exit 1
   fi
@@ -105,7 +105,7 @@ gcloud compute ssh "$VM" --project="$PROJECT" --zone="$ZONE" --command="
   echo 'Waiting for DB...'
   sleep 15
   source .env.prod
-  DB_URL=\"postgresql://\${DB_USER:-vantage}:\${DB_PASSWORD}@db:5432/\${DB_NAME:-vantage}\"
+  DB_URL=\"postgresql://\${DB_USER:-vencore}:\${DB_PASSWORD}@db:5432/\${DB_NAME:-vencore}\"
   docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm \
     -e DATABASE_URL=\"\$DB_URL\" \
     api sh -c 'node_modules/.bin/tsx packages/db/src/migrate.ts'

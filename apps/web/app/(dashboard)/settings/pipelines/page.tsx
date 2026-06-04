@@ -5,7 +5,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listPipelines, createPipeline, deletePipeline } from '@/modules/pipeline/lib/pipelines';
 import { listRecordTypes } from '@/modules/pipeline/lib/record-types';
 import { PipelineEditor } from '@/modules/pipeline/components/PipelineEditor';
-import type { PipelineWithDetails } from '@vantage/types';
+import type { PipelineWithDetails } from '@vencore/types';
 
 export default function PipelinesSettingsPage() {
   const getToken = useApiToken();

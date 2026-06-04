@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely';
-import type { PluginPermission, BridgeCall, BridgeResult } from '@vantage/plugin-types';
+import type { PluginPermission, BridgeCall, BridgeResult } from '@vencore/plugin-types';
 import { bridgeRegistry } from './bridge-registry';
 import { dispatchTableCall } from './table-client';
 

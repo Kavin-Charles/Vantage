@@ -10,7 +10,7 @@ import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
 import { FormField, Input, Select } from '@/modules/shared/components/ui/FormField';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listInfraDatabases, createInfraDatabase, deleteInfraDatabase } from '@/modules/databases/lib/infra-databases';
-import type { InfraDatabase } from '@vantage/types';
+import type { InfraDatabase } from '@vencore/types';
 
 const ENGINES = ['postgres', 'mysql', 'redis', 'clickhouse', 'mongo', 'other'] as const;
 type Engine = typeof ENGINES[number];

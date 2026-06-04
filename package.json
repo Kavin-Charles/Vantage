@@ -1,5 +1,5 @@
 {
-  "name": "vantage",
+  "name": "vencore",
   "private": true,
   "scripts": {
     "dev": "turbo dev",

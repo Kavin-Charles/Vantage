@@ -1,6 +1,6 @@
 // apps/api/src/workers/task-due-notifier.ts
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { sendPush } from '../lib/push-notify';
 import { logger } from '../lib/logger';
 

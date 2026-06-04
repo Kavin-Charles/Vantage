@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listRecords } from '@/modules/pipeline/lib/records';
 import { RecordDetailPanel } from './RecordDetailPanel';
-import type { PipelineWithDetails, PipelineRecordWithValues } from '@vantage/types';
+import type { PipelineWithDetails, PipelineRecordWithValues } from '@vencore/types';
 
 type SortKey = 'name' | 'created_at' | 'stage_id';
 

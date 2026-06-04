@@ -393,7 +393,7 @@ git commit -m "feat: add generic pipeline engine types, remove Deal type"
 // (paste shared helpers from top of this plan)
 import { createRecordTypesRouter } from './record-types';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 
 describe('GET /', () => {
   it('returns list', async () => {
@@ -477,7 +477,7 @@ cd apps/api && pnpm test -- record-types.test
 import { Router, type Router as ExpressRouter, type RequestHandler } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 const createTypeSchema = z.object({
@@ -809,7 +809,7 @@ cd apps/api && pnpm test -- records.test
 import { Router, type Router as ExpressRouter, type RequestHandler } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { generateRecordNumber } from '../lib/auto-number';
 
@@ -1117,7 +1117,7 @@ cd apps/api && pnpm test -- pipelines.test
 import { Router, type Router as ExpressRouter, type RequestHandler } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 const createPipelineSchema = z.object({

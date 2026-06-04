@@ -1,5 +1,5 @@
 import { apiFetch } from './core';
-import type { Activity } from '@vantage/types';
+import type { Activity } from '@vencore/types';
 
 export async function listActivity(
   token: string,

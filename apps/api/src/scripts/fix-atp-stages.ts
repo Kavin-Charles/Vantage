@@ -10,7 +10,7 @@
  * is_won/is_lost on the correct ATP stages, and reorders positions.
  */
 import 'dotenv/config';
-import { createDb } from '@vantage/db';
+import { createDb } from '@vencore/db';
 
 // Map: pipeline name → desired stage config (order = final position)
 const DESIRED: Record<string, { name: string; is_won: boolean; is_lost: boolean; color: string }[]> = {

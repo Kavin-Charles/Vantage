@@ -1,4 +1,4 @@
-export type { ModuleDefinition as ModuleManifest, ModuleDefinition, PermissionDef, NavItem, UserRole } from '@vantage/modules';
+export type { ModuleDefinition as ModuleManifest, ModuleDefinition, PermissionDef, NavItem, UserRole } from '@vencore/modules';
 export {
   CONTACTS_MODULE,
   COMPANIES_MODULE,
@@ -8,4 +8,4 @@ export {
   SERVERS_MODULE,
   ANALYTICS_MODULE,
   ACTIVITY_MODULE,
-} from '@vantage/modules';
+} from '@vencore/modules';

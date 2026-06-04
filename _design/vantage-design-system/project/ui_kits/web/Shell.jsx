@@ -56,12 +56,12 @@ function Sidebar({ active, onNavigate }) {
           border: '1px solid var(--border)',
           borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
         }}>
-          <img src="../../assets/logo-cloud-trimmed.png" alt="Vantage" style={{ width: 30, height: 30, objectFit: 'contain' }} />
+          <img src="../../assets/logo-cloud-trimmed.png" alt="Vencore" style={{ width: 30, height: 30, objectFit: 'contain' }} />
         </div>
         <span style={{
           fontFamily: 'var(--font-display)', fontSize: 19,
           fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.4px',
-        }}>Vantage</span>
+        }}>Vencore</span>
       </div>
 
       {NAV_GROUPS.map(group => (
@@ -146,7 +146,7 @@ function Topbar({ active, action, left }) {
           <span style={{
             fontFamily: 'var(--font-display)', fontSize: 20,
             fontWeight: 500, color: 'var(--text)', letterSpacing: '-0.4px',
-          }}>{PAGE_TITLES[active] ?? 'Vantage'}</span>
+          }}>{PAGE_TITLES[active] ?? 'Vencore'}</span>
         )}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

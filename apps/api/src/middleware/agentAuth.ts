@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database, Server } from '@vantage/db';
+import type { Database, Server } from '@vencore/db';
 
 export interface AgentRequest extends Request {
   server: Server;

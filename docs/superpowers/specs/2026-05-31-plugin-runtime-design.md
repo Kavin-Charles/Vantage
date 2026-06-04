@@ -7,7 +7,7 @@
 
 ## Overview
 
-Vantage Plugin Runtime is an open platform allowing third-party developers to build, publish, and sell plugins that extend Vantage workspaces. Plugins can add UI surfaces, custom backend logic, data access, and external integrations. Plugin code runs sandboxed on Vantage infrastructure via V8 isolates.
+Vencore Plugin Runtime is an open platform allowing third-party developers to build, publish, and sell plugins that extend Vencore workspaces. Plugins can add UI surfaces, custom backend logic, data access, and external integrations. Plugin code runs sandboxed on Vencore infrastructure via V8 isolates.
 
 ---
 
@@ -15,14 +15,14 @@ Vantage Plugin Runtime is an open platform allowing third-party developers to bu
 
 | URL | Purpose | Infra |
 |---|---|---|
-| `vantage.dev` | Marketing / onboarding | Vercel |
-| `<white-label.com>` | Vantage app | Vercel |
-| `market.vantage.dev` | Marketplace, developer portal, admin | Vercel (new Next.js app) |
-| `plugin-cdn.vantage.dev` | Plugin frontend bundle CDN | Cloudflare R2 (free tier) |
+| `vencore.dev` | Marketing / onboarding | Vercel |
+| `<white-label.com>` | Vencore app | Vercel |
+| `market.vencore.dev` | Marketplace, developer portal, admin | Vercel (new Next.js app) |
+| `plugin-cdn.vencore.dev` | Plugin frontend bundle CDN | Cloudflare R2 (free tier) |
 
 **New deployable services:**
 1. **Plugin Runtime Service** — Node.js + `isolated-vm`, deployed separately from main backend (crash/memory isolation)
-2. **market.vantage.dev** — new Next.js app (marketplace + developer portal + admin)
+2. **market.vencore.dev** — new Next.js app (marketplace + developer portal + admin)
 
 ---
 
@@ -30,7 +30,7 @@ Vantage Plugin Runtime is an open platform allowing third-party developers to bu
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    Vantage Host                      │
+│                    Vencore Host                      │
 │                                                     │
 │  ┌──────────┐   ┌──────────────┐   ┌─────────────┐ │
 │  │Marketplace│   │Plugin Runtime│   │  Plugin SDK │ │
@@ -117,13 +117,13 @@ Resume    → isolate rehydrated from compiled bundle (~5ms cold start)
 ### Host Bridge (injected into isolate)
 
 ```typescript
-vantage.contacts.list(filter)      // requires contacts:read
-vantage.contacts.update(id, data)  // requires contacts:write
-vantage.deals.get(id)              // requires deals:read
-vantage.activity.log(entry)        // requires activity:write
-vantage.storage.get(key)           // namespaced KV, isolated per plugin
-vantage.storage.set(key, value)    // namespaced KV
-vantage.http.fetch(url, options)   // requires http:<domain>
+vencore.contacts.list(filter)      // requires contacts:read
+vencore.contacts.update(id, data)  // requires contacts:write
+vencore.deals.get(id)              // requires deals:read
+vencore.activity.log(entry)        // requires activity:write
+vencore.storage.get(key)           // namespaced KV, isolated per plugin
+vencore.storage.set(key, value)    // namespaced KV
+vencore.http.fetch(url, options)   // requires http:<domain>
 ```
 
 ### Hard Limits
@@ -138,11 +138,11 @@ vantage.http.fetch(url, options)   // requires http:<domain>
 ### Plugin Dev Experience
 
 ```typescript
-import { vantage } from '@vantage/plugin-sdk'
+import { vencore } from '@vencore/plugin-sdk'
 
-vantage.on('contact.created', async (contact) => {
-  const enriched = await vantage.http.fetch('api.clearbit.com/v2/...')
-  await vantage.contacts.update(contact.id, { company: enriched.company })
+vencore.on('contact.created', async (contact) => {
+  const enriched = await vencore.http.fetch('api.clearbit.com/v2/...')
+  await vencore.contacts.update(contact.id, { company: enriched.company })
 })
 ```
 
@@ -152,13 +152,13 @@ Plugin code is TypeScript, compiled to a single bundle via esbuild before upload
 
 ## Frontend Plugin System (iframes)
 
-Frontend plugins are served from `plugin-cdn.vantage.dev` (R2) and rendered in sandboxed iframes.
+Frontend plugins are served from `plugin-cdn.vencore.dev` (R2) and rendered in sandboxed iframes.
 
 ### Iframe Setup
 
 ```html
 <iframe
-  src="https://plugin-cdn.vantage.dev/{pluginId}/index.html"
+  src="https://plugin-cdn.vencore.dev/{pluginId}/index.html"
   sandbox="allow-scripts allow-forms"
   csp="default-src 'self'; script-src 'self'"
 />
@@ -192,25 +192,25 @@ No `allow-same-origin` — iframe cannot access host DOM or localStorage.
 ### Frontend SDK
 
 ```typescript
-import { vantage } from '@vantage/plugin-sdk/frontend'
+import { vencore } from '@vencore/plugin-sdk/frontend'
 
-const contacts = await vantage.contacts.list()
-vantage.navigate('/contacts/123')
-vantage.modal.open({ title: 'Enrich', content: <MyForm /> })
-vantage.on('contact.selected', (contact) => { ... })
+const contacts = await vencore.contacts.list()
+vencore.navigate('/contacts/123')
+vencore.modal.open({ title: 'Enrich', content: <MyForm /> })
+vencore.on('contact.selected', (contact) => { ... })
 ```
 
 ---
 
 ## Plugin Browser (in-app)
 
-White-label workspaces live on custom domains (e.g. `<white-label.com>`). Cross-domain redirects to `market.vantage.dev` for installation would require complex cross-domain auth. Instead, **installation happens entirely within the Vantage app.**
+White-label workspaces live on custom domains (e.g. `<white-label.com>`). Cross-domain redirects to `market.vencore.dev` for installation would require complex cross-domain auth. Instead, **installation happens entirely within the Vencore app.**
 
-The main Vantage app has a built-in **Plugin Browser** page (Settings → Plugins → Browse):
-- Calls `GET /api/marketplace/plugins` → Vantage backend proxies the marketplace catalog
+The main Vencore app has a built-in **Plugin Browser** page (Settings → Plugins → Browse):
+- Calls `GET /api/marketplace/plugins` → Vencore backend proxies the marketplace catalog
 - Shows plugin listings, screenshots, pricing, ratings inline
 - Install button → permission consent screen → `POST /api/plugins/install` (server-side)
-- No redirect to `market.vantage.dev` needed
+- No redirect to `market.vencore.dev` needed
 
 **Install flow:**
 ```
@@ -223,33 +223,33 @@ Workspace admin (in white-label app)
   → Plugin active in workspace immediately
 ```
 
-`market.vantage.dev` is for public discovery (SEO, dev landing pages), developer portal, and admin review only — not for workspace-level installation.
+`market.vencore.dev` is for public discovery (SEO, dev landing pages), developer portal, and admin review only — not for workspace-level installation.
 
 ---
 
-## Marketplace & Developer Portal (`market.vantage.dev`)
+## Marketplace & Developer Portal (`market.vencore.dev`)
 
 ### Marketplace (public discovery)
 - Browse/search plugins by category (CRM, Infra, Integrations, Messaging, Analytics, Other)
 - Plugin listing: name, description, screenshots, pricing, ratings, install count
 - Public-facing only — installation happens via the in-app Plugin Browser
 
-### In-App Plugin Management (main Vantage app)
+### In-App Plugin Management (main Vencore app)
 - Settings → Plugins: list installed plugins, enable/disable, uninstall
 - `GET /api/marketplace/plugins` — catalog proxy endpoint on main backend
 - `POST /api/plugins/install` — install + charge Stripe
 - `DELETE /api/plugins/:id` — uninstall + cancel subscription
 - Billing via Stripe (one-time or subscription, per developer's choice)
 
-### Developer Portal (`market.vantage.dev/developer`)
+### Developer Portal (`market.vencore.dev/developer`)
 - Create/edit plugin listing (name, description, screenshots, category)
 - Set pricing: free / one-time / subscription (month or year)
 - Upload versioned bundles (zip: `plugin.json` + `dist/`)
 - View review status with feedback
 - Analytics: installs, active workspaces, revenue, uninstalls
-- Payouts via Stripe Connect (Vantage takes 20% cut)
+- Payouts via Stripe Connect (Vencore takes 20% cut)
 
-### Admin Panel (`market.vantage.dev/admin`)
+### Admin Panel (`market.vencore.dev/admin`)
 - Review queue: pending submissions
 - Automated checks: manifest valid, bundle < 5MB, no obvious malicious patterns
 - Manual approve / reject with feedback
@@ -261,7 +261,7 @@ Workspace admin (in white-label app)
 draft → submitted → approved → listed
                  → rejected  (feedback sent to dev)
 listed → deprecated (dev withdraws)
-listed → suspended  (Vantage action)
+listed → suspended  (Vencore action)
 ```
 
 ---
@@ -322,9 +322,9 @@ plugin_storage
 
 ## SDK Package
 
-Two npm packages published by Vantage:
+Two npm packages published by Vencore:
 
-- `@vantage/plugin-sdk` — backend SDK (runs inside isolate)
-- `@vantage/plugin-sdk/frontend` — frontend SDK (runs inside iframe, postMessage bridge)
+- `@vencore/plugin-sdk` — backend SDK (runs inside isolate)
+- `@vencore/plugin-sdk/frontend` — frontend SDK (runs inside iframe, postMessage bridge)
 
 Devs build with TypeScript, bundle with esbuild, upload zip to developer portal.

@@ -57,7 +57,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.card}>
-        <Text style={styles.title}>Vantage</Text>
+        <Text style={styles.title}>Vencore</Text>
         <Text style={styles.subtitle}>Sign in to your workspace</Text>
 
         <TextInput

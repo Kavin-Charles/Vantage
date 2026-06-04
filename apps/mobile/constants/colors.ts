@@ -1,5 +1,5 @@
 // apps/mobile/constants/colors.ts
-// Vantage design tokens — synced from colors_and_type.css
+// Vencore design tokens — synced from colors_and_type.css
 export const Colors = {
   // Surfaces
   bg:       '#f7f6f2',

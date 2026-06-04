@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { createDb } from '@vantage/db';
+import { createDb } from '@vencore/db';
 async function main() {
   const db = createDb(process.env['DATABASE_URL']!);
   const rts = await db.selectFrom('record_types').selectAll().execute();

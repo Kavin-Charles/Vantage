@@ -9,7 +9,7 @@ import {
 import { listPipelines } from '@/modules/pipeline/lib/pipelines';
 import { RecordTypeEditor } from '@/modules/pipeline/components/RecordTypeEditor';
 import { FieldMappingEditor } from '@/modules/pipeline/components/FieldMappingEditor';
-import type { RecordType, ConversionFieldMapping, PipelineWithDetails } from '@vantage/types';
+import type { RecordType, ConversionFieldMapping, PipelineWithDetails } from '@vencore/types';
 
 type Tab = 'fields' | 'conversions';
 

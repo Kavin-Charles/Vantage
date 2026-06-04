@@ -1,5 +1,5 @@
 import { apiFetch } from '@/modules/shared/lib/api';
-import type { Server, MetricsSnapshot } from '@vantage/types';
+import type { Server, MetricsSnapshot } from '@vencore/types';
 
 export async function listServers(token: string) {
   return apiFetch<{ data: Server[]; total: number; error: null }>('/api/servers', { token });

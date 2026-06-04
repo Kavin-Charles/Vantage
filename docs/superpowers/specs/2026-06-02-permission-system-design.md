@@ -23,7 +23,7 @@ Five components interact to form the system:
 ### Package identity
 
 ```json
-{ "name": "@vantage/modules" }
+{ "name": "@vencore/modules" }
 ```
 
 Imported by both `apps/api` and `apps/web`.
@@ -117,9 +117,9 @@ export const CONTACTS_MODULE: ModuleDefinition = {
 
 ### Backward compatibility
 
-`apps/api/src/modules/manifests.ts` and `registry.ts` become thin re-exports from `@vantage/modules`. Existing `ModuleManifest` type aliased to `ModuleDefinition`.
+`apps/api/src/modules/manifests.ts` and `registry.ts` become thin re-exports from `@vencore/modules`. Existing `ModuleManifest` type aliased to `ModuleDefinition`.
 
-Add `"@vantage/modules": "workspace:*"` to dependencies in both `apps/api/package.json` and `apps/web/package.json`.
+Add `"@vencore/modules": "workspace:*"` to dependencies in both `apps/api/package.json` and `apps/web/package.json`.
 
 ---
 

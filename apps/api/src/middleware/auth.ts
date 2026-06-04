@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database, User, Workspace } from '@vantage/db';
+import type { Database, User, Workspace } from '@vencore/db';
 
 export interface AuthenticatedRequest extends Request {
   user: User;
@@ -25,7 +25,7 @@ export function createRequireAuth(db: Kysely<Database>, jwtSecret: string) {
     const token =
       authHeader?.startsWith('Bearer ')
         ? authHeader.slice(7)
-        : (req.cookies['vantage_token'] as string | undefined);
+        : (req.cookies['vencore_token'] as string | undefined);
     if (!token) {
       res.status(401).json({ data: null, error: { code: 'UNAUTHORIZED' } });
       return;

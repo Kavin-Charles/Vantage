@@ -7,7 +7,7 @@ import { apiFetch } from '@/modules/shared/lib/api';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { GroupPermissionsEditor } from '@/modules/settings/components/GroupPermissionsEditor';
-import type { User } from '@vantage/types';
+import type { User } from '@vencore/types';
 
 export default function GroupDetailPage() {
   const { groupId } = useParams<{ groupId: string }>();

@@ -1,8 +1,8 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
-import type { SmtpConfig } from '@vantage/config';
+import type { Database } from '@vencore/db';
+import type { SmtpConfig } from '@vencore/config';
 import { createRequireAgentToken, type AgentRequest } from '../middleware/agentAuth';
 import { sendAlertEmail } from '../lib/send-alert-email';
 import { sendPush } from '../lib/push-notify';

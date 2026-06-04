@@ -13,7 +13,7 @@ import { openSshStream, getSshHistory } from '@/modules/servers/lib/ssh';
 import { openSftpSession, SftpClient } from '@/modules/servers/lib/sftp';
 import type { SftpEntry } from '@/modules/servers/lib/sftp';
 import { SshTerminal } from '@/modules/servers/components/SshTerminal';
-import type { Server, MetricsSnapshot, SshCommandLog } from '@vantage/types';
+import type { Server, MetricsSnapshot, SshCommandLog } from '@vencore/types';
 
 function Sparkline({ data, color = '#2d6a4f' }: { data: number[]; color?: string }) {
   if (data.length < 2) return <span style={{ color: 'var(--text3)', fontSize: 11 }}>no data</span>;
@@ -124,7 +124,7 @@ function OverviewTab({ server, snapshots }: {
             </div>
             <p style={{ margin: 0, fontSize: 13, color: 'var(--text2)' }}>Update the agent on your server:</p>
             <pre style={{ margin: 0, fontFamily: 'monospace', fontSize: 12, background: '#1a1814', color: '#f0ede6', borderRadius: 6, padding: '10px 12px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-              {`VANTAGE_TOKEN=${newToken} vantage-agent`}
+              {`VENCORE_TOKEN=${newToken} vencore-agent`}
             </pre>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <Button variant="primary" onClick={() => setNewToken(null)}>Done</Button>

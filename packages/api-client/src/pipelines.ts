@@ -1,5 +1,5 @@
 import { apiFetch } from './core';
-import type { PipelineWithDetails, PipelineRecord } from '@vantage/types';
+import type { PipelineWithDetails, PipelineRecord } from '@vencore/types';
 
 export async function listPipelines(token: string): Promise<{ data: PipelineWithDetails[] }> {
   return apiFetch<{ data: PipelineWithDetails[] }>('/api/pipelines', { token });

@@ -1,6 +1,6 @@
-# Vantage Web — UI Kit
+# Vencore Web — UI Kit
 
-A pixel-faithful, click-through recreation of the Vantage dashboard.
+A pixel-faithful, click-through recreation of the Vencore dashboard.
 
 **Open `index.html`** to launch the prototype. The sidebar toggles between five core screens — Pipeline, Contacts, Activity, Servers, Analytics — all of them populated with seed data lifted from the screenshots in the source repo (Meridian Labs, Cobalt Systems, Stackline, Fenix, Orbit Cloud, etc).
 

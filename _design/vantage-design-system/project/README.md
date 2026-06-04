@@ -1,15 +1,15 @@
-# Vantage Design System
+# Vencore Design System
 
-> **Vantage — Build, sell, and ship — one place.**
+> **Vencore — Build, sell, and ship — one place.**
 > A self-hosted all-in-one platform for developer-led teams that bundles a CRM, infrastructure monitoring, team tools, and billing into a single product.
 
-This folder is the visual-design source of truth for any artifact (mock, prototype, slide, marketing page) that needs to look and feel like Vantage. It was reverse-engineered from the production codebase, then iterated on with the brand team — design tokens, components, and motion all live here as the canonical reference.
+This folder is the visual-design source of truth for any artifact (mock, prototype, slide, marketing page) that needs to look and feel like Vencore. It was reverse-engineered from the production codebase, then iterated on with the brand team — design tokens, components, and motion all live here as the canonical reference.
 
 ## Source repository
 
-**GitHub:** [Kavin-Charles/Vantage](https://github.com/Kavin-Charles/Vantage)
+**GitHub:** [Kavin-Charles/Vencore](https://github.com/Kavin-Charles/Vencore)
 
-A Turborepo monorepo with five apps (`web`, `api`, `worker`, `agent`, `mobile`) and four shared packages. The design lives in `apps/web` — a Next.js 14 App-Router project. Keep that repo open in another window when you're building anything Vantage-shaped — the codebase is the deepest reference; this folder is its design summary.
+A Turborepo monorepo with five apps (`web`, `api`, `worker`, `agent`, `mobile`) and four shared packages. The design lives in `apps/web` — a Next.js 14 App-Router project. Keep that repo open in another window when you're building anything Vencore-shaped — the codebase is the deepest reference; this folder is its design summary.
 
 Useful paths if you dig in:
 
@@ -26,7 +26,7 @@ Useful paths if you dig in:
 
 ## Product surface area
 
-Vantage is one product, three feature pillars, all on a single dashboard:
+Vencore is one product, three feature pillars, all on a single dashboard:
 
 | Pillar | Pages |
 |---|---|
@@ -34,7 +34,7 @@ Vantage is one product, three feature pillars, all on a single dashboard:
 | **Infrastructure** | Servers, Databases, Websites, Files |
 | **General** | Analytics, Alerts, Settings |
 
-Sidebar is grouped by these three buckets. Feature pillars can be toggled off per-instance via `vantage.config.json`.
+Sidebar is grouped by these three buckets. Feature pillars can be toggled off per-instance via `vencore.config.json`.
 
 Target user: **technical founders, dev agencies, and dev-led SaaS teams of 2–20 people** who don't want to glue Hubspot to Datadog to Linear. The voice and visuals reflect that — calm, dense-but-uncluttered, no growth-marketing energy.
 
@@ -42,7 +42,7 @@ Target user: **technical founders, dev agencies, and dev-led SaaS teams of 2–2
 
 ## Content fundamentals
 
-**Voice:** Direct, technical, quiet. Vantage talks to engineers like a coworker, not a salesperson. Three pillars:
+**Voice:** Direct, technical, quiet. Vencore talks to engineers like a coworker, not a salesperson. Three pillars:
 
 - **Direct** — Tells the user what changed, what to do, what to expect. No hype words.
 - **Technical** — Speaks in product nouns (pipeline, agent, threshold) not marketing nouns (journey, magic, growth).
@@ -63,9 +63,9 @@ Target user: **technical founders, dev agencies, and dev-led SaaS teams of 2–2
 - Dates: locale-formatted in tables (`5/11/2026`); relative in activity feeds (`2m ago`).
 - Percentages: integer, with the `%` symbol pressed against the number.
 
-**Vantage vs Not-Vantage (sample copy):**
+**Vencore vs Not-Vencore (sample copy):**
 
-| ✓ Vantage | ✗ Not Vantage |
+| ✓ Vencore | ✗ Not Vencore |
 |---|---|
 | `Invalid email or password` | `Hmm, that didn't look right ✨` |
 | `No activity yet.` | `Nothing to see here — your timeline awaits!` |
@@ -94,7 +94,7 @@ A **warm parchment + cool ink** system. Backgrounds are creamy off-whites that r
 
 Semantic colors (green / amber / red / blue / purple) are always used as a **foreground + tinted background pair** — they appear in badges, the alert bar, kanban stage chips, and activity-type accents. Backgrounds are pastel; foregrounds are dark enough to clear AA on the pastel bg.
 
-**Brand blues** (from the cloud mark): `#0F1A6B` (Ink) · `#1652F0` (Vantage Blue) · `#2A8CFF` (Sky) · `#67B6FF` (Air). Used for the logo and brand moments only — not as UI accent colors. The product chrome stays in the warm-paper + cool-ink neutral palette.
+**Brand blues** (from the cloud mark): `#0F1A6B` (Ink) · `#1652F0` (Vencore Blue) · `#2A8CFF` (Sky) · `#67B6FF` (Air). Used for the logo and brand moments only — not as UI accent colors. The product chrome stays in the warm-paper + cool-ink neutral palette.
 
 ### Type
 
@@ -153,11 +153,11 @@ Almost none. The modal overlay is `rgba(0,0,0,0.3)` — a flat scrim, no `backdr
 
 ### Imagery
 
-The brand mark itself is the only first-party image: the cloud + ascending V + arrow logo (`assets/logo-cloud-trimmed.png`). **Use it everywhere Vantage appears** — sidebar, marketing, decks, exports, social. No illustrations, no stock photography. If a surface needs a focal point, prefer a piece of data (a chart, a number, a sparkline) over a stock visual.
+The brand mark itself is the only first-party image: the cloud + ascending V + arrow logo (`assets/logo-cloud-trimmed.png`). **Use it everywhere Vencore appears** — sidebar, marketing, decks, exports, social. No illustrations, no stock photography. If a surface needs a focal point, prefer a piece of data (a chart, a number, a sparkline) over a stock visual.
 
 ### Cards & surfaces
 
-A "card" in Vantage is:
+A "card" in Vencore is:
 
 - `background: var(--surface)` (pure white)
 - `border: 1px solid var(--border)` (tan-gray)
@@ -171,7 +171,7 @@ A "table" is a card-shaped container with a header row using uppercase eyebrow s
 
 ## Iconography
 
-**One system, end to end.** All icons in Vantage are **24×24 viewBox stroke icons** at `1.75px` stroke weight, with rounded caps and rounded joins, no fills. `currentColor` only — they inherit the surrounding text color and flip to white in active nav items.
+**One system, end to end.** All icons in Vencore are **24×24 viewBox stroke icons** at `1.75px` stroke weight, with rounded caps and rounded joins, no fills. `currentColor` only — they inherit the surrounding text color and flip to white in active nav items.
 
 This replaces the legacy 15×15 filled set that the source codebase shipped with. If you're working in the source repo, you'll see the old filled icons inline in `Sidebar.tsx` and elsewhere — port them over by name (the names in `assets/icons/` match 1:1 with the source).
 
@@ -184,7 +184,7 @@ The full set, by group:
 
 **No emoji.** Earlier versions of the product surfaced emoji as activity-row icons; that has been replaced — every activity type now uses the matching stroke glyph (call → phone, email → mail, meeting → meeting, note → note, deal_change → arrow-right, contact_created → contacts).
 
-**The brand mark** lives in `assets/logo-cloud-trimmed.png`. It is the only mark — use it in the sidebar (28px white tile + serif wordmark), as the favicon (mark only), and at any other size on any other surface where Vantage appears. There is no "secondary" mark.
+**The brand mark** lives in `assets/logo-cloud-trimmed.png`. It is the only mark — use it in the sidebar (28px white tile + serif wordmark), as the favicon (mark only), and at any other size on any other surface where Vencore appears. There is no "secondary" mark.
 
 ---
 
@@ -201,13 +201,13 @@ assets/
   logo-cloud-small.png     Smaller version for chrome lockups
   icons/                   29 stroke icons (24px viewBox, 1.75px, rounded)
 
-screenshots/               10 captured screens from a running Vantage instance
+screenshots/               10 captured screens from a running Vencore instance
 
 preview/                   Cards rendered into the Design System tab —
                            one concept per file (colors, type, components, …)
 
 ui_kits/
-  web/                     Pixel-faithful recreation of the Vantage dashboard,
+  web/                     Pixel-faithful recreation of the Vencore dashboard,
                            updated to the new visual language.
                            Click-thru: Pipeline, Contacts, Activity,
                            Servers, Analytics.
@@ -219,7 +219,7 @@ ui_kits/
 
 1. **Link `colors_and_type.css` first.** Every other rule depends on its variables.
 2. **Build the shell before the content.** Sidebar + topbar + content area is the universal layout; don't fight it.
-3. **Match the density.** This is a 14px-baseline product. Big padding and generous whitespace will read as "not Vantage."
+3. **Match the density.** This is a 14px-baseline product. Big padding and generous whitespace will read as "not Vencore."
 4. **Reach for the display face sparingly.** Page title, KPI number, modal title, wordmark. If everything is Bricolage, the brand stops working.
 5. **Use semantic colors as pairs.** Never green text on a white card. Always green text on `--green-bg`, inside a pill or row tile.
 6. **When you need an icon, copy one from `assets/icons/` first.** Only draw a new SVG if nothing in the set works, and match the 24×24 / 1.75px stroke style when you do.
@@ -229,6 +229,6 @@ ui_kits/
 
 ## Known gaps / caveats
 
-- **`vantage-full.html` was not found in the source repo at scrape time** — `CLAUDE.md` references it as the canonical UI reference but the file is not committed. The system here is reconstructed from the live component tree plus the brand iteration captured in *Visual Foundations*.
+- **`vencore-full.html` was not found in the source repo at scrape time** — `CLAUDE.md` references it as the canonical UI reference but the file is not committed. The system here is reconstructed from the live component tree plus the brand iteration captured in *Visual Foundations*.
 - **Fonts ship from Google.** Bricolage Grotesque, IBM Plex Sans, and IBM Plex Mono are all loaded via `@import`. The repo doesn't ship `.woff2` files. For an offline build you'll need to host them yourself.
 - **The Files page and Mail compose flow** exist in the source codebase but aren't in the UI kit recreation — they were behind feature flags and weren't central to the visual story.

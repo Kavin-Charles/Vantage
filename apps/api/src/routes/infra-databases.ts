@@ -1,7 +1,7 @@
 import { Router, type Response, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database, InfraDatabase, InfraDatabaseUpdate } from '@vantage/db';
+import type { Database, InfraDatabase, InfraDatabaseUpdate } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
 import {

@@ -7,7 +7,7 @@ import { Badge } from '@/modules/shared/components/ui/Badge';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
-import type { Alert } from '@vantage/types';
+import type { Alert } from '@vencore/types';
 
 type FilterTab = 'all' | 'unresolved' | 'critical' | 'warning' | 'info';
 

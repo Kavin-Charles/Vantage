@@ -5,7 +5,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import type { User } from '@vantage/types';
+import type { User } from '@vencore/types';
 import { UserPermissionsEditor } from '@/modules/settings/components/UserPermissionsEditor';
 
 export default function UserPermissionsPage() {

@@ -13,7 +13,7 @@ import { AgentInstallInstructions } from '@/modules/shared/components/ui/AgentIn
 import { listServers, createServer, deleteServer } from '@/modules/servers/lib/servers';
 import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
-import type { Server } from '@vantage/types';
+import type { Server } from '@vencore/types';
 
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return 'never';

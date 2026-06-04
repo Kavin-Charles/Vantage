@@ -1,6 +1,6 @@
 import { createHmac } from 'crypto';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import { logger } from '../lib/logger';
 
 const DELIVERY_TIMEOUT_MS = 10_000;
@@ -55,7 +55,7 @@ export async function runWebhookDelivery(db: Kysely<Database>): Promise<void> {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Vantage-Signature': signature,
+          'X-Vencore-Signature': signature,
         },
         body,
         signal: controller.signal,

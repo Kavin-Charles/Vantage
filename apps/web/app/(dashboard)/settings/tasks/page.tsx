@@ -8,7 +8,7 @@ import { Modal } from '@/modules/shared/components/ui/Modal';
 import { FormField, Input } from '@/modules/shared/components/ui/FormField';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
-import type { Task } from '@vantage/types';
+import type { Task } from '@vencore/types';
 
 interface WorkspaceUser { id: string; name: string; email: string; role: string; }
 

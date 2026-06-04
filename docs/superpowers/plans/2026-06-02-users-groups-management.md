@@ -362,10 +362,10 @@ git commit -m "feat: is_active check in requireAuth, group permission union in r
 import { Router } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { invalidatePermissionCache, invalidateGroupMemberCaches } from '../middleware/permission';
-import { getModuleForPermission } from '@vantage/modules';
+import { getModuleForPermission } from '@vencore/modules';
 
 const createGroupSchema = z.object({
   name: z.string().min(1).max(100),
@@ -667,8 +667,8 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
-import type { SmtpConfig } from '@vantage/config';
+import type { Database } from '@vencore/db';
+import type { SmtpConfig } from '@vencore/config';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 const createInviteSchema = z.object({
@@ -747,9 +747,9 @@ export function createInvitesRouter(
           await transporter.sendMail({
             from: smtp.from,
             to: parsed.data.email,
-            subject: `You've been invited to ${workspace.name} on Vantage`,
+            subject: `You've been invited to ${workspace.name} on Vencore`,
             text: [
-              `${inviter.name} has invited you to join ${workspace.name} on Vantage.`,
+              `${inviter.name} has invited you to join ${workspace.name} on Vencore.`,
               '',
               `Accept your invitation: ${appUrl}/invite/${token}`,
               '',
@@ -973,7 +973,7 @@ git commit -m "feat: add invites route, update users route with is_active + last
 
 ---
 
-## Task 5: `@vantage/api-client` — Groups + Invites Functions
+## Task 5: `@vencore/api-client` — Groups + Invites Functions
 
 **Files:**
 - Create: `packages/api-client/src/groups.ts`
@@ -1335,7 +1335,7 @@ import { useApiToken } from '@/lib/useApiToken';
 import { useAuth } from '@/lib/AuthContext';
 import { apiFetch } from '@/lib/api';
 import { InviteUserModal } from '@/components/settings/InviteUserModal';
-import type { User } from '@vantage/types';
+import type { User } from '@vencore/types';
 
 interface UserWithActive extends User {
   is_active: boolean;
@@ -1488,7 +1488,7 @@ import { useApiToken } from '@/lib/useApiToken';
 import { apiFetch } from '@/lib/api';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import type { User } from '@vantage/types';
+import type { User } from '@vencore/types';
 import { UserPermissionsEditor } from '@/components/settings/UserPermissionsEditor';
 
 export default function UserPermissionsPage() {
@@ -1566,7 +1566,7 @@ git commit -m "feat: add Users management page with invite modal, deactivate, re
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { apiFetch } from '@/lib/api';
-import { MODULE_REGISTRY } from '@vantage/modules';
+import { MODULE_REGISTRY } from '@vencore/modules';
 
 interface GroupPermEntry {
   permission: string;
@@ -1811,7 +1811,7 @@ import { apiFetch } from '@/lib/api';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { GroupPermissionsEditor } from '@/components/settings/GroupPermissionsEditor';
-import type { User } from '@vantage/types';
+import type { User } from '@vencore/types';
 
 export default function GroupDetailPage() {
   const { groupId } = useParams<{ groupId: string }>();

@@ -7,7 +7,7 @@ import { apiFetch } from '@/modules/shared/lib/api';
 import { RecordCard } from './RecordCard';
 import { RecordDetailPanel } from './RecordDetailPanel';
 import { RecordForm } from './RecordForm';
-import type { PipelineWithDetails, PipelineRecordWithValues, RecordTypeField } from '@vantage/types';
+import type { PipelineWithDetails, PipelineRecordWithValues, RecordTypeField } from '@vencore/types';
 
 interface WorkspaceUser { id: string; name: string; }
 

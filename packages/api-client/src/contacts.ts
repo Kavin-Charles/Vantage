@@ -1,5 +1,5 @@
 import { apiFetch } from './core';
-import type { Contact } from '@vantage/types';
+import type { Contact } from '@vencore/types';
 
 export interface ContactsResponse {
   data: Contact[];

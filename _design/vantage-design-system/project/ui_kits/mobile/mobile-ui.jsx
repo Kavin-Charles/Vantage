@@ -1,4 +1,4 @@
-/* Mobile UI primitives — Vantage on a phone.
+/* Mobile UI primitives — Vencore on a phone.
    These build on var(--bg)/var(--surface)/etc which are scoped per-frame
    so the same components serve light and dark variants.  */
 
@@ -419,7 +419,7 @@ function BottomSheet({ open, onClose, children, title }) {
 // ── Inline mini-logo (cloud mark) ──────────────────────────────────────────
 function LogoMark({ size = 24 }) {
   return (
-    <img src="../../assets/logo-cloud-trimmed.png" alt="Vantage"
+    <img src="../../assets/logo-cloud-trimmed.png" alt="Vencore"
       style={{ width: size, height: size, objectFit: 'contain', display: 'block' }} />
   );
 }

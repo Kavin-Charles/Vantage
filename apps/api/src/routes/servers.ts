@@ -2,7 +2,7 @@ import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 import { randomBytes, createHash } from 'crypto';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 const createServerSchema = z.object({
@@ -169,7 +169,7 @@ export function createServersRouter(db: Kysely<Database>, requirePermission: (p:
   return router;
 }
 
-import { bridgeRegistry } from '@vantage/plugin-runtime';
+import { bridgeRegistry } from '@vencore/plugin-runtime';
 
 export function registerServersBridgeMethods(): void {
   bridgeRegistry

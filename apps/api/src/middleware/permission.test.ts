@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { resolvePermissions, __clearPermCacheForTesting } from './permission';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
+import type { Database } from '@vencore/db';
 
 function buildMockDb(overrides: { permission: string; granted: boolean }[]) {
   const chain: Record<string, unknown> = {};

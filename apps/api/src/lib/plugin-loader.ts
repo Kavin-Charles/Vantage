@@ -2,9 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import type { Router } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vantage/db';
-import type { PluginManifest, PluginPermission } from '@vantage/plugin-types';
-import { dispatchBridgeCall, pluginEventBus } from '@vantage/plugin-runtime';
+import type { Database } from '@vencore/db';
+import type { PluginManifest, PluginPermission } from '@vencore/plugin-types';
+import { dispatchBridgeCall, pluginEventBus } from '@vencore/plugin-runtime';
 import { logger } from './logger';
 
 export function pluginStorageDir(): string {
@@ -32,7 +32,7 @@ export function loadPluginManifest(pluginId: string): PluginManifest | null {
 }
 
 interface PluginBackendDef {
-  setup(vantage: any): void | Promise<void>;
+  setup(vencore: any): void | Promise<void>;
 }
 
 const pluginInstances = new Map<string, any>();
@@ -63,7 +63,7 @@ export function loadPluginBackend(pluginId: string, db: Kysely<Database>): void 
           tables,
         }, call);
 
-      const vantage = {
+      const vencore = {
         _hookHandlers: new Map<string, Array<(p: unknown) => void>>(),
         on(event: string, handler: (p: unknown) => void) {
           const arr = this._hookHandlers.get(event) ?? [];
@@ -72,8 +72,8 @@ export function loadPluginBackend(pluginId: string, db: Kysely<Database>): void 
         },
         bus: {
           on(event: string, handler: (p: unknown) => void) {
-            vantage._hookHandlers.set(`bus:${event}`, [
-              ...(vantage._hookHandlers.get(`bus:${event}`) ?? []),
+            vencore._hookHandlers.set(`bus:${event}`, [
+              ...(vencore._hookHandlers.get(`bus:${event}`) ?? []),
               handler,
             ]);
           },
@@ -127,10 +127,10 @@ export function loadPluginBackend(pluginId: string, db: Kysely<Database>): void 
         safe: {} as any,
       };
 
-      void Promise.resolve(mod.default.setup(vantage)).then(() => {
-        pluginInstances.set(pluginId, vantage);
+      void Promise.resolve(mod.default.setup(vencore)).then(() => {
+        pluginInstances.set(pluginId, vencore);
 
-        for (const [key, handlers] of vantage._hookHandlers) {
+        for (const [key, handlers] of vencore._hookHandlers) {
           if (key.startsWith('bus:')) {
             const event = key.slice(4);
             for (const handler of handlers) {

@@ -4,7 +4,7 @@
  * Run: npx tsx src/scripts/add-atp-fields.ts
  */
 import 'dotenv/config';
-import { createDb } from '@vantage/db';
+import { createDb } from '@vencore/db';
 
 type FieldDef = { label: string; field_type: string; options?: string[]; is_required?: boolean };
 

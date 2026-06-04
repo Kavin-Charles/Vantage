@@ -5,8 +5,8 @@ import cookieParser from 'cookie-parser';
 import { WebSocketServer } from 'ws';
 import { handleTerminalUpgrade } from './ws/ssh-terminal';
 import { handleSftpUpgrade } from './ws/sftp-session';
-import { apiEnvSchema, readConfig } from '@vantage/config';
-import { createDb } from '@vantage/db';
+import { apiEnvSchema, readConfig } from '@vencore/config';
+import { createDb } from '@vencore/db';
 import { errorHandler } from './middleware/errors';
 import { createRequireAuth, requireAdmin } from './middleware/auth';
 import { createRequireModule } from './middleware/module';
@@ -51,7 +51,7 @@ import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
 import { loadPluginBackend, getPluginRouter } from './lib/plugin-loader';
 import { seedOnFirstBoot } from './lib/seed';
-import { bridgeRegistry, pluginEventBus } from '@vantage/plugin-runtime';
+import { bridgeRegistry, pluginEventBus } from '@vencore/plugin-runtime';
 import { registerContactsBridgeMethods } from './routes/contacts';
 import { registerCompaniesBridgeMethods } from './routes/companies';
 import { registerDealsBridgeMethods } from './routes/pipelines';
@@ -176,7 +176,7 @@ bridgeRegistry
     return null;
   })
   .register('permissions.check', null, async (ctx, p, db) => {
-    const { pluginPermissionKey } = await import('@vantage/plugin-runtime');
+    const { pluginPermissionKey } = await import('@vencore/plugin-runtime');
     const fullKey = pluginPermissionKey(ctx.pluginSlug, p.permissionKey as string);
     const row = await (db as any).selectFrom('user_permissions')
       .select('granted')
@@ -268,13 +268,13 @@ app.use(errorHandler);
 
 // First-boot seeding (non-blocking — errors logged, don't crash)
 seedOnFirstBoot(db, config).catch((err: unknown) => {
-  logger.error({ err }, '[Vantage] First-boot seeding failed');
+  logger.error({ err }, '[Vencore] First-boot seeding failed');
 });
 
 // Demo seed — only when DEMO_SEED=true
 if (process.env['DEMO_SEED'] === 'true') {
   seedDemo(db).catch((err: unknown) => {
-    logger.error({ err }, '[Vantage] Demo seeding failed');
+    logger.error({ err }, '[Vencore] Demo seeding failed');
   });
 }
 

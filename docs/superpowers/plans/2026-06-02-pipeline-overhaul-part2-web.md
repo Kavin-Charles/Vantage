@@ -4,9 +4,9 @@
 
 **Goal:** Build the complete generic pipeline UI — lib files, settings pages, kanban/table/list views, record detail panel, record form, conversion wizard. Delete all deals-specific web code.
 
-**Architecture:** Next.js App Router (app dir). API calls via `apiFetch` from `@vantage/api-client` (configured with empty base URL — Next.js proxies `/api/*`). State via `@tanstack/react-query`. DnD via HTML5 native drag events. Design system: CSS variables from `vantage-full.html` — match exactly.
+**Architecture:** Next.js App Router (app dir). API calls via `apiFetch` from `@vencore/api-client` (configured with empty base URL — Next.js proxies `/api/*`). State via `@tanstack/react-query`. DnD via HTML5 native drag events. Design system: CSS variables from `vencore-full.html` — match exactly.
 
-**Tech Stack:** Next.js 14 App Router, TypeScript, React Query, `apiFetch` from `@vantage/api-client`
+**Tech Stack:** Next.js 14 App Router, TypeScript, React Query, `apiFetch` from `@vencore/api-client`
 
 **Depends on:** Part 1 (`2026-06-02-pipeline-overhaul-part1-api.md`) must be complete first.
 
@@ -20,7 +20,7 @@
 --blue: #1e3a8a / --blue-bg: #dbeafe
 ```
 Fonts: `Instrument Serif` (names/numbers/display) + `DM Sans` (UI/body).
-Reference: `apps/web/vantage-full.html` — match it exactly for all new UI.
+Reference: `apps/web/vencore-full.html` — match it exactly for all new UI.
 
 ---
 
@@ -38,7 +38,7 @@ import { apiFetch } from './api';
 import type {
   RecordType, RecordTypeField, RecordTypeWithFields,
   ConversionTemplate, ConversionTemplateWithMappings, ConversionFieldMapping,
-} from '@vantage/types';
+} from '@vencore/types';
 
 export function listRecordTypes(token: string) {
   return apiFetch<{ data: RecordType[] }>('/api/record-types', { token });
@@ -120,7 +120,7 @@ export function deleteConversion(token: string, typeId: string, tid: string) {
 
 ```typescript
 import { apiFetch } from './api';
-import type { PipelineRecordWithValues, PipelineRecord } from '@vantage/types';
+import type { PipelineRecordWithValues, PipelineRecord } from '@vencore/types';
 
 export function listRecords(token: string, params: {
   pipeline_id?: string; stage_id?: string; record_type_id?: string;
@@ -171,7 +171,7 @@ export function convertRecord(token: string, id: string, body: {
 
 ```typescript
 import { apiFetch } from './api';
-import type { Pipeline, PipelineWithDetails, PipelineStage } from '@vantage/types';
+import type { Pipeline, PipelineWithDetails, PipelineStage } from '@vencore/types';
 
 export function listPipelines(token: string) {
   return apiFetch<{ data: PipelineWithDetails[] }>('/api/pipelines', { token });
@@ -250,7 +250,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { getPipeline, addStage, updateStage, deleteStage, reorderStages } from '@/lib/pipelines';
-import type { PipelineStage } from '@vantage/types';
+import type { PipelineStage } from '@vencore/types';
 
 const COLORS = ['#6366f1','#8b5cf6','#a855f7','#ec4899','#22c55e','#ef4444','#f59e0b','#3b82f6'];
 
@@ -398,7 +398,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { listFields, addField, updateField, deleteField, reorderFields } from '@/lib/record-types';
-import type { RecordTypeField } from '@vantage/types';
+import type { RecordTypeField } from '@vencore/types';
 
 const FIELD_TYPES = ['text', 'number', 'date', 'select', 'boolean'] as const;
 
@@ -504,7 +504,7 @@ Conversion template field mapper. Props: `sourceTypeId: string; targetTypeId: st
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { listFields } from '@/lib/record-types';
-import type { ConversionFieldMapping } from '@vantage/types';
+import type { ConversionFieldMapping } from '@vencore/types';
 
 type Mapping = Partial<ConversionFieldMapping>;
 
@@ -614,7 +614,7 @@ import { useApiToken } from '@/lib/useApiToken';
 import { listPipelines, createPipeline, deletePipeline } from '@/lib/pipelines';
 import { listRecordTypes } from '@/lib/record-types';
 import { PipelineEditor } from '@/components/pipeline/PipelineEditor';
-import type { PipelineWithDetails } from '@vantage/types';
+import type { PipelineWithDetails } from '@vencore/types';
 
 export default function PipelinesSettingsPage() {
   const getToken = useApiToken();
@@ -716,7 +716,7 @@ import { listRecordTypes, createRecordType, listConversions, createConversion, d
 import { listPipelines } from '@/lib/pipelines';
 import { RecordTypeEditor } from '@/components/pipeline/RecordTypeEditor';
 import { FieldMappingEditor } from '@/components/pipeline/FieldMappingEditor';
-import type { ConversionFieldMapping } from '@vantage/types';
+import type { ConversionFieldMapping } from '@vencore/types';
 
 export default function RecordTypesPage() {
   const getToken = useApiToken();
@@ -1092,7 +1092,7 @@ git commit -m "feat: pipeline pages with view switcher"
 - [ ] **Create `RecordCard.tsx`**
 
 ```tsx
-import type { PipelineRecordWithValues, RecordTypeField } from '@vantage/types';
+import type { PipelineRecordWithValues, RecordTypeField } from '@vencore/types';
 
 function getFieldValue(record: PipelineRecordWithValues, fields: RecordTypeField[], label: string): unknown {
   const field = fields.find(f => f.label.toLowerCase() === label.toLowerCase());
@@ -1184,7 +1184,7 @@ import { apiFetch } from '@/lib/api';
 import { RecordCard } from './RecordCard';
 import { RecordDetailPanel } from './RecordDetailPanel';
 import { RecordForm } from './RecordForm';
-import type { PipelineWithDetails, PipelineRecordWithValues, RecordTypeField } from '@vantage/types';
+import type { PipelineWithDetails, PipelineRecordWithValues, RecordTypeField } from '@vencore/types';
 
 interface WorkspaceUser { id: string; name: string; }
 
@@ -1371,7 +1371,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { listRecords, updateRecord } from '@/lib/records';
 import { RecordDetailPanel } from './RecordDetailPanel';
-import type { PipelineWithDetails, PipelineRecordWithValues } from '@vantage/types';
+import type { PipelineWithDetails, PipelineRecordWithValues } from '@vencore/types';
 
 type SortKey = 'name' | 'created_at' | 'stage_id';
 
@@ -1485,7 +1485,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { listRecords } from '@/lib/records';
 import { RecordDetailPanel } from './RecordDetailPanel';
-import type { PipelineWithDetails, PipelineRecordWithValues } from '@vantage/types';
+import type { PipelineWithDetails, PipelineRecordWithValues } from '@vencore/types';
 
 export function PipelineList({ pipeline, search }: { pipeline: PipelineWithDetails; search: string }) {
   const getToken = useApiToken();
@@ -1563,7 +1563,7 @@ import { useApiToken } from '@/lib/useApiToken';
 import { getRecord, updateRecord, deleteRecord } from '@/lib/records';
 import { listConversions } from '@/lib/record-types';
 import { ConversionWizard } from './ConversionWizard';
-import type { PipelineWithDetails, RecordTypeField, PipelineRecordWithValues } from '@vantage/types';
+import type { PipelineWithDetails, RecordTypeField, PipelineRecordWithValues } from '@vencore/types';
 
 function FieldInput({ field, value, onSave }: {
   field: RecordTypeField;
@@ -1744,7 +1744,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { createRecord } from '@/lib/records';
 import { apiFetch } from '@/lib/api';
-import type { PipelineWithDetails, RecordTypeField } from '@vantage/types';
+import type { PipelineWithDetails, RecordTypeField } from '@vencore/types';
 
 interface User { id: string; name: string; }
 
@@ -1875,7 +1875,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/lib/useApiToken';
 import { convertRecord } from '@/lib/records';
 import { listConversions } from '@/lib/record-types';
-import type { PipelineRecordWithValues, ConversionTemplateWithMappings } from '@vantage/types';
+import type { PipelineRecordWithValues, ConversionTemplateWithMappings } from '@vencore/types';
 
 type Step = 'select' | 'preview' | 'confirm';
 

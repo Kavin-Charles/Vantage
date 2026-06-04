@@ -142,8 +142,8 @@ function OverviewTab({ server, series }) {
             overflowX: 'auto', whiteSpace: 'pre',
           }}>
 {`# Install the agent
-$ VANTAGE_TOKEN=vt_••••4b9c \\
-  npx @vantage/agent`}
+$ VENCORE_TOKEN=vt_••••4b9c \\
+  npx @vencore/agent`}
           </pre>
           <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
             <Button>Copy token</Button>
@@ -272,7 +272,7 @@ function ServicesTab() {
     { name: 'nginx.service',     desc: 'A high performance web server',     active: 'active',   sub: 'running' },
     { name: 'postgres.service',  desc: 'PostgreSQL RDBMS',                  active: 'active',   sub: 'running' },
     { name: 'redis.service',     desc: 'Advanced key-value store',          active: 'inactive', sub: 'dead'    },
-    { name: 'vantage-agent.service', desc: 'Vantage monitoring agent',      active: 'active',   sub: 'running' },
+    { name: 'vencore-agent.service', desc: 'Vencore monitoring agent',      active: 'active',   sub: 'running' },
     { name: 'cron.service',      desc: 'Regular background program processing daemon', active: 'active', sub: 'running' },
     { name: 'ssh.service',       desc: 'OpenBSD Secure Shell server',       active: 'active',   sub: 'running' },
     { name: 'systemd-timesyncd.service', desc: 'Network Time Synchronization', active: 'active', sub: 'running' },
@@ -387,14 +387,14 @@ function LogsTab() {
 const LOG_JOURNALCTL = `May 13 23:42:18 prod-web-01 nginx[1228]: 192.168.1.42 - - [13/May/2026:23:42:18 +0000] "GET /api/health HTTP/1.1" 200 17
 May 13 23:42:18 prod-web-01 nginx[1228]: 192.168.1.88 - - [13/May/2026:23:42:18 +0000] "POST /api/agent/ping HTTP/1.1" 200 24
 May 13 23:42:21 prod-web-01 nginx[1228]: 192.168.1.42 - - [13/May/2026:23:42:21 +0000] "GET /api/alerts HTTP/1.1" 200 1842
-May 13 23:42:24 prod-web-01 systemd[1]: Started Vantage monitoring agent.
-May 13 23:42:24 prod-web-01 vantage-agent[3144]: INFO  agent v1.4.2 started (workspace=vantage-internal)
-May 13 23:42:24 prod-web-01 vantage-agent[3144]: INFO  connecting to https://api.vantage.dev
-May 13 23:42:25 prod-web-01 vantage-agent[3144]: INFO  ping ok (latency=42ms cpu=34.2 mem=61.8 disk=47.3)
-May 13 23:42:55 prod-web-01 vantage-agent[3144]: WARN  memory above 85% (current=87.1)
-May 13 23:43:25 prod-web-01 vantage-agent[3144]: INFO  ping ok (latency=38ms cpu=29.4 mem=78.2 disk=47.3)
-May 13 23:43:55 prod-web-01 vantage-agent[3144]: INFO  ping ok (latency=41ms cpu=31.2 mem=74.9 disk=47.3)
-May 13 23:44:25 prod-web-01 vantage-agent[3144]: INFO  ping ok (latency=39ms cpu=28.1 mem=72.4 disk=47.3)
+May 13 23:42:24 prod-web-01 systemd[1]: Started Vencore monitoring agent.
+May 13 23:42:24 prod-web-01 vencore-agent[3144]: INFO  agent v1.4.2 started (workspace=vencore-internal)
+May 13 23:42:24 prod-web-01 vencore-agent[3144]: INFO  connecting to https://api.vencore.dev
+May 13 23:42:25 prod-web-01 vencore-agent[3144]: INFO  ping ok (latency=42ms cpu=34.2 mem=61.8 disk=47.3)
+May 13 23:42:55 prod-web-01 vencore-agent[3144]: WARN  memory above 85% (current=87.1)
+May 13 23:43:25 prod-web-01 vencore-agent[3144]: INFO  ping ok (latency=38ms cpu=29.4 mem=78.2 disk=47.3)
+May 13 23:43:55 prod-web-01 vencore-agent[3144]: INFO  ping ok (latency=41ms cpu=31.2 mem=74.9 disk=47.3)
+May 13 23:44:25 prod-web-01 vencore-agent[3144]: INFO  ping ok (latency=39ms cpu=28.1 mem=72.4 disk=47.3)
 May 13 23:44:30 prod-web-01 sshd[3622]: Accepted publickey for nina from 192.168.1.42 port 51842 ssh2: ED25519 SHA256:Z9Lc…JTb4
 May 13 23:44:30 prod-web-01 sshd[3622]: pam_unix(sshd:session): session opened for user nina by (uid=0)`;
 
@@ -407,7 +407,7 @@ const LOG_FILE = `2026-05-13 23:40:01 INFO  worker started (pid=4128)
 2026-05-13 23:40:43 INFO  reconnecting to postgres
 2026-05-13 23:40:43 INFO  postgres reconnected
 2026-05-13 23:41:01 INFO  cron tick — usage meter snapshot
-2026-05-13 23:41:01 INFO  workspace=vantage-internal contacts=12 servers=4 dbs=3 seats=3
+2026-05-13 23:41:01 INFO  workspace=vencore-internal contacts=12 servers=4 dbs=3 seats=3
 2026-05-13 23:42:18 INFO  request id=req_4f3e /api/health 200 1ms`;
 
 // ── Files ───────────────────────────────────────────────────────────────────

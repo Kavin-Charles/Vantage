@@ -1,5 +1,5 @@
 import { apiFetch } from './core';
-import type { Task } from '@vantage/types';
+import type { Task } from '@vencore/types';
 
 export async function listTasks(
   token: string,

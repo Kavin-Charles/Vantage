@@ -1,8 +1,8 @@
 // apps/mobile/lib/secureStore.ts
 import * as SecureStore from 'expo-secure-store';
 
-const TOKEN_KEY = 'vantage_token';
-const PUSH_TOKEN_KEY = 'vantage_push_token';
+const TOKEN_KEY = 'vencore_token';
+const PUSH_TOKEN_KEY = 'vencore_push_token';
 
 export async function storeAuthToken(token: string): Promise<void> {
   await SecureStore.setItemAsync(TOKEN_KEY, token);
