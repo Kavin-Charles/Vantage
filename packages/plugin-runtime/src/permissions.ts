@@ -1,4 +1,4 @@
-import type { PluginPermission, PluginError } from '@vantage/plugin-types';
+import type { PluginPermission, PluginError } from '@vencore/plugin-types';
 
 /** Prefix for user-facing plugin permission keys in user_permissions/group_permissions tables. */
 export const PLUGIN_PERMISSION_PREFIX = 'plugin:';

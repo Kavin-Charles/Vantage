@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely';
-import type { PluginPermission } from '@vantage/plugin-types';
+import type { PluginPermission } from '@vencore/plugin-types';
 import type { BridgeContext } from './bridge-router';
 
 export type BridgeHandlerFn = (

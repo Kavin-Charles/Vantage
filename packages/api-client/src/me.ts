@@ -1,5 +1,5 @@
 import { apiFetch } from './core';
-import type { User, Workspace } from '@vantage/types';
+import type { User, Workspace } from '@vencore/types';
 
 export interface MeResponse {
   data: {

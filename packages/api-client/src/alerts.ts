@@ -1,5 +1,5 @@
 import { apiFetch } from './core';
-import type { Alert } from '@vantage/types';
+import type { Alert } from '@vencore/types';
 
 export async function listAlerts(
   token: string,

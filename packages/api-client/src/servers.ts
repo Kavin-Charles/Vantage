@@ -1,5 +1,5 @@
 import { apiFetch } from './core';
-import type { Server } from '@vantage/types';
+import type { Server } from '@vencore/types';
 
 export async function listServers(token: string): Promise<{ data: Server[] }> {
   return apiFetch<{ data: Server[] }>('/api/servers', { token });

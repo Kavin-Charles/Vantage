@@ -5,7 +5,7 @@ import {
   isPluginPermissionKey,
   parsePluginPermissionKey,
 } from '../permissions';
-import type { PluginPermission } from '@vantage/plugin-types';
+import type { PluginPermission } from '@vencore/plugin-types';
 
 const READ_CONTACTS: PluginPermission[] = ['contacts:read'];
 const READ_WRITE: PluginPermission[] = ['contacts:read', 'contacts:write', 'storage:read', 'storage:write'];

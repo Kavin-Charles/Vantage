@@ -1,5 +1,5 @@
 {
-  "name": "@vantage/plugin-runtime",
+  "name": "@vencore/plugin-runtime",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vantage/plugin-types": "workspace:*",
+    "@vencore/plugin-types": "workspace:*",
     "kysely": "^0.27.0"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely';
-import type { BridgeResult } from '@vantage/plugin-types';
+import type { BridgeResult } from '@vencore/plugin-types';
 import type { BridgeContext } from './bridge-router';
 
 /** Converts a plugin id to a safe SQL identifier fragment. */

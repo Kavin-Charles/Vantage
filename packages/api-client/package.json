@@ -1,5 +1,5 @@
 {
-  "name": "@vantage/api-client",
+  "name": "@vencore/api-client",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -10,7 +10,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@vantage/types": "workspace:*"
+    "@vencore/types": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.4.0"

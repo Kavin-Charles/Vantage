@@ -1,6 +1,6 @@
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
-import type { PluginMigration } from '@vantage/plugin-types';
+import type { PluginMigration } from '@vencore/plugin-types';
 
 type DB = Kysely<any>;
 
