@@ -13,6 +13,37 @@ import { requireAdmin } from '../middleware/auth';
 import { dispatchBridgeCall, runMigrations } from '@vencore/plugin-runtime';
 import { savePluginFile, loadPluginBackend, invalidatePlugin } from '../lib/plugin-loader';
 
+// ── Esbuild Global Shim Plugin ────────────────────────────────────────────────
+const globalExternalsPlugin: esbuild.Plugin = {
+  name: 'global-externals',
+  setup(build) {
+    // Intercept exact imports for react, react-dom, and sdk
+    build.onResolve({ filter: /^(react|react-dom|@vencore\/plugin-sdk|@vencore\/plugin-sdk\/react)$/ }, args => ({
+      path: args.path,
+      namespace: 'global-externals-stub',
+    }));
+
+    build.onLoad({ filter: /.*/, namespace: 'global-externals-stub' }, args => {
+      let contents = '';
+      if (args.path === 'react') {
+        contents = 'module.exports = window.React;';
+      } else if (args.path === 'react-dom') {
+        contents = 'module.exports = window.ReactDOM;';
+      } else if (args.path === '@vencore/plugin-sdk/react') {
+        contents = `
+          export function createFrontendPlugin(config) {
+            return config;
+          }
+        `;
+      } else if (args.path === '@vencore/plugin-sdk') {
+        // Fallback for general SDK imports in the client if any
+        contents = `module.exports = {};`;
+      }
+      return { contents, resolveDir: process.cwd() };
+    });
+  },
+};
+
 // ── Multer — memory storage, 10 MB limit ─────────────────────────────────────
 
 const upload = multer({
@@ -343,7 +374,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           platform: 'browser',
           format: 'esm',
           outfile,
-          external: ['@vencore/plugin-sdk', '@vencore/plugin-sdk/react', 'react', 'react-dom'],
+          plugins: [globalExternalsPlugin],
           logLevel: 'silent',
         });
         if (result.errors.length > 0) {

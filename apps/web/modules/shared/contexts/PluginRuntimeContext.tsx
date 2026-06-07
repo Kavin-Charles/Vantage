@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import * as ReactDOM from 'react-dom';
 import { useInstalledPlugins } from '@/modules/shared/hooks/useInstalledPlugins';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 
@@ -46,6 +47,12 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (isLoading) return;
+
+    // Expose React globally for plugins
+    if (typeof window !== 'undefined') {
+      (window as any).React = React;
+      (window as any).ReactDOM = ReactDOM;
+    }
 
     const enabledWithClient = plugins.filter(
       (p) => p.enabled && p.manifest?.build?.client,
