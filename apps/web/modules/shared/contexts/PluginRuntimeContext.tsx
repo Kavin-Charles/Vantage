@@ -4,6 +4,10 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { useInstalledPlugins } from '@/modules/shared/hooks/useInstalledPlugins';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 
+if (typeof window !== 'undefined') {
+  (window as any).React = React;
+}
+
 export type AnyComponent = React.ComponentType<any>;
 
 export interface FrontendSurfaceRegistry {
@@ -169,6 +173,50 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
                   });
                   const json = await r.json() as { data?: unknown[] };
                   return json.data ?? [];
+                },
+                get: async (id: string) => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'table.get', payload: { name, id } }),
+                  });
+                  const json = await r.json() as { data?: unknown };
+                  return json.data ?? null;
+                },
+                insert: async (data: Record<string, unknown>) => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'table.insert', payload: { name, data } }),
+                  });
+                  const json = await r.json() as { data?: unknown };
+                  return json.data ?? null;
+                },
+                update: async (id: string, data: Record<string, unknown>) => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'table.update', payload: { name, id, data } }),
+                  });
+                  const json = await r.json() as { data?: unknown };
+                  return json.data ?? null;
+                },
+                delete: async (id: string) => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'table.delete', payload: { name, id } }),
+                  });
+                  const json = await r.json() as { data?: unknown; error?: unknown };
+                  return !json.error;
                 },
               }),
               getContext: async () => {
