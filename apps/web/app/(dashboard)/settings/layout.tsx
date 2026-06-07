@@ -50,7 +50,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   }, [isAdmin, isLoading, pathname, router]);
 
   return (
-    <>
+    <div className="settings-layout">
       <Topbar />
       <div style={{ padding: 24 }}>
         {/* Tab nav */}
@@ -79,6 +79,6 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
         </div>
         {children}
       </div>
-    </>
+    </div>
   );
 }

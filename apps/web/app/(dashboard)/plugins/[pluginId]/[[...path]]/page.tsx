@@ -59,7 +59,9 @@ export default function PluginPage() {
     <React.Suspense
       fallback={<div style={{ padding: 32, color: 'var(--text3)', fontSize: 13 }}>Loading…</div>}
     >
-      <Component />
+      <div className="plugin-surface-root" style={{ width: '100%', height: '100%' }}>
+        <Component />
+      </div>
     </React.Suspense>
   );
 }
