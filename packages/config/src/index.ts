@@ -3,7 +3,7 @@ import { z } from 'zod';
 // Runtime config (vantage.config.json)
 export { readConfig, _resetConfig } from './read-config';
 export { readConfigFromDb } from './read-config-from-db';
-export type { VantageConfig, DbSeedConfig, SmtpConfig } from './config-schema';
+export type { VantageConfig, VantageConfig as VencoreConfig, DbSeedConfig, SmtpConfig } from './config-schema';
 export { configSchema, smtpSchema } from './config-schema';
 
 // API env (process.env — only DB + secrets, no Clerk/Stripe)
