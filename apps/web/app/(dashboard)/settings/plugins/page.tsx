@@ -186,7 +186,7 @@ export default function PluginsSettingsPage() {
             >
               <div
                 style={{ minWidth: 0, flex: 1, cursor: 'pointer' }}
-                onClick={() => router.push(`/plugins/${plugin.plugin_id}`)}
+                onClick={() => router.push(`/settings/plugins/${plugin.plugin_id}`)}
               >
                 <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
                   {plugin.name}

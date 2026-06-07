@@ -100,7 +100,11 @@ export default function PluginSettingsPage() {
   };
 
   if (isLoading || !plugin) {
-    return <div style={{ color: 'var(--text3)', fontSize: 13 }}>Loading…</div>;
+    return (
+      <div style={{ maxWidth: 680 }}>
+        <div style={{ color: 'var(--text3)', fontSize: 13 }}>Loading…</div>
+      </div>
+    );
   }
 
   const schema = plugin.manifest?.settings_schema ?? [];
@@ -146,12 +150,12 @@ export default function PluginSettingsPage() {
             <p style={{ fontSize: 12, color: 'var(--text3)', margin: '0 0 16px' }}>
               By {plugin.manifest.author}
               {plugin.manifest.homepage && (
-                <>
+                <span>
                   {' · '}
                   <a href={plugin.manifest.homepage} target="_blank" rel="noreferrer" style={{ color: 'var(--blue)' }}>
                     Website
                   </a>
-                </>
+                </span>
               )}
             </p>
           )}

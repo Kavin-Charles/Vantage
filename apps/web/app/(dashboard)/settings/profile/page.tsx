@@ -1,9 +1,15 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
 
 export default function ProfilePage() {
   const { user, isLoading } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
 
   if (isLoading) return <div style={{ color: 'var(--text3)', fontSize: 13 }}>Loading…</div>;
   if (!user) return null;
