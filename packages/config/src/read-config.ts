@@ -22,7 +22,8 @@ export function readConfig(): VantageConfig {
   let raw: unknown;
   try {
     raw = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  } catch {
+  } catch (err: unknown) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
     console.warn(
       `[Vencore] Config file not found at ${configPath}. Using defaults. Run setup wizard or set CONFIG_PATH.`
     );

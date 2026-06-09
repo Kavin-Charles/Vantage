@@ -41,6 +41,12 @@ describe('readConfig', () => {
     expect(() => readConfig()).toThrow();
   });
 
+  it('throws on malformed JSON in config file', async () => {
+    fs.writeFileSync(configPath, 'not valid json {{{{');
+    const { readConfig } = await import('../read-config');
+    expect(() => readConfig()).toThrow();
+  });
+
   it('returns safe defaults when file not found', async () => {
     process.env['CONFIG_PATH'] = '/nonexistent/vencore.config.json';
     const { readConfig, _resetConfig } = await import('../read-config');
