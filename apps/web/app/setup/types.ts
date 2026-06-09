@@ -104,6 +104,7 @@ export function getStepStatus(
   if (stepId === currentStep) return 'current';
   const currentIdx = stepList.indexOf(currentStep);
   const stepIdx = stepList.indexOf(stepId);
+  if (stepIdx === -1) return 'locked';
   return stepIdx < currentIdx ? 'done' : 'locked';
 }
 

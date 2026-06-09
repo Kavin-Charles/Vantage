@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getStepList, getStepStatus, INITIAL_STATE } from '../types';
+import { getStepList, getStepStatus, INITIAL_STATE, wizardReducer } from '../types';
 import type { SetupState } from '../types';
 
 const dockerState: SetupState = { ...INITIAL_STATE, infra: { ...INITIAL_STATE.infra, mode: 'docker-deploy' } };
@@ -45,5 +45,34 @@ describe('getStepStatus', () => {
   it('returns skipped when step in skipped array', () => {
     const list = getStepList(dockerState);
     expect(getStepStatus('smtp', 'features', ['smtp'], list)).toBe('skipped');
+  });
+});
+
+describe('wizardReducer', () => {
+  it('NEXT advances to next step', () => {
+    const state = { ...INITIAL_STATE, currentStep: 'branding' as const };
+    const list = getStepList(state);
+    const next = wizardReducer(state, { type: 'NEXT' });
+    expect(next.currentStep).toBe(list[list.indexOf('branding') + 1]);
+  });
+
+  it('BACK does nothing at first step', () => {
+    const state = { ...INITIAL_STATE, currentStep: 'branding' as const };
+    const next = wizardReducer(state, { type: 'BACK' });
+    expect(next.currentStep).toBe('branding');
+  });
+
+  it('SKIP adds step to skipped and advances', () => {
+    const state = { ...INITIAL_STATE, currentStep: 'domain' as const };
+    const next = wizardReducer(state, { type: 'SKIP', step: 'domain' });
+    expect(next.skipped).toContain('domain');
+    expect(next.currentStep).toBe('smtp');
+  });
+
+  it('SET_INFRA clears db and redis from skipped', () => {
+    const state = { ...INITIAL_STATE, skipped: ['db', 'redis'] as ('db' | 'redis')[] };
+    const next = wizardReducer(state, { type: 'SET_INFRA', value: state.infra });
+    expect(next.skipped).not.toContain('db');
+    expect(next.skipped).not.toContain('redis');
   });
 });
