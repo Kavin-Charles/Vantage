@@ -1,92 +1,138 @@
+// apps/web/app/setup/SetupWizard.tsx
 'use client';
 
-import { useState } from 'react';
-import { ProgressBar } from './ProgressBar';
+import { useReducer } from 'react';
+import { Sidebar } from './Sidebar';
+import { wizardReducer, INITIAL_STATE, getStepList, OPTIONAL_STEPS } from './types';
+import type { StepId } from './types';
 import { StepBranding } from './steps/StepBranding';
-import { StepFeatures } from './steps/StepFeatures';
+import { StepInfrastructure } from './steps/StepInfrastructure';
+import { StepDatabase } from './steps/StepDatabase';
+import { StepRedis } from './steps/StepRedis';
+import { StepDomainSsl } from './steps/StepDomainSsl';
 import { StepSmtp } from './steps/StepSmtp';
+import { StepFeatures } from './steps/StepFeatures';
 import { StepAdminAccount } from './steps/StepAdminAccount';
 import { StepReview } from './steps/StepReview';
-
-export type SmtpConfig = {
-  host: string;
-  port: number;
-  secure: boolean;
-  user: string;
-  password: string;
-  from: string;
-};
-
-export type SetupState = {
-  step: 1 | 2 | 3 | 4 | 5;
-  branding: { name: string; logoUrl: string; domain: string };
-  features: { crm: boolean; infra: boolean; alerts: boolean; analytics: boolean; files: boolean };
-  smtp: SmtpConfig | null;
-  admin: { name: string; email: string; password: string };
-};
-
-const INITIAL: SetupState = {
-  step: 1,
-  branding: { name: '', logoUrl: '/logo.png', domain: '' },
-  features: { crm: true, infra: true, alerts: true, analytics: false, files: false },
-  smtp: null,
-  admin: { name: '', email: '', password: '' },
-};
+import { StepComplete } from './steps/StepComplete';
 
 export function SetupWizard() {
-  const [state, setState] = useState<SetupState>(INITIAL);
+  const [state, dispatch] = useReducer(wizardReducer, INITIAL_STATE);
+  const stepList = getStepList(state);
+  const currentIdx = stepList.indexOf(state.currentStep);
+  const isOptional = OPTIONAL_STEPS.includes(state.currentStep);
 
-  const update = (partial: Partial<SetupState>) =>
-    setState(s => ({ ...s, ...partial }));
+  const stepContent: Record<StepId, React.ReactNode> = {
+    branding: <StepBranding state={state} dispatch={dispatch} />,
+    infra:    <StepInfrastructure state={state} dispatch={dispatch} />,
+    db:       <StepDatabase state={state} dispatch={dispatch} />,
+    redis:    <StepRedis state={state} dispatch={dispatch} />,
+    domain:   <StepDomainSsl state={state} dispatch={dispatch} />,
+    smtp:     <StepSmtp state={state} dispatch={dispatch} />,
+    features: <StepFeatures state={state} dispatch={dispatch} />,
+    admin:    <StepAdminAccount state={state} dispatch={dispatch} />,
+    review:   <StepReview state={state} dispatch={dispatch} />,
+    complete: <StepComplete state={state} />,
+  };
 
-  const next = () => update({ step: (state.step + 1) as SetupState['step'] });
-  const back = () => update({ step: (state.step - 1) as SetupState['step'] });
+  const showFooter = state.currentStep !== 'complete' && state.currentStep !== 'review';
 
   return (
-    <div style={{
-      background: 'var(--surface)',
-      border: '1px solid var(--border)',
-      borderRadius: 12,
-      padding: 32,
-    }}>
-      <ProgressBar current={state.step} />
-      {state.step === 1 && (
-        <StepBranding
-          value={state.branding}
-          onChange={branding => update({ branding })}
-          onNext={next}
-        />
-      )}
-      {state.step === 2 && (
-        <StepFeatures
-          value={state.features}
-          onChange={features => update({ features })}
-          onNext={next}
-          onBack={back}
-        />
-      )}
-      {state.step === 3 && (
-        <StepSmtp
-          value={state.smtp}
-          onChange={smtp => update({ smtp })}
-          onNext={next}
-          onBack={back}
-        />
-      )}
-      {state.step === 4 && (
-        <StepAdminAccount
-          value={state.admin}
-          onChange={admin => update({ admin })}
-          onNext={next}
-          onBack={back}
-        />
-      )}
-      {state.step === 5 && (
-        <StepReview
-          state={state}
-          onBack={back}
-        />
-      )}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      {/* Header */}
+      <header style={{
+        height: 56,
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--surface)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 28px',
+        flexShrink: 0,
+      }}>
+        <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>
+          Vencore Setup
+        </span>
+        {state.currentStep !== 'complete' && (
+          <span style={{ fontSize: 12, color: 'var(--text3)' }}>
+            Step {currentIdx + 1} of {stepList.length - 1}
+          </span>
+        )}
+      </header>
+
+      {/* Body */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <Sidebar state={state} onGoTo={step => dispatch({ type: 'GO_TO', step })} />
+
+        <main style={{
+          flex: 1,
+          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
+          <div style={{ flex: 1, padding: '40px 48px', maxWidth: 640 }}>
+            {stepContent[state.currentStep]}
+          </div>
+
+          {showFooter && (
+            <footer style={{
+              borderTop: '1px solid var(--border)',
+              padding: '16px 48px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              background: 'var(--surface)',
+              flexShrink: 0,
+            }}>
+              <div style={{ display: 'flex', gap: 12 }}>
+                {currentIdx > 0 && (
+                  <button onClick={() => dispatch({ type: 'BACK' })} style={btnSecondary}>
+                    ← Back
+                  </button>
+                )}
+                {isOptional && (
+                  <button
+                    onClick={() => dispatch({ type: 'SKIP', step: state.currentStep })}
+                    style={{ ...btnSecondary, color: 'var(--text3)' }}
+                  >
+                    Skip for now
+                  </button>
+                )}
+              </div>
+              <button
+                id="wizard-continue"
+                onClick={() => dispatch({ type: 'NEXT' })}
+                style={btnPrimary}
+              >
+                Continue →
+              </button>
+            </footer>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
+
+const btnPrimary: React.CSSProperties = {
+  padding: '9px 20px',
+  background: 'var(--text)',
+  color: '#fff',
+  border: 'none',
+  borderRadius: 6,
+  fontSize: 14,
+  fontWeight: 500,
+  cursor: 'pointer',
+  fontFamily: 'IBM Plex Sans, sans-serif',
+};
+
+const btnSecondary: React.CSSProperties = {
+  padding: '9px 20px',
+  background: 'var(--surface2)',
+  color: 'var(--text)',
+  border: '1px solid var(--border)',
+  borderRadius: 6,
+  fontSize: 14,
+  fontWeight: 500,
+  cursor: 'pointer',
+  fontFamily: 'IBM Plex Sans, sans-serif',
+};
