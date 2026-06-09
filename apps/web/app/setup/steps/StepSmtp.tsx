@@ -2,135 +2,92 @@
 'use client';
 
 import { useState } from 'react';
-import type { SmtpConfig } from '../SetupWizard';
+import type { SetupState, WizardAction, SmtpConfig } from '../types';
 
-type Props = {
-  value: SmtpConfig | null;
-  onChange: (v: SmtpConfig | null) => void;
-  onNext: () => void;
-  onBack: () => void;
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 12px',
-  border: '1px solid var(--border)',
-  borderRadius: 6,
-  background: 'var(--surface)',
-  color: 'var(--text)',
-  fontSize: 14,
-  fontFamily: 'DM Sans, sans-serif',
-  boxSizing: 'border-box',
-};
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: 13,
-  fontWeight: 500,
-  color: 'var(--text)',
-  marginBottom: 6,
-};
+type Props = { state: SetupState; dispatch: React.Dispatch<WizardAction> };
 
 const EMPTY: SmtpConfig = { host: '', port: 587, secure: false, user: '', password: '', from: '' };
 
-export function StepSmtp({ value, onChange, onNext, onBack }: Props) {
-  const [enabled, setEnabled] = useState(value !== null);
-  const [form, setForm] = useState<SmtpConfig>(value ?? EMPTY);
-  const [error, setError] = useState('');
+export function StepSmtp({ state, dispatch }: Props) {
+  const smtp = state.smtp ?? EMPTY;
+  const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle');
+  const [testError, setTestError] = useState('');
 
-  const btnBase: React.CSSProperties = {
-    padding: '8px 20px',
-    border: 'none',
-    borderRadius: 6,
-    fontSize: 14,
-    fontWeight: 500,
-    cursor: 'pointer',
-    fontFamily: 'DM Sans, sans-serif',
-  };
+  const set = (partial: Partial<SmtpConfig>) =>
+    dispatch({ type: 'SET_SMTP', value: { ...smtp, ...partial } });
 
-  const submit = () => {
-    if (!enabled) {
-      onChange(null);
-      onNext();
-      return;
+  const sendTest = async () => {
+    if (!state.admin.email && !smtp.from) return;
+    setTestStatus('sending');
+    setTestError('');
+    try {
+      const res = await fetch('/api/installer/test-smtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ smtp, to: state.admin.email || smtp.from }),
+      });
+      const json = await res.json();
+      if (json.data?.ok) { setTestStatus('ok'); }
+      else { setTestStatus('error'); setTestError(json.error?.message ?? 'Send failed'); }
+    } catch {
+      setTestStatus('error');
+      setTestError('Network error — is the API running?');
     }
-    if (!form.host || !form.user || !form.password || !form.from) {
-      setError('All SMTP fields are required when SMTP is enabled.');
-      return;
-    }
-    setError('');
-    onChange(form);
-    onNext();
   };
-
-  const f = (key: keyof SmtpConfig) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm(s => ({ ...s, [key]: key === 'port' ? Number(e.target.value) : e.target.value }));
 
   return (
     <div>
-      <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>
-        SMTP
+      <h2 style={heading}>
+        SMTP{' '}
+        <span style={{ fontSize: 13, color: 'var(--text3)', fontWeight: 400 }}>optional</span>
       </h2>
-      <p style={{ margin: '0 0 20px', color: 'var(--text2)', fontSize: 14 }}>
-        Configure email sending for notifications and password resets.
-      </p>
+      <p style={subtext}>Configure outbound email (invites, alerts, password reset). Skip to set up later.</p>
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, cursor: 'pointer' }}>
-        <input
-          type="checkbox"
-          checked={enabled}
-          onChange={e => setEnabled(e.target.checked)}
-          style={{ width: 16, height: 16 }}
-        />
-        <span style={{ fontSize: 14, color: 'var(--text)' }}>Enable SMTP</span>
-      </label>
-
-      {enabled && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: 12 }}>
-            <div>
-              <label style={labelStyle}>Host *</label>
-              <input style={inputStyle} value={form.host} onChange={f('host')} placeholder="smtp.sendgrid.net" />
-            </div>
-            <div>
-              <label style={labelStyle}>Port *</label>
-              <input style={inputStyle} type="number" value={form.port} onChange={f('port')} />
-            </div>
-          </div>
-          <div>
-            <label style={labelStyle}>Username *</label>
-            <input style={inputStyle} value={form.user} onChange={f('user')} placeholder="apikey" />
-          </div>
-          <div>
-            <label style={labelStyle}>Password *</label>
-            <input style={inputStyle} type="password" value={form.password} onChange={f('password')} />
-          </div>
-          <div>
-            <label style={labelStyle}>From address *</label>
-            <input style={inputStyle} value={form.from} onChange={f('from')} placeholder="hello@yourcompany.com" />
-          </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={form.secure}
-              onChange={e => setForm(s => ({ ...s, secure: e.target.checked }))}
-              style={{ width: 16, height: 16 }}
-            />
-            <span style={{ fontSize: 13, color: 'var(--text)' }}>Use TLS (port 465)</span>
-          </label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <Field label="Host" style={{ flex: 3 }}>
+            <input style={input} value={smtp.host} onChange={e => set({ host: e.target.value })} placeholder="smtp.example.com" />
+          </Field>
+          <Field label="Port" style={{ flex: 1 }}>
+            <input style={input} type="number" value={smtp.port} onChange={e => set({ port: parseInt(e.target.value) || 587 })} />
+          </Field>
         </div>
-      )}
+        <Field label="Username">
+          <input style={input} value={smtp.user} onChange={e => set({ user: e.target.value })} />
+        </Field>
+        <Field label="Password">
+          <input style={input} type="password" value={smtp.password} onChange={e => set({ password: e.target.value })} />
+        </Field>
+        <Field label="From address">
+          <input style={input} type="email" value={smtp.from} onChange={e => set({ from: e.target.value })} placeholder="noreply@acme.com" />
+        </Field>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+          <input type="checkbox" checked={smtp.secure} onChange={e => set({ secure: e.target.checked })} />
+          <span style={{ color: 'var(--text)' }}>Use TLS/SSL</span>
+        </label>
+      </div>
 
-      {error && <p style={{ color: 'var(--red)', fontSize: 13, marginTop: 12 }}>{error}</p>}
-
-      <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between' }}>
-        <button onClick={onBack} style={{ ...btnBase, background: 'var(--surface2)', color: 'var(--text)' }}>
-          Back
+      <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button onClick={sendTest} disabled={testStatus === 'sending' || !smtp.host} style={btnTest}>
+          {testStatus === 'sending' ? 'Sending…' : 'Send test email'}
         </button>
-        <button onClick={submit} style={{ ...btnBase, background: 'var(--text)', color: '#fff' }}>
-          {enabled ? 'Next' : 'Skip'}
-        </button>
+        {testStatus === 'ok' && <span style={{ fontSize: 13, color: 'var(--green)' }}>✓ Email sent</span>}
+        {testStatus === 'error' && <span style={{ fontSize: 13, color: 'var(--red)' }}>✗ {testError}</span>}
       </div>
     </div>
   );
 }
+
+function Field({ label, children, style }: { label: string; children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={style}>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 6 }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+const heading: React.CSSProperties = { margin: '0 0 4px', fontSize: 20, fontWeight: 700, color: 'var(--text)', fontFamily: 'Bricolage Grotesque, sans-serif' };
+const subtext: React.CSSProperties = { margin: '0 0 28px', color: 'var(--text2)', fontSize: 14 };
+const input: React.CSSProperties = { width: '100%', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--text)', fontSize: 14, fontFamily: 'IBM Plex Sans, sans-serif', boxSizing: 'border-box' };
+const btnTest: React.CSSProperties = { padding: '8px 16px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'IBM Plex Sans, sans-serif', color: 'var(--text)' };
