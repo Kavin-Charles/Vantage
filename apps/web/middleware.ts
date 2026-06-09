@@ -7,6 +7,21 @@ const SETUP_PATHS = ['/setup', '/api/setup'];
 export default function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // INSTALLER_MODE: redirect all non-setup routes to /setup
+  if (process.env['INSTALLER_MODE'] === 'true') {
+    if (
+      pathname.startsWith('/setup') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/favicon') ||
+      pathname.startsWith('/logo') ||
+      pathname === '/'
+    ) {
+      return NextResponse.next();
+    }
+    return NextResponse.redirect(new URL('/setup', req.url));
+  }
+
   // Allow static files, Next.js internals
   if (
     pathname.startsWith('/_next') ||
