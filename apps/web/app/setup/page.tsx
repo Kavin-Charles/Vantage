@@ -25,34 +25,5 @@ export default async function SetupPage({ searchParams }: PageProps) {
     const from = params.from ?? '/';
     redirect(`/api/setup/activate?from=${encodeURIComponent(from)}`);
   }
-
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
-      fontFamily: 'DM Sans, sans-serif',
-    }}>
-      <div style={{ width: '100%', maxWidth: 560 }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <h1 style={{
-            fontFamily: 'Instrument Serif, serif',
-            fontSize: 32,
-            fontWeight: 400,
-            color: 'var(--text)',
-            margin: '0 0 8px',
-          }}>
-            Welcome to Vencore
-          </h1>
-          <p style={{ color: 'var(--text2)', margin: 0 }}>
-            Let's get your instance set up.
-          </p>
-        </div>
-        <SetupWizard />
-      </div>
-    </div>
-  );
+  return <SetupWizard />;
 }

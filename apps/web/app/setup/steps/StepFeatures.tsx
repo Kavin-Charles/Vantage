@@ -1,66 +1,37 @@
 'use client';
 
-type Features = { crm: boolean; infra: boolean; alerts: boolean; analytics: boolean; files: boolean };
+import type { SetupState, WizardAction } from '../types';
 
-type Props = {
-  value: Features;
-  onChange: (v: Features) => void;
-  onNext: () => void;
-  onBack: () => void;
-};
+type Props = { state: SetupState; dispatch: React.Dispatch<WizardAction> };
+type Features = SetupState['features'];
 
 const FEATURE_LABELS: { key: keyof Features; label: string; desc: string }[] = [
-  { key: 'crm', label: 'CRM', desc: 'Contacts, companies, deals, tasks, activity' },
-  { key: 'infra', label: 'Infrastructure', desc: 'Server monitoring, databases, websites' },
-  { key: 'alerts', label: 'Alerts', desc: 'Threshold alerts and notifications' },
-  { key: 'analytics', label: 'Analytics', desc: 'Revenue charts, pipeline stats, rep leaderboard' },
-  { key: 'files', label: 'Files', desc: 'File storage and management' },
+  { key: 'crm',       label: 'CRM',            desc: 'Contacts, companies, deals, tasks, activity' },
+  { key: 'infra',     label: 'Infrastructure', desc: 'Server monitoring, databases, websites' },
+  { key: 'alerts',    label: 'Alerts',         desc: 'Threshold alerts and notifications' },
+  { key: 'analytics', label: 'Analytics',      desc: 'Revenue charts, pipeline stats, rep leaderboard' },
+  { key: 'files',     label: 'Files',          desc: 'File storage and management' },
 ];
 
-export function StepFeatures({ value, onChange, onNext, onBack }: Props) {
-  const toggle = (key: keyof Features) =>
-    onChange({ ...value, [key]: !value[key] });
+export function StepFeatures({ state, dispatch }: Props) {
+  const { features } = state;
 
-  const btnBase: React.CSSProperties = {
-    padding: '8px 20px',
-    border: 'none',
-    borderRadius: 6,
-    fontSize: 14,
-    fontWeight: 500,
-    cursor: 'pointer',
-    fontFamily: 'DM Sans, sans-serif',
-  };
+  const toggle = (key: keyof Features) =>
+    dispatch({ type: 'SET_FEATURES', value: { ...features, [key]: !features[key] } });
 
   return (
     <div>
-      <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>
-        Features
-      </h2>
-      <p style={{ margin: '0 0 24px', color: 'var(--text2)', fontSize: 14 }}>
-        Enable the modules you need.
-      </p>
+      <h2 style={heading}>Features</h2>
+      <p style={subtext}>Enable the modules you need. You can change these after setup.</p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {FEATURE_LABELS.map(({ key, label, desc }) => (
-          <label
-            key={key}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              padding: '12px 16px',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              cursor: 'pointer',
-              background: value[key] ? 'var(--surface2)' : 'var(--surface)',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={value[key]}
-              onChange={() => toggle(key)}
-              style={{ width: 16, height: 16, cursor: 'pointer' }}
-            />
+          <label key={key} style={{
+            display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
+            border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer',
+            background: features[key] ? 'var(--surface2)' : 'var(--surface)',
+          }}>
+            <input type="checkbox" checked={features[key]} onChange={() => toggle(key)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
             <div>
               <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>{label}</div>
               <div style={{ fontSize: 12, color: 'var(--text2)' }}>{desc}</div>
@@ -68,15 +39,9 @@ export function StepFeatures({ value, onChange, onNext, onBack }: Props) {
           </label>
         ))}
       </div>
-
-      <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between' }}>
-        <button onClick={onBack} style={{ ...btnBase, background: 'var(--surface2)', color: 'var(--text)' }}>
-          Back
-        </button>
-        <button onClick={onNext} style={{ ...btnBase, background: 'var(--text)', color: '#fff' }}>
-          Next
-        </button>
-      </div>
     </div>
   );
 }
+
+const heading: React.CSSProperties = { margin: '0 0 4px', fontSize: 20, fontWeight: 700, color: 'var(--text)', fontFamily: 'Bricolage Grotesque, sans-serif' };
+const subtext: React.CSSProperties = { margin: '0 0 28px', color: 'var(--text2)', fontSize: 14 };

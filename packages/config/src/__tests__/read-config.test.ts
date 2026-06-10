@@ -41,11 +41,28 @@ describe('readConfig', () => {
     expect(() => readConfig()).toThrow();
   });
 
-  it('throws if config file missing', async () => {
-    // Set invalid path BEFORE singleton has been touched (already reset in beforeEach)
-    process.env['CONFIG_PATH'] = '/nonexistent/path.json';
-    const { readConfig, _resetConfig } = await import('../read-config');
-    _resetConfig(); // reset again so the new path is used
+  it('throws on malformed JSON in config file', async () => {
+    fs.writeFileSync(configPath, 'not valid json {{{{');
+    const { readConfig } = await import('../read-config');
     expect(() => readConfig()).toThrow();
+  });
+
+  it('returns safe defaults when file not found', async () => {
+    process.env['CONFIG_PATH'] = '/nonexistent/vencore.config.json';
+    const { readConfig, _resetConfig } = await import('../read-config');
+    _resetConfig();
+    const config = readConfig();
+    expect(config.app.name).toBe('Vencore');
+    expect(config.features.crm).toBe(true);
+    expect(config.smtp).toBeNull();
+    delete process.env['CONFIG_PATH'];
+  });
+
+  it('does not throw when file is missing', async () => {
+    process.env['CONFIG_PATH'] = '/nonexistent/vencore.config.json';
+    const { readConfig, _resetConfig } = await import('../read-config');
+    _resetConfig();
+    expect(() => readConfig()).not.toThrow();
+    delete process.env['CONFIG_PATH'];
   });
 });

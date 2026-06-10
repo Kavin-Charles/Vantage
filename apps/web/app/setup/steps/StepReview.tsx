@@ -1,137 +1,171 @@
 'use client';
 
 import { useState } from 'react';
-import type { SetupState } from '../SetupWizard';
+import type { SetupState, WizardAction, StepId } from '../types';
+import { getStepList, OPTIONAL_STEPS } from '../types';
 
-type Props = {
-  state: SetupState;
-  onBack: () => void;
+type Props = { state: SetupState; dispatch: React.Dispatch<WizardAction> };
+
+export type DeployStatus = 'idle' | 'deploying' | 'done' | 'error';
+
+const STEP_LABELS: Partial<Record<StepId, string>> = {
+  branding: 'Branding',
+  infra: 'Infrastructure',
+  db: 'Database',
+  redis: 'Redis',
+  domain: 'Domain & SSL',
+  smtp: 'SMTP',
+  features: 'Features',
+  admin: 'Admin Account',
 };
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-      <span style={{ color: 'var(--text2)', fontSize: 13 }}>{label}</span>
-      <span style={{ color: 'var(--text)', fontSize: 13, fontWeight: 500 }}>{value}</span>
-    </div>
-  );
-}
+const SKIP_WARNINGS: Partial<Record<StepId, string>> = {
+  redis: 'Sessions/queues may degrade without Redis.',
+  domain: 'App accessible via IP only, no SSL.',
+  smtp: 'Email features (invites, alerts, password reset) will not work.',
+};
 
-export function StepReview({ state, onBack }: Props) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+export function StepReview({ state, dispatch }: Props) {
+  const [deployStatus, setDeployStatus] = useState<DeployStatus>('idle');
+  const [logLines, setLogLines] = useState<string[]>([]);
+  const [deployError, setDeployError] = useState('');
 
-  const btnBase: React.CSSProperties = {
-    padding: '8px 20px',
-    border: 'none',
-    borderRadius: 6,
-    fontSize: 14,
-    fontWeight: 500,
-    cursor: 'pointer',
-    fontFamily: 'DM Sans, sans-serif',
-  };
+  const stepList = getStepList(state);
+  const reviewSteps = stepList.filter(s => s !== 'review' && s !== 'complete');
 
-  const submit = async () => {
-    setLoading(true);
-    setError('');
+  const deploy = async () => {
+    setDeployStatus('deploying');
+    setLogLines([]);
+    setDeployError('');
+
     try {
-      const res = await fetch(`/api/setup`, {
+      const res = await fetch('/api/installer/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          branding: state.branding,
-          features: state.features,
-          smtp: state.smtp,
-          admin: state.admin,
-        }),
+        body: JSON.stringify(state),
       });
-
       const json = await res.json();
+      if (!json.data?.jobId) throw new Error(json.error?.message ?? 'Deploy failed to start');
 
-      if (!res.ok || json.error) {
-        setError(json.error?.code === 'ALREADY_CONFIGURED'
-          ? 'This instance is already configured.'
-          : 'Setup failed. Please check your inputs and try again.');
-        return;
-      }
+      const { jobId } = json.data;
+      const es = new EventSource(`/api/installer/deploy/${jobId}/stream`);
 
-      // /api/setup/activate sets the setup_done cookie (works over HTTP) then redirects
-      window.location.href = '/api/setup/activate?from=/login';
-    } catch {
-      setError('Network error. Is the API running?');
-    } finally {
-      setLoading(false);
+      es.onmessage = e => {
+        const msg = JSON.parse(e.data) as { type: string; line?: string };
+        if (msg.type === 'log') setLogLines(prev => [...prev, msg.line ?? '']);
+        if (msg.type === 'done') {
+          es.close();
+          setDeployStatus('done');
+          dispatch({ type: 'NEXT' });
+        }
+        if (msg.type === 'error') {
+          es.close();
+          setDeployStatus('error');
+          setDeployError(msg.line ?? 'Deploy failed');
+        }
+      };
+
+      es.onerror = () => {
+        es.close();
+        setDeployStatus('error');
+        setDeployError('Lost connection to deploy stream. Check API logs.');
+      };
+    } catch (err) {
+      setDeployStatus('error');
+      setDeployError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
-  const enabledFeatures = Object.entries(state.features)
-    .filter(([, v]) => v)
-    .map(([k]) => k)
-    .join(', ') || 'None';
-
   return (
-    <div>
-      <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 600, color: 'var(--text)' }}>
-        Review & Confirm
-      </h2>
-      <p style={{ margin: '0 0 24px', color: 'var(--text2)', fontSize: 14 }}>
-        Check your configuration before launching.
-      </p>
+    <div style={{ display: 'flex', gap: 32, height: '100%' }}>
+      {/* Left: summary */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <h2 style={heading}>Review & Deploy</h2>
+        <p style={subtext}>Confirm your configuration before deploying.</p>
 
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-          Branding
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {reviewSteps.map(stepId => {
+            const isSkipped = state.skipped.includes(stepId);
+            const warning = isSkipped ? SKIP_WARNINGS[stepId] : undefined;
+            return (
+              <div key={stepId} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+                padding: '10px 14px', borderRadius: 8,
+                background: isSkipped ? 'color-mix(in srgb, var(--text3) 10%, transparent)' : 'var(--surface2)',
+                border: `1px solid ${isSkipped ? 'var(--text3)' : 'var(--border)'}`,
+              }}>
+                <span style={{ fontSize: 13, color: isSkipped ? 'var(--text3)' : 'var(--green)', fontWeight: 700, marginTop: 1 }}>
+                  {isSkipped ? '⊘' : '✓'}
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
+                    {STEP_LABELS[stepId]}
+                    {isSkipped && <span style={{ color: 'var(--text3)', fontWeight: 400 }}> — skipped</span>}
+                  </div>
+                  {warning && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>⚠ {warning}</div>}
+                  {!isSkipped && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{summarize(state, stepId)}</div>}
+                </div>
+                <button onClick={() => dispatch({ type: 'GO_TO', step: stepId })} style={editBtn}>Edit</button>
+              </div>
+            );
+          })}
         </div>
-        <Row label="App name" value={state.branding.name} />
-        <Row label="Logo URL" value={state.branding.logoUrl} />
-        {state.branding.domain && <Row label="Domain" value={state.branding.domain} />}
       </div>
 
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-          Features
+      {/* Right: deploy log */}
+      <div style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 10 }}>Deploy Log</div>
+        <div style={{
+          flex: 1, minHeight: 200, maxHeight: 400,
+          background: '#0b1330', borderRadius: 8,
+          padding: '14px 16px', overflowY: 'auto',
+          fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#a8b4cc',
+          lineHeight: 1.6,
+        }}>
+          {logLines.length === 0 && deployStatus === 'idle' && (
+            <span style={{ color: '#4a5677' }}>Ready to deploy…</span>
+          )}
+          {logLines.map((line, i) => <div key={i}>{line}</div>)}
+          {deployStatus === 'error' && (
+            <div style={{ color: '#f87171', marginTop: 8 }}>✗ {deployError}</div>
+          )}
         </div>
-        <Row label="Enabled" value={enabledFeatures} />
-      </div>
 
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-          SMTP
-        </div>
-        {state.smtp
-          ? <>
-              <Row label="Host" value={`${state.smtp.host}:${state.smtp.port}`} />
-              <Row label="From" value={state.smtp.from} />
-              <Row label="Password" value="••••••••" />
-            </>
-          : <Row label="Status" value="Skipped" />
-        }
-      </div>
-
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-          Admin Account
-        </div>
-        <Row label="Name" value={state.admin.name} />
-        <Row label="Email" value={state.admin.email} />
-        <Row label="Password" value="••••••••" />
-      </div>
-
-      {error && <p style={{ color: 'var(--red)', fontSize: 13, marginBottom: 12 }}>{error}</p>}
-
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <button onClick={onBack} disabled={loading} style={{ ...btnBase, background: 'var(--surface2)', color: 'var(--text)' }}>
-          Back
-        </button>
         <button
-          onClick={submit}
-          disabled={loading}
-          style={{ ...btnBase, background: 'var(--green)', color: '#fff', opacity: loading ? 0.7 : 1 }}
+          onClick={deployStatus === 'error' || deployStatus === 'idle' ? deploy : undefined}
+          disabled={deployStatus === 'deploying' || deployStatus === 'done'}
+          style={{
+            marginTop: 16, padding: '12px', width: '100%',
+            background: deployStatus === 'error' ? 'var(--red)' : 'var(--text)',
+            color: '#fff', border: 'none', borderRadius: 8,
+            fontSize: 15, fontWeight: 600, cursor: deployStatus === 'deploying' ? 'wait' : 'pointer',
+            fontFamily: 'Bricolage Grotesque, sans-serif',
+          }}
         >
-          {loading ? 'Launching…' : 'Launch Vencore'}
+          {deployStatus === 'idle' && '🚀 Deploy Vencore'}
+          {deployStatus === 'deploying' && '⟳ Deploying…'}
+          {deployStatus === 'done' && '✓ Done'}
+          {deployStatus === 'error' && '↺ Retry'}
         </button>
       </div>
     </div>
   );
 }
+
+function summarize(state: SetupState, stepId: StepId): string {
+  switch (stepId) {
+    case 'branding': return state.branding.name || '—';
+    case 'infra': return state.infra.mode === 'docker-deploy' ? 'Docker Deploy' : 'Own Credentials';
+    case 'db': return `${state.infra.db.host}:${state.infra.db.port}/${state.infra.db.name}`;
+    case 'redis': return `${state.infra.redis.host}:${state.infra.redis.port}`;
+    case 'domain': return state.domain.domain || 'No domain';
+    case 'smtp': return state.smtp?.host ?? '—';
+    case 'features': return Object.entries(state.features).filter(([, v]) => v).map(([k]) => k).join(', ');
+    case 'admin': return state.admin.email || '—';
+    default: return '';
+  }
+}
+
+const heading: React.CSSProperties = { margin: '0 0 4px', fontSize: 20, fontWeight: 700, color: 'var(--text)', fontFamily: 'Bricolage Grotesque, sans-serif' };
+const subtext: React.CSSProperties = { margin: '0 0 20px', color: 'var(--text2)', fontSize: 14 };
+const editBtn: React.CSSProperties = { padding: '3px 10px', fontSize: 12, background: 'transparent', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text2)', fontFamily: 'IBM Plex Sans, sans-serif' };
