@@ -597,6 +597,10 @@ export interface WorkspacePluginTable {
   manifest: Record<string, unknown>;
   enabled: Generated<boolean>;
   installed_at: Generated<Date>;
+  pricing_type: Generated<'free' | 'paid'>;
+  license_key: string | null;
+  source: Generated<'local' | 'marketplace'>;
+  platform_plugin_id: string | null;
 }
 
 export interface PluginSettingsTable {

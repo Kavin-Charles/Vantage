@@ -107,6 +107,23 @@ const manifestSchema = z.object({
   build: z.object({ server: z.string().optional(), client: z.string().optional() }).optional(),
 });
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface MarketplacePlugin {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  category: string;
+  version: string;
+  pricing_type: 'free' | 'paid';
+  price_cents: number | null;
+  currency: string;
+  icon_url: string | null;
+  author_name: string;
+  download_url?: string;
+}
+
 // ── Router ────────────────────────────────────────────────────────────────────
 
 export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
@@ -153,6 +170,175 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       return res.json(result);
     } catch (err) {
       return next(err);
+    }
+  });
+
+  /**
+   * GET /api/plugins/marketplace
+   * Lists approved plugins from the platform marketplace.
+   */
+  router.get('/marketplace', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const marketplaceUrl = process.env['MARKETPLACE_API_URL'] ?? '';
+      if (!marketplaceUrl) {
+        return res.json({ data: [], error: null });
+      }
+
+      const r = await fetch(`${marketplaceUrl}/v1/plugins`);
+      if (!r.ok) {
+        return res.status(502).json({ data: null, error: { code: 'UPSTREAM_ERROR', message: 'Failed to fetch marketplace' } });
+      }
+      const json = await (r.json() as Promise<{ data: MarketplacePlugin[]; error: null }>);
+
+      const installed = await db
+        .selectFrom('workspace_plugins')
+        .select(['platform_plugin_id'])
+        .where('workspace_id', '=', workspace.id)
+        .where('platform_plugin_id', 'is not', null)
+        .execute();
+
+      const installedIds = new Set(installed.map(p => p.platform_plugin_id));
+
+      const plugins = (json.data ?? []).map(p => ({
+        ...p,
+        installed: installedIds.has(p.id),
+      }));
+
+      return res.json({ data: plugins, error: null });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  /**
+   * POST /api/plugins/marketplace/install/:platformPluginId
+   * Downloads plugin from marketplace and installs it.
+   * Paid plugins require a license_key in the body.
+   */
+  router.post('/marketplace/install/:platformPluginId', requireAdmin, async (req, res, next) => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vencore-plugin-'));
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const { platformPluginId } = req.params as { platformPluginId: string };
+      const { license_key } = req.body as { license_key?: string };
+
+      const marketplaceUrl = process.env['MARKETPLACE_API_URL'] ?? '';
+      if (!marketplaceUrl) {
+        return res.status(503).json({ data: null, error: { code: 'NO_MARKETPLACE', message: 'Marketplace not configured' } });
+      }
+
+      const r = await fetch(`${marketplaceUrl}/v1/plugins/${platformPluginId}`);
+      if (!r.ok) {
+        return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found in marketplace' } });
+      }
+      const { data: mp } = await (r.json() as Promise<{ data: MarketplacePlugin & { download_url: string } }>);
+
+      if (mp.pricing_type === 'paid') {
+        if (!license_key) {
+          return res.status(402).json({ data: null, error: { code: 'LICENSE_REQUIRED', message: 'License key required for paid plugin' } });
+        }
+        const licRes = await fetch(`${marketplaceUrl}/v1/licenses/validate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plugin_id: mp.id, workspace_id: workspace.id, key: license_key }),
+        });
+        const licJson = await (licRes.json() as Promise<{ data: { valid: boolean } | null; error: { code: string; message: string } | null }>);
+        if (licJson.error) {
+          return res.status(licRes.status).json({ data: null, error: licJson.error });
+        }
+      }
+
+      const zipRes = await fetch(mp.download_url);
+      if (!zipRes.ok) {
+        return res.status(502).json({ data: null, error: { code: 'DOWNLOAD_FAILED', message: 'Failed to download plugin' } });
+      }
+      const zipBuffer = Buffer.from(await zipRes.arrayBuffer());
+
+      const zip = new AdmZip(zipBuffer);
+      zip.extractAllTo(tmpDir, true);
+
+      const pluginJsonPath = path.join(tmpDir, 'plugin.json');
+      if (!fs.existsSync(pluginJsonPath)) {
+        return res.status(400).json({ data: null, error: { code: 'MISSING_PLUGIN_JSON', message: 'plugin.json not found in zip' } });
+      }
+      const manifestRaw = JSON.parse(fs.readFileSync(pluginJsonPath, 'utf8'));
+      const parsed = manifestSchema.safeParse(manifestRaw);
+      if (!parsed.success) {
+        return res.status(400).json({ data: null, error: { code: 'INVALID_MANIFEST', message: parsed.error.message } });
+      }
+      const mf = parsed.data;
+
+      // Use pre-built bundles from the zip (marketplace stores built artifacts)
+      const serverBundlePath = path.join(tmpDir, 'server.cjs');
+      if (fs.existsSync(serverBundlePath)) {
+        savePluginFile(mf.id, 'server.cjs', fs.readFileSync(serverBundlePath));
+      } else if (mf.build?.server) {
+        const entryPath = path.join(tmpDir, mf.build.server);
+        if (fs.existsSync(entryPath)) {
+          const outfile = path.join(tmpDir, '_server_out.cjs');
+          await esbuild.build({
+            entryPoints: [entryPath], bundle: true, platform: 'node', format: 'cjs', outfile,
+            external: ['@vencore/plugin-sdk', '@vencore/plugin-types'], logLevel: 'silent',
+          });
+          savePluginFile(mf.id, 'server.cjs', fs.readFileSync(outfile));
+        }
+      }
+
+      const clientBundlePath = path.join(tmpDir, 'client.js');
+      if (fs.existsSync(clientBundlePath)) {
+        savePluginFile(mf.id, 'client.js', fs.readFileSync(clientBundlePath));
+      } else if (mf.build?.client) {
+        const entryPath = path.join(tmpDir, mf.build.client);
+        if (fs.existsSync(entryPath)) {
+          const outfile = path.join(tmpDir, '_client_out.js');
+          await esbuild.build({
+            entryPoints: [entryPath], bundle: true, platform: 'browser', format: 'esm', outfile,
+            plugins: [globalExternalsPlugin], logLevel: 'silent',
+          });
+          savePluginFile(mf.id, 'client.js', fs.readFileSync(outfile));
+        }
+      }
+
+      savePluginFile(mf.id, 'plugin.json', Buffer.from(JSON.stringify(mf)));
+      await runMigrations(db as Kysely<any>, mf.id, workspace.id, mf.migrations);
+
+      const isPaid = mp.pricing_type === 'paid';
+      const plugin = await db
+        .insertInto('workspace_plugins')
+        .values({
+          workspace_id: workspace.id,
+          plugin_id: mf.id,
+          name: mf.name,
+          version: mf.version,
+          manifest: mf as unknown as Record<string, unknown>,
+          enabled: isPaid ? true : true,
+          pricing_type: mp.pricing_type,
+          license_key: isPaid ? (license_key ?? null) : null,
+          source: 'marketplace',
+          platform_plugin_id: mp.id,
+        })
+        .onConflict((oc) =>
+          oc.constraint('workspace_plugins_workspace_plugin_unique').doUpdateSet({
+            name: mf.name,
+            version: mf.version,
+            manifest: mf as unknown as Record<string, unknown>,
+            enabled: true,
+            pricing_type: mp.pricing_type,
+            license_key: isPaid ? (license_key ?? null) : null,
+            source: 'marketplace',
+            platform_plugin_id: mp.id,
+          })
+        )
+        .returningAll()
+        .executeTakeFirstOrThrow();
+
+      loadPluginBackend(mf.id, db);
+      return res.status(201).json({ data: plugin, error: null });
+    } catch (err) {
+      return next(err);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
 
@@ -425,11 +611,63 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
   /**
    * PATCH /api/plugins/:id
    * Toggle a plugin enabled/disabled.
+   * Paid marketplace plugins: enabling requires license_key (validated with platform).
+   * Disabling releases the license key back to the pool.
    */
   router.patch('/:id', requireAdmin, async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      const { enabled } = z.object({ enabled: z.boolean() }).parse(req.body);
+      const { enabled, license_key } = z.object({
+        enabled: z.boolean(),
+        license_key: z.string().optional(),
+      }).parse(req.body);
+
+      const existing = await db
+        .selectFrom('workspace_plugins')
+        .selectAll()
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .executeTakeFirst();
+
+      if (!existing) {
+        return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
+      }
+
+      const marketplaceUrl = process.env['MARKETPLACE_API_URL'] ?? '';
+
+      if (enabled && existing.pricing_type === 'paid') {
+        const key = license_key ?? existing.license_key;
+        if (!key) {
+          return res.status(402).json({ data: null, error: { code: 'LICENSE_REQUIRED', message: 'License key required to enable this plugin' } });
+        }
+        if (marketplaceUrl && existing.platform_plugin_id) {
+          const licRes = await fetch(`${marketplaceUrl}/v1/licenses/validate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plugin_id: existing.platform_plugin_id, workspace_id: workspace.id, key }),
+          });
+          const licJson = await (licRes.json() as Promise<{ data: { valid: boolean } | null; error: { code: string; message: string } | null }>);
+          if (licJson.error) {
+            return res.status(licRes.status).json({ data: null, error: licJson.error });
+          }
+        }
+        const plugin = await db
+          .updateTable('workspace_plugins')
+          .set({ enabled: true, license_key: key })
+          .where('id', '=', req.params['id']!)
+          .where('workspace_id', '=', workspace.id)
+          .returningAll()
+          .executeTakeFirstOrThrow();
+        return res.json({ data: plugin, error: null });
+      }
+
+      if (!enabled && existing.pricing_type === 'paid' && existing.license_key && existing.platform_plugin_id && marketplaceUrl) {
+        await fetch(`${marketplaceUrl}/v1/licenses/deactivate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plugin_id: existing.platform_plugin_id, workspace_id: workspace.id, key: existing.license_key }),
+        }).catch(() => { /* non-fatal — key stays in DB, platform may already be deactivated */ });
+      }
 
       const plugin = await db
         .updateTable('workspace_plugins')
