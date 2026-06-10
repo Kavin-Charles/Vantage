@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { Router } from 'express';
+import { Router } from 'express';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { PluginManifest, PluginPermission } from '@vencore/plugin-types';
@@ -63,8 +63,11 @@ export function loadPluginBackend(pluginId: string, db: Kysely<Database>): void 
           tables,
         }, call);
 
+      type HttpEntry = { path: string; handler: (req: unknown) => Promise<unknown> | unknown };
+
       const vencore = {
         _hookHandlers: new Map<string, Array<(p: unknown) => void>>(),
+        _httpHandlers: [] as HttpEntry[],
         on(event: string, handler: (p: unknown) => void) {
           const arr = this._hookHandlers.get(event) ?? [];
           arr.push(handler);
@@ -91,6 +94,9 @@ export function loadPluginBackend(pluginId: string, db: Kysely<Database>): void 
         },
         http: {
           fetch: (url: string, opts?: unknown) => bridge({ method: 'http.fetch', payload: { url, ...((opts ?? {}) as object) } }),
+          onEndpoint: (endpointPath: string, handler: (req: unknown) => Promise<unknown> | unknown) => {
+            vencore._httpHandlers.push({ path: endpointPath, handler });
+          },
         },
         table: (name: string) => ({
           list: (opts?: unknown) => bridge({ method: 'table.list', payload: { name, ...(opts ?? {}) } }),
@@ -138,6 +144,46 @@ export function loadPluginBackend(pluginId: string, db: Kysely<Database>): void 
             }
           }
         }
+
+        if (vencore._httpHandlers.length > 0) {
+          const router = Router({ mergeParams: true });
+          for (const entry of vencore._httpHandlers) {
+            router.all(entry.path, async (req, res) => {
+              try {
+                const pluginReq = {
+                  method: req.method,
+                  path: req.path,
+                  query: req.query as Record<string, string>,
+                  headers: req.headers as Record<string, string>,
+                  body: req.body != null ? (typeof req.body === 'string' ? req.body : JSON.stringify(req.body)) : null,
+                  params: req.params as Record<string, string>,
+                };
+                const pluginRes = (await Promise.resolve(entry.handler(pluginReq))) as {
+                  status?: number;
+                  headers?: Record<string, string>;
+                  body?: string | Record<string, unknown>;
+                };
+                const status = pluginRes?.status ?? 200;
+                const headers = pluginRes?.headers ?? {};
+                for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
+                res.status(status);
+                if (typeof pluginRes?.body === 'string') {
+                  res.send(pluginRes.body);
+                } else if (pluginRes?.body != null) {
+                  res.json(pluginRes.body);
+                } else {
+                  res.end();
+                }
+              } catch (err) {
+                logger.error({ err, pluginId }, 'Plugin HTTP endpoint error');
+                res.status(500).json({ data: null, error: { code: 'PLUGIN_ERROR', message: 'Internal plugin error' } });
+              }
+            });
+          }
+          routerCache.set(pluginId, router);
+          logger.info({ pluginId, count: vencore._httpHandlers.length }, 'Plugin HTTP endpoints registered');
+        }
+
         logger.info({ pluginId }, 'Plugin backend setup complete');
       });
     }
