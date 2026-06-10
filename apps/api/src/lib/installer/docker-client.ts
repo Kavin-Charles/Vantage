@@ -20,7 +20,7 @@ function dockerRequest(opts: DockerRequestOptions): Promise<{ statusCode: number
 
     const bodyStr = opts.body ? JSON.stringify(opts.body) : undefined;
     if (bodyStr) {
-      reqOpts.headers!['Content-Length'] = Buffer.byteLength(bodyStr).toString();
+      (reqOpts.headers as Record<string, string>)['Content-Length'] = Buffer.byteLength(bodyStr).toString();
     }
 
     const req = http.request(reqOpts, res => {
