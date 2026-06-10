@@ -87,7 +87,7 @@ export function WidgetCard({ widgetId, label, isEditMode, onRemove, children }: 
             <div style={{ fontSize: 13, color: 'var(--text3)' }}>Loading…</div>
           }
         >
-          <WidgetErrorBoundary>{children}</WidgetErrorBoundary>
+          <WidgetErrorBoundary key={widgetId}>{children}</WidgetErrorBoundary>
         </React.Suspense>
       </div>
     </div>

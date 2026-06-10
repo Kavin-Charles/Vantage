@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
 import type { LayoutItem, ResponsiveLayouts } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
@@ -35,16 +35,20 @@ function toLayoutItems(rows: LayoutWidget[]): LayoutItem[] {
 export function DashboardGrid({ layoutRows, isEditMode, pluginWidgets, onLayoutChange, onRemoveWidget }: Props) {
   const { width, containerRef, mounted } = useContainerWidth();
   const [layouts, setLayouts] = useState<ResponsiveLayouts>(() => ({ lg: toLayoutItems(layoutRows) }));
+  const currentBreakpointRef = useRef<string>('lg');
 
   useEffect(() => {
     setLayouts({ lg: toLayoutItems(layoutRows) });
   }, [layoutRows]);
 
-  function handleLayoutChange(layout: readonly LayoutItem[]) {
-    const items = layout as LayoutItem[];
-    setLayouts(prev => ({ ...prev, lg: items }));
-    if (!onLayoutChange) return;
-    const updated: LayoutWidget[] = items.map(l => {
+  function handleLayoutChange(layout: readonly LayoutItem[], allLayouts: ResponsiveLayouts) {
+    // Always keep local lg layout in sync
+    if (allLayouts.lg) {
+      setLayouts(prev => ({ ...prev, lg: allLayouts.lg }));
+    }
+    // Only propagate upstream when the active breakpoint is lg (source of truth)
+    if (currentBreakpointRef.current !== 'lg' || !onLayoutChange) return;
+    const updated: LayoutWidget[] = (allLayouts.lg ?? (layout as LayoutItem[])).map(l => {
       const original = layoutRows.find(r => r.widget_id === l.i);
       return {
         id: original?.id ?? '',
@@ -81,6 +85,7 @@ export function DashboardGrid({ layoutRows, isEditMode, pluginWidgets, onLayoutC
           rowHeight={80}
           dragConfig={{ enabled: isEditMode, handle: '.drag-handle', threshold: 3, bounded: false }}
           resizeConfig={{ enabled: isEditMode, handles: ['se'] }}
+          onBreakpointChange={(bp) => { currentBreakpointRef.current = bp; }}
           onLayoutChange={handleLayoutChange}
         >
           {layoutRows.map(row => {
