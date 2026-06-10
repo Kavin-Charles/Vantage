@@ -701,6 +701,7 @@ export interface DashboardLayoutTable {
   min_w: number | null;
   min_h: number | null;
   permission_key: string | null;
+  created_at: Generated<Date>;
 }
 
 export interface DashboardGroupAssignmentTable {
@@ -853,7 +854,9 @@ export type Dashboard = Selectable<DashboardTable>;
 export type NewDashboard = Insertable<DashboardTable>;
 export type DashboardLayout = Selectable<DashboardLayoutTable>;
 export type NewDashboardLayout = Insertable<DashboardLayoutTable>;
+export type DashboardLayoutUpdate = Updateable<DashboardLayoutTable>;
 export type DashboardGroupAssignment = Selectable<DashboardGroupAssignmentTable>;
+export type NewDashboardGroupAssignment = Insertable<DashboardGroupAssignmentTable>;
 
 export type WorkspaceSshKeypair = Selectable<WorkspaceSshKeypairTable>;
 export type NewWorkspaceSshKeypair = Insertable<WorkspaceSshKeypairTable>;

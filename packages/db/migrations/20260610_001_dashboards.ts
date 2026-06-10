@@ -10,7 +10,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn('workspace_id', 'uuid', col =>
       col.notNull().references('workspaces.id').onDelete('cascade'),
     )
-    .addColumn('name', sql`varchar(255)`, col => col.notNull())
+    .addColumn('name', 'text', col => col.notNull())
     .addColumn('created_by', 'uuid', col =>
       col.notNull().references('users.id').onDelete('cascade'),
     )
@@ -36,14 +36,17 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn('dashboard_id', 'uuid', col =>
       col.notNull().references('dashboards.id').onDelete('cascade'),
     )
-    .addColumn('widget_id', sql`varchar(255)`, col => col.notNull())
+    .addColumn('widget_id', 'text', col => col.notNull())
     .addColumn('x', 'integer', col => col.notNull())
     .addColumn('y', 'integer', col => col.notNull())
     .addColumn('w', 'integer', col => col.notNull())
     .addColumn('h', 'integer', col => col.notNull())
     .addColumn('min_w', 'integer')
     .addColumn('min_h', 'integer')
-    .addColumn('permission_key', sql`varchar(255)`)
+    .addColumn('permission_key', 'text')
+    .addColumn('created_at', 'timestamptz', col =>
+      col.notNull().defaultTo(sql`now()`),
+    )
     .execute();
 
   await db.schema
@@ -60,13 +63,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn('group_id', 'uuid', col =>
       col.notNull().references('groups.id').onDelete('cascade'),
     )
-    .execute();
-
-  await db.schema
-    .createIndex('dashboard_group_assignments_pk')
-    .on('dashboard_group_assignments')
-    .columns(['dashboard_id', 'group_id'])
-    .unique()
+    .addPrimaryKeyConstraint('dashboard_group_assignments_pk', ['dashboard_id', 'group_id'])
     .execute();
 }
 
