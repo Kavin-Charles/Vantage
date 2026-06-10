@@ -8,4 +8,5 @@ export {
   SERVERS_MODULE,
   ANALYTICS_MODULE,
   ACTIVITY_MODULE,
+  DASHBOARD_MODULE,
 } from '@vencore/modules';
