@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { ResponsiveGridLayout, useContainerWidth } from 'react-grid-layout';
 import type { LayoutItem, ResponsiveLayouts } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
 import { WidgetCard } from './WidgetCard';
 import { getDashboardWidgetById, type DashboardWidgetDef } from '@/modules/shared/lib/dashboard-registry';
 import type { LayoutWidget } from '../lib/dashboard-api';
