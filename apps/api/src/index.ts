@@ -45,6 +45,7 @@ import { createApiKeysRouter } from './routes/api-keys';
 import { createRecordTypesRouter } from './routes/record-types';
 import { createRecordsRouter } from './routes/records';
 import { createNotificationsRouter } from './routes/notifications';
+import { createDashboardsRouter } from './routes/dashboards';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
@@ -227,6 +228,7 @@ app.use('/api/stages', requireAuth, requireModule('pipelines'), createStageField
 app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db, requirePermission));
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
 app.use('/api/alerts', requireAuth, createAlertsRouter(db));
+app.use('/api/dashboards', requireAuth, createDashboardsRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
 app.use('/api/item-groups', requireAuth, requireModule('pipelines'), createItemGroupsRouter(db, requirePermission));
 app.use('/api/items', requireAuth, requireModule('pipelines'), createItemsRouter(db, requirePermission));
