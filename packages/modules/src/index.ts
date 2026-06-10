@@ -7,6 +7,7 @@ export * from './websites';
 export * from './servers';
 export * from './analytics';
 export * from './activity';
+export * from './dashboard';
 
 import { CONTACTS_MODULE } from './contacts';
 import { COMPANIES_MODULE } from './companies';
@@ -16,9 +17,11 @@ import { WEBSITES_MODULE } from './websites';
 import { SERVERS_MODULE } from './servers';
 import { ANALYTICS_MODULE } from './analytics';
 import { ACTIVITY_MODULE } from './activity';
+import { DASHBOARD_MODULE } from './dashboard';
 import type { ModuleDefinition, PermissionDef, UserRole } from './types';
 
 export const MODULE_REGISTRY: ModuleDefinition[] = [
+  DASHBOARD_MODULE,
   CONTACTS_MODULE,
   COMPANIES_MODULE,
   PIPELINES_MODULE,
