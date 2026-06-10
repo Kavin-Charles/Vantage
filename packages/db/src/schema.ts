@@ -681,6 +681,33 @@ export interface InviteTable {
   created_at: Generated<Date>;
 }
 
+export interface DashboardTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  created_by: string;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface DashboardLayoutTable {
+  id: Generated<string>;
+  dashboard_id: string;
+  widget_id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  min_w: number | null;
+  min_h: number | null;
+  permission_key: string | null;
+}
+
+export interface DashboardGroupAssignmentTable {
+  dashboard_id: string;
+  group_id: string;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -736,6 +763,9 @@ export interface Database {
   group_members: GroupMemberTable;
   group_permissions: GroupPermissionTable;
   invites: InviteTable;
+  dashboards: DashboardTable;
+  dashboard_layouts: DashboardLayoutTable;
+  dashboard_group_assignments: DashboardGroupAssignmentTable;
 }
 
 // Convenience types
@@ -818,6 +848,12 @@ export type ItemFieldUpdate = Updateable<ItemFieldTable>;
 export type ItemFieldValue = Selectable<ItemFieldValueTable>;
 export type NewItemFieldValue = Insertable<ItemFieldValueTable>;
 export type ItemFieldValueUpdate = Updateable<ItemFieldValueTable>;
+
+export type Dashboard = Selectable<DashboardTable>;
+export type NewDashboard = Insertable<DashboardTable>;
+export type DashboardLayout = Selectable<DashboardLayoutTable>;
+export type NewDashboardLayout = Insertable<DashboardLayoutTable>;
+export type DashboardGroupAssignment = Selectable<DashboardGroupAssignmentTable>;
 
 export type WorkspaceSshKeypair = Selectable<WorkspaceSshKeypairTable>;
 export type NewWorkspaceSshKeypair = Insertable<WorkspaceSshKeypairTable>;
