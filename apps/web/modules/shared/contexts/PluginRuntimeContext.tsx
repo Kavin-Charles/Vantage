@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import * as ReactDOM from 'react-dom';
 import { useInstalledPlugins } from '@/modules/shared/hooks/useInstalledPlugins';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import type { DashboardWidgetDef } from '@/modules/shared/lib/dashboard-registry';
 
 if (typeof window !== 'undefined') {
   (window as any).React = React;
@@ -20,6 +21,7 @@ export interface FrontendSurfaceRegistry {
 interface PluginRuntimeContextValue {
   registry: FrontendSurfaceRegistry;
   loading: boolean;
+  dashboardWidgets: Map<string, DashboardWidgetDef>;
 }
 
 const defaultRegistry: FrontendSurfaceRegistry = {
@@ -31,10 +33,15 @@ const defaultRegistry: FrontendSurfaceRegistry = {
 const PluginRuntimeCtx = createContext<PluginRuntimeContextValue>({
   registry: defaultRegistry,
   loading: false,
+  dashboardWidgets: new Map(),
 });
 
 export function usePluginRegistry() {
   return useContext(PluginRuntimeCtx);
+}
+
+export function useDashboardWidgets(): Map<string, DashboardWidgetDef> {
+  return useContext(PluginRuntimeCtx).dashboardWidgets;
 }
 
 export function PluginRuntimeProvider({ children }: { children: React.ReactNode }) {
@@ -48,6 +55,7 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
   });
   const [loading, setLoading] = useState(true);
   const loadedRef = useRef(new Set<string>());
+  const [dashboardWidgets, setDashboardWidgets] = useState<Map<string, DashboardWidgetDef>>(new Map());
 
   useEffect(() => {
     if (isLoading) return;
@@ -258,8 +266,19 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
     return () => { active = false; };
   }, [isLoading, plugins.map((p) => p.plugin_id).join(',')]);
 
+  useEffect(() => {
+    function handleDashboardWidget(e: Event) {
+      const { def, component } = (e as CustomEvent<{ def: Omit<DashboardWidgetDef, 'component'>; component: React.ComponentType }>).detail;
+      setDashboardWidgets(prev => new Map(prev).set(def.id, { ...def, component }));
+    }
+    window.addEventListener('vencore:dashboard:register-widget', handleDashboardWidget);
+    return () => {
+      window.removeEventListener('vencore:dashboard:register-widget', handleDashboardWidget);
+    };
+  }, []);
+
   return (
-    <PluginRuntimeCtx.Provider value={{ registry, loading }}>
+    <PluginRuntimeCtx.Provider value={{ registry, loading, dashboardWidgets }}>
       {children}
     </PluginRuntimeCtx.Provider>
   );
