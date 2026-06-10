@@ -237,7 +237,8 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
             const url = URL.createObjectURL(blob);
 
             try {
-              const mod = await (eval(`import("${url}")`) as Promise<{ default?: { setup: (v: unknown) => void | Promise<void> } }>);
+              const importFn = new Function('url', 'return import(url)');
+              const mod = await (importFn(url) as Promise<{ default?: { setup: (v: unknown) => void | Promise<void> } }>);
               if (mod.default?.setup) {
                 await Promise.resolve(mod.default.setup(makeVencore()));
               }

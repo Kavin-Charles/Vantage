@@ -1,3 +1,6 @@
+# Worktrees
+.clone/
+
 # Logs
 logs
 *.log
