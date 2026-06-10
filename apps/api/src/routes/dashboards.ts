@@ -6,11 +6,7 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
 import { resolvePermissions } from '../middleware/permission';
 
-const createDashboardSchema = z.object({
-  name: z.string().min(1).max(100),
-});
-
-const renameDashboardSchema = z.object({
+const dashboardNameSchema = z.object({
   name: z.string().min(1).max(100),
 });
 
@@ -110,7 +106,7 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
   router.post('/', requireAdmin, async (req, res, next) => {
     try {
       const { user, workspace } = req as unknown as AuthenticatedRequest;
-      const parsed = createDashboardSchema.safeParse(req.body);
+      const parsed = dashboardNameSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', details: parsed.error } });
       }
@@ -198,7 +194,7 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { id } = req.params as { id: string };
-      const parsed = renameDashboardSchema.safeParse(req.body);
+      const parsed = dashboardNameSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', details: parsed.error } });
       }
@@ -221,11 +217,15 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { id } = req.params as { id: string };
-      await db
+      const deleted = await db
         .deleteFrom('dashboards')
         .where('id', '=', id)
         .where('workspace_id', '=', workspace.id)
-        .execute();
+        .returningAll()
+        .executeTakeFirst();
+      if (!deleted) {
+        return res.status(404).json({ data: null, error: { code: 'NOT_FOUND' } });
+      }
       res.json({ data: null, error: null });
     } catch (err) { next(err); }
   });
@@ -236,6 +236,11 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { id } = req.params as { id: string };
 
+      const parsed = saveLayoutSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', details: parsed.error } });
+      }
+
       const exists = await db
         .selectFrom('dashboards')
         .where('id', '=', id)
@@ -244,11 +249,6 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
         .executeTakeFirst();
       if (!exists) {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND' } });
-      }
-
-      const parsed = saveLayoutSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', details: parsed.error } });
       }
 
       await db.transaction().execute(async trx => {
@@ -283,6 +283,11 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { id } = req.params as { id: string };
 
+      const parsed = assignGroupsSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', details: parsed.error } });
+      }
+
       const exists = await db
         .selectFrom('dashboards')
         .where('id', '=', id)
@@ -291,11 +296,6 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
         .executeTakeFirst();
       if (!exists) {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND' } });
-      }
-
-      const parsed = assignGroupsSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', details: parsed.error } });
       }
 
       await db.transaction().execute(async trx => {
