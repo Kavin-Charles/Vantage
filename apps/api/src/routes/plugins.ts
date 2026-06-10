@@ -185,9 +185,13 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         return res.json({ data: [], error: null });
       }
 
-      const r = await fetch(`${marketplaceUrl}/v1/plugins`);
+      const svcToken = process.env['MARKETPLACE_SERVICE_TOKEN'] ?? '';
+      const r = await fetch(`${marketplaceUrl}/v1/plugins`, {
+        headers: { 'x-service-token': svcToken },
+      });
       if (!r.ok) {
-        return res.status(502).json({ data: null, error: { code: 'UPSTREAM_ERROR', message: 'Failed to fetch marketplace' } });
+        const errBody = await r.text().catch(() => '');
+        return res.status(502).json({ data: null, error: { code: 'UPSTREAM_ERROR', message: `Platform returned ${r.status}: ${errBody.slice(0, 200)}` } });
       }
       const json = await (r.json() as Promise<{ data: MarketplacePlugin[]; error: null }>);
 
@@ -228,7 +232,10 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         return res.status(503).json({ data: null, error: { code: 'NO_MARKETPLACE', message: 'Marketplace not configured' } });
       }
 
-      const r = await fetch(`${marketplaceUrl}/v1/plugins/${platformPluginId}`);
+      const svcToken = process.env['MARKETPLACE_SERVICE_TOKEN'] ?? '';
+      const r = await fetch(`${marketplaceUrl}/v1/plugins/${platformPluginId}`, {
+        headers: { 'x-service-token': svcToken },
+      });
       if (!r.ok) {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found in marketplace' } });
       }
@@ -240,7 +247,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         }
         const licRes = await fetch(`${marketplaceUrl}/v1/licenses/validate`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-service-token': svcToken },
           body: JSON.stringify({ plugin_id: mp.id, workspace_id: workspace.id, key: license_key }),
         });
         const licJson = await (licRes.json() as Promise<{ data: { valid: boolean } | null; error: { code: string; message: string } | null }>);
@@ -641,9 +648,10 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           return res.status(402).json({ data: null, error: { code: 'LICENSE_REQUIRED', message: 'License key required to enable this plugin' } });
         }
         if (marketplaceUrl && existing.platform_plugin_id) {
+          const svcTok = process.env['MARKETPLACE_SERVICE_TOKEN'] ?? '';
           const licRes = await fetch(`${marketplaceUrl}/v1/licenses/validate`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-service-token': svcTok },
             body: JSON.stringify({ plugin_id: existing.platform_plugin_id, workspace_id: workspace.id, key }),
           });
           const licJson = await (licRes.json() as Promise<{ data: { valid: boolean } | null; error: { code: string; message: string } | null }>);
@@ -662,9 +670,10 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       }
 
       if (!enabled && existing.pricing_type === 'paid' && existing.license_key && existing.platform_plugin_id && marketplaceUrl) {
+        const svcTok = process.env['MARKETPLACE_SERVICE_TOKEN'] ?? '';
         await fetch(`${marketplaceUrl}/v1/licenses/deactivate`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-service-token': svcTok },
           body: JSON.stringify({ plugin_id: existing.platform_plugin_id, workspace_id: workspace.id, key: existing.license_key }),
         }).catch(() => { /* non-fatal — key stays in DB, platform may already be deactivated */ });
       }

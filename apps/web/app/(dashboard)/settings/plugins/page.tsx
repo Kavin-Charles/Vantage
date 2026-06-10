@@ -147,7 +147,8 @@ export default function PluginsSettingsPage() {
       if (!pluginsJson.error) setPlugins(pluginsJson.data ?? []);
 
       const marketplaceJson = await marketplaceRes.json() as { data: MarketplacePlugin[]; error: null } | { data: null; error: { message: string } };
-      if (!marketplaceJson.error) setMarketplace(marketplaceJson.data ?? []);
+      if (marketplaceJson.error) setError(`Marketplace: ${marketplaceJson.error.message}`);
+      else setMarketplace(marketplaceJson.data ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load plugins');
     } finally {
