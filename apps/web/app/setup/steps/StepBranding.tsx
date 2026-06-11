@@ -1,13 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { SetupState, WizardAction } from '../types';
 
-type Props = { state: SetupState; dispatch: React.Dispatch<WizardAction> };
+type Props = {
+  state: SetupState;
+  dispatch: React.Dispatch<WizardAction>;
+  validateRef: React.MutableRefObject<() => boolean>;
+};
 
-export function StepBranding({ state, dispatch }: Props) {
+export function StepBranding({ state, dispatch, validateRef }: Props) {
   const { branding } = state;
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    validateRef.current = () => {
+      if (!branding.name.trim()) {
+        setError('App name is required.');
+        return false;
+      }
+      setError('');
+      return true;
+    };
+    return () => { validateRef.current = () => true; };
+  }, [branding, validateRef]);
 
   const set = (partial: Partial<SetupState['branding']>) =>
     dispatch({ type: 'SET_BRANDING', value: { ...branding, ...partial } });

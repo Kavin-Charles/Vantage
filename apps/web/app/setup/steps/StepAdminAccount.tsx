@@ -1,14 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { SetupState, WizardAction } from '../types';
 
-type Props = { state: SetupState; dispatch: React.Dispatch<WizardAction> };
+type Props = {
+  state: SetupState;
+  dispatch: React.Dispatch<WizardAction>;
+  validateRef: React.MutableRefObject<() => boolean>;
+};
 
-export function StepAdminAccount({ state, dispatch }: Props) {
+export function StepAdminAccount({ state, dispatch, validateRef }: Props) {
   const { admin } = state;
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    validateRef.current = () => {
+      if (!admin.name.trim()) { setError('Full name is required.'); return false; }
+      if (!admin.email.trim()) { setError('Email is required.'); return false; }
+      if (admin.password.length < 8) { setError('Password must be at least 8 characters.'); return false; }
+      if (admin.password !== confirm) { setError('Passwords do not match.'); return false; }
+      setError('');
+      return true;
+    };
+    return () => { validateRef.current = () => true; };
+  }, [admin, confirm, validateRef]);
 
   const set = (partial: Partial<typeof admin>) =>
     dispatch({ type: 'SET_ADMIN', value: { ...admin, ...partial } });

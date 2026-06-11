@@ -1,7 +1,7 @@
 // apps/web/app/setup/SetupWizard.tsx
 'use client';
 
-import { useReducer } from 'react';
+import { useReducer, useRef } from 'react';
 import { Sidebar } from './Sidebar';
 import { wizardReducer, INITIAL_STATE, getStepList, OPTIONAL_STEPS } from './types';
 import type { StepId } from './types';
@@ -18,19 +18,26 @@ import { StepComplete } from './steps/StepComplete';
 
 export function SetupWizard() {
   const [state, dispatch] = useReducer(wizardReducer, INITIAL_STATE);
+  const stepValidateRef = useRef<() => boolean>(() => true);
   const stepList = getStepList(state);
   const currentIdx = stepList.indexOf(state.currentStep);
   const isOptional = OPTIONAL_STEPS.includes(state.currentStep);
 
+  const handleContinue = () => {
+    if (stepValidateRef.current()) {
+      dispatch({ type: 'NEXT' });
+    }
+  };
+
   const stepContent: Record<StepId, React.ReactNode> = {
-    branding: <StepBranding state={state} dispatch={dispatch} />,
+    branding: <StepBranding state={state} dispatch={dispatch} validateRef={stepValidateRef} />,
     infra:    <StepInfrastructure state={state} dispatch={dispatch} />,
     db:       <StepDatabase state={state} dispatch={dispatch} />,
     redis:    <StepRedis state={state} dispatch={dispatch} />,
     domain:   <StepDomainSsl state={state} dispatch={dispatch} />,
     smtp:     <StepSmtp state={state} dispatch={dispatch} />,
     features: <StepFeatures state={state} dispatch={dispatch} />,
-    admin:    <StepAdminAccount state={state} dispatch={dispatch} />,
+    admin:    <StepAdminAccount state={state} dispatch={dispatch} validateRef={stepValidateRef} />,
     review:   <StepReview state={state} dispatch={dispatch} />,
     complete: <StepComplete state={state} />,
   };
@@ -100,7 +107,7 @@ export function SetupWizard() {
               </div>
               <button
                 id="wizard-continue"
-                onClick={() => dispatch({ type: 'NEXT' })}
+                onClick={handleContinue}
                 style={btnPrimary}
               >
                 Continue →
