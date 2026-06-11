@@ -36,16 +36,21 @@ export function DashboardGrid({ layoutRows, isEditMode, pluginWidgets, onLayoutC
   const { width, containerRef, mounted } = useContainerWidth();
   const [layouts, setLayouts] = useState<ResponsiveLayouts>(() => ({ lg: toLayoutItems(layoutRows) }));
   const currentBreakpointRef = useRef<string>('lg');
+  const isProgrammaticRef = useRef(false);
 
   useEffect(() => {
+    isProgrammaticRef.current = true;
     setLayouts({ lg: toLayoutItems(layoutRows) });
   }, [layoutRows]);
 
   function handleLayoutChange(layout: readonly LayoutItem[], allLayouts: ResponsiveLayouts) {
-    // Only track layout changes in edit mode — avoids infinite loop in view mode
-    // (react-grid-layout fires onLayoutChange on initial render, which would cause
-    //  setPendingLayout → new layoutRows ref → useEffect → setLayouts → loop)
     if (!isEditMode) return;
+    // Layout changed because we called setLayouts programmatically (e.g. parent added a widget)
+    // — skip propagating back to parent or we create a layoutRows→useEffect→onLayoutChange→layoutRows loop
+    if (isProgrammaticRef.current) {
+      isProgrammaticRef.current = false;
+      return;
+    }
     if (allLayouts.lg) {
       setLayouts(prev => ({ ...prev, lg: allLayouts.lg }));
     }
