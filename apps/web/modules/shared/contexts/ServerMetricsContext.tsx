@@ -48,12 +48,15 @@ export function ServerMetricsProvider({ children }: { children: ReactNode }) {
   const [lastAlert, setLastAlert] = useState<LiveAlertEvent | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
+
   const connect = useCallback(async (retryDelay: number): Promise<void> => {
     const controller = new AbortController();
     abortRef.current = controller;
 
     try {
-      const token = await getToken();
+      const token = await getTokenRef.current();
       const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? '';
       const res = await fetch(`${apiUrl}/api/sse/servers`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -107,7 +110,7 @@ export function ServerMetricsProvider({ children }: { children: ReactNode }) {
       const next = Math.min(retryDelay * 2, 30_000);
       setTimeout(() => void connect(next), retryDelay);
     }
-  }, [getToken]);
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps — reads token via ref, no dep needed
 
   useEffect(() => {
     void connect(1_000);
