@@ -42,7 +42,10 @@ export function DashboardGrid({ layoutRows, isEditMode, pluginWidgets, onLayoutC
   }, [layoutRows]);
 
   function handleLayoutChange(layout: readonly LayoutItem[], allLayouts: ResponsiveLayouts) {
-    // Always keep local lg layout in sync
+    // Only track layout changes in edit mode — avoids infinite loop in view mode
+    // (react-grid-layout fires onLayoutChange on initial render, which would cause
+    //  setPendingLayout → new layoutRows ref → useEffect → setLayouts → loop)
+    if (!isEditMode) return;
     if (allLayouts.lg) {
       setLayouts(prev => ({ ...prev, lg: allLayouts.lg }));
     }
