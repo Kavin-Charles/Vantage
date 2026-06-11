@@ -63,7 +63,7 @@ export function PipelineWidget() {
           {records.map((r: PipelineRecordWithValues, i: number) => {
             const stage = stageMap.get(r.stage_id);
             return (
-              <div
+              <button
                 key={r.id}
                 onClick={() => router.push(`/pipeline/${r.pipeline_id}`)}
                 style={{
@@ -74,15 +74,19 @@ export function PipelineWidget() {
                   borderBottom: i < records.length - 1 ? '1px solid var(--border)' : 'none',
                   cursor: 'pointer',
                   borderRadius: 4,
+                  background: 'transparent',
+                  border: 'none',
+                  width: '100%',
+                  textAlign: 'left',
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--surface2)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface2)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
               >
                 <span style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 8 }}>
                   {r.name}
                 </span>
                 {stage && <Badge label={stage.name} color="gray" />}
-              </div>
+              </button>
             );
           })}
         </div>
