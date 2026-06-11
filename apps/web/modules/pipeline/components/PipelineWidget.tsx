@@ -15,7 +15,7 @@ export function PipelineWidget() {
   const getToken = useApiToken();
   const router = useRouter();
 
-  const { data: pipelinesData, isLoading: pipelinesLoading } = useQuery({
+  const { data: pipelinesData, isLoading: pipelinesLoading, isError: pipelinesError } = useQuery({
     queryKey: ['widget', 'pipelines'],
     queryFn: async () => listPipelines(await getToken()),
     staleTime: 60_000,
@@ -33,7 +33,7 @@ export function PipelineWidget() {
 
   if (!isEnabled('pipelines')) return null;
   if (pipelinesLoading || recordsLoading) return <WidgetSkeleton />;
-  if (isError) return <WidgetError onRetry={() => void refetch()} />;
+  if (pipelinesError || isError) return <WidgetError onRetry={() => void refetch()} />;
 
   if (!firstPipeline) {
     return <EmptyState href="/pipeline" label="Create your first pipeline" />;
@@ -71,11 +71,11 @@ export function PipelineWidget() {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '7px 4px',
+                  border: 'none',
                   borderBottom: i < records.length - 1 ? '1px solid var(--border)' : 'none',
                   cursor: 'pointer',
                   borderRadius: 4,
                   background: 'transparent',
-                  border: 'none',
                   width: '100%',
                   textAlign: 'left',
                 }}

@@ -55,11 +55,11 @@ export function ServersWidget() {
               alignItems: 'center',
               gap: 8,
               padding: '7px 4px',
+              border: 'none',
               borderBottom: i < top5.length - 1 ? '1px solid var(--border)' : 'none',
               cursor: 'pointer',
               borderRadius: 4,
               background: 'transparent',
-              border: 'none',
               width: '100%',
               textAlign: 'left',
             }}
