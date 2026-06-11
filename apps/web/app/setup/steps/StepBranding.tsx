@@ -1,13 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import type { SetupState, WizardAction } from '../types';
 
-type Props = { state: SetupState; dispatch: React.Dispatch<WizardAction> };
+type Props = { state: SetupState; dispatch: React.Dispatch<WizardAction>; error?: string };
 
-export function StepBranding({ state, dispatch }: Props) {
+export function StepBranding({ state, dispatch, error }: Props) {
   const { branding } = state;
-  const [error, setError] = useState('');
 
   const set = (partial: Partial<SetupState['branding']>) =>
     dispatch({ type: 'SET_BRANDING', value: { ...branding, ...partial } });
