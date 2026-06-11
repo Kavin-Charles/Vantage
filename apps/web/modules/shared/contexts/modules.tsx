@@ -1,7 +1,8 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { useSelector } from 'react-redux';
+import type { RootState } from '@/store';
 
 interface ModuleRow {
   module_id: string;
@@ -18,7 +19,7 @@ interface ModulesContextValue {
 const ModulesContext = createContext<ModulesContextValue | null>(null);
 
 export function ModuleProvider({ children }: { children: React.ReactNode }) {
-  const getToken = useApiToken();
+  const token = useSelector((state: RootState) => state.auth.token);
   const [modules, setModules] = useState<ModuleRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,10 +27,9 @@ export function ModuleProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     async function load() {
       try {
-        const token = await getToken();
         const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? '';
         const res = await fetch(`${apiUrl}/api/workspace/modules`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token ?? ''}` },
           credentials: 'include',
         });
         const body = (await res.json()) as { data?: ModuleRow[] };
@@ -42,7 +42,7 @@ export function ModuleProvider({ children }: { children: React.ReactNode }) {
     }
     void load();
     return () => { cancelled = true; };
-  }, [getToken]);
+  }, [token]);
 
   function isEnabled(moduleId: string): boolean {
     const row = modules.find(m => m.module_id === moduleId);
