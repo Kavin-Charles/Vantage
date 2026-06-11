@@ -36,10 +36,6 @@ const ICONS: Record<string, React.ReactNode> = {
     <path d="M12 3a13.5 13.5 0 0 1 0 18"/>
     <path d="M12 3a13.5 13.5 0 0 0 0 18"/>
   </>,
-  files: <>
-    <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-    <path d="M14 3v6h6"/><path d="M8 13h8M8 17h6"/>
-  </>,
   analytics: <>
     <path d="M4 20V4"/><path d="M4 20h16"/>
     <rect x="7" y="12" width="3.2" height="6" rx=".5"/>

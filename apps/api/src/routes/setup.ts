@@ -36,7 +36,6 @@ const setupSchema = z.object({
     infra: z.boolean(),
     alerts: z.boolean(),
     analytics: z.boolean(),
-    files: z.boolean(),
   }),
   smtp: smtpSchema.nullable(),
   admin: z.object({

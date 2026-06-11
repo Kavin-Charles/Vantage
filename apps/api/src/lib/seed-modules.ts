@@ -6,10 +6,9 @@ import { MODULE_REGISTRY } from '../modules/registry';
 // Maps installer feature flags → module IDs they control
 const FEATURE_MODULE_MAP: Record<string, string[]> = {
   crm:       ['contacts', 'companies', 'pipelines', 'tasks', 'activity'],
-  infra:     ['websites', 'servers'],
+  infra:     ['websites', 'servers', 'databases'],
   analytics: ['analytics'],
   alerts:    [],  // no module yet — handled by alerts system
-  files:     [],  // no module yet
 };
 
 export async function seedWorkspaceModules(

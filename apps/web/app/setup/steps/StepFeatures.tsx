@@ -10,7 +10,6 @@ const FEATURE_LABELS: { key: keyof Features; label: string; desc: string }[] = [
   { key: 'infra',     label: 'Infrastructure', desc: 'Server monitoring, databases, websites' },
   { key: 'alerts',    label: 'Alerts',         desc: 'Threshold alerts and notifications' },
   { key: 'analytics', label: 'Analytics',      desc: 'Revenue charts, pipeline stats, rep leaderboard' },
-  { key: 'files',     label: 'Files',          desc: 'File storage and management' },
 ];
 
 export function StepFeatures({ state, dispatch }: Props) {

@@ -30,9 +30,8 @@ const NAV_GROUPS = [
     feature: 'infra' as const,
     items: [
       { href: '/servers',     label: 'Servers',     icon: 'servers',   moduleId: 'servers'  },
-      { href: '/databases',   label: 'Databases',   icon: 'databases'  },
+      { href: '/databases',   label: 'Databases',   icon: 'databases',  moduleId: 'databases' },
       { href: '/websites',    label: 'Websites',    icon: 'websites',  moduleId: 'websites' },
-      { href: '/files',       label: 'Files',       icon: 'files',     featureKey: 'files' as const },
     ],
   },
   {
@@ -183,68 +182,45 @@ export function Sidebar() {
         </span>
       </div>
 
-      {/* Nav groups */}
-      {NAV_GROUPS.map(group => {
-        if (group.feature === 'crm' && !(config?.features.crm ?? true)) return null;
-        if (group.feature === 'infra' && !(config?.features.infra ?? true)) return null;
-        const groupKey = group.label.toLowerCase() as 'crm' | 'infrastructure' | 'general';
-        const pluginGroup = groupKey === 'infrastructure' ? 'infra' : groupKey === 'crm' ? 'crm' : 'general';
-        const groupPlugins = pluginNavItems.filter(p => (p.manifest.nav?.group ?? 'general') === pluginGroup);
-        return (
-          <div key={group.label} style={{ padding: '12px 12px 4px' }}>
-            <div style={{
-              fontSize: 10, fontWeight: 600, color: 'var(--text3)',
-              textTransform: 'uppercase', letterSpacing: 1.4,
-              padding: '0 10px', marginBottom: 6,
-            }}>{group.label}</div>
-            {group.items.map(item => {
-              if ('moduleId' in item && item.moduleId && !isEnabled(item.moduleId)) return null;
-              if ('featureKey' in item && item.featureKey) {
-                const key = item.featureKey as keyof NonNullable<typeof config>['features'];
-                if (config?.features && key in config.features && !config.features[key]) return null;
-              }
-              return (
-                <NavLink
-                  key={item.href}
-                  href={item.href}
-                  label={item.label}
-                  icon={item.icon}
-                  dot={'dot' in item && item.dot && hasCritical ? true : undefined}
-                />
-              );
-            })}
-            {groupPlugins.map(p => (
+      {/* Nav items */}
+      <div style={{ padding: '12px 12px 4px' }}>
+        {NAV_GROUPS.map(group => {
+          if (group.feature === 'crm' && !(config?.features.crm ?? true)) return null;
+          if (group.feature === 'infra' && !(config?.features.infra ?? true)) return null;
+          return group.items.map(item => {
+            if ('moduleId' in item && item.moduleId && !isEnabled(item.moduleId)) return null;
+            if ('featureKey' in item && item.featureKey) {
+              const key = item.featureKey as keyof NonNullable<typeof config>['features'];
+              if (config?.features && key in config.features && !config.features[key]) return null;
+            }
+            return (
               <NavLink
-                key={p.plugin_id}
-                href={p.manifest.nav!.href}
-                label={p.manifest.nav!.label}
-                icon={p.manifest.nav!.icon ?? 'plugin'}
+                key={item.href}
+                href={item.href}
+                label={item.label}
+                icon={item.icon}
+                dot={'dot' in item && item.dot && hasCritical ? true : undefined}
               />
-            ))}
-          </div>
-        );
-      })}
-
-      {/* Plugin nav items from surfaces.nav */}
-      {surfaceNavItems.length > 0 && (
-        <div style={{ padding: '12px 12px 4px' }}>
-          <div style={{
-            fontSize: 10, fontWeight: 600, color: 'var(--text3)',
-            textTransform: 'uppercase', letterSpacing: 1.4,
-            padding: '0 10px', marginBottom: 6,
-          }}>
-            Plugins
-          </div>
-          {surfaceNavItems.map((item) => (
-            <NavLink
-              key={`${item.pluginId}:${item.href}`}
-              href={item.href}
-              label={item.label}
-              icon={item.icon}
-            />
-          ))}
-        </div>
-      )}
+            );
+          });
+        })}
+        {pluginNavItems.map(p => (
+          <NavLink
+            key={p.plugin_id}
+            href={p.manifest.nav!.href}
+            label={p.manifest.nav!.label}
+            icon={p.manifest.nav!.icon ?? 'plugin'}
+          />
+        ))}
+        {surfaceNavItems.map((item) => (
+          <NavLink
+            key={`${item.pluginId}:${item.href}`}
+            href={item.href}
+            label={item.label}
+            icon={item.icon}
+          />
+        ))}
+      </div>
 
       {/* User */}
       <div style={{ marginTop: 'auto', padding: 12, borderTop: '1px solid var(--border)' }}>

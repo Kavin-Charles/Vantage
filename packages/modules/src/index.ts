@@ -5,6 +5,7 @@ export * from './pipelines';
 export * from './tasks';
 export * from './websites';
 export * from './servers';
+export * from './databases';
 export * from './analytics';
 export * from './activity';
 export * from './dashboard';
@@ -15,6 +16,7 @@ import { PIPELINES_MODULE } from './pipelines';
 import { TASKS_MODULE } from './tasks';
 import { WEBSITES_MODULE } from './websites';
 import { SERVERS_MODULE } from './servers';
+import { DATABASES_MODULE } from './databases';
 import { ANALYTICS_MODULE } from './analytics';
 import { ACTIVITY_MODULE } from './activity';
 import { DASHBOARD_MODULE } from './dashboard';
@@ -28,6 +30,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
   TASKS_MODULE,
   WEBSITES_MODULE,
   SERVERS_MODULE,
+  DATABASES_MODULE,
   ANALYTICS_MODULE,
   ACTIVITY_MODULE,
 ];

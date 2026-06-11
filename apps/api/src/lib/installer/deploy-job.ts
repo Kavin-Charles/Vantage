@@ -18,7 +18,7 @@ export type DeployPayload = {
   };
   domain: { domain: string; sslEnabled: boolean; sslEmail: string; proxyType: 'caddy' | 'nginx' };
   smtp: { host: string; port: number; user: string; password: string; from: string; secure: boolean } | null;
-  features: { crm: boolean; infra: boolean; alerts: boolean; analytics: boolean; files: boolean };
+  features: { crm: boolean; infra: boolean; alerts: boolean; analytics: boolean };
   admin: { name: string; email: string; password: string };
   skipped: string[];
 };

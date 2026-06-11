@@ -8,7 +8,6 @@ interface PublicConfig {
     infra: boolean;
     alerts: boolean;
     analytics: boolean;
-    files: boolean;
     calendar: boolean;
   };
 }

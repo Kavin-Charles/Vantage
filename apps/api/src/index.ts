@@ -256,7 +256,7 @@ app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 // Infra routes
 app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db, requirePermission));
 app.use('/api/sse', requireAuth, createSseRouter(db));
-app.use('/api/databases', requireAuth, createInfraDatabasesRouter(db));
+app.use('/api/databases', requireAuth, requireModule('databases'), createInfraDatabasesRouter(db));
 app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesRouter(db, env.CRON_SECRET, requirePermission));
 app.use('/api/alert-thresholds', requireAuth, createAlertThresholdsRouter(db));
 

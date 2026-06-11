@@ -49,7 +49,7 @@ export type SetupState = {
     proxyType: ProxyType;
   };
   smtp: SmtpConfig | null;
-  features: { crm: boolean; infra: boolean; alerts: boolean; analytics: boolean; files: boolean };
+  features: { crm: boolean; infra: boolean; alerts: boolean; analytics: boolean };
   admin: { name: string; email: string; password: string };
 };
 
@@ -81,7 +81,7 @@ export const INITIAL_STATE: SetupState = {
   },
   domain: { domain: '', sslEnabled: true, sslEmail: '', proxyType: 'caddy' },
   smtp: null,
-  features: { crm: true, infra: true, alerts: true, analytics: false, files: false },
+  features: { crm: true, infra: true, alerts: true, analytics: false },
   admin: { name: '', email: '', password: '' },
 };
 

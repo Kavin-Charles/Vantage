@@ -9,8 +9,9 @@ const MODULE_META = [
   { id: 'companies', name: 'Companies', description: 'Company records and relationships.'                 },
   { id: 'pipelines', name: 'Pipelines', description: 'Deals pipeline, items, and conversions.'            },
   { id: 'tasks',     name: 'Tasks',     description: 'Task management and due date tracking.'             },
-  { id: 'websites',  name: 'Websites',  description: 'Website uptime monitoring and SSL expiry.'          },
-  { id: 'servers',   name: 'Servers',   description: 'Server monitoring and agent heartbeats.'            },
+  { id: 'websites',   name: 'Websites',   description: 'Website uptime monitoring and SSL expiry.'          },
+  { id: 'servers',    name: 'Servers',    description: 'Server monitoring and agent heartbeats.'            },
+  { id: 'databases',  name: 'Databases',  description: 'Database health monitoring and connection management.' },
   { id: 'analytics', name: 'Analytics', description: 'Revenue, pipeline stats, and team leaderboard.'    },
   { id: 'activity',  name: 'Activity',  description: 'Unified activity feed across all workspace records.'},
 ];
