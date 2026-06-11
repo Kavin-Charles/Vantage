@@ -1,0 +1,37 @@
+import { registerDashboardWidget } from './dashboard-registry';
+import { ContactsWidget } from '@/modules/contacts/components/ContactsWidget';
+import { PipelineWidget } from '@/modules/pipeline/components/PipelineWidget';
+import { ServersWidget } from '@/modules/servers/components/ServersWidget';
+
+registerDashboardWidget({
+  id: 'core:contacts',
+  label: 'Contacts',
+  description: 'Recent contacts and status overview',
+  defaultW: 4,
+  defaultH: 3,
+  minW: 3,
+  minH: 2,
+  component: ContactsWidget,
+});
+
+registerDashboardWidget({
+  id: 'core:pipeline',
+  label: 'Pipeline',
+  description: 'Recent records across your pipeline',
+  defaultW: 6,
+  defaultH: 3,
+  minW: 4,
+  minH: 3,
+  component: PipelineWidget,
+});
+
+registerDashboardWidget({
+  id: 'core:servers',
+  label: 'Servers',
+  description: 'Server status and resource usage',
+  defaultW: 4,
+  defaultH: 3,
+  minW: 3,
+  minH: 2,
+  component: ServersWidget,
+});

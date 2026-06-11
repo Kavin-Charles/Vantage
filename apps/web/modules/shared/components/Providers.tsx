@@ -1,5 +1,6 @@
 'use client';
 
+import '@/modules/shared/lib/register-module-widgets';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Provider } from 'react-redux';
 import { useState } from 'react';
