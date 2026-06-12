@@ -15,8 +15,6 @@ interface Tab {
 const ALL_TABS: Tab[] = [
   { href: '/settings/profile', label: 'Profile' },
   { href: '/settings/users', label: 'Users & Groups', adminOnly: true },
-  { href: '/settings/pipelines', label: 'Pipelines', adminOnly: true },
-  { href: '/settings/tasks', label: 'Tasks', adminOnly: true },
   { href: '/settings/ssh', label: 'SSH Keys', adminOnly: true },
   { href: '/settings/api-keys', label: 'API Keys', adminOnly: true },
   { href: '/settings/modules', label: 'Modules', adminOnly: true },

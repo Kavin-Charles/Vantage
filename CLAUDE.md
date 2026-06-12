@@ -2,11 +2,11 @@
 
 ## What is Vencore?
 
-Vencore is a modular company management solution. It brings together everything a business needs to operate: CRM (contacts, deals, pipeline, tasks, activity), infrastructure monitoring (servers, databases, websites), team collaboration, analytics, and billing — in a single platform. Add the modules you need, skip the ones you don't.
+Vencore is a modular white-label company management platform. Companies deploy it under their own brand and configure only the modules their teams need — covering every department: sales (CRM), engineering (infra monitoring), HR, management, and more. The platform is fully brandable; end users see the customer's name and logo, not Vencore.
 
 **Tagline:** One Platform to Run Your Entire Business
 
-**Target user:** Businesses of all sizes that want to consolidate their operations tooling into one platform — from technical founders and dev agencies to growing teams replacing fragmented SaaS stacks.
+**Target user:** Companies that want to offer their teams a unified operations platform under their own brand — replacing fragmented SaaS stacks with a single white-labelled solution.
 
 ---
 
@@ -14,17 +14,15 @@ Vencore is a modular company management solution. It brings together everything 
 
 | Layer | Choice | Notes |
 |---|---|---|
-| Frontend | Next.js 14 (App Router) | TypeScript. Tailwind CSS. |
+| Frontend | Next.js (App Router) | TypeScript. Tailwind CSS. |
 | Backend | Node.js + Express | TypeScript. REST API. |
-| Primary DB | PostgreSQL 15 | All CRM + user data. |
+| Primary DB | PostgreSQL | All CRM + user data. |
 | Metrics DB | TimescaleDB | Infra metrics, time-series data. |
 | Cache | Redis | Sessions, caching, queues. |
 | Object storage | S3-compatible (Cloudflare R2) | File storage. |
-| Auth | Clerk | Multi-tenant workspace auth. |
-| Billing | Stripe | Usage-based metering. |
+| Auth | Custom JWT | bcrypt + jsonwebtoken. Multi-tenant workspace auth. |
 | Monitoring agent | Lightweight Node.js daemon | Installed on customer servers. Phones home metrics via HTTPS. |
-| Frontend hosting | Vercel | |
-| Backend hosting | Railway or Render | |
+| Hosting | GCP VM (`vencore-platform`, asia-south1-c) | Docker Compose prod. |
 
 ---
 
@@ -51,22 +49,6 @@ Sidebar width: `220px`. Topbar height: `56px`.
 
 ---
 
-## Business Model
-
-**Per-company (workspace) usage-based pricing.**
-
-| Component | Price |
-|---|---|
-| Base fee | $79 / workspace / month |
-| Contacts overage | +$10 per 500 contacts over 1,000 |
-| Server overage | +$8 per server over 5 |
-| Database overage | +$6 per database over 3 |
-| Seat overage | +$12 per user over 5 |
-
-Base includes: 1,000 contacts, 5 servers, 3 databases, 5 seats.
-
-Billing is calculated on the 1st of each month based on peak usage in the prior month. Stripe handles payment. 14-day free trial on signup — no credit card required.
-
 ---
 
 ## Data Models
@@ -76,14 +58,6 @@ Billing is calculated on the 1st of each month based on peak usage in the prior 
 id: uuid PK
 name: string
 domain: string
-plan: enum (trial, active, cancelled)
-stripe_customer_id: string
-stripe_subscription_id: string
-seat_count: int
-contact_count: int
-server_count: int
-db_count: int
-trial_ends_at: timestamp
 created_at: timestamp
 updated_at: timestamp
 ```
@@ -238,42 +212,26 @@ resolved_at: timestamp (nullable)
 created_at: timestamp
 ```
 
-### UsageMeter (for billing)
-```
-id: uuid PK
-workspace_id: uuid FK → workspace
-period_start: date
-period_end: date
-contact_count_peak: int
-server_count_peak: int
-db_count_peak: int
-seat_count_peak: int
-base_fee: decimal(10,2)
-overage_total: decimal(10,2)
-total_bill: decimal(10,2)
-stripe_invoice_id: string (nullable)
-status: enum (pending, invoiced, paid, failed)
-created_at: timestamp
-```
-
 ---
 
-## Features — Build Order
+## Current State & Priorities
 
-### Phase 1 — Ship this first
-1. **Auth & workspaces** — Clerk integration, workspace creation, invite teammates, roles (admin/member)
-2. **CRM core** — Contacts CRUD, Companies CRUD, Deals pipeline (kanban + list), Tasks, Activity timeline
-3. **Basic billing** — Stripe customer creation on signup, usage tracking, invoice generation
+### Done (web, api, worker, agent all working)
+- Auth & workspaces (custom JWT, multi-tenant, roles)
+- CRM core (contacts, companies, deals pipeline, tasks, activity)
+- Infra monitoring (server agent, dashboards, website uptime, alerts)
+- White-label branding per workspace
 
-### Phase 2
-4. **Infra monitoring** — Server agent (Node.js daemon), server status dashboard, database health (manual config), website uptime checks (cron pings)
-5. **Alerts** — Alert creation from infra events, notification service (email + in-app), alert acknowledge/resolve flow
-6. **Analytics** — Revenue by period, win rate, pipeline by stage, rep leaderboard
+### Now — Polish for web prod
+- Minor features and UX polish across existing modules
+- Bug fixes and edge cases
+- Production hardening
 
-### Phase 3
-7. **Integrations** — Gmail send/track (email open tracking), Zapier webhook support, CSV import/export
-8. **Mobile app** — React Native, mirrors web feature set, push notifications for alerts
-9. **API** — Public REST API with API key auth, webhook delivery
+### Next — After web prod
+- Analytics (revenue by period, win rate, pipeline by stage, rep leaderboard)
+- Integrations (Gmail, Zapier webhooks, CSV import/export)
+- Public REST API with API key auth and webhook delivery
+- Mobile app (React Native — mirrors web feature set)
 
 ---
 
@@ -284,7 +242,6 @@ created_at: timestamp
 - **Infra agent is pull-based.** The agent on customer servers sends metrics to Vencore API every 30 seconds via HTTPS POST. Vencore does not SSH into servers.
 - **Website monitoring is a cron job.** Every 60 seconds, a worker pings all monitored URLs and records response time + status code. SSL expiry is checked daily.
 - **Alerts are event-driven.** When a metric crosses a threshold (CPU > 85%, replication lag > 10s, site down), the alert service creates an Alert record and triggers the notification service.
-- **Usage metering is daily snapshots.** Every night at midnight UTC, a cron job records peak usage counts for each workspace and updates the UsageMeter for the current billing period.
 - **The infra alert bar** in the UI is always visible on CRM pages when there are unresolved critical/warning alerts. It should be a component that polls `/api/alerts?resolved=false&severity=critical,warning&limit=3` every 60 seconds.
 
 ---
@@ -338,10 +295,6 @@ PATCH  /api/alerts/:id/resolve      Resolve
 GET    /api/analytics/pipeline      Pipeline stats
 GET    /api/analytics/revenue       Revenue by period
 GET    /api/analytics/team          Per-rep stats
-
-GET    /api/billing/usage           Current period usage
-GET    /api/billing/invoices        Invoice history
-POST   /api/billing/portal          Stripe billing portal session
 ```
 
 ---
@@ -353,18 +306,12 @@ POST   /api/billing/portal          Stripe billing portal session
 NEXT_PUBLIC_APP_URL=
 NODE_ENV=
 
-# Clerk (auth)
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
-CLERK_SECRET_KEY=
+# Auth
+JWT_SECRET=
 
 # Database
 DATABASE_URL=           # PostgreSQL
 REDIS_URL=              # Redis
-
-# Stripe
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 
 # Storage
 R2_ACCOUNT_ID=
@@ -407,8 +354,8 @@ CRON_SECRET=            # Protects cron endpoints
 - Built-in database editor or query tool
 - Website builder
 - AI features
-- Mobile app (Phase 3 only)
-- Public API (Phase 3 only)
+- Mobile app — deferred until after web prod ships
+- Public API — deferred until after web prod ships
 
 ---
 
