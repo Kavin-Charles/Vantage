@@ -12,7 +12,7 @@ export async function runSprintRollover(db: Kysely<Database>): Promise<void> {
   const sprints = await db
     .selectFrom('sprints')
     .selectAll()
-    .where('status', '=', 'ACTIVE' as 'ACTIVE')
+    .where('status', '=', 'ACTIVE' as any)
     .where('end_date', '>=', yesterday)
     .where('end_date', '<=', yesterdayEnd)
     .execute()
@@ -34,7 +34,7 @@ export async function runSprintRollover(db: Kysely<Database>): Promise<void> {
 
     await db
       .updateTable('sprints')
-      .set({ status: 'COMPLETED' as 'COMPLETED', velocity })
+      .set({ status: 'COMPLETED', velocity })
       .where('id', '=', sprint.id)
       .execute()
 

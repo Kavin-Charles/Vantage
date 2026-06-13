@@ -15,27 +15,22 @@ export async function runDueDateAlerts(db: Kysely<Database>): Promise<void> {
     .where('t.due_date', '>=', now)
     .where('t.due_date', '<=', in24h)
     .where('s.is_done', '=', false)
-    .where('p.status', '=', 'ACTIVE' as 'ACTIVE')
+    .where('p.status', '=', 'ACTIVE' as any)
     .execute()
 
   let sent = 0
   for (const task of tasks) {
     const todayStart = new Date(now.toISOString().slice(0, 10) + 'T00:00:00.000Z')
-    let existing
-    try {
-      existing = await db
-        .selectFrom('activities')
-        .select('id')
-        .where('workspace_id', '=', task.workspace_id)
-        .where('user_id', '=', task.user_id)
-        .where('type', '=', 'note')
-        .where('body', '=', `Task "${task.title}" is due within 24 hours`)
-        .where('created_at', '>=', todayStart)
-        .executeTakeFirst()
-    } catch (err) {
-      logger.warn({ err, taskId: task.id }, 'due-date-alert: failed to check for existing alert, skipping')
-      continue
-    }
+    const existing = await db
+      .selectFrom('activities')
+      .select('id')
+      .where('workspace_id', '=', task.workspace_id)
+      .where('user_id', '=', task.user_id)
+      .where('type', '=', 'note')
+      .where('body', '=', `Task "${task.title}" is due within 24 hours`)
+      .where('created_at', '>=', todayStart)
+      .executeTakeFirst()
+      .catch(() => null)
 
     if (!existing) {
       await db.insertInto('activities').values({
