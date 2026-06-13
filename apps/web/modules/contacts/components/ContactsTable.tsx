@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { Modal } from '@/modules/shared/components/ui/Modal';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { ContactForm } from './ContactForm';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listContacts, deleteContact } from '@/modules/contacts/lib/contacts';
@@ -23,6 +24,7 @@ export function ContactsTable() {
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | Contact | null>(null);
   const [removing, setRemoving] = useState<Set<string>>(new Set());
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data, isLoading } = useQuery({
     queryKey: ['contacts'],
@@ -70,9 +72,23 @@ export function ContactsTable() {
             fading={removing.has(c.id)}
             onEdit={() => setModal(c)}
             onDelete={() => { if (confirm(`Delete ${c.name}?`)) deleteMut.mutate(c.id); }}
+            onContextMenu={(e) => {
+              const items: ContextMenuItem[] = [
+                { icon: 'open',  label: 'Edit contact',   onClick: () => setModal(c) },
+                { type: 'separator' },
+                { icon: 'phone', label: 'Copy phone', disabled: !c.phone, onClick: () => navigator.clipboard.writeText(c.phone ?? '') },
+                { icon: 'mail',  label: 'Copy email',  onClick: () => navigator.clipboard.writeText(c.email) },
+                { icon: 'link',  label: 'Copy link',   onClick: () => navigator.clipboard.writeText(`${window.location.origin}/contacts/${c.id}`) },
+                { type: 'separator' },
+                { icon: 'trash', label: 'Delete', danger: true, onClick: () => { if (confirm(`Delete ${c.name}?`)) deleteMut.mutate(c.id); } },
+              ];
+              openMenu(e, items);
+            }}
           />
         ))}
       </div>
+
+      <ContextMenu menu={menu} onClose={closeMenu} />
 
       {modal && (
         <Modal
@@ -92,15 +108,17 @@ export function ContactsTable() {
   );
 }
 
-function ContactRow({ c, last, fading, onEdit, onDelete }: {
+function ContactRow({ c, last, fading, onEdit, onDelete, onContextMenu }: {
   c: Contact; last: boolean; fading: boolean;
   onEdit: () => void; onDelete: () => void;
+  onContextMenu: (e: React.MouseEvent) => void;
 }) {
   const [hover, setHover] = useState(false);
   return (
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onContextMenu={onContextMenu}
       style={{
         display: 'grid', gridTemplateColumns: COLS,
         gap: 14, alignItems: 'center',

@@ -7,6 +7,7 @@ import { Button } from '@/modules/shared/components/ui/Button';
 import { Modal } from '@/modules/shared/components/ui/Modal';
 import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
 import { FormField, Input } from '@/modules/shared/components/ui/FormField';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listWebsites, createWebsite, deleteWebsite } from '@/modules/shared/lib/websites';
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
@@ -32,6 +33,7 @@ export default function WebsitesPage() {
   const qc = useQueryClient();
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({ url: '', label: '' });
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data, isLoading } = useQuery({
     queryKey: ['websites'],
@@ -75,6 +77,16 @@ export default function WebsitesPage() {
               site={site}
               last={i === sites.length - 1}
               onDelete={() => { if (confirm('Stop monitoring this website?')) deleteMut.mutate(site.id); }}
+              onContextMenu={(e) => {
+                const items: ContextMenuItem[] = [
+                  { icon: 'globe', label: 'Open in new tab', onClick: () => window.open(site.url, '_blank') },
+                  { type: 'separator' },
+                  { icon: 'copy',  label: 'Copy URL',        onClick: () => navigator.clipboard.writeText(site.url) },
+                  { type: 'separator' },
+                  { icon: 'trash', label: 'Remove',          danger: true, onClick: () => { if (confirm('Stop monitoring this website?')) deleteMut.mutate(site.id); } },
+                ];
+                openMenu(e, items);
+              }}
             />
           ))}
         </div>
@@ -96,18 +108,20 @@ export default function WebsitesPage() {
           </form>
         </Modal>
       )}
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </ModuleGuard>
   );
 }
 
-function WebsiteRow({ site, last, onDelete }: {
-  site: Website; last: boolean; onDelete: () => void;
+function WebsiteRow({ site, last, onDelete, onContextMenu }: {
+  site: Website; last: boolean; onDelete: () => void; onContextMenu: (e: React.MouseEvent) => void;
 }) {
   const [hover, setHover] = useState(false);
   return (
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onContextMenu={onContextMenu}
       style={{
         display: 'grid', gridTemplateColumns: COLS,
         gap: 14, alignItems: 'center',

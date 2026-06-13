@@ -8,6 +8,7 @@ import { Button } from '@/modules/shared/components/ui/Button';
 import { Modal } from '@/modules/shared/components/ui/Modal';
 import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
 import { FormField, Input, Select } from '@/modules/shared/components/ui/FormField';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listInfraDatabases, createInfraDatabase, deleteInfraDatabase } from '@/modules/databases/lib/infra-databases';
 import type { InfraDatabase } from '@vencore/types';
@@ -57,6 +58,7 @@ export default function DatabasesPage() {
   const router = useRouter();
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(BLANK_FORM);
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data, isLoading } = useQuery({
     queryKey: ['infra-databases'],
@@ -114,6 +116,17 @@ export default function DatabasesPage() {
               last={i === dbs.length - 1}
               onClick={() => router.push(`/databases/${db.id}`)}
               onDelete={() => { if (confirm('Remove this database?')) deleteMut.mutate(db.id); }}
+              onContextMenu={(e) => {
+                const items: ContextMenuItem[] = [
+                  { icon: 'open',     label: 'Open database',   onClick: () => router.push(`/databases/${db.id}`) },
+                  { type: 'separator' },
+                  ...(db.host ? [{ icon: 'copy', label: 'Copy host', onClick: () => navigator.clipboard.writeText(db.host!) } as ContextMenuItem] : []),
+                  { icon: 'copy',     label: 'Copy name',       onClick: () => navigator.clipboard.writeText(db.name) },
+                  { type: 'separator' },
+                  { icon: 'trash',    label: 'Remove database', danger: true, onClick: () => { if (confirm('Remove this database?')) deleteMut.mutate(db.id); } },
+                ];
+                openMenu(e, items);
+              }}
             />
           ))}
         </div>
@@ -170,13 +183,14 @@ export default function DatabasesPage() {
           </form>
         </Modal>
       )}
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </>
   );
 }
 
-function DatabaseRow({ db, last, onClick, onDelete }: {
+function DatabaseRow({ db, last, onClick, onDelete, onContextMenu }: {
   db: InfraDatabase; last: boolean;
-  onClick: () => void; onDelete: () => void;
+  onClick: () => void; onDelete: () => void; onContextMenu: (e: React.MouseEvent) => void;
 }) {
   const [hover, setHover] = useState(false);
   return (
@@ -184,6 +198,7 @@ function DatabaseRow({ db, last, onClick, onDelete }: {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onClick={onClick}
+      onContextMenu={onContextMenu}
       style={{
         display: 'grid', gridTemplateColumns: COLS,
         gap: 14, alignItems: 'center',
