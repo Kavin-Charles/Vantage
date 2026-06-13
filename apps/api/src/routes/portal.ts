@@ -422,6 +422,20 @@ export function createPortalRouter(db: Kysely<Database>): Router {
     return res.status(201).json({ data: comment, error: null })
   })
 
+  // GET /:token/approvals — list approvals for this portal
+  router.get('/:token/approvals', requirePortalSession, async (req, res) => {
+    const portalReq = req as Request & { portal: { id: string; project_id: string } }
+
+    const approvals = await db.selectFrom('approval_requests')
+      .selectAll()
+      .where('portal_id', '=', portalReq.portal.id)
+      .where('project_id', '=', portalReq.portal.project_id)
+      .orderBy('created_at', 'desc')
+      .execute()
+
+    return res.json({ data: approvals, error: null })
+  })
+
   // POST /:token/approvals/:approvalId/respond — approve or reject
   router.post('/:token/approvals/:approvalId/respond', requirePortalSession, async (req, res) => {
     const portalReq = req as Request & { portal: { id: string; project_id: string } }
