@@ -25,7 +25,7 @@ export function createMilestonesRouter(db: Kysely<Database>): Router {
   // GET /api/projects/:projectId/milestones
   router.get('/', async (req, res) => {
     const { workspace } = req as unknown as AuthenticatedRequest
-    const { projectId } = req.params as { projectId: string }
+    const { projectId } = req.params
     try {
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
@@ -45,7 +45,7 @@ export function createMilestonesRouter(db: Kysely<Database>): Router {
   // POST /api/projects/:projectId/milestones
   router.post('/', async (req, res) => {
     const { workspace } = req as unknown as AuthenticatedRequest
-    const { projectId } = req.params as { projectId: string }
+    const { projectId } = req.params
     const parsed = createMilestoneSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
@@ -62,7 +62,7 @@ export function createMilestonesRouter(db: Kysely<Database>): Router {
           project_id: projectId,
           name: parsed.data.name,
           description: parsed.data.description ?? null,
-          due_date: parsed.data.due_date as unknown as Date,
+          due_date: parsed.data.due_date,
           client_visible: parsed.data.client_visible,
           position: (Number(maxPos?.max ?? -1)) + 1,
         })
@@ -76,7 +76,7 @@ export function createMilestonesRouter(db: Kysely<Database>): Router {
 
   // PATCH /api/projects/:projectId/milestones/:milestoneId
   router.patch('/:milestoneId', async (req, res) => {
-    const { projectId, milestoneId } = req.params as { projectId: string; milestoneId: string }
+    const { projectId, milestoneId } = req.params
     const parsed = updateMilestoneSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
@@ -98,7 +98,7 @@ export function createMilestonesRouter(db: Kysely<Database>): Router {
 
   // DELETE /api/projects/:projectId/milestones/:milestoneId
   router.delete('/:milestoneId', async (req, res) => {
-    const { milestoneId, projectId } = req.params as { milestoneId: string; projectId: string }
+    const { milestoneId, projectId } = req.params
     await db.deleteFrom('milestones').where('id', '=', milestoneId).where('project_id', '=', projectId).execute()
     return res.json({ data: { success: true }, error: null })
   })
