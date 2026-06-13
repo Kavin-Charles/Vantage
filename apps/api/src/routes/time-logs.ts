@@ -75,14 +75,12 @@ export function createTimeLogsRouter(db: Kysely<Database>): Router {
       const project = await verifyProjectAccess(db, projectId, workspace.id)
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
-      const log = await db.selectFrom('time_logs').select(['id', 'user_id'])
+      await db.deleteFrom('time_logs')
         .where('id', '=', logId)
         .where('task_id', '=', taskId)
-        .executeTakeFirst()
-      if (!log) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Log not found' } })
-      if (log.user_id !== user.id) return res.status(403).json({ data: null, error: { code: 'FORBIDDEN', message: "Cannot delete another user's time log" } })
+        .where('user_id', '=', user.id)
+        .execute()
 
-      await db.deleteFrom('time_logs').where('id', '=', logId).execute()
       return res.json({ data: { success: true }, error: null })
     } catch {
       return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })

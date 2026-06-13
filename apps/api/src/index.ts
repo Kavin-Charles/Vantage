@@ -48,6 +48,8 @@ import { createNotificationsRouter } from './routes/notifications';
 import { createDashboardsRouter } from './routes/dashboards'
 import { createProjectsRouter, createProjectStatusesRouter } from './routes/projects';
 import { createProjectTasksRouter, createMyTasksRouter } from './routes/project-tasks';
+import { createCustomFieldsRouter, createTaskFieldValuesRouter } from './routes/custom-fields';
+import { createTimeLogsRouter } from './routes/time-logs';
 import { createMilestonesRouter } from './routes/milestones';
 import { createSprintsRouter } from './routes/sprints';
 import { createProjectMembersRouter } from './routes/project-members';
@@ -247,6 +249,9 @@ app.use('/api/projects/:projectId/sprints', requireAuth, createSprintsRouter(db)
 app.use('/api/projects/:projectId/members', requireAuth, createProjectMembersRouter(db));
 app.use('/api/projects/:projectId/portal', requireAuth, createPortalInternalRouter(db));
 app.use('/api/projects/:projectId/automations', requireAuth, createAutomationRouter(db));
+app.use('/api/projects/:projectId/custom-fields', requireAuth, createCustomFieldsRouter(db));
+app.use('/api/projects/:projectId/tasks/:taskId/field-values', requireAuth, createTaskFieldValuesRouter(db));
+app.use('/api/projects/:projectId/tasks/:taskId/time-logs', requireAuth, createTimeLogsRouter(db));
 
 // Public portal — no requireAuth
 app.use('/api/portal', createPortalRouter(db));
