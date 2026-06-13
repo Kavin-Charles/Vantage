@@ -5,6 +5,10 @@ import type { ProjectWithProgress } from '@/modules/projects/lib/api';
 const NAV = [
   { href: 'board', label: 'Board' },
   { href: 'list', label: 'List' },
+  { href: 'timeline', label: 'Timeline' },
+  { href: 'calendar', label: 'Calendar' },
+  { href: 'table', label: 'Table' },
+  { href: 'roadmap', label: 'Roadmap' },
 ];
 
 const HEALTH_COLORS = {

@@ -2,9 +2,20 @@
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { pmApi, type Milestone } from '@/modules/projects/lib/api';
+import { apiFetch } from '@/modules/shared/lib/api';
+
+interface Milestone {
+  id: string;
+  project_id: string;
+  name: string;
+  description: string | null;
+  due_date: string;
+  status: string;
+  client_visible: boolean;
+  position: number;
+}
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING:   '#93c5fd',
@@ -16,137 +27,20 @@ const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'];
 const QUARTER_MONTHS = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11]];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-interface AddMilestoneModalProps {
-  onClose: () => void;
-  onSave: (data: { name: string; due_date: string; description?: string }) => void;
-  loading: boolean;
-  defaultYear: number;
-}
-
-function AddMilestoneModal({ onClose, onSave, loading, defaultYear }: AddMilestoneModalProps) {
-  const [name, setName] = useState('');
-  const [dueDate, setDueDate] = useState(`${defaultYear}-01-01`);
-  const [description, setDescription] = useState('');
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim() || !dueDate) return;
-    onSave({ name: name.trim(), due_date: dueDate, description: description.trim() || undefined });
-  }
-
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
-    }}>
-      <div style={{
-        background: 'var(--surface)', borderRadius: 14, padding: 28,
-        width: 420, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-      }}>
-        <h3 style={{ fontFamily: 'Instrument Serif', fontSize: 22, color: 'var(--text)', margin: '0 0 20px' }}>
-          Add milestone
-        </h3>
-        <form onSubmit={submit}>
-          <label style={{ display: 'block', fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>
-            Name *
-          </label>
-          <input
-            autoFocus
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Milestone name"
-            style={{
-              width: '100%', padding: '9px 12px', border: '1px solid var(--border)',
-              borderRadius: 8, fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)',
-              background: 'var(--surface2)', outline: 'none', boxSizing: 'border-box', marginBottom: 14,
-            }}
-          />
-
-          <label style={{ display: 'block', fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>
-            Due date *
-          </label>
-          <input
-            type="date"
-            value={dueDate}
-            onChange={e => setDueDate(e.target.value)}
-            style={{
-              width: '100%', padding: '9px 12px', border: '1px solid var(--border)',
-              borderRadius: 8, fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)',
-              background: 'var(--surface2)', outline: 'none', boxSizing: 'border-box', marginBottom: 14,
-            }}
-          />
-
-          <label style={{ display: 'block', fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>
-            Description
-          </label>
-          <textarea
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            placeholder="Optional description"
-            rows={3}
-            style={{
-              width: '100%', padding: '9px 12px', border: '1px solid var(--border)',
-              borderRadius: 8, fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)',
-              background: 'var(--surface2)', outline: 'none', boxSizing: 'border-box',
-              resize: 'none', marginBottom: 20,
-            }}
-          />
-
-          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                padding: '8px 18px', border: '1px solid var(--border)', borderRadius: 8,
-                fontFamily: 'DM Sans', fontSize: 13, cursor: 'pointer',
-                background: 'none', color: 'var(--text2)',
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || !name.trim() || !dueDate}
-              style={{
-                padding: '8px 18px', border: 'none', borderRadius: 8,
-                fontFamily: 'DM Sans', fontSize: 13, cursor: 'pointer',
-                background: 'var(--text)', color: '#fff',
-                opacity: loading || !name.trim() || !dueDate ? 0.5 : 1,
-              }}
-            >
-              {loading ? 'Saving…' : 'Add milestone'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 export default function RoadmapPage() {
   const { id: projectId } = useParams<{ id: string }>();
   const getToken = useApiToken();
-  const qc = useQueryClient();
   const [year, setYear] = useState(new Date().getFullYear());
-  const [showModal, setShowModal] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['milestones', projectId],
     queryFn: async () => {
       const token = await getToken();
-      const res = await pmApi.listMilestones(token, projectId);
-      return res.data;
-    },
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async (body: { name: string; due_date: string; description?: string }) => {
-      const token = await getToken();
-      return pmApi.createMilestone(token, projectId, body);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['milestones', projectId] });
-      setShowModal(false);
+      const res = await apiFetch<{ data: Milestone[] }>(
+        `/api/projects/${projectId}/milestones`,
+        { token }
+      );
+      return res.data.data;
     },
   });
 
@@ -195,19 +89,9 @@ export default function RoadmapPage() {
         >
           ›
         </button>
-        <span style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)' }}>
+        <span style={{ marginLeft: 'auto', fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)' }}>
           {yearMilestones.length} milestone{yearMilestones.length !== 1 ? 's' : ''}
         </span>
-        <button
-          onClick={() => setShowModal(true)}
-          style={{
-            marginLeft: 'auto', fontFamily: 'DM Sans', fontSize: 13, fontWeight: 500,
-            background: 'var(--text)', color: '#fff', border: 'none', borderRadius: 8,
-            padding: '7px 16px', cursor: 'pointer',
-          }}
-        >
-          + Add milestone
-        </button>
       </div>
 
       {isLoading ? (
@@ -293,15 +177,6 @@ export default function RoadmapPage() {
             </div>
           )}
         </div>
-      )}
-
-      {showModal && (
-        <AddMilestoneModal
-          onClose={() => setShowModal(false)}
-          onSave={body => createMutation.mutate(body)}
-          loading={createMutation.isPending}
-          defaultYear={year}
-        />
       )}
     </div>
   );
