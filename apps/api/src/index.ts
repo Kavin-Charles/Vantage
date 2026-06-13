@@ -51,6 +51,7 @@ import { createProjectTasksRouter, createMyTasksRouter } from './routes/project-
 import { createMilestonesRouter } from './routes/milestones';
 import { createSprintsRouter } from './routes/sprints';
 import { createProjectMembersRouter } from './routes/project-members';
+import { createPortalRouter, createPortalInternalRouter } from './routes/portal';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
@@ -240,6 +241,10 @@ app.use('/api/projects/:projectId/tasks', requireAuth, createProjectTasksRouter(
 app.use('/api/projects/:projectId/milestones', requireAuth, createMilestonesRouter(db));
 app.use('/api/projects/:projectId/sprints', requireAuth, createSprintsRouter(db));
 app.use('/api/projects/:projectId/members', requireAuth, createProjectMembersRouter(db));
+app.use('/api/projects/:projectId/portal', requireAuth, createPortalInternalRouter(db));
+
+// Public portal — no requireAuth
+app.use('/api/portal', createPortalRouter(db));
 app.use('/api/me/tasks', requireAuth, createMyTasksRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
 app.use('/api/item-groups', requireAuth, requireModule('pipelines'), createItemGroupsRouter(db, requirePermission));
