@@ -187,10 +187,6 @@ export default function AnalyticsPage() {
     );
   }
 
-  if (healthQ.error || statusQ.error || workloadQ.error || velocityQ.error) {
-    return <div style={{ padding: '24px', color: 'var(--red)' }}>Failed to load analytics.</div>;
-  }
-
   return (
     <div style={{ padding: '24px 32px', maxWidth: 960 }}>
       <h2 style={{ fontFamily: 'Instrument Serif', fontSize: 24, color: 'var(--text)', margin: '0 0 24px' }}>

@@ -9,6 +9,8 @@ const NAV = [
   { href: 'calendar', label: 'Calendar' },
   { href: 'table', label: 'Table' },
   { href: 'roadmap', label: 'Roadmap' },
+  { href: 'analytics', label: 'Analytics' },
+  { href: 'docs', label: 'Docs' },
 ];
 
 const HEALTH_COLORS = {

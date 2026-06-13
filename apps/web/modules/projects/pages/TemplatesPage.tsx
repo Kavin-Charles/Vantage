@@ -25,8 +25,6 @@ export default function TemplatesPage() {
   const getToken = useApiToken();
   const router = useRouter();
   const qc = useQueryClient();
-  const [applyingId, setApplyingId] = useState<string | null>(null);
-  const [newName, setNewName] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['project-templates'],
@@ -46,7 +44,6 @@ export default function TemplatesPage() {
       });
     },
     onSuccess: (res) => {
-      setApplyingId(null);
       qc.invalidateQueries({ queryKey: ['projects'] });
       router.push(`/projects/${res.data.id}/board`);
     },
@@ -65,9 +62,10 @@ export default function TemplatesPage() {
     },
   });
 
-  function handleApply(templateId: string, name: string) {
-    if (!name.trim()) return;
-    applyMutation.mutate({ templateId, name: name.trim() });
+  function handleUse(template: Template) {
+    const name = window.prompt(`New project name:`, `${template.name} copy`);
+    if (!name?.trim()) return;
+    applyMutation.mutate({ templateId: template.id, name: name.trim() });
   }
 
   const templates = data?.data ?? [];
@@ -87,27 +85,11 @@ export default function TemplatesPage() {
         <div style={{ fontFamily: 'DM Sans', fontSize: 14, color: 'var(--text3)' }}>Loading...</div>
       ) : (
         <>
-          {applyMutation.error && (
-            <div style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--red)', marginBottom: 16 }}>
-              Failed to create project from template.
-            </div>
-          )}
-          {deleteMutation.error && (
-            <div style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--red)', marginBottom: 16 }}>
-              Failed to delete template.
-            </div>
-          )}
-
           {/* My templates */}
           <Section
             title="Workspace Templates"
             templates={myTemplates}
-            applyingId={applyingId}
-            newName={newName}
-            onNewNameChange={setNewName}
-            onStartApply={(t) => { setApplyingId(t.id); setNewName(`${t.name} copy`); }}
-            onCancelApply={() => setApplyingId(null)}
-            onApply={handleApply}
+            onUse={handleUse}
             onDelete={t => deleteMutation.mutate(t.id)}
             isPending={applyMutation.isPending || deleteMutation.isPending}
             showDelete
@@ -118,12 +100,7 @@ export default function TemplatesPage() {
             <Section
               title="Built-in Templates"
               templates={publicTemplates}
-              applyingId={applyingId}
-              newName={newName}
-              onNewNameChange={setNewName}
-              onStartApply={(t) => { setApplyingId(t.id); setNewName(`${t.name} copy`); }}
-              onCancelApply={() => setApplyingId(null)}
-              onApply={handleApply}
+              onUse={handleUse}
               isPending={applyMutation.isPending}
             />
           )}
@@ -150,24 +127,14 @@ export default function TemplatesPage() {
 function Section({
   title,
   templates,
-  applyingId,
-  newName,
-  onNewNameChange,
-  onStartApply,
-  onCancelApply,
-  onApply,
+  onUse,
   onDelete,
   isPending,
   showDelete = false,
 }: {
   title: string;
   templates: Template[];
-  applyingId: string | null;
-  newName: string;
-  onNewNameChange: (v: string) => void;
-  onStartApply: (t: Template) => void;
-  onCancelApply: () => void;
-  onApply: (templateId: string, name: string) => void;
+  onUse: (t: Template) => void;
   onDelete?: (t: Template) => void;
   isPending: boolean;
   showDelete?: boolean;
@@ -189,12 +156,7 @@ function Section({
             <TemplateCard
               key={t.id}
               template={t}
-              isApplying={applyingId === t.id}
-              newName={newName}
-              onNewNameChange={onNewNameChange}
-              onStartApply={onStartApply}
-              onCancelApply={onCancelApply}
-              onApply={onApply}
+              onUse={onUse}
               onDelete={showDelete ? onDelete : undefined}
               isPending={isPending}
             />
@@ -207,22 +169,12 @@ function Section({
 
 function TemplateCard({
   template,
-  isApplying,
-  newName,
-  onNewNameChange,
-  onStartApply,
-  onCancelApply,
-  onApply,
+  onUse,
   onDelete,
   isPending,
 }: {
   template: Template;
-  isApplying: boolean;
-  newName: string;
-  onNewNameChange: (v: string) => void;
-  onStartApply: (t: Template) => void;
-  onCancelApply: () => void;
-  onApply: (templateId: string, name: string) => void;
+  onUse: (t: Template) => void;
   onDelete?: (t: Template) => void;
   isPending: boolean;
 }) {
@@ -249,76 +201,33 @@ function TemplateCard({
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', gap: 8, marginTop: 'auto', flexWrap: 'wrap' }}>
-        {isApplying ? (
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', width: '100%', flexWrap: 'wrap' }}>
-            <input
-              value={newName}
-              onChange={e => onNewNameChange(e.target.value)}
-              placeholder="Project name"
-              autoFocus
-              style={{
-                flex: 1, minWidth: 0,
-                border: '1px solid var(--border)', borderRadius: 6,
-                padding: '4px 8px', fontSize: 13, fontFamily: 'DM Sans',
-                background: 'var(--bg)', color: 'var(--text)', outline: 'none',
-              }}
-            />
-            <button
-              onClick={() => onApply(template.id, newName)}
-              disabled={isPending || !newName.trim()}
-              style={{
-                fontFamily: 'DM Sans', fontSize: 12, fontWeight: 500,
-                background: 'var(--text)', color: '#fff',
-                border: 'none', borderRadius: 6, padding: '5px 12px',
-                cursor: isPending || !newName.trim() ? 'not-allowed' : 'pointer',
-                opacity: isPending || !newName.trim() ? 0.6 : 1,
-              }}
-            >
-              Create
-            </button>
-            <button
-              onClick={onCancelApply}
-              style={{
-                fontFamily: 'DM Sans', fontSize: 12,
-                background: 'transparent', color: 'var(--text3)',
-                border: '1px solid var(--border)', borderRadius: 6, padding: '5px 10px',
-                cursor: 'pointer',
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <>
-            <button
-              onClick={() => onStartApply(template)}
-              disabled={isPending}
-              style={{
-                fontFamily: 'DM Sans', fontSize: 12, fontWeight: 500,
-                background: 'var(--text)', color: '#fff',
-                border: 'none', borderRadius: 6, padding: '6px 14px',
-                cursor: isPending ? 'not-allowed' : 'pointer',
-                opacity: isPending ? 0.6 : 1, flex: 1,
-              }}
-            >
-              Use template
-            </button>
-            {onDelete && (
-              <button
-                onClick={() => onDelete(template)}
-                disabled={isPending}
-                style={{
-                  fontFamily: 'DM Sans', fontSize: 12,
-                  background: 'transparent', color: 'var(--text3)',
-                  border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px',
-                  cursor: isPending ? 'not-allowed' : 'pointer',
-                }}
-              >
-                Delete
-              </button>
-            )}
-          </>
+      <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
+        <button
+          onClick={() => onUse(template)}
+          disabled={isPending}
+          style={{
+            fontFamily: 'DM Sans', fontSize: 12, fontWeight: 500,
+            background: 'var(--text)', color: '#fff',
+            border: 'none', borderRadius: 6, padding: '6px 14px',
+            cursor: isPending ? 'not-allowed' : 'pointer',
+            opacity: isPending ? 0.6 : 1, flex: 1,
+          }}
+        >
+          Use template
+        </button>
+        {onDelete && (
+          <button
+            onClick={() => onDelete(template)}
+            disabled={isPending}
+            style={{
+              fontFamily: 'DM Sans', fontSize: 12,
+              background: 'transparent', color: 'var(--text3)',
+              border: '1px solid var(--border)', borderRadius: 6, padding: '6px 10px',
+              cursor: isPending ? 'not-allowed' : 'pointer',
+            }}
+          >
+            Delete
+          </button>
         )}
       </div>
     </div>

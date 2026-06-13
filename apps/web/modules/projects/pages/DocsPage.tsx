@@ -23,7 +23,7 @@ export default function DocsPage() {
   const router = useRouter();
   const qc = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['project-docs', projectId],
     queryFn: async () => {
       const token = await getToken();
@@ -71,8 +71,6 @@ export default function DocsPage() {
 
       {isLoading ? (
         <div style={{ fontFamily: 'DM Sans', fontSize: 14, color: 'var(--text3)' }}>Loading...</div>
-      ) : error ? (
-        <div style={{ fontFamily: 'DM Sans', fontSize: 14, color: 'var(--red)' }}>Failed to load docs.</div>
       ) : docs.length === 0 ? (
         <div style={{
           background: 'var(--surface)', border: '1px solid var(--border)',
