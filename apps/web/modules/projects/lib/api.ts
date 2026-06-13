@@ -10,13 +10,25 @@ export interface ProjectWithProgress extends Project { progress: number }
 export interface TaskStatus { id: string; project_id: string; name: string; color: string; position: number; is_done: boolean }
 export interface Task {
   id: string; project_id: string; parent_id: string | null; status_id: string; title: string;
-  description: string | null; priority: string; due_date: string | null; estimate_hours: string | null;
+  description: string | null; priority: string; due_date: string | null; start_date: string | null;
+  estimate_hours: string | null; estimated_minutes: number | null;
   client_visible: boolean; position: number; created_at: string; updated_at: string;
 }
 export interface TaskWithAssignees extends Task { assignees: { id: string; name: string; email: string }[] }
 export interface Comment { id: string; task_id: string; body: string | null; parent_id: string | null; created_at: string; author_name: string | null }
 
+export interface Milestone {
+  id: string; project_id: string; name: string; description: string | null;
+  due_date: string; status: string; client_visible: boolean; position: number;
+}
+
 export const pmApi = {
+  listMilestones: (token: string, projectId: string) =>
+    apiFetch<{ data: Milestone[] }>(`/api/projects/${projectId}/milestones`, { token }),
+  createMilestone: (token: string, projectId: string, body: { name: string; due_date: string; description?: string; client_visible?: boolean }) =>
+    apiFetch<{ data: Milestone }>(`/api/projects/${projectId}/milestones`, { token, method: 'POST', body: JSON.stringify(body) }),
+  updateMilestone: (token: string, projectId: string, milestoneId: string, body: Partial<Milestone>) =>
+    apiFetch<{ data: Milestone }>(`/api/projects/${projectId}/milestones/${milestoneId}`, { token, method: 'PATCH', body: JSON.stringify(body) }),
   listProjects: (token: string, params?: Record<string, string>) =>
     apiFetch<{ data: ProjectWithProgress[] }>(`/api/projects${params ? '?' + new URLSearchParams(params) : ''}`, { token }),
   getProject: (token: string, id: string) =>
