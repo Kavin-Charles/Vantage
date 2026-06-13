@@ -40,7 +40,7 @@ export default function RoadmapPage() {
         `/api/projects/${projectId}/milestones`,
         { token }
       );
-      return res.data.data;
+      return res.data;
     },
   });
 
