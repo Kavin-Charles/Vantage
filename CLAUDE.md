@@ -37,7 +37,7 @@ Vencore is a modular white-label company management platform. Companies deploy i
 
 ## Design System
 
-The UI reference file is `vencore-full.html` in the project root. **Match it exactly.** Do not invent new components or deviate from the established patterns.
+The UI reference folder is `_design` in the project root. **Match it exactly.** Do not invent new components or deviate from the established patterns.
 
 Key design tokens:
 - `--bg: #f7f6f2` — warm off-white page background
