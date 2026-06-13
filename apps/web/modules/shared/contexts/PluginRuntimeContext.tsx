@@ -7,7 +7,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import type { DashboardWidgetDef } from '@/modules/shared/lib/dashboard-registry';
 
 if (typeof window !== 'undefined') {
-  (window as any).React = React;
+  (window as any).React = require('react');
 }
 
 export type AnyComponent = React.ComponentType<any>;
@@ -62,8 +62,8 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
 
     // Expose React globally for plugins
     if (typeof window !== 'undefined') {
-      (window as any).React = React;
-      (window as any).ReactDOM = ReactDOM;
+      (window as any).React = require('react');
+      (window as any).ReactDOM = require('react-dom');
     }
 
     const enabledWithClient = plugins.filter(

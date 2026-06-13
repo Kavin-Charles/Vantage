@@ -6,6 +6,7 @@ import { Topbar } from '@/modules/shared/components/Topbar';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { Modal } from '@/modules/shared/components/ui/Modal';
 import { Icon } from '@/modules/shared/components/ui/Icon';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { FormField, Select, Textarea } from '@/modules/shared/components/ui/FormField';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listActivity, createActivity } from '@/modules/activity/lib/activity';
@@ -49,6 +50,7 @@ export default function ActivityPage() {
   const [form, setForm] = useState<{ type: ActivityType; body: string }>({ type: 'note', body: '' });
   const [offset, setOffset] = useState(0);
   const LIMIT = 25;
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data, isLoading } = useQuery({
     queryKey: ['activity', offset],
@@ -82,7 +84,17 @@ export default function ActivityPage() {
           ) : items.length === 0 ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>No activity yet.</div>
           ) : items.map((item, i) => (
-            <ActivityRow key={item.id} item={item} last={i === items.length - 1} />
+            <ActivityRow
+              key={item.id}
+              item={item}
+              last={i === items.length - 1}
+              onContextMenu={(e) => {
+                const menuItems: ContextMenuItem[] = [
+                  ...(item.body ? [{ icon: 'copy', label: 'Copy text', onClick: () => navigator.clipboard.writeText(item.body ?? '') } as ContextMenuItem] : []),
+                ];
+                openMenu(e, menuItems);
+              }}
+            />
           ))}
         </div>
 
@@ -100,6 +112,8 @@ export default function ActivityPage() {
           </div>
         )}
       </div>
+
+      <ContextMenu menu={menu} onClose={closeMenu} />
 
       {modal && (
         <Modal title="Log activity" onClose={() => setModal(false)}>
@@ -133,7 +147,7 @@ export default function ActivityPage() {
   );
 }
 
-function ActivityRow({ item, last }: { item: Activity; last: boolean }) {
+function ActivityRow({ item, last, onContextMenu }: { item: Activity; last: boolean; onContextMenu: (e: React.MouseEvent) => void }) {
   const [hover, setHover] = useState(false);
   const iconName = TYPE_ICONS[item.type] ?? 'note';
   const label = TYPE_LABELS[item.type] ?? item.type;
@@ -142,6 +156,7 @@ function ActivityRow({ item, last }: { item: Activity; last: boolean }) {
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onContextMenu={onContextMenu}
       style={{
         display: 'flex', gap: 14, padding: '14px 18px',
         borderBottom: last ? 'none' : '1px solid var(--border)',
