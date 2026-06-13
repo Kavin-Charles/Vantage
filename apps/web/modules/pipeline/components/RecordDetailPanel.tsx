@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { getRecord, updateRecord, deleteRecord } from '@/modules/pipeline/lib/records';
 import { listConversions } from '@/modules/pipeline/lib/record-types';
 import { ConversionWizard } from './ConversionWizard';
@@ -18,7 +17,6 @@ interface Props {
 export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
   const getToken = useApiToken();
   const qc = useQueryClient();
-  const { ask: askConfirm, el: confirmEl } = useConfirm();
 
   const { data } = useQuery({
     queryKey: ['record', recordId],
@@ -186,7 +184,11 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
             </div>
           )}
           <button
-            onClick={() => askConfirm({ title: 'Delete record', message: 'Delete this record? This cannot be undone.', confirmLabel: 'Delete', variant: 'danger', onConfirm: () => deleteMut.mutate() })}
+            onClick={() => {
+              if (window.confirm('Delete this record? This cannot be undone.')) {
+                deleteMut.mutate();
+              }
+            }}
             style={{
               fontSize: 13, padding: '6px 14px',
               background: 'var(--red-bg)', color: 'var(--red)',
@@ -199,7 +201,6 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
           </button>
         </div>
       </div>
-      {confirmEl}
     </>
   );
 }

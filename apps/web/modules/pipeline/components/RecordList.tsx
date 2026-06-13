@@ -2,10 +2,8 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAlert } from '@/modules/shared/components/ui/ConfirmDialog';
 import { ConversionModal } from './ConversionModal';
 import { getRecordConversions, listTemplates, type EnrichedConversion } from '@/modules/pipeline/lib/conversions';
-import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -111,7 +109,6 @@ function RecordCard({
   onClose: () => void;
 }) {
   const qc = useQueryClient();
-  const { show: showAlert, el: alertEl } = useAlert();
   const [editName, setEditName] = useState(record.name);
   const [editStageId, setEditStageId] = useState(record.stage_id);
   const [fieldEdits, setFieldEdits] = useState<Record<string, string>>({});
@@ -366,11 +363,10 @@ function RecordCard({
             setShowConvert(false);
             void qc.invalidateQueries({ queryKey: ['record-conversions', record.id] });
             void qc.invalidateQueries({ queryKey: ['records'] });
-            showAlert(`New record created: ${newId}`, { title: 'Converted!', variant: 'success' });
+            alert(`Converted! New record ID: ${newId}`);
           }}
         />
       )}
-      {alertEl}
     </div>
   );
 }
@@ -385,7 +381,6 @@ export function RecordList({
   pipelineId: string;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data: pipelineData } = useQuery<{ data: PipelineWithStages }>({
     queryKey: ['pipeline', pipelineId],
@@ -421,8 +416,6 @@ export function RecordList({
   }
 
   return (
-    <div>
-    <ContextMenu menu={menu} onClose={closeMenu} />
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, overflow: 'hidden', fontFamily: 'DM Sans, sans-serif' }}>
       {sorted.length === 0 && (
         <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
@@ -441,30 +434,6 @@ export function RecordList({
             {/* Row */}
             <div
               onClick={() => setExpandedId(isExpanded ? null : record.id)}
-              onContextMenu={(e) => {
-                const items: ContextMenuItem[] = [
-                  { icon: 'open', label: 'Open record', onClick: () => setExpandedId(isExpanded ? null : record.id) },
-                  { type: 'separator' },
-                  {
-                    type: 'submenu', icon: 'stage', label: 'Move to stage',
-                    items: stages.map(s => ({
-                      label: s.name,
-                      swatch: stageColor(s),
-                      onClick: async () => {
-                        await fetch(`/api/records/${record.id}`, {
-                          method: 'PATCH',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ stage_id: s.id }),
-                        });
-                      },
-                    })),
-                  },
-                  { type: 'separator' },
-                  { icon: 'link', label: 'Copy link', onClick: () => navigator.clipboard.writeText(`${window.location.origin}/pipeline?record=${record.id}`) },
-                  ...(record.record_number ? [{ icon: 'copy', label: 'Copy record #', onClick: () => navigator.clipboard.writeText(record.record_number!) } as ContextMenuItem] : []),
-                ];
-                openMenu(e, items);
-              }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '12px 16px', cursor: 'pointer',
@@ -533,7 +502,6 @@ export function RecordList({
           </div>
         );
       })}
-    </div>
     </div>
   );
 }
