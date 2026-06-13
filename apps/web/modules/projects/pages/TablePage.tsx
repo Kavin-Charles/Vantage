@@ -97,7 +97,7 @@ export default function TablePage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'DM Sans' }}>
             <thead>
               <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-                {['Task', 'Status', 'Priority', 'Due Date', 'Est. Hours'].map(col => (
+                {['Task', 'Status', 'Priority', 'Due Date', 'Est.'].map(col => (
                   <th
                     key={col}
                     style={{
@@ -117,7 +117,7 @@ export default function TablePage() {
                 const priority = PRIORITY_BADGE[task.priority] ?? PRIORITY_BADGE['NONE']!;
                 const dueDate = task.due_date ? new Date(task.due_date) : null;
                 const overdue = dueDate && dueDate < now && !(status?.is_done);
-                const estHours = task.estimate_hours ? Number(task.estimate_hours).toFixed(1) : '—';
+                const estHours = task.estimated_minutes ? `${Math.round(task.estimated_minutes / 60)}h` : '—';
 
                 return (
                   <tr
