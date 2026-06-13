@@ -1,7 +1,11 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import type { ProjectWithProgress } from '@/modules/projects/lib/api';
-import { ProjectNav } from './ProjectNav';
+
+const NAV = [
+  { href: 'board', label: 'Board' },
+  { href: 'list', label: 'List' },
+];
 
 const HEALTH_COLORS = {
   ON_TRACK: { dot: '#2d6a4f', bg: '#d8f3dc', label: 'On Track' },
@@ -49,7 +53,7 @@ export default async function ProjectLayout({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 56 }}>
           <Link
             href="/projects"
-            style={{ color: 'var(--text2)', fontSize: 13, fontFamily: 'DM Sans', textDecoration: 'none' }}
+            style={{ color: 'var(--text3)', fontSize: 13, fontFamily: 'DM Sans', textDecoration: 'none' }}
           >
             Projects
           </Link>
@@ -77,7 +81,7 @@ export default async function ProjectLayout({
 
           {project && (
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ height: 6, width: 100, background: 'var(--surface2)', borderRadius: 3 }}>
+              <div style={{ height: 4, width: 100, background: 'var(--surface2)', borderRadius: 2 }}>
                 <div style={{
                   height: '100%', borderRadius: 2,
                   background: project.color ?? 'var(--green)',
@@ -92,7 +96,22 @@ export default async function ProjectLayout({
         </div>
 
         {/* Sub-nav */}
-        <ProjectNav id={id} />
+        <div style={{ display: 'flex', gap: 2 }}>
+          {NAV.map(n => (
+            <Link
+              key={n.href}
+              href={`/projects/${id}/${n.href}`}
+              style={{
+                fontFamily: 'DM Sans', fontSize: 13, fontWeight: 500,
+                padding: '8px 14px', textDecoration: 'none',
+                color: 'var(--text2)', borderBottom: '2px solid transparent',
+                display: 'inline-block',
+              }}
+            >
+              {n.label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Page content */}
