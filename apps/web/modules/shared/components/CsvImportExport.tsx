@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { Button } from '@/modules/shared/components/ui/Button';
+import { useAlert } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { parseCSV, downloadCSV } from '@/modules/shared/lib/csv';
@@ -30,6 +31,7 @@ export function CsvImportExport({
   templateHeaders,
 }: Props) {
   const getToken = useApiToken();
+  const { show: showAlert, el: alertEl } = useAlert();
   const fileRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -56,7 +58,7 @@ export function CsvImportExport({
     if (!file) return;
     const MAX_CSV_BYTES = 5 * 1024 * 1024; // 5 MB
     if (file.size > MAX_CSV_BYTES) {
-      alert('File too large. Maximum CSV size is 5 MB.');
+      showAlert('File too large. Maximum CSV size is 5 MB.', { variant: 'error', title: 'File too large' });
       if (fileRef.current) fileRef.current.value = '';
       return;
     }
@@ -64,7 +66,7 @@ export function CsvImportExport({
     try {
       const text = await file.text();
       const rows = parseCSV(text);
-      if (rows.length === 0) { alert('No rows found in CSV.'); return; }
+      if (rows.length === 0) { showAlert('No rows found in the CSV file.', { variant: 'error', title: 'Empty file' }); return; }
       const token = await getToken();
       const result = await apiFetch<{ data: { created: number; errors: string[] }; error: null }>(
         `/api/${resource}/import`,
@@ -73,7 +75,7 @@ export function CsvImportExport({
       const { created, errors } = result.data;
       const msg = [`Imported ${created} record${created !== 1 ? 's' : ''}.`];
       if (errors.length > 0) msg.push(`${errors.length} error(s):\n${errors.slice(0, 5).join('\n')}`);
-      alert(msg.join('\n'));
+      showAlert(msg.join('\n'), { title: 'Import complete', variant: errors.length > 0 ? 'error' : 'success' });
       onImported?.({ created, errors });
     } finally {
       setImporting(false);
@@ -87,6 +89,7 @@ export function CsvImportExport({
 
   return (
     <div style={{ display: 'flex', gap: 6 }}>
+      {alertEl}
       <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleImport} />
       <Button onClick={downloadTemplate}>Template</Button>
       <Button onClick={() => fileRef.current?.click()} disabled={importing}>

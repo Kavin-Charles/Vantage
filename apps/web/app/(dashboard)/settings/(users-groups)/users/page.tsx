@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
 import { apiFetch } from '@/modules/shared/lib/api';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { InviteUserModal } from '@/modules/settings/components/InviteUserModal';
 import type { User } from '@vencore/types';
 
@@ -17,6 +18,7 @@ export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const [showInvite, setShowInvite] = useState(false);
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
 
   const { data: usersData, isLoading } = useQuery({
     queryKey: ['users'],
@@ -123,11 +125,7 @@ export default function UsersPage() {
                     {u.is_active ? 'Deactivate' : 'Reactivate'}
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm(`Remove ${u.name} from this workspace?`)) {
-                        deleteUser.mutate(u.id);
-                      }
-                    }}
+                    onClick={() => askConfirm({ title: 'Remove member', message: `Remove ${u.name} from this workspace?`, confirmLabel: 'Remove', variant: 'danger', onConfirm: () => deleteUser.mutate(u.id) })}
                     disabled={cantRemove}
                     style={{ fontSize: 12, color: 'var(--red)', background: 'none', border: 'none', cursor: cantRemove ? 'not-allowed' : 'pointer', opacity: cantRemove ? 0.4 : 1 }}
                     title={cantRemove ? (isSelf ? "Can't remove yourself" : "Can't remove last admin") : undefined}
@@ -142,6 +140,7 @@ export default function UsersPage() {
       )}
 
       {showInvite && <InviteUserModal hasSMTP={hasSMTP} onClose={() => setShowInvite(false)} />}
+      {confirmEl}
     </div>
   );
 }
