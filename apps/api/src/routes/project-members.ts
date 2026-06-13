@@ -19,7 +19,7 @@ export function createProjectMembersRouter(db: Kysely<Database>): Router {
   // GET /api/projects/:projectId/members
   router.get('/', async (req, res) => {
     const { workspace } = req as unknown as AuthenticatedRequest
-    const { projectId } = req.params
+    const { projectId } = req.params as { projectId: string }
     try {
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
@@ -39,7 +39,7 @@ export function createProjectMembersRouter(db: Kysely<Database>): Router {
 
   // POST /api/projects/:projectId/members/invite
   router.post('/invite', async (req, res) => {
-    const { projectId } = req.params
+    const { projectId } = req.params as { projectId: string }
     const parsed = inviteMemberSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
@@ -55,7 +55,7 @@ export function createProjectMembersRouter(db: Kysely<Database>): Router {
 
   // PATCH /api/projects/:projectId/members/:memberId
   router.patch('/:memberId', async (req, res) => {
-    const { memberId, projectId } = req.params
+    const { memberId, projectId } = req.params as { memberId: string; projectId: string }
     const parsed = updateMemberSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
@@ -70,7 +70,7 @@ export function createProjectMembersRouter(db: Kysely<Database>): Router {
 
   // DELETE /api/projects/:projectId/members/:memberId
   router.delete('/:memberId', async (req, res) => {
-    const { memberId, projectId } = req.params
+    const { memberId, projectId } = req.params as { memberId: string; projectId: string }
     await db.deleteFrom('project_members').where('id', '=', memberId).where('project_id', '=', projectId).execute()
     return res.json({ data: { success: true }, error: null })
   })

@@ -30,7 +30,7 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
   // GET /api/projects/:projectId/sprints
   router.get('/', async (req, res) => {
     const { workspace } = req as unknown as AuthenticatedRequest
-    const { projectId } = req.params
+    const { projectId } = req.params as { projectId: string }
     try {
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
@@ -50,7 +50,7 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
   // POST /api/projects/:projectId/sprints
   router.post('/', async (req, res) => {
     const { workspace } = req as unknown as AuthenticatedRequest
-    const { projectId } = req.params
+    const { projectId } = req.params as { projectId: string }
     const parsed = createSprintSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
@@ -60,7 +60,13 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
       const sprint = await db.insertInto('sprints')
-        .values({ project_id: projectId, name: parsed.data.name, start_date: parsed.data.start_date, end_date: parsed.data.end_date, goal: parsed.data.goal ?? null })
+        .values({
+          project_id: projectId,
+          name: parsed.data.name,
+          start_date: parsed.data.start_date as unknown as Date,
+          end_date: parsed.data.end_date as unknown as Date,
+          goal: parsed.data.goal ?? null,
+        })
         .returningAll().executeTakeFirstOrThrow()
       return res.status(201).json({ data: sprint, error: null })
     } catch {
@@ -70,7 +76,7 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
 
   // PATCH /api/projects/:projectId/sprints/:sprintId
   router.patch('/:sprintId', async (req, res) => {
-    const { sprintId, projectId } = req.params
+    const { sprintId, projectId } = req.params as { sprintId: string; projectId: string }
     const parsed = updateSprintSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
@@ -92,7 +98,7 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
 
   // GET /api/projects/:projectId/sprints/:sprintId/tasks
   router.get('/:sprintId/tasks', async (req, res) => {
-    const { sprintId } = req.params
+    const { sprintId } = req.params as { sprintId: string }
     const tasks = await db.selectFrom('sprint_tasks as st')
       .innerJoin('project_tasks as t', 't.id', 'st.task_id')
       .innerJoin('project_task_statuses as s', 's.id', 't.status_id')
@@ -104,7 +110,7 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
 
   // POST /api/projects/:projectId/sprints/:sprintId/tasks
   router.post('/:sprintId/tasks', async (req, res) => {
-    const { sprintId } = req.params
+    const { sprintId } = req.params as { sprintId: string }
     const parsed = addSprintTaskSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     await db.insertInto('sprint_tasks')
@@ -116,7 +122,7 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
 
   // DELETE /api/projects/:projectId/sprints/:sprintId/tasks/:taskId
   router.delete('/:sprintId/tasks/:taskId', async (req, res) => {
-    const { sprintId, taskId } = req.params
+    const { sprintId, taskId } = req.params as { sprintId: string; taskId: string }
     await db.deleteFrom('sprint_tasks').where('sprint_id', '=', sprintId).where('task_id', '=', taskId).execute()
     return res.json({ data: { success: true }, error: null })
   })
