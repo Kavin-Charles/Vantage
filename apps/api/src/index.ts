@@ -63,6 +63,10 @@ import { loadPluginBackend, getPluginRouter } from './lib/plugin-loader';
 import { seedOnFirstBoot } from './lib/seed';
 import { createAutomationRouter } from './routes/automation';
 import { initAutomationEngine } from './lib/automation-engine';
+import { createPmAnalyticsRouter } from './routes/pm-analytics';
+import { createProjectDocsRouter } from './routes/project-docs';
+import { createPmSearchRouter } from './routes/pm-search';
+import { createProjectTemplatesRouter, createSaveAsTemplateRouter } from './routes/project-templates';
 import { bridgeRegistry, pluginEventBus } from '@vencore/plugin-runtime';
 import { registerContactsBridgeMethods } from './routes/contacts';
 import { registerCompaniesBridgeMethods } from './routes/companies';
@@ -252,6 +256,11 @@ app.use('/api/projects/:projectId/automations', requireAuth, createAutomationRou
 app.use('/api/projects/:projectId/custom-fields', requireAuth, createCustomFieldsRouter(db));
 app.use('/api/projects/:projectId/tasks/:taskId/field-values', requireAuth, createTaskFieldValuesRouter(db));
 app.use('/api/projects/:projectId/tasks/:taskId/time-logs', requireAuth, createTimeLogsRouter(db));
+app.use('/api/projects/:projectId/analytics', requireAuth, createPmAnalyticsRouter(db));
+app.use('/api/projects/:projectId/docs', requireAuth, createProjectDocsRouter(db));
+app.use('/api/projects/:projectId/save-as-template', requireAuth, createSaveAsTemplateRouter(db));
+app.use('/api/pm/search', requireAuth, createPmSearchRouter(db));
+app.use('/api/project-templates', requireAuth, createProjectTemplatesRouter(db));
 
 // Public portal — no requireAuth
 app.use('/api/portal', createPortalRouter(db));
