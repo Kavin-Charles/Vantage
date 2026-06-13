@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-A full-featured project management module built into every white-labeled Vencore instance. Each tenant gets isolated projects, teams, and data. Core differentiator: a native **Client Portal** — branded, permission-scoped, and client-facing — something no generic PM tool does well for white-label products.
+A full-featured project management module built into every white-labeled Vencore instance. Each workspace gets isolated projects, teams, and data. Core differentiator: a native **Client Portal** — branded, permission-scoped, and client-facing — something no generic PM tool does well for white-label products.
 
 No CRM integration. No agent/server-awareness. Those are future modules.
 
@@ -23,8 +23,10 @@ Standalone PM module. Lives in `apps/web` (UI) and `apps/api` (REST). Shares the
 - Notification & alert system — PM events feed into existing notification infrastructure
 - Activity feed UI — per-project feeds reuse existing feed components
 - Analytics/KPI components — reporting reuses existing chart components
-- Task module UI — extended, not replaced
+- Design system — all PM UI matches `vencore-full.html` exactly (same tokens, fonts, components)
+- **Note:** existing CRM `Task` table is separate. PM tasks live in a new `ProjectTask` table to avoid schema conflicts.
 - Design system — all new UI uses existing typography, components
+- **Tech stack:** Kysely (query builder, no raw SQL without parameterisation), Zod (input validation on all routes), `{ data, error }` response envelope on all API responses
 
 ### New packages / modules
 
@@ -48,7 +50,7 @@ Standalone PM module. Lives in `apps/web` (UI) and `apps/api` (REST). Shares the
 ```
 Project {
   id            uuid PK
-  tenant_id     uuid FK → Tenant
+  workspace_id  uuid FK → Workspace
   name          string
   description   json          // block editor content
   cover_image   string?       // URL
@@ -64,16 +66,18 @@ Project {
 }
 ```
 
-### Task (extends existing)
+### ProjectTask
+
+New table — distinct from the existing CRM `Task` table (which is contact/deal-linked with simple `todo/done` status).
 
 ```
-Task {
+ProjectTask {
   id              uuid PK
   project_id      uuid FK → Project
-  parent_id       uuid? FK → Task   // subtasks
+  parent_id       uuid? FK → ProjectTask   // subtasks
   title           string
   description     json?             // block editor
-  status_id       uuid FK → TaskStatus
+  status_id       uuid FK → ProjectTaskStatus
   priority        enum(URGENT, HIGH, MEDIUM, LOW, NONE)
   assignees       TaskAssignee[]
   due_date        timestamp?
@@ -89,7 +93,7 @@ Task {
   updated_at      timestamp
 }
 
-TaskStatus {
+ProjectTaskStatus {
   id          uuid PK
   project_id  uuid FK → Project
   name        string
@@ -98,9 +102,9 @@ TaskStatus {
   is_done     boolean   // completion counts toward progress
 }
 
-TaskDependency {
-  task_id       uuid FK → Task
-  depends_on_id uuid FK → Task
+ProjectTaskDependency {
+  task_id       uuid FK → ProjectTask
+  depends_on_id uuid FK → ProjectTask
   type          enum(BLOCKS, RELATES_TO)
 }
 
@@ -111,8 +115,8 @@ TaskLabel {
   color       string
 }
 
-TaskLabelAssignment {
-  task_id   uuid FK → Task
+ProjectTaskLabelAssignment {
+  task_id   uuid FK → ProjectTask
   label_id  uuid FK → TaskLabel
 }
 
@@ -126,14 +130,14 @@ CustomField {
 }
 
 CustomFieldValue {
-  task_id   uuid FK → Task
+  task_id   uuid FK → ProjectTask
   field_id  uuid FK → CustomField
   value     json
 }
 
-TaskChecklist {
+ProjectTaskChecklist {
   id        uuid PK
-  task_id   uuid FK → Task
+  task_id   uuid FK → ProjectTask
   title     string
   done      boolean
   position  int
@@ -141,7 +145,7 @@ TaskChecklist {
 
 TimeLog {
   id          uuid PK
-  task_id     uuid FK → Task
+  task_id     uuid FK → ProjectTask
   user_id     uuid FK → User
   duration_m  int       // minutes
   logged_at   timestamp
@@ -149,9 +153,9 @@ TimeLog {
   is_billable boolean
 }
 
-TaskAttachment {
+ProjectTaskAttachment {
   id          uuid PK
-  task_id     uuid FK → Task
+  task_id     uuid FK → ProjectTask
   filename    string
   url         string
   size_bytes  int
@@ -160,10 +164,10 @@ TaskAttachment {
   is_deliverable boolean  // flagged for client portal
 }
 
-TaskComment {
+ProjectTaskComment {
   id          uuid PK
-  task_id     uuid FK → Task
-  author_id   uuid FK → User | ClientPortalSession
+  task_id     uuid FK → ProjectTask
+  author_id   uuid FK → User | ClientPortalSession  // client comments store portal_session_id, user_id null
   body        json     // block editor
   parent_id   uuid?    // thread reply
   created_at  timestamp
@@ -187,7 +191,7 @@ Milestone {
 
 MilestoneTask {
   milestone_id uuid FK → Milestone
-  task_id      uuid FK → Task
+  task_id      uuid FK → ProjectTask
 }
 ```
 
@@ -207,7 +211,7 @@ Sprint {
 
 SprintTask {
   sprint_id uuid FK → Sprint
-  task_id   uuid FK → Task
+  task_id   uuid FK → ProjectTask
   points    int?
 }
 ```
@@ -252,9 +256,9 @@ ApprovalRequest {
   id           uuid PK
   project_id   uuid FK → Project
   portal_id    uuid FK → PortalAccess
-  task_id      uuid? FK → Task
+  task_id      uuid? FK → ProjectTask
   milestone_id uuid? FK → Milestone
-  attachment_id uuid? FK → TaskAttachment
+  attachment_id uuid? FK → ProjectTaskAttachment
   status       enum(PENDING, APPROVED, REJECTED)
   note         string?
   responded_at timestamp?
@@ -384,13 +388,13 @@ Client tokens are separate from user accounts.
 
 #### Access
 - Each project can have one or more portal links (`PortalAccess`)
-- Portal URL: `{tenant}.vencore.app/portal/{token}` or custom subdomain via tenant settings
+- Portal URL: `{workspace}.vencore.app/portal/{token}` or custom subdomain via workspace settings
 - Optional password protection per portal
 - Magic-link / token-based — no Vencore account required for client
 - Revoke access anytime from project settings
 
 #### Branding
-- Inherits tenant white-label settings: logo, primary color, font
+- Inherits workspace white-label settings: logo, primary color, font
 - No Vencore branding visible to client
 - Optional custom portal title per project
 
@@ -494,7 +498,7 @@ Rules are ordered, evaluated in sequence. Max 20 rules per project (prevent abus
 
 ### 4.12 Search & Global Views
 
-- Global search: tasks, docs, files across all projects in tenant
+- Global search: tasks, docs, files across all projects in workspace
 - Filter by: assignee, status, priority, label, project, due date range
 - Saved filter views (per user, per project)
 - **My Tasks**: cross-project view of everything assigned to current user
@@ -506,7 +510,7 @@ Rules are ordered, evaluated in sequence. Max 20 rules per project (prevent abus
 - Project templates: pre-built task lists + statuses + milestones + custom fields
 - Save any project as template (strips member/date data, keeps structure)
 - Task templates
-- Org-level template gallery: shared across all projects in tenant
+- Workspace-level template gallery: shared across all projects in workspace
 - Default templates shipped with module (e.g. "Software Sprint", "Client Delivery", "Event Planning")
 
 ---
@@ -516,7 +520,7 @@ Rules are ordered, evaluated in sequence. Max 20 rules per project (prevent abus
 RESTful. All routes under `/api/v1/projects/`.
 
 ```
-GET    /projects                          list all (tenant-scoped)
+GET    /projects                          list all (workspace-scoped)
 POST   /projects                          create
 GET    /projects/:id                      get
 PATCH  /projects/:id                      update
@@ -580,7 +584,7 @@ GET    /search                            global search
 
 Portal routes use a separate auth path — not the existing JWT middleware.
 
-- `GET /portal/:token` validates token, returns tenant branding + project basics
+- `GET /portal/:token` validates token, returns workspace branding + project basics
 - If password-protected: returns `{ requiresPassword: true }`, client POSTs password
 - On success: issues short-lived signed cookie (`portal_session_id`) — no JWT
 - All `/portal/:token/*` routes validate `portal_session_id` + token ownership
@@ -607,7 +611,7 @@ New PM jobs:
 |---|---|---|
 | `pm-due-date-alerts` | Every 15 min | Find tasks due in 24h/1h, emit notifications |
 | `pm-overdue-scan` | Hourly | Mark overdue tasks, alert assignees |
-| `pm-digest-email` | Daily 8am (tenant TZ) | Generate + send weekly/daily digests |
+| `pm-digest-email` | Daily 8am (workspace TZ) | Generate + send weekly/daily digests |
 | `pm-sprint-rollover` | On sprint end | Move incomplete tasks per user setting |
 | `pm-health-auto` | Hourly | Recompute project health from overdue % |
 | `pm-automation-eval` | Event-driven | Evaluate automation rules on trigger events |
