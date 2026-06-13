@@ -12,6 +12,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { AgentInstallInstructions } from '@/modules/shared/components/ui/AgentInstallInstructions';
 import { listServers, createServer, deleteServer } from '@/modules/servers/lib/servers';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
 import type { Server } from '@vencore/types';
@@ -40,6 +41,7 @@ export default function ServersPage() {
   const [modal, setModal] = useState<'create' | { token: string; name: string } | null>(null);
   const [form, setForm] = useState({ name: '', region: '', ip_address: '' });
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
 
   const { data, isLoading } = useQuery({
     queryKey: ['servers'],
@@ -88,7 +90,7 @@ export default function ServersPage() {
               server={s}
               last={i === servers.length - 1}
               onClick={() => router.push(`/servers/${s.id}`)}
-              onDelete={() => { if (confirm('Deregister this server?')) deleteMut.mutate(s.id); }}
+              onDelete={() => askConfirm({ title: 'Deregister server', message: `Deregister "${s.name}"? The monitoring agent will stop sending data.`, confirmLabel: 'Deregister', variant: 'danger', onConfirm: () => deleteMut.mutate(s.id) })}
               onContextMenu={(e) => {
                 const items: ContextMenuItem[] = [
                   { icon: 'open',     label: 'Open server',       onClick: () => router.push(`/servers/${s.id}`) },
@@ -96,7 +98,7 @@ export default function ServersPage() {
                   ...(s.ip_address ? [{ icon: 'copy', label: 'Copy IP address',  onClick: () => navigator.clipboard.writeText(s.ip_address!) } as ContextMenuItem] : []),
                   { icon: 'copy',     label: 'Copy agent token',  onClick: () => navigator.clipboard.writeText(s.agent_token ?? '') },
                   { type: 'separator' },
-                  { icon: 'trash',    label: 'Remove server',     danger: true, onClick: () => { if (confirm('Deregister this server?')) deleteMut.mutate(s.id); } },
+                  { icon: 'trash',    label: 'Remove server',     danger: true, onClick: () => askConfirm({ title: 'Deregister server', message: `Deregister "${s.name}"? The monitoring agent will stop sending data.`, confirmLabel: 'Deregister', variant: 'danger', onConfirm: () => deleteMut.mutate(s.id) }) },
                 ];
                 openMenu(e, items);
               }}
@@ -142,6 +144,7 @@ export default function ServersPage() {
         </Modal>
       )}
       <ContextMenu menu={menu} onClose={closeMenu} />
+      {confirmEl}
     </ModuleGuard>
   );
 }

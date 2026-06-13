@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAlert } from '@/modules/shared/components/ui/ConfirmDialog';
 import { ConversionModal } from './ConversionModal';
 import { getRecordConversions, listTemplates, type EnrichedConversion } from '@/modules/pipeline/lib/conversions';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
@@ -110,6 +111,7 @@ function RecordCard({
   onClose: () => void;
 }) {
   const qc = useQueryClient();
+  const { show: showAlert, el: alertEl } = useAlert();
   const [editName, setEditName] = useState(record.name);
   const [editStageId, setEditStageId] = useState(record.stage_id);
   const [fieldEdits, setFieldEdits] = useState<Record<string, string>>({});
@@ -364,10 +366,11 @@ function RecordCard({
             setShowConvert(false);
             void qc.invalidateQueries({ queryKey: ['record-conversions', record.id] });
             void qc.invalidateQueries({ queryKey: ['records'] });
-            alert(`Converted! New record ID: ${newId}`);
+            showAlert(`New record created: ${newId}`, { title: 'Converted!', variant: 'success' });
           }}
         />
       )}
+      {alertEl}
     </div>
   );
 }

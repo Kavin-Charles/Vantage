@@ -9,6 +9,7 @@ import { Modal } from '@/modules/shared/components/ui/Modal';
 import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
 import { FormField, Input, Select } from '@/modules/shared/components/ui/FormField';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listInfraDatabases, createInfraDatabase, deleteInfraDatabase } from '@/modules/databases/lib/infra-databases';
 import type { InfraDatabase } from '@vencore/types';
@@ -59,6 +60,7 @@ export default function DatabasesPage() {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(BLANK_FORM);
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
 
   const { data, isLoading } = useQuery({
     queryKey: ['infra-databases'],
@@ -115,7 +117,7 @@ export default function DatabasesPage() {
               db={db}
               last={i === dbs.length - 1}
               onClick={() => router.push(`/databases/${db.id}`)}
-              onDelete={() => { if (confirm('Remove this database?')) deleteMut.mutate(db.id); }}
+              onDelete={() => askConfirm({ title: 'Remove database', message: 'Remove this database from monitoring?', confirmLabel: 'Remove', variant: 'danger', onConfirm: () => deleteMut.mutate(db.id) })}
               onContextMenu={(e) => {
                 const items: ContextMenuItem[] = [
                   { icon: 'open',     label: 'Open database',   onClick: () => router.push(`/databases/${db.id}`) },
@@ -123,7 +125,7 @@ export default function DatabasesPage() {
                   ...(db.host ? [{ icon: 'copy', label: 'Copy host', onClick: () => navigator.clipboard.writeText(db.host!) } as ContextMenuItem] : []),
                   { icon: 'copy',     label: 'Copy name',       onClick: () => navigator.clipboard.writeText(db.name) },
                   { type: 'separator' },
-                  { icon: 'trash',    label: 'Remove database', danger: true, onClick: () => { if (confirm('Remove this database?')) deleteMut.mutate(db.id); } },
+                  { icon: 'trash',    label: 'Remove database', danger: true, onClick: () => askConfirm({ title: 'Remove database', message: 'Remove this database from monitoring?', confirmLabel: 'Remove', variant: 'danger', onConfirm: () => deleteMut.mutate(db.id) }) },
                 ];
                 openMenu(e, items);
               }}
@@ -184,6 +186,7 @@ export default function DatabasesPage() {
         </Modal>
       )}
       <ContextMenu menu={menu} onClose={closeMenu} />
+      {confirmEl}
     </>
   );
 }

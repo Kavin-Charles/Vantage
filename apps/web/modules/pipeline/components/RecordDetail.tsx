@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAlert } from '@/modules/shared/components/ui/ConfirmDialog';
 import { ConversionModal } from './ConversionModal';
 import { getRecordConversions, listTemplates, type EnrichedConversion } from '@/modules/pipeline/lib/conversions';
 
@@ -28,6 +29,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 export function RecordDetail({ recordId, onClose }: { recordId: string; onClose: () => void }) {
   const qc = useQueryClient();
   const [showConvert, setShowConvert] = useState(false);
+  const { show: showAlert, el: alertEl } = useAlert();
   const [editName, setEditName] = useState<string | null>(null);
 
   const { data: record } = useQuery<PipelineRecord>({
@@ -180,10 +182,11 @@ export function RecordDetail({ recordId, onClose }: { recordId: string; onClose:
             setShowConvert(false);
             void qc.invalidateQueries({ queryKey: ['record-conversions', recordId] });
             void qc.invalidateQueries({ queryKey: ['records'] });
-            alert(`Converted! New record ID: ${newId}`);
+            showAlert(`New record created: ${newId}`, { title: 'Converted!', variant: 'success' });
           }}
         />
       )}
+      {alertEl}
     </>
   );
 }
