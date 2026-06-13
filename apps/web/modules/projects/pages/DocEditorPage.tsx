@@ -15,7 +15,7 @@ interface Doc {
   updated_at: string;
 }
 
-type SaveStatus = 'idle' | 'saving' | 'saved';
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 export default function DocEditorPage() {
   const { id: projectId, docId } = useParams<{ id: string; docId: string }>();
@@ -60,7 +60,7 @@ export default function DocEditorPage() {
       qc.invalidateQueries({ queryKey: ['project-doc', projectId, docId] });
     },
     onError: () => {
-      setSaveStatus('idle');
+      setSaveStatus('error');
     },
   });
 
@@ -100,9 +100,13 @@ export default function DocEditorPage() {
     <div style={{ padding: '32px', maxWidth: 760, margin: '0 auto' }}>
       {/* Save status indicator */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <span style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)' }}>
+        <span style={{
+          fontFamily: 'DM Sans', fontSize: 12,
+          color: saveStatus === 'error' ? 'var(--red)' : 'var(--text3)',
+        }}>
           {saveStatus === 'saving' && 'Saving...'}
           {saveStatus === 'saved' && 'Saved'}
+          {saveStatus === 'error' && 'Save failed'}
         </span>
       </div>
 
