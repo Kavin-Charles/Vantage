@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
 import type { AuthenticatedRequest } from '../middleware/auth'
+import { pmEvents } from '../lib/pm-events'
 
 const createTaskSchema = z.object({
   title: z.string().min(1).max(500),
@@ -230,6 +231,15 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
             .values(parsed.data.assignee_ids.map(uid => ({ task_id: task.id, user_id: uid })))
             .execute()
         }
+      }
+
+      if (parsed.data.status_id !== undefined) {
+        pmEvents.emit('pm', {
+          type: 'task_status_changed',
+          projectId,
+          taskId: task.id,
+          to_status_id: parsed.data.status_id,
+        })
       }
 
       return res.json({ data: task, error: null })

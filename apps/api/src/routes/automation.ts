@@ -4,18 +4,7 @@ import type { Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
 import type { AuthenticatedRequest } from '../middleware/auth'
 
-function parseRuleFields(rule: { trigger: unknown; actions: unknown }) {
-  const triggerParsed = triggerSchema.safeParse(
-    typeof rule.trigger === 'string' ? JSON.parse(rule.trigger) : rule.trigger,
-  )
-  const actionsParsed = z.array(actionSchema).safeParse(
-    typeof rule.actions === 'string' ? JSON.parse(rule.actions as string) : rule.actions,
-  )
-  if (!triggerParsed.success || !actionsParsed.success) return null
-  return { trigger: triggerParsed.data, actions: actionsParsed.data }
-}
-
-export const triggerSchema = z.discriminatedUnion('type', [
+const triggerSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('task_status_changed'), to_status_id: z.string().uuid().optional() }),
   z.object({ type: z.literal('task_overdue') }),
   z.object({ type: z.literal('task_assigned') }),
@@ -26,7 +15,7 @@ export const triggerSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('sprint_ended') }),
 ])
 
-export const actionSchema = z.discriminatedUnion('type', [
+const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('send_notification'), user_ids: z.array(z.string().uuid()), message: z.string() }),
   z.object({ type: z.literal('change_task_status'), status_id: z.string().uuid() }),
   z.object({ type: z.literal('assign_task'), user_id: z.string().uuid() }),
@@ -34,7 +23,7 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('send_webhook'), url: z.string().url(), payload: z.record(z.unknown()).optional() }),
 ])
 
-export const createRuleSchema = z.object({
+const createRuleSchema = z.object({
   name: z.string().min(1).max(255),
   trigger: triggerSchema,
   actions: z.array(actionSchema).min(1).max(10),
@@ -49,7 +38,7 @@ async function verifyProjectAccess(db: Kysely<Database>, projectId: string, work
     .selectAll()
     .where('id', '=', projectId)
     .where('workspace_id', '=', workspaceId)
-    .where('status', '!=', 'DELETED' as 'DELETED')
+    .where('status', '!=', 'DELETED' as any)
     .executeTakeFirst()
 }
 
@@ -70,11 +59,11 @@ export function createAutomationRouter(db: Kysely<Database>): Router {
         .orderBy('created_at', 'asc')
         .execute()
 
-      const parsed = rules.map(r => {
-        const fields = parseRuleFields(r)
-        if (!fields) return null
-        return { ...r, ...fields }
-      }).filter(Boolean)
+      const parsed = rules.map(r => ({
+        ...r,
+        trigger: typeof r.trigger === 'string' ? JSON.parse(r.trigger) : r.trigger,
+        actions: typeof r.actions === 'string' ? JSON.parse(r.actions) : r.actions,
+      }))
 
       return res.json({ data: parsed, error: null })
     } catch (err) {
@@ -112,11 +101,12 @@ export function createAutomationRouter(db: Kysely<Database>): Router {
         created_by: user.id,
       }).returningAll().executeTakeFirstOrThrow()
 
-      const ruleFields = parseRuleFields(rule)
-      if (!ruleFields) return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
-
       return res.status(201).json({
-        data: { ...rule, ...ruleFields },
+        data: {
+          ...rule,
+          trigger: typeof rule.trigger === 'string' ? JSON.parse(rule.trigger) : rule.trigger,
+          actions: typeof rule.actions === 'string' ? JSON.parse(rule.actions) : rule.actions,
+        },
         error: null,
       })
     } catch (err) {
@@ -136,21 +126,13 @@ export function createAutomationRouter(db: Kysely<Database>): Router {
         return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
       }
 
-      const updates: {
-        name?: string
-        is_active?: boolean
-        trigger?: string
-        actions?: string
-        updated_at: string
-      } = { updated_at: new Date().toISOString() }
-      if (parsed.data.name !== undefined) updates.name = parsed.data.name
-      if (parsed.data.trigger !== undefined) updates.trigger = JSON.stringify(parsed.data.trigger)
-      if (parsed.data.actions !== undefined) updates.actions = JSON.stringify(parsed.data.actions)
-      if (parsed.data.is_active !== undefined) updates.is_active = parsed.data.is_active
+      const updates: Record<string, unknown> = {}
+      if (parsed.data.name !== undefined) updates['name'] = parsed.data.name
+      if (parsed.data.trigger !== undefined) updates['trigger'] = JSON.stringify(parsed.data.trigger)
+      if (parsed.data.actions !== undefined) updates['actions'] = JSON.stringify(parsed.data.actions)
+      if (parsed.data.is_active !== undefined) updates['is_active'] = parsed.data.is_active
 
-      const hasChanges = parsed.data.name !== undefined || parsed.data.trigger !== undefined ||
-        parsed.data.actions !== undefined || parsed.data.is_active !== undefined
-      if (!hasChanges) {
+      if (Object.keys(updates).length === 0) {
         const existing = await db
           .selectFrom('automation_rules')
           .selectAll()
@@ -163,7 +145,7 @@ export function createAutomationRouter(db: Kysely<Database>): Router {
 
       const rule = await db
         .updateTable('automation_rules')
-        .set(updates)
+        .set(updates as any)
         .where('id', '=', ruleId)
         .where('project_id', '=', projectId)
         .returningAll()
@@ -171,11 +153,12 @@ export function createAutomationRouter(db: Kysely<Database>): Router {
 
       if (!rule) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Rule not found' } })
 
-      const updatedFields = parseRuleFields(rule)
-      if (!updatedFields) return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
-
       return res.json({
-        data: { ...rule, ...updatedFields },
+        data: {
+          ...rule,
+          trigger: typeof rule.trigger === 'string' ? JSON.parse(rule.trigger) : rule.trigger,
+          actions: typeof rule.actions === 'string' ? JSON.parse(rule.actions) : rule.actions,
+        },
         error: null,
       })
     } catch (err) {

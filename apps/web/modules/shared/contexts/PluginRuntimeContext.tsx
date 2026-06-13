@@ -1,24 +1,27 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import * as ReactDOM from 'react-dom';
 import { useInstalledPlugins } from '@/modules/shared/hooks/useInstalledPlugins';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import type { DashboardWidgetDef } from '@/modules/shared/lib/dashboard-registry';
 
+if (typeof window !== 'undefined') {
+  (window as any).React = require('react');
+}
+
 export type AnyComponent = React.ComponentType<any>;
 
 export interface FrontendSurfaceRegistry {
-  pages: Map<string, { pluginId: string; path: string }>;
-  widgets: Map<string, { pluginId: string; id: string }>;
-  panels: Map<string, { pluginId: string; recordType: string; id: string; label: string }>;
+  pages: Map<string, AnyComponent>;
+  widgets: Map<string, AnyComponent>;
+  panels: Map<string, { recordType: string; id: string; label: string; component: AnyComponent }>;
 }
 
 interface PluginRuntimeContextValue {
   registry: FrontendSurfaceRegistry;
   loading: boolean;
   dashboardWidgets: Map<string, DashboardWidgetDef>;
-  /** Sends a bridge call on behalf of an iframe plugin, relaying to the API. */
-  relayBridgeCall(pluginId: string, method: string, payload: unknown): Promise<unknown>;
 }
 
 const defaultRegistry: FrontendSurfaceRegistry = {
@@ -31,7 +34,6 @@ const PluginRuntimeCtx = createContext<PluginRuntimeContextValue>({
   registry: defaultRegistry,
   loading: false,
   dashboardWidgets: new Map(),
-  relayBridgeCall: async () => ({ data: null, error: { code: 'NOT_READY', message: 'Runtime not initialized' } }),
 });
 
 export function usePluginRegistry() {
@@ -52,239 +54,232 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
     panels: new Map(),
   });
   const [loading, setLoading] = useState(true);
+  const loadedRef = useRef(new Set<string>());
   const [dashboardWidgets, setDashboardWidgets] = useState<Map<string, DashboardWidgetDef>>(new Map());
 
-  // Map from pluginId → iframe element for token + bridge relay
-  const iframeRefs = useRef(new Map<string, HTMLIFrameElement>());
-  // Pending bridge calls relayed to iframe plugin → API → iframe
-  const pendingBridgeCalls = useRef(new Map<number, { resolve: (r: unknown) => void }>());
-  const bridgeCallCounter = useRef(0);
-
-  const relayBridgeCall = useCallback(async (pluginId: string, method: string, payload: unknown): Promise<unknown> => {
-    const token = await getToken();
-    const res = await fetch(`${apiUrl}/api/plugins/bridge`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      credentials: 'include',
-      body: JSON.stringify({ plugin_id: pluginId, method, payload }),
-    });
-    return res.json();
-  }, [apiUrl, getToken]);
-
-  // Handle postMessages from plugin iframes
-  useEffect(() => {
-    async function handleMessage(e: MessageEvent) {
-      const d = e.data;
-      if (!d || typeof d !== 'object') return;
-
-      // Token request from iframe — respond with auth token
-      if (d.type === 'frame:token:request') {
-        const frameId = d.frameId;
-        const token = await getToken();
-        (e.source as WindowProxy)?.postMessage({ type: 'frame:token', frameId, token }, '*');
-        return;
-      }
-
-      // Bridge call from plugin iframe → relay to API → respond to iframe
-      if (d.type === 'bridge:request') {
-        const { id, method, payload } = d as { id: number; method: string; payload: unknown };
-        // Prefer pluginId sent in the message (works for both hidden + visible iframes).
-        // Fall back to source-window matching for older frames that don't send it.
-        let pluginId: string | null = (d as any).pluginId ?? null;
-        if (!pluginId) {
-          for (const [pid, iframe] of iframeRefs.current) {
-            if (iframe.contentWindow === e.source) { pluginId = pid; break; }
-          }
-        }
-        if (!pluginId) return;
-
-        try {
-          const result = await relayBridgeCall(pluginId, method, payload);
-          (e.source as WindowProxy)?.postMessage({ type: 'bridge:response', id, result }, '*');
-        } catch (err) {
-          (e.source as WindowProxy)?.postMessage({
-            type: 'bridge:response',
-            id,
-            result: { data: null, error: { code: 'RELAY_ERROR', message: err instanceof Error ? err.message : String(err) } },
-          }, '*');
-        }
-        return;
-      }
-
-      // Surface registration from iframe
-      if (d.type === 'surface:register') {
-        const { kind, pluginId } = d as { kind: string; pluginId: string };
-        if (kind === 'page') {
-          registry.pages.set(`${pluginId}:${d.path}`, { pluginId, path: d.path });
-        } else if (kind === 'widget') {
-          registry.widgets.set(`${pluginId}:${d.id}`, { pluginId, id: d.id });
-        } else if (kind === 'panel') {
-          registry.panels.set(`${pluginId}:${d.recordType}:${d.id}`, {
-            pluginId, recordType: d.recordType, id: d.id, label: d.id,
-          });
-        }
-        return;
-      }
-
-      // React globals request from iframe
-      if (d.type === 'frame:react:request') {
-        (e.source as WindowProxy)?.postMessage({
-          type: 'frame:react:globals',
-          // We don't inject React objects cross-origin — plugins must bundle React or use globalThis.React
-          // injected by the frame page itself.
-        }, '*');
-        return;
-      }
-
-      // Host UI events forwarded from iframe
-      if (d.type === 'host:toast') {
-        window.dispatchEvent(new CustomEvent('vencore:toast', { detail: { message: d.message, type: d.toastType } }));
-      }
-      if (d.type === 'host:navigate') {
-        window.dispatchEvent(new CustomEvent('vencore:navigate', { detail: { path: d.path } }));
-      }
-      if (d.type === 'host:modal:open') {
-        window.dispatchEvent(new CustomEvent('vencore:modal:open', { detail: d.opts }));
-      }
-      if (d.type === 'host:modal:close') {
-        window.dispatchEvent(new CustomEvent('vencore:modal:close'));
-      }
-
-      if (d.type === 'frame:ready') {
-        // Plugin iframe finished setup
-      }
-      if (d.type === 'frame:error') {
-        console.warn(`[vencore] Plugin frame error (${d.pluginId}):`, d.message);
-      }
-    }
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [getToken, registry, relayBridgeCall]);
-
-  // Mount hidden iframes for each enabled plugin that has a client bundle
   useEffect(() => {
     if (isLoading) return;
 
-    const enabledWithClient = plugins.filter((p) => p.enabled && p.manifest?.build?.client);
+    // Expose React globally for plugins
+    if (typeof window !== 'undefined') {
+      (window as any).React = require('react');
+      (window as any).ReactDOM = require('react-dom');
+    }
+
+    const enabledWithClient = plugins.filter(
+      (p) => p.enabled && p.manifest?.build?.client,
+    );
 
     if (enabledWithClient.length === 0) {
       setLoading(false);
       return;
     }
 
+    let active = true;
     setLoading(true);
-    let readyCount = 0;
 
-    for (const plugin of enabledWithClient) {
-      if (iframeRefs.current.has(plugin.plugin_id)) continue;
+    (async () => {
+      await Promise.allSettled(
+        enabledWithClient.map(async (plugin) => {
+          if (loadedRef.current.has(plugin.plugin_id)) return;
 
-      const iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.style.position = 'absolute';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      // allow-same-origin needed for postMessage to work reliably
-      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-      iframe.src = `/plugins/frame/${encodeURIComponent(plugin.plugin_id)}`;
-      document.body.appendChild(iframe);
-      iframeRefs.current.set(plugin.plugin_id, iframe);
+          try {
+            const token = await getToken();
+            const res = await fetch(`${apiUrl}/api/plugins/${plugin.id}/client.js`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+              credentials: 'include',
+            });
+            if (!res.ok) return;
 
-      // Track when each frame is ready
-      const readyHandler = (e: MessageEvent) => {
-        if (e.data?.type === 'frame:ready' && e.data?.pluginId === plugin.plugin_id) {
-          window.removeEventListener('message', readyHandler);
-          readyCount++;
-          if (readyCount >= enabledWithClient.length) {
-            setLoading(false);
+            const code = await res.text();
+
+            const makeVencore = () => ({
+              registerPage: (path: string, component: AnyComponent) => {
+                registry.pages.set(path, component);
+              },
+              registerWidget: (id: string, component: AnyComponent) => {
+                registry.widgets.set(id, component);
+              },
+              registerPanel: (recordType: string, id: string, component: AnyComponent) => {
+                registry.panels.set(`${recordType}:${id}`, { recordType, id, label: id, component });
+              },
+              toast: (message: string, type?: string) => {
+                window.dispatchEvent(new CustomEvent('vencore:toast', { detail: { message, type } }));
+              },
+              navigate: (path: string) => {
+                window.dispatchEvent(new CustomEvent('vencore:navigate', { detail: { path } }));
+              },
+              modal: {
+                open: (opts: unknown) => window.dispatchEvent(new CustomEvent('vencore:modal:open', { detail: opts })),
+                close: () => window.dispatchEvent(new CustomEvent('vencore:modal:close')),
+              },
+              settings: {
+                get: async (key: string) => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'settings.get', payload: { key } }),
+                  });
+                  const json = await r.json() as { data?: unknown };
+                  return json.data ?? null;
+                },
+              },
+              user: {
+                get: async () => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'user.get', payload: {} }),
+                  });
+                  const json = await r.json() as { data?: unknown };
+                  return json.data;
+                },
+              },
+              workspace: {
+                get: async () => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'workspace.get', payload: {} }),
+                  });
+                  const json = await r.json() as { data?: unknown };
+                  return json.data;
+                },
+              },
+              bus: {
+                on: (_event: string, _handler: (p: unknown) => void) => () => {},
+              },
+              list: async (resource: string, filter?: unknown) => {
+                const t = await getToken();
+                const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                  credentials: 'include',
+                  body: JSON.stringify({ plugin_id: plugin.plugin_id, method: `${resource}.list`, payload: { filter } }),
+                });
+                const json = await r.json() as { data?: unknown[] };
+                return json.data ?? [];
+              },
+              get: async (resource: string, id: string) => {
+                const t = await getToken();
+                const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                  credentials: 'include',
+                  body: JSON.stringify({ plugin_id: plugin.plugin_id, method: `${resource}.get`, payload: { id } }),
+                });
+                const json = await r.json() as { data?: unknown };
+                return json.data;
+              },
+              table: (name: string) => ({
+                list: async (opts?: unknown) => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'table.list', payload: { name, ...(opts as Record<string, unknown> ?? {}) } }),
+                  });
+                  const json = await r.json() as { data?: unknown[] };
+                  return json.data ?? [];
+                },
+                get: async (id: string) => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'table.get', payload: { name, id } }),
+                  });
+                  const json = await r.json() as { data?: unknown };
+                  return json.data ?? null;
+                },
+                insert: async (data: Record<string, unknown>) => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'table.insert', payload: { name, data } }),
+                  });
+                  const json = await r.json() as { data?: unknown };
+                  return json.data ?? null;
+                },
+                update: async (id: string, data: Record<string, unknown>) => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'table.update', payload: { name, id, data } }),
+                  });
+                  const json = await r.json() as { data?: unknown };
+                  return json.data ?? null;
+                },
+                delete: async (id: string) => {
+                  const t = await getToken();
+                  const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                    credentials: 'include',
+                    body: JSON.stringify({ plugin_id: plugin.plugin_id, method: 'table.delete', payload: { name, id } }),
+                  });
+                  const json = await r.json() as { data?: unknown; error?: unknown };
+                  return !json.error;
+                },
+              }),
+              getContext: async () => {
+                return { workspace_id: '', user_id: '', page: 'full-page', record_id: null, record_type: null };
+              },
+              search: { register: (_handler: unknown) => {} },
+              commands: { register: (_label: string, _handler: () => void) => {} },
+            });
+
+            const blob = new Blob([code], { type: 'application/javascript' });
+            const url = URL.createObjectURL(blob);
+
+            try {
+              const importFn = new Function('url', 'return import(url)');
+              const mod = await (importFn(url) as Promise<{ default?: { setup: (v: unknown) => void | Promise<void> } }>);
+              if (mod.default?.setup) {
+                await Promise.resolve(mod.default.setup(makeVencore()));
+              }
+              loadedRef.current.add(plugin.plugin_id);
+            } finally {
+              URL.revokeObjectURL(url);
+            }
+          } catch (err) {
+            console.warn(`[vencore] Failed to load plugin ${plugin.plugin_id}:`, err);
           }
-        }
-        if (e.data?.type === 'frame:error' && e.data?.pluginId === plugin.plugin_id) {
-          window.removeEventListener('message', readyHandler);
-          readyCount++;
-          if (readyCount >= enabledWithClient.length) {
-            setLoading(false);
-          }
-        }
-      };
-      window.addEventListener('message', readyHandler);
-    }
+        }),
+      );
 
-    // Fallback: mark loading done after 10s regardless
-    const timeout = setTimeout(() => setLoading(false), 10_000);
-    return () => clearTimeout(timeout);
+      if (active) setLoading(false);
+    })();
+
+    return () => { active = false; };
   }, [isLoading, plugins.map((p) => p.plugin_id).join(',')]);
 
-  // Cleanup iframes on unmount
-  useEffect(() => {
-    return () => {
-      for (const [, iframe] of iframeRefs.current) {
-        iframe.remove();
-      }
-      iframeRefs.current.clear();
-    };
-  }, []);
-
-  // Dashboard widget registration (via postMessage or CustomEvent)
   useEffect(() => {
     function handleDashboardWidget(e: Event) {
       const { def, component } = (e as CustomEvent<{ def: Omit<DashboardWidgetDef, 'component'>; component: React.ComponentType }>).detail;
       setDashboardWidgets(prev => new Map(prev).set(def.id, { ...def, component }));
     }
     window.addEventListener('vencore:dashboard:register-widget', handleDashboardWidget);
-    return () => window.removeEventListener('vencore:dashboard:register-widget', handleDashboardWidget);
+    return () => {
+      window.removeEventListener('vencore:dashboard:register-widget', handleDashboardWidget);
+    };
   }, []);
 
   return (
-    <PluginRuntimeCtx.Provider value={{ registry, loading, dashboardWidgets, relayBridgeCall }}>
+    <PluginRuntimeCtx.Provider value={{ registry, loading, dashboardWidgets }}>
       {children}
     </PluginRuntimeCtx.Provider>
-  );
-}
-
-/**
- * PluginIframeSlot — renders a plugin's iframe surface in the active slot.
- * Use this where you previously rendered plugin components directly.
- */
-export function PluginIframeSlot({
-  pluginId,
-  surfaceType,
-  surfaceId,
-  className,
-  style,
-}: {
-  pluginId: string;
-  surfaceType: 'page' | 'widget' | 'panel';
-  surfaceId: string;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    // Activate the surface in the plugin iframe once mounted
-    const timer = setTimeout(() => {
-      iframeRef.current?.contentWindow?.postMessage({
-        type: 'surface:activate',
-        surfaceType,
-        surfaceId,
-        path: surfaceId,
-      }, '*');
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [surfaceType, surfaceId]);
-
-  return (
-    <iframe
-      ref={iframeRef}
-      src={`/plugins/frame/${encodeURIComponent(pluginId)}`}
-      sandbox="allow-scripts allow-same-origin"
-      className={className}
-      style={{ border: 'none', width: '100%', height: '100%', ...style }}
-      title={`Plugin: ${pluginId}`}
-    />
   );
 }

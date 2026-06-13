@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 
@@ -121,7 +120,6 @@ function LicenseModal({ plugin, onClose, onActivate }: {
 export default function PluginsSettingsPage() {
   const getToken = useApiToken();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { ask: askConfirm, el: confirmEl } = useConfirm();
   const [plugins, setPlugins] = useState<WorkspacePlugin[]>([]);
   const [marketplace, setMarketplace] = useState<MarketplacePlugin[]>([]);
@@ -185,7 +183,6 @@ export default function PluginsSettingsPage() {
         if (idx >= 0) { const next = [...prev]; next[idx] = json.data; return next; }
         return [...prev, json.data];
       });
-      void queryClient.invalidateQueries({ queryKey: ['plugins'] });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -216,7 +213,6 @@ export default function PluginsSettingsPage() {
       const json = await res.json() as { data: WorkspacePlugin; error: null } | { data: null; error: { message: string } };
       if (json.error) throw new Error(json.error.message);
       setPlugins(prev => prev.map(p => p.id === plugin.id ? json.data : p));
-      void queryClient.invalidateQueries({ queryKey: ['plugins'] });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update plugin');
     } finally {
@@ -248,7 +244,6 @@ export default function PluginsSettingsPage() {
       setMarketplace(prev => prev.map(p =>
         plugins.find(wp => wp.platform_plugin_id === p.id) ? { ...p, installed: false } : p
       ));
-      void queryClient.invalidateQueries({ queryKey: ['plugins'] });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove plugin');
     } finally {
@@ -285,7 +280,6 @@ export default function PluginsSettingsPage() {
         return [...prev, json.data];
       });
       setMarketplace(prev => prev.map(p => p.id === mp.id ? { ...p, installed: true } : p));
-      void queryClient.invalidateQueries({ queryKey: ['plugins'] });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Install failed');
     } finally {

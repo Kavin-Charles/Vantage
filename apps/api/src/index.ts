@@ -59,6 +59,8 @@ import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
 import { loadPluginBackend, getPluginRouter } from './lib/plugin-loader';
 import { seedOnFirstBoot } from './lib/seed';
+import { createAutomationRouter } from './routes/automation';
+import { initAutomationEngine } from './lib/automation-engine';
 import { bridgeRegistry, pluginEventBus } from '@vencore/plugin-runtime';
 import { registerContactsBridgeMethods } from './routes/contacts';
 import { registerCompaniesBridgeMethods } from './routes/companies';
@@ -73,6 +75,8 @@ import { logger } from './lib/logger';
 const env = apiEnvSchema.parse(process.env);
 const config = readConfig();
 const db = createDb(env.DATABASE_URL);
+
+initAutomationEngine(db);
 
 // Register all module bridge methods
 registerContactsBridgeMethods();
@@ -242,6 +246,7 @@ app.use('/api/projects/:projectId/milestones', requireAuth, createMilestonesRout
 app.use('/api/projects/:projectId/sprints', requireAuth, createSprintsRouter(db));
 app.use('/api/projects/:projectId/members', requireAuth, createProjectMembersRouter(db));
 app.use('/api/projects/:projectId/portal', requireAuth, createPortalInternalRouter(db));
+app.use('/api/projects/:projectId/automations', requireAuth, createAutomationRouter(db));
 
 // Public portal — no requireAuth
 app.use('/api/portal', createPortalRouter(db));
