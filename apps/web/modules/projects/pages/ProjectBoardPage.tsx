@@ -124,19 +124,22 @@ export default function ProjectBoardPage() {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<TaskWithAssignees | null>(null);
 
-  const { data: statusesData } = useQuery({
+  const { data: statuses = [] } = useQuery<TaskStatus[]>({
     queryKey: ['statuses', projectId],
-    queryFn: async () => pmApi.listStatuses(await getToken(), projectId),
+    queryFn: async () => {
+      const res = await pmApi.listStatuses(await getToken(), projectId);
+      return res.data ?? [];
+    },
     enabled: !!projectId,
   });
-  const { data: tasksData } = useQuery({
+  const { data: tasks = [] } = useQuery<Task[]>({
     queryKey: ['tasks', projectId],
-    queryFn: async () => pmApi.listTasks(await getToken(), projectId),
+    queryFn: async () => {
+      const res = await pmApi.listTasks(await getToken(), projectId);
+      return res.data ?? [];
+    },
     enabled: !!projectId,
   });
-
-  const statuses: TaskStatus[] = statusesData?.data ?? [];
-  const tasks: Task[] = tasksData?.data ?? [];
 
   const updateMutation = useMutation({
     mutationFn: async ({ taskId, patch }: { taskId: string; patch: Partial<Task> }) => {

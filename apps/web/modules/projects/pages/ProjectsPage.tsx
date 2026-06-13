@@ -5,19 +5,20 @@ import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { Topbar } from '@/modules/shared/components/Topbar';
 import { Icon } from '@/modules/shared/components/ui/Icon';
-import { pmApi } from '@/modules/projects/lib/api';
+import { pmApi, type ProjectWithProgress } from '@/modules/projects/lib/api';
 import { ProjectCard } from '@/modules/projects/components/ProjectCard';
 
 export default function ProjectsPage() {
   const router = useRouter();
   const getToken = useApiToken();
 
-  const { data, isLoading } = useQuery({
+  const { data: projects = [], isLoading } = useQuery<ProjectWithProgress[]>({
     queryKey: ['projects'],
-    queryFn: async () => pmApi.listProjects(await getToken()),
+    queryFn: async () => {
+      const res = await pmApi.listProjects(await getToken());
+      return res.data ?? [];
+    },
   });
-
-  const projects = data?.data ?? [];
   const active = projects.filter(p => p.status !== 'archived');
   const archived = projects.filter(p => p.status === 'archived');
 
