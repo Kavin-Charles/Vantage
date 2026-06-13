@@ -6,8 +6,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { pmApi, type Task, type TaskWithAssignees, type TaskStatus } from '@/modules/projects/lib/api';
 import { TaskDetailPanel } from '@/modules/projects/components/TaskDetailPanel';
-import { AvatarGroup } from '@/modules/projects/components/AvatarGroup';
-import { TaskCreateModal } from '@/modules/projects/components/TaskCreateModal';
 
 const PRIORITY_COLORS: Record<string, string> = {
   LOW: 'var(--text3)', MEDIUM: 'var(--amber)', HIGH: 'var(--red)', URGENT: 'var(--red)',
@@ -20,24 +18,20 @@ export default function ProjectListPage() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<string>('ALL');
   const [selectedTask, setSelectedTask] = useState<TaskWithAssignees | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
 
-  const { data: statuses = [] } = useQuery<TaskStatus[]>({
+  const { data: statusesData } = useQuery({
     queryKey: ['statuses', projectId],
-    queryFn: async () => {
-      const res = await pmApi.listStatuses(await getToken(), projectId);
-      return res.data ?? [];
-    },
+    queryFn: async () => pmApi.listStatuses(await getToken(), projectId),
     enabled: !!projectId,
   });
-  const { data: tasks = [] } = useQuery<TaskWithAssignees[]>({
+  const { data: tasksData } = useQuery({
     queryKey: ['tasks', projectId],
-    queryFn: async () => {
-      const res = await pmApi.listTasks(await getToken(), projectId);
-      return res.data ?? [];
-    },
+    queryFn: async () => pmApi.listTasks(await getToken(), projectId),
     enabled: !!projectId,
   });
+
+  const statuses: TaskStatus[] = statusesData?.data ?? [];
+  const tasks: Task[] = tasksData?.data ?? [];
   const filtered = filter === 'ALL' ? tasks : tasks.filter(t => t.status_id === filter);
 
   const updateMutation = useMutation({
@@ -82,23 +76,6 @@ export default function ProjectListPage() {
             {s.name}
           </button>
         ))}
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <button
-          onClick={() => setShowCreate(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)',
-            background: 'var(--surface)', color: 'var(--text2)',
-            fontFamily: 'DM Sans', fontSize: 12, fontWeight: 500, cursor: 'pointer',
-            transition: 'background 0.15s ease, color 0.15s ease',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface2)'; e.currentTarget.style.color = 'var(--text)'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface)'; e.currentTarget.style.color = 'var(--text2)'; }}
-        >
-          + Add Task
-        </button>
       </div>
 
       {/* Table */}
@@ -147,24 +124,13 @@ export default function ProjectListPage() {
                   <td style={{ padding: '11px 14px', fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)' }}>
                     {task.due_date ? new Date(task.due_date).toLocaleDateString() : '—'}
                   </td>
-                  <td style={{ padding: '11px 14px', minWidth: 80 }}>
-                    {task.assignees?.length > 0
-                      ? <AvatarGroup assignees={task.assignees} />
-                      : <span style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)' }}>—</span>}
-                  </td>
+                  <td style={{ padding: '11px 14px', fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)' }}>—</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-
-      {showCreate && (
-        <TaskCreateModal
-          projectId={projectId}
-          onClose={() => setShowCreate(false)}
-        />
-      )}
 
       {selectedTask && (
         <TaskDetailPanel
