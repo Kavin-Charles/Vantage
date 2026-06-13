@@ -47,6 +47,7 @@ import { createRecordsRouter } from './routes/records';
 import { createNotificationsRouter } from './routes/notifications';
 import { createDashboardsRouter } from './routes/dashboards'
 import { createProjectsRouter, createProjectStatusesRouter } from './routes/projects';
+import { createProjectTasksRouter, createMyTasksRouter } from './routes/project-tasks';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
@@ -232,6 +233,8 @@ app.use('/api/alerts', requireAuth, createAlertsRouter(db));
 app.use('/api/dashboards', requireAuth, createDashboardsRouter(db))
 app.use('/api/projects', requireAuth, createProjectsRouter(db))
 app.use('/api/projects/:projectId/tasks/statuses', requireAuth, createProjectStatusesRouter(db));
+app.use('/api/projects/:projectId/tasks', requireAuth, createProjectTasksRouter(db));
+app.use('/api/me/tasks', requireAuth, createMyTasksRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
 app.use('/api/item-groups', requireAuth, requireModule('pipelines'), createItemGroupsRouter(db, requirePermission));
 app.use('/api/items', requireAuth, requireModule('pipelines'), createItemsRouter(db, requirePermission));
