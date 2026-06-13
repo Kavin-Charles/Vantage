@@ -23,7 +23,7 @@ Standalone PM module. Lives in `apps/web` (UI) and `apps/api` (REST). Shares the
 - Notification & alert system — PM events feed into existing notification infrastructure
 - Activity feed UI — per-project feeds reuse existing feed components
 - Analytics/KPI components — reporting reuses existing chart components
-- Design system — all PM UI matches `vencore-full.html` exactly (same tokens, fonts, components)
+- Design system — all PM UI matches `_design/vantage-design-system/` exactly. Tokens: `project/colors_and_type.css`. Component references: `project/ui_kits/web/`. Previews: `project/preview/`.
 - **Note:** existing CRM `Task` table is separate. PM tasks live in a new `ProjectTask` table to avoid schema conflicts.
 - Design system — all new UI uses existing typography, components
 - **Tech stack:** Kysely (query builder, no raw SQL without parameterisation), Zod (input validation on all routes), `{ data, error }` response envelope on all API responses
