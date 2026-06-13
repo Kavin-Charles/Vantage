@@ -25,7 +25,7 @@ function initials(name: string | null, email: string | null): string {
 
 export default function MembersPage() {
   const { id: projectId } = useParams<{ id: string }>();
-  const { getToken } = useApiToken();
+  const getToken = useApiToken();
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({

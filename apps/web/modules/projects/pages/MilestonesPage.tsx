@@ -38,7 +38,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function MilestonesPage() {
   const { id: projectId } = useParams<{ id: string }>();
-  const { getToken } = useApiToken();
+  const getToken = useApiToken();
   const qc = useQueryClient();
 
   const [showForm, setShowForm] = useState(false);
