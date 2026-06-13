@@ -3,7 +3,6 @@ import { z } from 'zod'
 import type { Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
 import type { AuthenticatedRequest } from '../middleware/auth'
-import { pmEvents } from '../lib/pm-events'
 
 const createTaskSchema = z.object({
   title: z.string().min(1).max(500),
@@ -233,15 +232,6 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
         }
       }
 
-      if (parsed.data.status_id !== undefined) {
-        pmEvents.emit('pm', {
-          type: 'task_status_changed',
-          projectId,
-          taskId: task.id,
-          to_status_id: parsed.data.status_id,
-        })
-      }
-
       return res.json({ data: task, error: null })
     } catch {
       return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Task not found' } })
@@ -256,81 +246,6 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
     if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
     await db.deleteFrom('project_tasks').where('id', '=', taskId).where('project_id', '=', projectId).execute()
     return res.json({ data: { success: true }, error: null })
-  })
-
-  // Task dependencies
-  const dependencySchema = z.object({
-    depends_on_task_id: z.string().uuid(),
-    type: z.enum(['BLOCKS', 'BLOCKED_BY', 'RELATES_TO']).default('BLOCKS'),
-  })
-
-  router.get('/:taskId/dependencies', async (req, res) => {
-    const { workspace } = req as unknown as AuthenticatedRequest
-    const { projectId, taskId } = req.params as { projectId: string; taskId: string }
-    try {
-      const project = await verifyProjectAccess(db, projectId, workspace.id)
-      if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
-
-      const blocking = await db.selectFrom('project_task_dependencies as d')
-        .innerJoin('project_tasks as t', 't.id', 'd.depends_on_task_id')
-        .select(['d.depends_on_task_id as id', 't.title', 'd.type'])
-        .where('d.task_id', '=', taskId)
-        .execute()
-
-      const blockedBy = await db.selectFrom('project_task_dependencies as d')
-        .innerJoin('project_tasks as t', 't.id', 'd.task_id')
-        .select(['d.task_id as id', 't.title', 'd.type'])
-        .where('d.depends_on_task_id', '=', taskId)
-        .execute()
-
-      return res.json({ data: { blocking, blockedBy }, error: null })
-    } catch {
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
-    }
-  })
-
-  router.post('/:taskId/dependencies', async (req, res) => {
-    const { workspace } = req as unknown as AuthenticatedRequest
-    const { projectId, taskId } = req.params as { projectId: string; taskId: string }
-    try {
-      const project = await verifyProjectAccess(db, projectId, workspace.id)
-      if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
-
-      const parsed = dependencySchema.safeParse(req.body)
-      if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
-
-      if (taskId === parsed.data.depends_on_task_id) {
-        return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: 'A task cannot depend on itself' } })
-      }
-
-      const dep = await db.insertInto('project_task_dependencies')
-        .values({ task_id: taskId, depends_on_task_id: parsed.data.depends_on_task_id, type: parsed.data.type })
-        .onConflict(oc => oc.columns(['task_id', 'depends_on_task_id']).doNothing())
-        .returningAll()
-        .executeTakeFirst()
-
-      return res.status(201).json({ data: dep ?? null, error: null })
-    } catch {
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
-    }
-  })
-
-  router.delete('/:taskId/dependencies/:dependsOnTaskId', async (req, res) => {
-    const { workspace } = req as unknown as AuthenticatedRequest
-    const { projectId, taskId, dependsOnTaskId } = req.params as { projectId: string; taskId: string; dependsOnTaskId: string }
-    try {
-      const project = await verifyProjectAccess(db, projectId, workspace.id)
-      if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
-
-      await db.deleteFrom('project_task_dependencies')
-        .where('task_id', '=', taskId)
-        .where('depends_on_task_id', '=', dependsOnTaskId)
-        .execute()
-
-      return res.json({ data: { success: true }, error: null })
-    } catch {
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
-    }
   })
 
   // Comments sub-routes
