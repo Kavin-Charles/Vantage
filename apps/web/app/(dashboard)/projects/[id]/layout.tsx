@@ -1,17 +1,7 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import type { ProjectWithProgress } from '@/modules/projects/lib/api';
-
-const NAV = [
-  { href: 'board', label: 'Board' },
-  { href: 'list', label: 'List' },
-  { href: 'timeline', label: 'Timeline' },
-  { href: 'calendar', label: 'Calendar' },
-  { href: 'table', label: 'Table' },
-  { href: 'roadmap', label: 'Roadmap' },
-  { href: 'analytics', label: 'Analytics' },
-  { href: 'docs', label: 'Docs' },
-];
+import { ProjectNav } from './ProjectNav';
 
 const HEALTH_COLORS = {
   ON_TRACK: { dot: '#2d6a4f', bg: '#d8f3dc', label: 'On Track' },
@@ -102,22 +92,7 @@ export default async function ProjectLayout({
         </div>
 
         {/* Sub-nav */}
-        <div style={{ display: 'flex', gap: 2 }}>
-          {NAV.map(n => (
-            <Link
-              key={n.href}
-              href={`/projects/${id}/${n.href}`}
-              style={{
-                fontFamily: 'DM Sans', fontSize: 13, fontWeight: 500,
-                padding: '8px 14px', textDecoration: 'none',
-                color: 'var(--text2)', borderBottom: '2px solid transparent',
-                display: 'inline-block',
-              }}
-            >
-              {n.label}
-            </Link>
-          ))}
-        </div>
+        <ProjectNav id={id} />
       </div>
 
       {/* Page content */}
