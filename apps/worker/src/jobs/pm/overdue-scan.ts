@@ -12,7 +12,7 @@ export async function runOverdueScan(db: Kysely<Database>): Promise<void> {
     .select(db.fn.countAll<number>().as('count'))
     .where('t.due_date', '<', now)
     .where('s.is_done', '=', false)
-    .where('p.status', '=', 'ACTIVE' as any)
+    .where('p.status', '=', 'ACTIVE' as 'ACTIVE')
     .executeTakeFirst()
 
   const count = Number(result?.count ?? 0)

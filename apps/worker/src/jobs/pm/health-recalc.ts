@@ -8,7 +8,7 @@ export async function runHealthRecalc(db: Kysely<Database>): Promise<void> {
   const projects = await db
     .selectFrom('projects')
     .select('id')
-    .where('status', '=', 'ACTIVE' as any)
+    .where('status', '=', 'ACTIVE' as 'ACTIVE')
     .execute()
 
   let updated = 0
