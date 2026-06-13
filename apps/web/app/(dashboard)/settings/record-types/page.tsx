@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 
 interface RecordType {
   id: string;
@@ -44,7 +43,6 @@ function previewAutoNumber(prefix: string, format: string): string {
 export default function RecordTypesSettingsPage() {
   const qc = useQueryClient();
   const [selected, setSelected] = useState<RecordType | null>(null);
-  const { ask: askConfirm, el: confirmEl } = useConfirm();
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: '',
@@ -122,7 +120,7 @@ export default function RecordTypesSettingsPage() {
               <button
                 onClick={e => {
                   e.stopPropagation();
-                  askConfirm({ title: 'Delete record type', message: `Delete "${type.name}"? This cannot be undone.`, confirmLabel: 'Delete', variant: 'danger', onConfirm: () => deleteType.mutate(type.id) });
+                  if (confirm(`Delete "${type.name}"? This cannot be undone.`)) deleteType.mutate(type.id);
                 }}
                 style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 11, padding: 2 }}
               >
@@ -250,7 +248,6 @@ export default function RecordTypesSettingsPage() {
           </div>
         </div>
       )}
-      {confirmEl}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import {
   listRecordTypes, createRecordType,
@@ -155,7 +154,6 @@ function ConversionsSection({
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
-  const { ask: askConfirm, el: confirmEl } = useConfirm();
   const [form, setForm] = useState({ name: '', target_type_id: '', target_pipeline_id: '', target_stage_id: '' });
   const [mappings, setMappings] = useState<Partial<ConversionFieldMapping>[]>([]);
 
@@ -197,7 +195,7 @@ function ConversionsSection({
             → {types.find(t => t.id === c.target_type_id)?.name ?? 'Unknown'}
           </span>
           <button
-            onClick={() => askConfirm({ title: 'Delete conversion', message: `Delete "${c.name}"? This cannot be undone.`, confirmLabel: 'Delete', variant: 'danger', onConfirm: () => deleteMut.mutate(c.id) })}
+            onClick={() => { if (window.confirm(`Delete "${c.name}"?`)) deleteMut.mutate(c.id); }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18 }}
           >×</button>
         </div>
@@ -294,7 +292,6 @@ function ConversionsSection({
           }}
         >+ Add conversion</button>
       )}
-      {confirmEl}
     </div>
   );
 }

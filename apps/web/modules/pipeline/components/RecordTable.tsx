@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { RecordDetail } from './RecordDetail';
-import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 
 interface PipelineRecord {
   id: string;
@@ -64,7 +63,6 @@ export function RecordTable({
 }) {
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [sort, setSort] = useState<{ col: string; dir: 'asc' | 'desc' }>({ col: 'created_at', dir: 'desc' });
-  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data: pipelineData } = useQuery<PipelineWithStages>({
     queryKey: ['pipeline', pipelineId],
@@ -172,15 +170,6 @@ export function RecordTable({
               <tr
                 key={record.id}
                 onClick={() => setSelectedRecordId(record.id)}
-                onContextMenu={(e) => {
-                  const items: ContextMenuItem[] = [
-                    { icon: 'open', label: 'Open record', onClick: () => setSelectedRecordId(record.id) },
-                    { type: 'separator' },
-                    { icon: 'link', label: 'Copy link', onClick: () => navigator.clipboard.writeText(`${window.location.origin}/pipeline?record=${record.id}`) },
-                    ...(record.record_number ? [{ icon: 'copy', label: 'Copy record #', onClick: () => navigator.clipboard.writeText(record.record_number!) } as ContextMenuItem] : []),
-                  ];
-                  openMenu(e, items);
-                }}
                 style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'var(--surface2)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = ''; }}
@@ -205,7 +194,6 @@ export function RecordTable({
       {selectedRecordId && (
         <RecordDetail recordId={selectedRecordId} onClose={() => setSelectedRecordId(null)} />
       )}
-      <ContextMenu menu={menu} onClose={closeMenu} />
     </>
   );
 }

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 
 interface WorkspacePlugin {
   id: string;
@@ -120,7 +119,6 @@ function LicenseModal({ plugin, onClose, onActivate }: {
 export default function PluginsSettingsPage() {
   const getToken = useApiToken();
   const router = useRouter();
-  const { ask: askConfirm, el: confirmEl } = useConfirm();
   const [plugins, setPlugins] = useState<WorkspacePlugin[]>([]);
   const [marketplace, setMarketplace] = useState<MarketplacePlugin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -220,17 +218,8 @@ export default function PluginsSettingsPage() {
     }
   }
 
-  function removePlugin(plugin: WorkspacePlugin) {
-    askConfirm({
-      title: 'Remove plugin',
-      message: `Remove plugin "${plugin.name}"? This cannot be undone.`,
-      confirmLabel: 'Remove',
-      variant: 'danger',
-      onConfirm: () => { void doRemovePlugin(plugin); },
-    });
-  }
-
-  async function doRemovePlugin(plugin: WorkspacePlugin) {
+  async function removePlugin(plugin: WorkspacePlugin) {
+    if (!confirm(`Remove plugin "${plugin.name}"? This cannot be undone.`)) return;
     setRemoving(plugin.id);
     try {
       const res = await fetch(`${apiUrl}/api/plugins/${plugin.id}`, {
@@ -473,7 +462,6 @@ export default function PluginsSettingsPage() {
           }}
         />
       )}
-      {confirmEl}
     </div>
   );
 }
