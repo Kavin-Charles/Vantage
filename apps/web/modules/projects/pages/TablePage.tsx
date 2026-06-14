@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { pmApi, type Task, type TaskStatus } from '@/modules/projects/lib/api';
+import { pmApi, type TaskWithAssignees, type TaskStatus } from '@/modules/projects/lib/api';
+import { AvatarGroup } from '@/modules/projects/components/AvatarGroup';
 
 const PRIORITY_BADGE: Record<string, { label: string; color: string; bg: string }> = {
   URGENT: { label: 'Urgent', color: 'var(--red)', bg: 'var(--red-bg, #fee2e2)' },
@@ -38,7 +39,7 @@ export default function TablePage() {
     },
   });
 
-  const tasks: Task[] = tasksData ?? [];
+  const tasks: TaskWithAssignees[] = tasksData ?? [];
   const statuses: TaskStatus[] = statusesData ?? [];
   const statusMap: Record<string, TaskStatus> = {};
   for (const s of statuses) statusMap[s.id] = s;
@@ -97,7 +98,7 @@ export default function TablePage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'DM Sans' }}>
             <thead>
               <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-                {['Task', 'Status', 'Priority', 'Due Date', 'Est.'].map(col => (
+                {['Task', 'Status', 'Priority', 'Due Date', 'Assignees', 'Est.'].map(col => (
                   <th
                     key={col}
                     style={{
@@ -112,7 +113,7 @@ export default function TablePage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((task, idx) => {
+              {filtered.map((task) => {
                 const status = statusMap[task.status_id];
                 const priority = PRIORITY_BADGE[task.priority] ?? PRIORITY_BADGE['NONE']!;
                 const dueDate = task.due_date ? new Date(task.due_date) : null;
@@ -123,9 +124,12 @@ export default function TablePage() {
                   <tr
                     key={task.id}
                     style={{
-                      background: idx % 2 === 0 ? 'var(--surface)' : 'var(--bg)',
+                      background: 'var(--surface)',
                       borderBottom: '1px solid var(--border)',
+                      transition: 'background 0.15s ease',
                     }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--surface)')}
                   >
                     <td style={{ padding: '10px 16px', fontSize: 13, color: 'var(--text)', maxWidth: 320 }}>
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
@@ -161,6 +165,11 @@ export default function TablePage() {
                         <span style={{ fontSize: 12, color: 'var(--text3)' }}>—</span>
                       )}
                     </td>
+                    <td style={{ padding: '10px 16px', whiteSpace: 'nowrap' }}>
+                      {task.assignees?.length > 0
+                        ? <AvatarGroup assignees={task.assignees} size={22} />
+                        : <span style={{ fontSize: 12, color: 'var(--text3)' }}>—</span>}
+                    </td>
                     <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
                       {estHours}
                     </td>
@@ -169,7 +178,7 @@ export default function TablePage() {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ padding: 32, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+                  <td colSpan={6} style={{ padding: 32, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
                     No tasks match your filters.
                   </td>
                 </tr>
