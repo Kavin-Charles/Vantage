@@ -10,10 +10,22 @@ const createCompanySchema = z.object({
   industry: z.string().optional(),
   location: z.string().optional(),
   employee_count: z.number().int().positive().optional(),
-  website: z.string().url().optional(),
+  website: z.preprocess(
+    v => (v === '' ? undefined : v),
+    z.string().url().optional(),
+  ),
 });
 
-const updateCompanySchema = createCompanySchema.partial();
+const updateCompanySchema = z.object({
+  name: z.string().min(1).optional(),
+  industry: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  employee_count: z.number().int().positive().nullable().optional(),
+  website: z.preprocess(
+    v => (v === '' ? null : v),
+    z.string().url().nullable().optional(),
+  ),
+});
 
 
 const COMPANY_HEADERS = ['name', 'industry', 'location', 'employee_count', 'website'];
