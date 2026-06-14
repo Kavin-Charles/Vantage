@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { RequestHandler } from 'express';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { z } from 'zod';
@@ -27,11 +28,14 @@ const acceptInviteSchema = z.object({
 export function createInvitesRouter(
   db: Kysely<Database>,
   smtp: SmtpConfig | null | undefined,
+  requireAuth: RequestHandler,
+  requireAdmin: RequestHandler,
 ): Router {
   const router = Router();
 
-  // POST /api/invites — create invite or direct-create (admin only, enforced at route level)
-  router.post('/', async (req, res, next) => {
+  // POST /api/invites — create invite or direct-create (admin only)
+  // requireAuth + requireAdmin applied here so the accept routes below remain public
+  router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
     try {
       const { workspace, user: inviter } = req as unknown as AuthenticatedRequest;
 
