@@ -49,7 +49,7 @@ export default async function ProjectLayout({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 56 }}>
           <Link
             href="/projects"
-            style={{ color: 'var(--text3)', fontSize: 13, fontFamily: 'DM Sans', textDecoration: 'none' }}
+            style={{ color: 'var(--text2)', fontSize: 13, fontFamily: 'DM Sans', textDecoration: 'none' }}
           >
             Projects
           </Link>
@@ -77,7 +77,7 @@ export default async function ProjectLayout({
 
           {project && (
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ height: 4, width: 100, background: 'var(--surface2)', borderRadius: 2 }}>
+              <div style={{ height: 6, width: 100, background: 'var(--surface2)', borderRadius: 3 }}>
                 <div style={{
                   height: '100%', borderRadius: 2,
                   background: project.color ?? 'var(--green)',
