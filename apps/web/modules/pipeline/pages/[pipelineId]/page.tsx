@@ -2,10 +2,12 @@
 import { useState, useEffect, ComponentType } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getPipeline } from '@/modules/pipeline/lib/pipelines';
 import { ViewSwitcher } from '@/modules/pipeline/components/ViewSwitcher';
+import { Icon } from '@/modules/shared/components/ui/Icon';
 import { PipelineSwitcher } from '../PipelineSwitcher';
 import type { PipelineWithDetails } from '@vencore/types';
 
@@ -72,6 +74,18 @@ export default function PipelineViewPage() {
         {pipeline && (
           <ViewSwitcher pipelineId={pipelineId} current={view} onChange={setView} />
         )}
+        <Link
+          href="/settings/pipelines"
+          title="Pipeline settings"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 34, height: 34, borderRadius: 8,
+            border: '1px solid var(--border)', background: 'var(--surface)',
+            color: 'var(--text2)', cursor: 'pointer', flexShrink: 0,
+          }}
+        >
+          <Icon name="settings" size={16} />
+        </Link>
         <button
           onClick={() => setAddTrigger(n => n + 1)}
           style={{
