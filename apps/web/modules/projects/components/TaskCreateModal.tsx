@@ -143,6 +143,8 @@ export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) 
           <label style={labelStyle}>Title *</label>
           <input
             ref={titleRef}
+            autoFocus
+            required
             value={title}
             onChange={e => setTitle(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && canSubmit) createMutation.mutate(); }}
