@@ -93,7 +93,7 @@ const LABEL_STYLE: React.CSSProperties = {
 const INPUT_STYLE: React.CSSProperties = {
   width: '100%', border: '1px solid var(--border)', borderRadius: 6,
   padding: '6px 10px', fontSize: 13, outline: 'none',
-  boxSizing: 'border-box', fontFamily: 'DM Sans, sans-serif',
+  boxSizing: 'border-box', fontFamily: 'var(--font-sans)',
   background: 'var(--surface)',
 };
 
@@ -177,7 +177,7 @@ function RecordCard({
       borderTop: '1px solid var(--border)',
       background: 'var(--bg)',
       padding: '20px 20px 20px 24px',
-      fontFamily: 'DM Sans, sans-serif',
+      fontFamily: 'var(--font-sans)',
     }}>
       <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
 

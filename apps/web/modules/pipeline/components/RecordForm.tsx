@@ -23,7 +23,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
 
   const { data: meData } = useQuery({
     queryKey: ['me'],
-    queryFn: async () => apiFetch<{ data: { id: string; name: string } }>('/api/me', { token: await getToken() }),
+    queryFn: async () => apiFetch<{ data: { user: { id: string; name: string } } }>('/api/me', { token: await getToken() }),
   });
 
   const activeStages = pipeline.stages.filter(s => !s.is_won && !s.is_lost);
@@ -32,7 +32,11 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    const ownerId = meData?.data?.id;
+    if (!pipeline.record_type) {
+      setError('This pipeline has no record type configured. Set one up in Settings → Record Types.');
+      return;
+    }
+    const ownerId = meData?.data?.user?.id;
     if (!ownerId) {
       setError('Could not determine current user');
       return;
@@ -66,7 +70,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
     width: 480, background: 'var(--surface)',
     borderRadius: 12, border: '1px solid var(--border)',
     boxShadow: '0 8px 40px rgba(26,24,20,0.12)',
-    fontFamily: 'DM Sans, sans-serif',
+    fontFamily: 'var(--font-sans)',
     overflow: 'hidden',
   };
 
@@ -75,7 +79,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
     fontSize: 14, color: 'var(--text)',
     border: '1px solid var(--border)', borderRadius: 7,
     padding: '8px 11px', background: 'var(--surface)',
-    fontFamily: 'DM Sans, sans-serif', outline: 'none',
+    fontFamily: 'var(--font-sans)', outline: 'none',
   };
 
   return (
@@ -87,7 +91,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>
-            New {pipeline.record_type.name}
+            New {pipeline.record_type?.name ?? 'Record'}
           </span>
           <button
             onClick={onClose}
@@ -108,7 +112,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
               <input
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder={`${pipeline.record_type.name} name`}
+                placeholder={`${pipeline.record_type?.name ?? 'Record'} name`}
                 required
                 style={inputStyle}
                 autoFocus
@@ -165,7 +169,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
                 fontSize: 14, padding: '8px 18px',
                 background: 'none', border: '1px solid var(--border)',
                 borderRadius: 7, cursor: 'pointer',
-                color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif',
+                color: 'var(--text2)', fontFamily: 'var(--font-sans)',
               }}
             >
               Cancel
@@ -178,7 +182,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
                 background: 'var(--text)', color: '#fff',
                 border: 'none', borderRadius: 7,
                 cursor: submitting ? 'not-allowed' : 'pointer',
-                fontFamily: 'DM Sans, sans-serif', fontWeight: 500,
+                fontFamily: 'var(--font-sans)', fontWeight: 500,
                 opacity: submitting || !name.trim() ? 0.55 : 1,
               }}
             >

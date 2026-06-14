@@ -109,6 +109,23 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
     }
   });
 
+  router.delete('/:id', requirePermission('tasks:edit'), async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const deleted = await db
+        .deleteFrom('tasks')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .returning(['id'])
+        .executeTakeFirst();
+      if (!deleted) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Task not found' } });
+        return;
+      }
+      res.json({ data: { id: deleted.id }, error: null });
+    } catch (err) { next(err); }
+  });
+
   router.patch('/:id', requirePermission('tasks:edit'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;

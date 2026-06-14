@@ -158,7 +158,7 @@ export default function ConversionsSettingsPage() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%', border: '1px solid var(--border)', borderRadius: 6,
-    padding: '8px 10px', fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+    padding: '8px 10px', fontSize: 13, fontFamily: 'var(--font-sans)',
     boxSizing: 'border-box', background: '#fff',
   };
   const labelStyle: React.CSSProperties = {
@@ -179,7 +179,7 @@ export default function ConversionsSettingsPage() {
       <div style={{ maxWidth: 720 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
-            <h2 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 22, fontWeight: 400, margin: 0 }}>Conversion Templates</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, margin: 0 }}>Conversion Templates</h2>
             <p style={{ fontSize: 13, color: 'var(--text3)', margin: '4px 0 0' }}>
               Define how records convert between types (e.g. Enquiry → Quote).
             </p>
@@ -223,7 +223,7 @@ export default function ConversionsSettingsPage() {
     // Step 1: Name + source/target type selection
     return (
       <div style={{ maxWidth: 480 }}>
-        <h2 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 22, fontWeight: 400, margin: '0 0 4px' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, margin: '0 0 4px' }}>
           {draft.id ? 'Edit Template' : 'New Template'} — Step 1 of 3
         </h2>
         <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 24 }}>Choose source and target record types.</p>
@@ -279,7 +279,7 @@ export default function ConversionsSettingsPage() {
     // Step 2: Target pipeline + stage
     return (
       <div style={{ maxWidth: 480 }}>
-        <h2 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 22, fontWeight: 400, margin: '0 0 4px' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, margin: '0 0 4px' }}>
           {draft.name} — Step 2 of 3
         </h2>
         <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 24 }}>
@@ -343,7 +343,7 @@ export default function ConversionsSettingsPage() {
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <h2 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 22, fontWeight: 400, margin: '0 0 4px' }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, margin: '0 0 4px' }}>
         {draft.name} — Step 3 of 3
       </h2>
       <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 24 }}>

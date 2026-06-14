@@ -2,10 +2,12 @@
 import { useState, useEffect, ComponentType } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getPipeline } from '@/modules/pipeline/lib/pipelines';
 import { ViewSwitcher } from '@/modules/pipeline/components/ViewSwitcher';
+import { Icon } from '@/modules/shared/components/ui/Icon';
 import { PipelineSwitcher } from '../PipelineSwitcher';
 import type { PipelineWithDetails } from '@vencore/types';
 
@@ -66,18 +68,30 @@ export default function PipelineViewPage() {
           placeholder="Search records…"
           style={{
             padding: '6px 12px', border: '1px solid var(--border)',
-            borderRadius: 8, fontSize: 13, fontFamily: 'DM Sans, sans-serif', width: 200,
+            borderRadius: 8, fontSize: 13, fontFamily: 'var(--font-sans)', width: 200,
           }}
         />
         {pipeline && (
           <ViewSwitcher pipelineId={pipelineId} current={view} onChange={setView} />
         )}
+        <Link
+          href="/settings/pipelines"
+          title="Pipeline settings"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 34, height: 34, borderRadius: 8,
+            border: '1px solid var(--border)', background: 'var(--surface)',
+            color: 'var(--text2)', cursor: 'pointer', flexShrink: 0,
+          }}
+        >
+          <Icon name="settings" size={16} />
+        </Link>
         <button
           onClick={() => setAddTrigger(n => n + 1)}
           style={{
             padding: '8px 16px', background: 'var(--text)', color: '#fff',
             border: 'none', borderRadius: 8, cursor: 'pointer',
-            fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+            fontSize: 13, fontFamily: 'var(--font-sans)',
           }}
         >+ Add record</button>
       </div>
@@ -85,7 +99,7 @@ export default function PipelineViewPage() {
       {/* View content */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {!pipeline && (
-          <div style={{ padding: 40, color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif' }}>Loading…</div>
+          <div style={{ padding: 40, color: 'var(--text2)', fontFamily: 'var(--font-sans)' }}>Loading…</div>
         )}
         {pipeline && view === 'kanban' && (
           <PipelineKanban pipeline={pipeline} search={search} addTrigger={addTrigger} />

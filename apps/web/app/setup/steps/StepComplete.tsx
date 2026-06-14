@@ -69,7 +69,7 @@ export function StepComplete({ state }: Props) {
   return (
     <div style={{ textAlign: 'center', paddingTop: 40 }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-      <h1 style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontSize: 28, fontWeight: 700, color: 'var(--text)', margin: '0 0 8px' }}>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--text)', margin: '0 0 8px' }}>
         {branding.name || 'Vencore'} is running
       </h1>
       {domain.domain && (
@@ -113,7 +113,7 @@ export function StepComplete({ state }: Props) {
         display: 'inline-block', padding: '12px 32px',
         background: 'var(--text)', color: '#fff', borderRadius: 8,
         fontSize: 15, fontWeight: 600, textDecoration: 'none',
-        fontFamily: 'Bricolage Grotesque, sans-serif',
+        fontFamily: 'var(--font-display)',
       }}>
         Open {branding.name || 'Vencore'} →
       </a>

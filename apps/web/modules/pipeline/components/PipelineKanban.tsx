@@ -28,11 +28,11 @@ export function PipelineKanban({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (addTrigger > 0) {
+    if (addTrigger > 0 && pipeline.record_type) {
       const firstActive = pipeline.stages.find(s => !s.is_won && !s.is_lost);
       setCreateStageId(firstActive?.id ?? null);
     }
-  }, [addTrigger, pipeline.stages]);
+  }, [addTrigger, pipeline.record_type, pipeline.stages]);
 
   const { data: recordsData } = useQuery({
     queryKey: ['records', pipeline.id],
@@ -94,7 +94,7 @@ export function PipelineKanban({
         <div style={{
           margin: '12px 24px', padding: '10px 14px',
           background: 'var(--amber-bg)', color: 'var(--amber)',
-          borderRadius: 8, fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+          borderRadius: 8, fontSize: 13, fontFamily: 'var(--font-sans)',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           {error}
@@ -129,14 +129,14 @@ export function PipelineKanban({
                 }} />
                 <span style={{
                   flex: 1, fontSize: 13, fontWeight: 600,
-                  color: 'var(--text)', fontFamily: 'DM Sans, sans-serif',
+                  color: 'var(--text)', fontFamily: 'var(--font-sans)',
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>{stage.name}</span>
-                <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'DM Sans, sans-serif' }}>
+                <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--font-sans)' }}>
                   {cards.length}
                 </span>
                 {total && (
-                  <span style={{ fontSize: 12, fontFamily: 'Instrument Serif, serif', color: 'var(--text2)' }}>
+                  <span style={{ fontSize: 12, fontFamily: 'var(--font-display)', color: 'var(--text2)' }}>
                     {total}
                   </span>
                 )}
@@ -162,16 +162,18 @@ export function PipelineKanban({
                 ))}
               </div>
 
-              {/* Add in column */}
-              <button
-                onClick={() => setCreateStageId(stage.id)}
-                style={{
-                  padding: '8px', background: 'none',
-                  border: '1px dashed var(--border)', borderRadius: 8,
-                  cursor: 'pointer', color: 'var(--text3)', fontSize: 13,
-                  fontFamily: 'DM Sans, sans-serif', textAlign: 'left',
-                }}
-              >+ Add</button>
+              {/* Add in column — only available when pipeline has a record type */}
+              {pipeline.record_type && (
+                <button
+                  onClick={() => setCreateStageId(stage.id)}
+                  style={{
+                    padding: '8px', background: 'none',
+                    border: '1px dashed var(--border)', borderRadius: 8,
+                    cursor: 'pointer', color: 'var(--text3)', fontSize: 13,
+                    fontFamily: 'var(--font-sans)', textAlign: 'left',
+                  }}
+                >+ Add</button>
+              )}
             </div>
           );
         })}
@@ -192,16 +194,16 @@ export function PipelineKanban({
                   <div style={{
                     fontSize: 12, fontWeight: 600,
                     color: isWon ? 'var(--green)' : 'var(--red)',
-                    fontFamily: 'DM Sans, sans-serif', marginBottom: 4,
+                    fontFamily: 'var(--font-sans)', marginBottom: 4,
                   }}>{stage.name}</div>
                   <div style={{
-                    fontSize: 20, fontFamily: 'Instrument Serif, serif',
+                    fontSize: 20, fontFamily: 'var(--font-display)',
                     color: isWon ? 'var(--green)' : 'var(--red)',
                   }}>{cnt}</div>
                   {total && (
                     <div style={{
                       fontSize: 12, color: isWon ? 'var(--green)' : 'var(--red)',
-                      fontFamily: 'DM Sans, sans-serif', marginTop: 2,
+                      fontFamily: 'var(--font-sans)', marginTop: 2,
                     }}>{total}</div>
                   )}
                 </div>

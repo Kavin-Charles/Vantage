@@ -38,7 +38,7 @@ export default function PipelinesSettingsLayout({ children }: { children: React.
                 background: active ? 'var(--surface2, #f0ede6)' : 'transparent',
                 textDecoration: 'none',
                 marginBottom: 2,
-                fontFamily: 'DM Sans, sans-serif',
+                fontFamily: 'var(--font-sans)',
                 transition: 'all .12s',
               }}
             >

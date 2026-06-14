@@ -36,7 +36,7 @@ export function ViewSwitcher({
             padding: '5px 10px', border: 'none', borderRadius: 6, cursor: 'pointer',
             background: current === v.id ? 'var(--surface)' : 'transparent',
             color: current === v.id ? 'var(--text)' : 'var(--text2)',
-            fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+            fontSize: 13, fontFamily: 'var(--font-sans)',
             boxShadow: current === v.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
             transition: 'all 0.1s',
           }}

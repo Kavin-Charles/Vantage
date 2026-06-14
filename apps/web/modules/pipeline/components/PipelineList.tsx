@@ -54,14 +54,14 @@ export function PipelineList({
               {record.record_number && (
                 <span style={{
                   fontSize: 11, color: 'var(--text3)', width: 80, flexShrink: 0,
-                  fontFamily: 'DM Sans, sans-serif',
+                  fontFamily: 'var(--font-sans)',
                 }}>
                   {record.record_number}
                 </span>
               )}
               <span style={{
                 flex: 1, fontSize: 14, fontWeight: 500, color: 'var(--text)',
-                fontFamily: 'DM Sans, sans-serif', overflow: 'hidden',
+                fontFamily: 'var(--font-sans)', overflow: 'hidden',
                 textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {record.name}
@@ -71,14 +71,14 @@ export function PipelineList({
                   padding: '3px 10px', borderRadius: 12,
                   background: `${stage.color ?? '#6366f1'}22`,
                   fontSize: 12, color: stage.color ?? 'var(--text)',
-                  fontFamily: 'DM Sans, sans-serif', flexShrink: 0,
+                  fontFamily: 'var(--font-sans)', flexShrink: 0,
                 }}>
                   {stage.name}
                 </span>
               )}
               {val && (
                 <span style={{
-                  fontSize: 14, fontFamily: 'Instrument Serif, serif',
+                  fontSize: 14, fontFamily: 'var(--font-display)',
                   color: 'var(--text)', width: 100, textAlign: 'right', flexShrink: 0,
                 }}>
                   {val}
@@ -90,7 +90,7 @@ export function PipelineList({
         {filtered.length === 0 && (
           <div style={{
             textAlign: 'center', padding: '48px 0',
-            color: 'var(--text3)', fontFamily: 'DM Sans, sans-serif', fontSize: 14,
+            color: 'var(--text3)', fontFamily: 'var(--font-sans)', fontSize: 14,
           }}>
             No records found
           </div>

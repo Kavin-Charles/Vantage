@@ -26,8 +26,9 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
   const record: PipelineRecordWithValues | undefined = data?.data;
 
   const { data: conversionsData } = useQuery({
-    queryKey: ['conversions', pipeline.record_type.id],
-    queryFn: async () => listConversions(await getToken(), pipeline.record_type.id),
+    queryKey: ['conversions', pipeline.record_type?.id],
+    queryFn: async () => listConversions(await getToken(), pipeline.record_type!.id),
+    enabled: !!pipeline.record_type,
   });
 
   const conversions = conversionsData?.data ?? [];
@@ -80,7 +81,7 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
     background: 'var(--surface)',
     borderLeft: '1px solid var(--border)',
     display: 'flex', flexDirection: 'column',
-    fontFamily: 'DM Sans, sans-serif',
+    fontFamily: 'var(--font-sans)',
     boxShadow: '-4px 0 24px rgba(26,24,20,0.08)',
   };
 
@@ -113,7 +114,7 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
               onChange={e => setName(e.target.value)}
               onBlur={() => { if (name !== record.name) saveMut.mutate({ name }); }}
               style={{
-                flex: 1, fontSize: 18, fontFamily: 'Instrument Serif, serif',
+                flex: 1, fontSize: 18, fontFamily: 'var(--font-display)',
                 fontWeight: 400, color: 'var(--text)',
                 border: 'none', outline: 'none', background: 'transparent',
                 padding: 0, lineHeight: 1.3,
@@ -138,7 +139,7 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
               style={{
                 fontSize: 13, color: 'var(--text)', border: '1px solid var(--border)',
                 borderRadius: 6, padding: '4px 8px', background: 'var(--surface)',
-                fontFamily: 'DM Sans, sans-serif', cursor: 'pointer',
+                fontFamily: 'var(--font-sans)', cursor: 'pointer',
               }}
             >
               {pipeline.stages.map(s => (
@@ -153,10 +154,12 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
           {fields.map(field => (
             <FieldRow key={field.id} field={field} value={getFieldValue(field.id)} onBlur={handleFieldBlur} />
           ))}
-          <PluginPanelSlot
-            recordType={pipeline.record_type.name.toLowerCase()}
-            recordId={recordId}
-          />
+          {pipeline.record_type && (
+            <PluginPanelSlot
+              recordType={pipeline.record_type.name.toLowerCase()}
+              recordId={recordId}
+            />
+          )}
         </div>
 
         {/* Footer */}
@@ -175,7 +178,7 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
                     fontSize: 13, padding: '6px 14px',
                     background: 'var(--blue-bg)', color: 'var(--blue)',
                     border: 'none', borderRadius: 6, cursor: 'pointer',
-                    fontFamily: 'DM Sans, sans-serif', fontWeight: 500,
+                    fontFamily: 'var(--font-sans)', fontWeight: 500,
                   }}
                 >
                   Convert → {tpl.name}
@@ -193,7 +196,7 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
               fontSize: 13, padding: '6px 14px',
               background: 'var(--red-bg)', color: 'var(--red)',
               border: 'none', borderRadius: 6, cursor: 'pointer',
-              fontFamily: 'DM Sans, sans-serif', fontWeight: 500,
+              fontFamily: 'var(--font-sans)', fontWeight: 500,
               alignSelf: 'flex-start',
             }}
           >
@@ -226,7 +229,7 @@ function FieldRow({
     flex: 1, fontSize: 13, color: 'var(--text)',
     border: '1px solid var(--border)', borderRadius: 6,
     padding: '5px 9px', background: 'var(--surface)',
-    fontFamily: 'DM Sans, sans-serif',
+    fontFamily: 'var(--font-sans)',
     outline: 'none',
   };
 

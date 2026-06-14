@@ -12,6 +12,7 @@ export function CompanyForm({ company, onDone }: { company?: Company; onDone: ()
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: company?.name ?? '',
     industry: company?.industry ?? '',
@@ -26,16 +27,30 @@ export function CompanyForm({ company, onDone }: { company?: Company; onDone: ()
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
       const token = await getToken();
-      const body = {
-        ...form,
-        employee_count: form.employee_count ? parseInt(form.employee_count) : undefined,
-      };
-      if (company) await updateCompany(token, company.id, body);
-      else await createCompany(token, body);
+      if (company) {
+        await updateCompany(token, company.id, {
+          name: form.name,
+          industry: form.industry || null,
+          location: form.location || null,
+          website: form.website || null,
+          employee_count: form.employee_count ? parseInt(form.employee_count) : null,
+        });
+      } else {
+        await createCompany(token, {
+          name: form.name,
+          industry: form.industry || undefined,
+          location: form.location || undefined,
+          website: form.website || undefined,
+          employee_count: form.employee_count ? parseInt(form.employee_count) : undefined,
+        });
+      }
       await qc.invalidateQueries({ queryKey: ['companies'] });
       onDone();
+    } catch (err) {
+      setError((err as Error).message ?? 'Failed to save company.');
     } finally {
       setLoading(false);
     }
@@ -58,6 +73,9 @@ export function CompanyForm({ company, onDone }: { company?: Company; onDone: ()
       <FormField label="Employees">
         <Input type="number" value={form.employee_count} onChange={set('employee_count')} placeholder="50" />
       </FormField>
+      {error && (
+        <p style={{ color: 'var(--red)', fontSize: 13, marginTop: 4, marginBottom: 4 }}>{error}</p>
+      )}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
         <Button type="button" onClick={onDone}>Cancel</Button>
         <Button type="submit" variant="primary" disabled={loading}>

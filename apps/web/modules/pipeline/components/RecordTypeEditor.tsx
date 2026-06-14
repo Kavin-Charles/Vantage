@@ -84,7 +84,7 @@ export function RecordTypeEditor({ recordTypeId }: { recordTypeId: string }) {
             onBlur={e => { if (e.target.value !== field.label) updateMut.mutate({ id: field.id, label: e.target.value }); }}
             style={{
               flex: 1, border: 'none', outline: 'none', background: 'transparent',
-              fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: 'var(--text)',
+              fontFamily: 'var(--font-sans)', fontSize: 14, color: 'var(--text)',
             }}
           />
           <span style={{
@@ -123,7 +123,7 @@ export function RecordTypeEditor({ recordTypeId }: { recordTypeId: string }) {
             placeholder="Field label"
             style={{
               flex: 1, border: 'none', outline: 'none', background: 'transparent',
-              fontFamily: 'DM Sans, sans-serif', fontSize: 14,
+              fontFamily: 'var(--font-sans)', fontSize: 14,
             }}
           />
           <select
@@ -152,7 +152,7 @@ export function RecordTypeEditor({ recordTypeId }: { recordTypeId: string }) {
             padding: '8px 12px', background: 'none',
             border: '1px dashed var(--border)', borderRadius: 8,
             cursor: 'pointer', color: 'var(--text2)',
-            fontFamily: 'DM Sans, sans-serif', fontSize: 14, textAlign: 'left',
+            fontFamily: 'var(--font-sans)', fontSize: 14, textAlign: 'left',
           }}
         >+ Add field</button>
       )}

@@ -51,14 +51,14 @@ export function PipelineTable({
 
   const thStyle: React.CSSProperties = {
     padding: '10px 14px', textAlign: 'left', fontSize: 12, fontWeight: 600,
-    color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif',
+    color: 'var(--text2)', fontFamily: 'var(--font-sans)',
     borderBottom: '1px solid var(--border)', cursor: 'pointer',
     userSelect: 'none', background: 'var(--surface)', whiteSpace: 'nowrap',
     position: 'sticky', top: 0,
   };
   const tdStyle: React.CSSProperties = {
     padding: '10px 14px', fontSize: 14, color: 'var(--text)',
-    fontFamily: 'DM Sans, sans-serif', borderBottom: '1px solid var(--border)',
+    fontFamily: 'var(--font-sans)', borderBottom: '1px solid var(--border)',
     verticalAlign: 'middle',
   };
 
@@ -97,7 +97,7 @@ export function PipelineTable({
                 >
                   <td style={tdStyle}>
                     {record.record_number && (
-                      <span style={{ fontSize: 11, color: 'var(--text3)', marginRight: 6, fontFamily: 'DM Sans, sans-serif' }}>
+                      <span style={{ fontSize: 11, color: 'var(--text3)', marginRight: 6, fontFamily: 'var(--font-sans)' }}>
                         {record.record_number}
                       </span>
                     )}
@@ -117,7 +117,7 @@ export function PipelineTable({
                     )}
                   </td>
                   {valueField && (
-                    <td style={{ ...tdStyle, fontFamily: 'Instrument Serif, serif' }}>{val}</td>
+                    <td style={{ ...tdStyle, fontFamily: 'var(--font-display)' }}>{val}</td>
                   )}
                   <td style={{ ...tdStyle, color: 'var(--text2)', fontSize: 12 }}>
                     {fmtDate(record.created_at)}

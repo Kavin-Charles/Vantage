@@ -45,7 +45,7 @@ export default function PipelinesSettingsPage() {
   return (
     <div style={{ padding: '32px 40px', maxWidth: 720 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 24, color: 'var(--text)', margin: 0 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--text)', margin: 0 }}>
           Pipelines
         </h1>
         <button
@@ -53,7 +53,7 @@ export default function PipelinesSettingsPage() {
           style={{
             padding: '8px 16px', background: 'var(--text)', color: '#fff',
             border: 'none', borderRadius: 8, cursor: 'pointer',
-            fontFamily: 'DM Sans, sans-serif', fontSize: 14,
+            fontFamily: 'var(--font-sans)', fontSize: 14,
           }}
         >+ New pipeline</button>
       </div>
@@ -71,7 +71,7 @@ export default function PipelinesSettingsPage() {
               placeholder="Pipeline name"
               style={{
                 flex: 1, padding: '8px 12px', border: '1px solid var(--border)',
-                borderRadius: 8, fontFamily: 'DM Sans, sans-serif', fontSize: 14,
+                borderRadius: 8, fontFamily: 'var(--font-sans)', fontSize: 14,
               }}
             />
             <select
@@ -79,7 +79,7 @@ export default function PipelinesSettingsPage() {
               onChange={e => setNewTypeId(e.target.value)}
               style={{
                 padding: '8px 12px', border: '1px solid var(--border)',
-                borderRadius: 8, fontSize: 14, fontFamily: 'DM Sans, sans-serif',
+                borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-sans)',
               }}
             >
               <option value="">Record type…</option>
@@ -119,10 +119,10 @@ export default function PipelinesSettingsPage() {
               style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', cursor: 'pointer' }}
               onClick={() => setExpanded(expanded === p.id ? null : p.id)}
             >
-              <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 15, flex: 1, color: 'var(--text)' }}>
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 15, flex: 1, color: 'var(--text)' }}>
                 {p.name}
               </span>
-              <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'DM Sans, sans-serif' }}>
+              <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--font-sans)' }}>
                 {p.record_type?.name} · {p.stages.length} stages
               </span>
               <span style={{ color: 'var(--text3)', fontSize: 12 }}>{expanded === p.id ? '▲' : '▼'}</span>
@@ -138,7 +138,7 @@ export default function PipelinesSettingsPage() {
                     marginTop: 16, padding: '6px 12px',
                     background: 'var(--red-bg)', color: 'var(--red)',
                     border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13,
-                    fontFamily: 'DM Sans, sans-serif',
+                    fontFamily: 'var(--font-sans)',
                   }}
                 >Delete pipeline</button>
               </div>
@@ -146,7 +146,7 @@ export default function PipelinesSettingsPage() {
           </div>
         ))}
         {pipelines.length === 0 && !creating && (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text3)', fontFamily: 'DM Sans, sans-serif' }}>
+          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text3)', fontFamily: 'var(--font-sans)' }}>
             No pipelines yet. Create your first pipeline above.
           </div>
         )}

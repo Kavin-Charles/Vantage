@@ -528,7 +528,7 @@ export interface RecordTypeWithFields extends RecordType {
 
 export interface PipelineWithDetails extends Pipeline {
   stages: PipelineStage[];
-  record_type: RecordTypeWithFields;
+  record_type: RecordTypeWithFields | null;
 }
 
 export interface ConversionTemplate {

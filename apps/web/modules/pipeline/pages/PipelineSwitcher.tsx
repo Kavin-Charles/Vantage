@@ -17,7 +17,7 @@ export function PipelineSwitcher({ currentId }: { currentId: string }) {
 
   if (pipelines.length <= 1) {
     return (
-      <span style={{ fontFamily: 'Instrument Serif, serif', fontSize: 18, color: 'var(--text)' }}>
+      <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--text)' }}>
         {current?.name ?? 'Pipeline'}
       </span>
     );
@@ -28,7 +28,7 @@ export function PipelineSwitcher({ currentId }: { currentId: string }) {
       value={currentId}
       onChange={e => router.push(`/pipeline/${e.target.value}`)}
       style={{
-        fontFamily: 'Instrument Serif, serif', fontSize: 18, color: 'var(--text)',
+        fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--text)',
         border: 'none', background: 'transparent', cursor: 'pointer',
         outline: 'none', padding: '0 4px',
       }}

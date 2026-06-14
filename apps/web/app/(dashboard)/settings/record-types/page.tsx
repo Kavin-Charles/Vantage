@@ -91,10 +91,10 @@ export default function RecordTypesSettingsPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 22, fontWeight: 400, margin: 0 }}>Record Types</h1>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 400, margin: 0 }}>Record Types</h1>
         <button
           onClick={() => setShowCreate(true)}
-          style={{ background: 'var(--text, #1a1814)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}
+          style={{ background: 'var(--text, #1a1814)', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--font-sans)' }}
         >
           + New Record Type
         </button>
@@ -133,7 +133,7 @@ export default function RecordTypesSettingsPage() {
         {/* Detail panel */}
         {selected && (
           <div style={{ flex: 1, background: 'var(--surface, #fff)', borderRadius: 12, border: '1px solid var(--border, #e4e0d8)', padding: 24 }}>
-            <h2 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 18, fontWeight: 400, margin: '0 0 20px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, margin: '0 0 20px' }}>
               {selected.icon} {selected.name}
             </h2>
 
@@ -198,8 +198,8 @@ export default function RecordTypesSettingsPage() {
       {/* Create modal */}
       {showCreate && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: 12, padding: 32, width: 400, fontFamily: 'DM Sans, sans-serif' }}>
-            <h2 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 18, fontWeight: 400, margin: '0 0 20px' }}>New Record Type</h2>
+          <div style={{ background: '#fff', borderRadius: 12, padding: 32, width: 400, fontFamily: 'var(--font-sans)' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 400, margin: '0 0 20px' }}>New Record Type</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={{ fontSize: 11, color: 'var(--text3)', display: 'block', marginBottom: 4 }}>Name</label>
