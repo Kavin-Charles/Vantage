@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import {
   listTemplates,
   getTemplate,
@@ -59,7 +58,6 @@ const EMPTY_DRAFT: DraftTemplate = {
 export default function ConversionsSettingsPage() {
   const qc = useQueryClient();
   const [step, setStep] = useState<Step>('list');
-  const { ask: askConfirm, el: confirmEl } = useConfirm();
   const [draft, setDraft] = useState<DraftTemplate>(EMPTY_DRAFT);
   const [error, setError] = useState<string | null>(null);
 
@@ -178,8 +176,6 @@ export default function ConversionsSettingsPage() {
 
   if (step === 'list') {
     return (
-      <>
-      {confirmEl}
       <div style={{ maxWidth: 720 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
@@ -211,7 +207,7 @@ export default function ConversionsSettingsPage() {
               </div>
               <button onClick={() => void startEdit(tpl)} style={btnSecondary}>Edit</button>
               <button
-                onClick={() => askConfirm({ title: 'Delete template', message: `Delete template "${tpl.name}"? This cannot be undone.`, confirmLabel: 'Delete', variant: 'danger', onConfirm: () => deleteMutation.mutate(tpl.id) })}
+                onClick={() => { if (confirm('Delete this template?')) deleteMutation.mutate(tpl.id); }}
                 style={{ ...btnSecondary, color: 'var(--red, #991b1b)', borderColor: 'var(--red, #991b1b)' }}
               >
                 Delete
@@ -220,7 +216,6 @@ export default function ConversionsSettingsPage() {
           ))}
         </div>
       </div>
-      </>
     );
   }
 

@@ -4,12 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
-import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import type { User } from '@vencore/types';
 
 export default function TeamPage() {
   const getToken = useApiToken();
-  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data, isLoading } = useQuery({
     queryKey: ['me'],
@@ -84,33 +82,7 @@ export default function TeamPage() {
               <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>Team Members</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {users.map(u => (
-                  <div
-                    key={u.id}
-                    onContextMenu={(e) => {
-                      const items: ContextMenuItem[] = [
-                        { icon: 'user', label: u.name, disabled: true, onClick: () => {} },
-                        { type: 'separator' },
-                        { icon: 'copy', label: 'Copy email', onClick: () => navigator.clipboard.writeText(u.email) },
-                        { icon: 'copy', label: 'Copy name',  onClick: () => navigator.clipboard.writeText(u.name) },
-                        ...(currentUser?.role === 'admin' ? [
-                          { type: 'separator' as const },
-                          {
-                            type: 'submenu' as const,
-                            icon: 'shield',
-                            label: 'Change role',
-                            items: [
-                              { label: 'Admin',  swatch: '#6366f1', onClick: () => {} },
-                              { label: 'Member', swatch: '#94a3b8', onClick: () => {} },
-                            ],
-                          },
-                        ] : []),
-                      ];
-                      openMenu(e, items);
-                    }}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: 8, padding: '6px 8px', margin: '-6px -8px', cursor: 'default' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--surface2)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = ''; }}
-                  >
+                  <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
                       <span style={{ fontSize: 13, fontWeight: 500 }}>{u.name}</span>
                       <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 8 }}>{u.email}</span>
@@ -133,7 +105,6 @@ export default function TeamPage() {
           )}
         </>
       )}
-      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }

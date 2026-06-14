@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { ContextMenu, useContextMenu } from '@/modules/shared/components/ui/ContextMenu';
 
 interface Props {
   widgetId: string;
@@ -35,17 +34,8 @@ class WidgetErrorBoundary extends React.Component<{ children: React.ReactNode },
 }
 
 export function WidgetCard({ widgetId, label, isEditMode, onRemove, children }: Props) {
-  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
   return (
     <div
-      onContextMenu={(e) => {
-        const items = [
-          { type: 'header' as const, label },
-          { type: 'separator' as const },
-          ...(onRemove ? [{ icon: 'trash', label: 'Remove widget', danger: true, onClick: () => onRemove(widgetId) }] : []),
-        ];
-        openMenu(e, items);
-      }}
       style={{
         height: '100%',
         background: 'var(--surface)',
@@ -100,7 +90,6 @@ export function WidgetCard({ widgetId, label, isEditMode, onRemove, children }: 
           <WidgetErrorBoundary key={widgetId}>{children}</WidgetErrorBoundary>
         </React.Suspense>
       </div>
-      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }

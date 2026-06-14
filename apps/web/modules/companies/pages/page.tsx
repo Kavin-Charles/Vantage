@@ -6,7 +6,6 @@ import { Topbar } from '@/modules/shared/components/Topbar';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { Modal } from '@/modules/shared/components/ui/Modal';
 import { Icon } from '@/modules/shared/components/ui/Icon';
-import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { CompanyForm } from '@/modules/companies/components/CompanyForm';
 import { CsvImportExport } from '@/modules/shared/components/CsvImportExport';
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
@@ -25,7 +24,6 @@ export default function CompaniesPage() {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | Company | null>(null);
-  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data, isLoading } = useQuery({
     queryKey: ['companies'],
@@ -71,21 +69,9 @@ export default function CompaniesPage() {
               company={c}
               last={i === companies.length - 1}
               onEdit={() => setModal(c)}
-              onContextMenu={(e) => {
-                const items: ContextMenuItem[] = [
-                  { icon: 'open', label: 'Edit company', onClick: () => setModal(c) },
-                  { type: 'separator' },
-                  { icon: 'copy', label: 'Copy name',    onClick: () => navigator.clipboard.writeText(c.name) },
-                  { icon: 'globe', label: 'Copy website', disabled: !c.website, onClick: () => navigator.clipboard.writeText(c.website ?? '') },
-                  { icon: 'link',  label: 'Copy link',   onClick: () => navigator.clipboard.writeText(`${window.location.origin}/companies/${c.id}`) },
-                ];
-                openMenu(e, items);
-              }}
             />
           ))}
         </div>
-
-        <ContextMenu menu={menu} onClose={closeMenu} />
 
         {modal && (
           <Modal title={modal === 'create' ? 'Add company' : `Edit ${(modal as Company).name}`} onClose={() => setModal(null)}>
@@ -97,16 +83,14 @@ export default function CompaniesPage() {
   );
 }
 
-function CompanyRow({ company: c, last, onEdit, onContextMenu }: {
+function CompanyRow({ company: c, last, onEdit }: {
   company: Company; last: boolean; onEdit: () => void;
-  onContextMenu: (e: React.MouseEvent) => void;
 }) {
   const [hover, setHover] = useState(false);
   return (
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      onContextMenu={onContextMenu}
       style={{
         display: 'grid', gridTemplateColumns: COLS,
         gap: 14, alignItems: 'center',

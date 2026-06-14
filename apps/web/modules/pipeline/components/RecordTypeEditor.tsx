@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { listFields, addField, updateField, deleteField, reorderFields } from '@/modules/pipeline/lib/record-types';
 import type { RecordTypeField } from '@vencore/types';
 
@@ -12,7 +11,6 @@ export function RecordTypeEditor({ recordTypeId }: { recordTypeId: string }) {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
-  const { ask: askConfirm, el: confirmEl } = useConfirm();
   const [newLabel, setNewLabel] = useState('');
   const [newType, setNewType] = useState<typeof FIELD_TYPES[number]>('text');
   const [dragId, setDragId] = useState<string | null>(null);
@@ -104,7 +102,7 @@ export function RecordTypeEditor({ recordTypeId }: { recordTypeId: string }) {
             Required
           </label>
           <button
-            onClick={() => askConfirm({ title: 'Delete field', message: `Delete field "${field.label}"? Existing values will be lost.`, confirmLabel: 'Delete', variant: 'danger', onConfirm: () => deleteMut.mutate(field.id) })}
+            onClick={() => { if (window.confirm(`Delete field "${field.label}"?`)) deleteMut.mutate(field.id); }}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, lineHeight: 1, padding: '0 2px' }}
           >×</button>
         </div>
@@ -158,7 +156,6 @@ export function RecordTypeEditor({ recordTypeId }: { recordTypeId: string }) {
           }}
         >+ Add field</button>
       )}
-      {confirmEl}
     </div>
   );
 }
