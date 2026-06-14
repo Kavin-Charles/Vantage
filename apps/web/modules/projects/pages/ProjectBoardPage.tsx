@@ -5,8 +5,10 @@ import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { Icon } from '@/modules/shared/components/ui/Icon';
-import { pmApi, type Task, type TaskWithAssignees, type TaskStatus } from '@/modules/projects/lib/api';
+import { pmApi, type TaskWithAssignees, type TaskStatus } from '@/modules/projects/lib/api';
 import { TaskDetailPanel } from '@/modules/projects/components/TaskDetailPanel';
+import { AvatarGroup } from '@/modules/projects/components/AvatarGroup';
+import { TaskCreateModal } from '@/modules/projects/components/TaskCreateModal';
 
 const PRIORITY_COLORS: Record<string, string> = {
   LOW: 'var(--text3)', MEDIUM: 'var(--amber)', HIGH: 'var(--red)', URGENT: 'var(--red)',
@@ -17,11 +19,15 @@ function TaskCard({
   onClick,
   onDragStart,
 }: {
-  task: Task;
+  task: TaskWithAssignees;
   onClick: () => void;
   onDragStart: (e: React.DragEvent) => void;
 }) {
   const [hover, setHover] = useState(false);
+  const now = new Date();
+  const dueDate = task.due_date ? new Date(task.due_date) : null;
+  const overdue = dueDate && dueDate < now;
+
   return (
     <div
       draggable
@@ -33,84 +39,32 @@ function TaskCard({
         background: hover ? 'var(--surface2)' : 'var(--surface)',
         border: '1px solid var(--border)', borderRadius: 10,
         padding: '10px 12px', cursor: 'pointer', marginBottom: 8,
+        boxShadow: hover ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
+        transition: 'background 0.15s ease, box-shadow 0.15s ease',
       }}
     >
-      <p style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)', margin: '0 0 8px', lineHeight: 1.4 }}>
-        {task.title}
-      </p>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontFamily: 'DM Sans', fontSize: 11, color: PRIORITY_COLORS[task.priority] ?? 'var(--text3)', fontWeight: 600 }}>
-          {task.priority}
-        </span>
-        {task.due_date && (
-          <span style={{ fontFamily: 'DM Sans', fontSize: 11, color: 'var(--text3)', marginLeft: 'auto' }}>
-            {new Date(task.due_date).toLocaleDateString()}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+        <p style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)', margin: 0, lineHeight: 1.4, flex: 1 }}>
+          {task.title}
+        </p>
+        {task.priority && task.priority !== 'NONE' && (
+          <span style={{
+            fontFamily: 'DM Sans', fontSize: 10, color: PRIORITY_COLORS[task.priority] ?? 'var(--text3)',
+            fontWeight: 700, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.03em',
+          }}>
+            {task.priority}
           </span>
         )}
       </div>
-    </div>
-  );
-}
-
-function AddTaskInline({ onAdd, loading }: { onAdd: (title: string) => void; loading: boolean }) {
-  const [open, setOpen] = useState(false);
-  const [val, setVal] = useState('');
-
-  function submit() {
-    if (val.trim()) { onAdd(val.trim()); setVal(''); setOpen(false); }
-  }
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 6,
-          background: 'none', border: '1px dashed var(--border)', borderRadius: 8,
-          padding: '7px 10px', cursor: 'pointer', color: 'var(--text3)',
-          fontFamily: 'DM Sans', fontSize: 12,
-        }}
-      >
-        <Icon name="plus" size={13} /> Add task
-      </button>
-    );
-  }
-
-  return (
-    <div>
-      <input
-        autoFocus
-        value={val}
-        onChange={e => setVal(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') setOpen(false); }}
-        placeholder="Task title…"
-        style={{
-          width: '100%', padding: '8px 10px', border: '1px solid var(--border)',
-          borderRadius: 8, fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)',
-          background: 'var(--surface)', outline: 'none', boxSizing: 'border-box', marginBottom: 6,
-        }}
-      />
-      <div style={{ display: 'flex', gap: 6 }}>
-        <button
-          onClick={submit}
-          disabled={loading || !val.trim()}
-          style={{
-            background: 'var(--text)', color: '#fff', border: 'none', borderRadius: 7,
-            padding: '5px 12px', fontFamily: 'DM Sans', fontSize: 12, cursor: 'pointer',
-            opacity: loading || !val.trim() ? 0.5 : 1,
-          }}
-        >
-          Add
-        </button>
-        <button
-          onClick={() => setOpen(false)}
-          style={{
-            background: 'none', border: '1px solid var(--border)', borderRadius: 7,
-            padding: '5px 10px', fontFamily: 'DM Sans', fontSize: 12, cursor: 'pointer', color: 'var(--text2)',
-          }}
-        >
-          Cancel
-        </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {dueDate ? (
+          <span style={{ fontFamily: 'DM Sans', fontSize: 11, color: overdue ? 'var(--red)' : 'var(--text3)', fontWeight: overdue ? 600 : 400 }}>
+            {dueDate.toLocaleDateString()}
+          </span>
+        ) : <span />}
+        {task.assignees.length > 0 && (
+          <AvatarGroup assignees={task.assignees} size={22} max={3} />
+        )}
       </div>
     </div>
   );
@@ -123,6 +77,7 @@ export default function ProjectBoardPage() {
   const qc = useQueryClient();
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<TaskWithAssignees | null>(null);
+  const [createForStatus, setCreateForStatus] = useState<string | null>(null);
 
   const { data: statuses = [] } = useQuery<TaskStatus[]>({
     queryKey: ['statuses', projectId],
@@ -132,7 +87,8 @@ export default function ProjectBoardPage() {
     },
     enabled: !!projectId,
   });
-  const { data: tasks = [] } = useQuery<Task[]>({
+
+  const { data: tasks = [] } = useQuery<TaskWithAssignees[]>({
     queryKey: ['tasks', projectId],
     queryFn: async () => {
       const res = await pmApi.listTasks(await getToken(), projectId);
@@ -142,17 +98,9 @@ export default function ProjectBoardPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ taskId, patch }: { taskId: string; patch: Partial<Task> }) => {
+    mutationFn: async ({ taskId, patch }: { taskId: string; patch: Partial<TaskWithAssignees> }) => {
       const token = await getToken();
       return pmApi.updateTask(token, projectId, taskId, patch);
-    },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
-  });
-
-  const createMutation = useMutation({
-    mutationFn: async ({ title, statusId }: { title: string; statusId: string }) => {
-      const token = await getToken();
-      return pmApi.createTask(token, projectId, { title, status_id: statusId, priority: 'MEDIUM' });
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
   });
@@ -165,7 +113,7 @@ export default function ProjectBoardPage() {
     }
   }
 
-  async function openTask(task: Task) {
+  async function openTask(task: TaskWithAssignees) {
     const token = await getToken();
     const res = await pmApi.getTask(token, projectId, task.id);
     setSelectedTask(res.data);
@@ -181,24 +129,16 @@ export default function ProjectBoardPage() {
               key={status.id}
               onDragOver={e => e.preventDefault()}
               onDrop={e => handleDrop(e, status.id)}
-              style={{
-                width: 270, background: 'var(--bg)', borderRadius: 14,
-                padding: 12, flexShrink: 0,
-              }}
+              style={{ width: 270, background: 'var(--bg)', borderRadius: 14, padding: 12, flexShrink: 0 }}
             >
-              {/* Column header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: status.color, flexShrink: 0 }} />
                 <span style={{ fontFamily: 'DM Sans', fontSize: 13, fontWeight: 600, color: 'var(--text)', flex: 1 }}>{status.name}</span>
-                <span style={{
-                  fontFamily: 'DM Sans', fontSize: 11, color: 'var(--text3)',
-                  background: 'var(--surface2)', borderRadius: 10, padding: '1px 7px',
-                }}>
+                <span style={{ fontFamily: 'DM Sans', fontSize: 11, color: 'var(--text3)', background: 'var(--surface2)', borderRadius: 10, padding: '1px 7px' }}>
                   {columnTasks.length}
                 </span>
               </div>
 
-              {/* Tasks */}
               {columnTasks.map(task => (
                 <TaskCard
                   key={task.id}
@@ -208,11 +148,18 @@ export default function ProjectBoardPage() {
                 />
               ))}
 
-              {/* Add task */}
-              <AddTaskInline
-                loading={createMutation.isPending}
-                onAdd={title => createMutation.mutate({ title, statusId: status.id })}
-              />
+              <button
+                onClick={() => setCreateForStatus(status.id)}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'none', border: '1px dashed var(--border)', borderRadius: 8,
+                  padding: '7px 10px', cursor: 'pointer', color: 'var(--text3)',
+                  fontFamily: 'DM Sans', fontSize: 12,
+                  transition: 'border-color 0.15s ease, color 0.15s ease',
+                }}
+              >
+                <Icon name="plus" size={13} /> Add task
+              </button>
             </div>
           );
         })}
@@ -231,6 +178,14 @@ export default function ProjectBoardPage() {
           statuses={statuses}
           onClose={() => setSelectedTask(null)}
           onUpdate={patch => setSelectedTask(prev => prev ? { ...prev, ...patch } : null)}
+        />
+      )}
+
+      {createForStatus && (
+        <TaskCreateModal
+          projectId={projectId}
+          defaultStatusId={createForStatus}
+          onClose={() => setCreateForStatus(null)}
         />
       )}
     </div>
