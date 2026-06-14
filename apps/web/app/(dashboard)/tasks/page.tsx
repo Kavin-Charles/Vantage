@@ -9,6 +9,7 @@ import { Modal } from '@/modules/shared/components/ui/Modal';
 import { FormField, Input } from '@/modules/shared/components/ui/FormField';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
@@ -44,6 +45,7 @@ export default function TasksPage() {
   const [form, setForm] = useState({ title: '', due_date: '', assignee_id: '' });
   const [filter, setFilter] = useState<'all' | 'todo' | 'done'>('todo');
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
 
   const { data: usersData } = useQuery({
     queryKey: ['workspace-users'],
@@ -54,7 +56,10 @@ export default function TasksPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['tasks'],
-    queryFn: async () => apiFetch<{ data: Task[]; error: null }>('/api/tasks', { token: await getToken() }),
+    queryFn: async () => {
+      const qs = isAdmin ? '?show_all=true&per_page=100' : '?per_page=100';
+      return apiFetch<{ data: Task[]; error: null }>(`/api/tasks${qs}`, { token: await getToken() });
+    },
   });
 
   const toggleMut = useMutation({
@@ -64,14 +69,41 @@ export default function TasksPage() {
   });
 
   const createMut = useMutation({
-    mutationFn: async () => {
-      const body: Record<string, string> = { title: form.title };
-      if (form.due_date) body['due_date'] = form.due_date;
-      if (form.assignee_id) body['assignee_id'] = form.assignee_id;
-      return apiFetch('/api/tasks', { method: 'POST', body: JSON.stringify(body), token: await getToken() });
-    },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tasks'] }); setModal(false); setForm({ title: '', due_date: '', assignee_id: '' }); },
+    mutationFn: async (body: Record<string, string>) =>
+      apiFetch('/api/tasks', { method: 'POST', body: JSON.stringify(body), token: await getToken() }),
   });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) =>
+      apiFetch(`/api/tasks/${id}`, { method: 'DELETE', token: await getToken() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
+  });
+
+  async function submitTask(e: React.FormEvent) {
+    e.preventDefault();
+    if (createMut.isPending) return;
+    const body: Record<string, string> = { title: form.title };
+    if (form.due_date) body['due_date'] = form.due_date;
+    if (form.assignee_id) body['assignee_id'] = form.assignee_id;
+    try {
+      await createMut.mutateAsync(body);
+    } catch {
+      return;
+    }
+    setModal(false);
+    setForm({ title: '', due_date: '', assignee_id: '' });
+    void qc.invalidateQueries({ queryKey: ['tasks'] });
+  }
+
+  function deleteTask(task: Task) {
+    askConfirm({
+      title: 'Delete task',
+      message: `Delete "${task.title}"? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+      onConfirm: () => deleteMut.mutate(task.id),
+    });
+  }
 
   const allTasks = data?.data ?? [];
   const tasks = filter === 'all' ? allTasks : allTasks.filter(t => t.status === filter);
@@ -135,7 +167,9 @@ export default function TasksPage() {
                 task={task}
                 last={i === tasks.length - 1}
                 isOverdue={!!isOverdue}
+                isAdmin={isAdmin}
                 onToggle={() => toggleMut.mutate({ id: task.id, status: done ? 'todo' : 'done' })}
+                onDelete={() => deleteTask(task)}
                 assigneeName={task.assignee_id ? userMap[task.assignee_id] : undefined}
                 onContextMenu={(e) => {
                   const items: ContextMenuItem[] = [
@@ -144,6 +178,7 @@ export default function TasksPage() {
                       : { icon: 'check',   label: 'Mark done', shortcut: '⌘↵', onClick: () => toggleMut.mutate({ id: task.id, status: 'done' }) },
                     { type: 'separator' },
                     { icon: 'copy', label: 'Copy title', onClick: () => navigator.clipboard.writeText(task.title) },
+                    ...(isAdmin ? [{ type: 'separator' as const }, { icon: 'trash', label: 'Delete task', onClick: () => deleteTask(task) }] : []),
                   ];
                   openMenu(e, items);
                 }}
@@ -153,11 +188,12 @@ export default function TasksPage() {
         </div>
       </div>
 
+      {confirmEl}
       <ContextMenu menu={menu} onClose={closeMenu} />
 
       {modal && isAdmin && (
         <Modal title="Add task" onClose={() => setModal(false)}>
-          <form onSubmit={e => { e.preventDefault(); createMut.mutate(); }}>
+          <form onSubmit={submitTask}>
             <FormField label="Task *">
               <Input required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Follow up with Acme Corp" />
             </FormField>
@@ -205,7 +241,7 @@ function Avatar({ name, size = 24 }: { name: string; size?: number }) {
 
 const TASK_STATUS_COLOR: Record<string, 'green' | 'amber'> = { done: 'green', todo: 'amber' };
 
-function TaskRow({ task, last, isOverdue, onToggle, assigneeName, onContextMenu }: { task: Task; last: boolean; isOverdue: boolean; onToggle: () => void; assigneeName?: string; onContextMenu: (e: React.MouseEvent) => void }) {
+function TaskRow({ task, last, isOverdue, isAdmin, onToggle, onDelete, assigneeName, onContextMenu }: { task: Task; last: boolean; isOverdue: boolean; isAdmin: boolean; onToggle: () => void; onDelete: () => void; assigneeName?: string; onContextMenu: (e: React.MouseEvent) => void }) {
   const [hover, setHover] = useState(false);
   const done = task.status === 'done';
   return (
@@ -244,6 +280,21 @@ function TaskRow({ task, last, isOverdue, onToggle, assigneeName, onContextMenu 
         </span>
       )}
       <Badge label={task.status} color={TASK_STATUS_COLOR[task.status] ?? 'gray'} />
+      {isAdmin && hover && (
+        <button
+          onClick={e => { e.stopPropagation(); onDelete(); }}
+          title="Delete task"
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
+            color: 'var(--text3)', borderRadius: 4, display: 'flex', alignItems: 'center',
+            transition: 'color .12s',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--red)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text3)')}
+        >
+          <Icon name="trash" size={14} />
+        </button>
+      )}
     </div>
   );
 }
