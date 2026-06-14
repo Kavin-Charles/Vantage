@@ -9,6 +9,7 @@ import { Modal } from '@/modules/shared/components/ui/Modal';
 import { FormField, Input } from '@/modules/shared/components/ui/FormField';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
@@ -44,6 +45,7 @@ export default function TasksPage() {
   const [form, setForm] = useState({ title: '', due_date: '', assignee_id: '' });
   const [filter, setFilter] = useState<'all' | 'todo' | 'done'>('todo');
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
 
   const { data: usersData } = useQuery({
     queryKey: ['workspace-users'],
@@ -176,6 +178,7 @@ export default function TasksPage() {
                       : { icon: 'check',   label: 'Mark done', shortcut: '⌘↵', onClick: () => toggleMut.mutate({ id: task.id, status: 'done' }) },
                     { type: 'separator' },
                     { icon: 'copy', label: 'Copy title', onClick: () => navigator.clipboard.writeText(task.title) },
+                    ...(isAdmin ? [{ type: 'separator' as const }, { icon: 'trash', label: 'Delete task', onClick: () => deleteTask(task) }] : []),
                   ];
                   openMenu(e, items);
                 }}
@@ -185,6 +188,7 @@ export default function TasksPage() {
         </div>
       </div>
 
+      {confirmEl}
       <ContextMenu menu={menu} onClose={closeMenu} />
 
       {modal && isAdmin && (
@@ -237,7 +241,7 @@ function Avatar({ name, size = 24 }: { name: string; size?: number }) {
 
 const TASK_STATUS_COLOR: Record<string, 'green' | 'amber'> = { done: 'green', todo: 'amber' };
 
-function TaskRow({ task, last, isOverdue, onToggle, assigneeName, onContextMenu }: { task: Task; last: boolean; isOverdue: boolean; onToggle: () => void; assigneeName?: string; onContextMenu: (e: React.MouseEvent) => void }) {
+function TaskRow({ task, last, isOverdue, isAdmin, onToggle, onDelete, assigneeName, onContextMenu }: { task: Task; last: boolean; isOverdue: boolean; isAdmin: boolean; onToggle: () => void; onDelete: () => void; assigneeName?: string; onContextMenu: (e: React.MouseEvent) => void }) {
   const [hover, setHover] = useState(false);
   const done = task.status === 'done';
   return (
