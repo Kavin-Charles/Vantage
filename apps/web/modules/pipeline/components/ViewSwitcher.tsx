@@ -1,57 +1,47 @@
 'use client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { updatePipeline } from '@/modules/pipeline/lib/pipelines';
 
-type View = 'kanban' | 'table';
+type View = 'kanban' | 'table' | 'list';
 
-interface Props {
-  current: View;
-  onChange: (v: View) => void;
-}
-
-const VIEWS: { id: View; label: string; icon: string }[] = [
-  { id: 'kanban', label: 'Board', icon: '⊞' },
-  { id: 'table', label: 'Table', icon: '☰' },
+const VIEWS: { id: View; icon: string; label: string }[] = [
+  { id: 'kanban', icon: '⬛', label: 'Kanban' },
+  { id: 'table', icon: '☰', label: 'Table' },
+  { id: 'list', icon: '≡', label: 'List' },
 ];
 
-export function ViewSwitcher({ current, onChange }: Props) {
+export function ViewSwitcher({
+  pipelineId, current, onChange,
+}: { pipelineId: string; current: View; onChange: (v: View) => void }) {
+  const getToken = useApiToken();
+  const qc = useQueryClient();
+
+  const mut = useMutation({
+    mutationFn: async (view: View) => updatePipeline(await getToken(), pipelineId, { view }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['pipeline', pipelineId] }),
+  });
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        background: 'var(--bg)',
-        border: '1px solid var(--border)',
-        borderRadius: 10,
-        padding: 3,
-        gap: 2,
-      }}
-    >
-      {VIEWS.map(v => {
-        const active = current === v.id;
-        return (
-          <button
-            key={v.id}
-            onClick={() => onChange(v.id)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              padding: '5px 12px',
-              border: 'none',
-              borderRadius: 8,
-              background: active ? 'var(--surface)' : 'transparent',
-              boxShadow: active ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
-              color: active ? 'var(--text)' : 'var(--text3)',
-              cursor: 'pointer',
-              fontSize: 12,
-              fontFamily: 'var(--font-sans)',
-              fontWeight: active ? 600 : 400,
-              transition: 'var(--transition)',
-            }}
-          >
-            <span style={{ fontSize: 14, lineHeight: 1 }}>{v.icon}</span>
-            {v.label}
-          </button>
-        );
-      })}
+    <div style={{
+      display: 'flex', gap: 2,
+      background: 'var(--surface2)', borderRadius: 8, padding: 3,
+    }}>
+      {VIEWS.map(v => (
+        <button
+          key={v.id}
+          onClick={() => { onChange(v.id); mut.mutate(v.id); }}
+          title={v.label}
+          style={{
+            padding: '5px 10px', border: 'none', borderRadius: 6, cursor: 'pointer',
+            background: current === v.id ? 'var(--surface)' : 'transparent',
+            color: current === v.id ? 'var(--text)' : 'var(--text2)',
+            fontSize: 13, fontFamily: 'var(--font-sans)',
+            boxShadow: current === v.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+            transition: 'all 0.1s',
+          }}
+        >{v.icon} {v.label}</button>
+      ))}
     </div>
   );
 }

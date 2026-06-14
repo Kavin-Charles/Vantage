@@ -1,274 +1,159 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listPipelines, createPipeline, deletePipeline } from '@/modules/pipeline/lib/pipelines';
-import Link from 'next/link';
+import { listRecordTypes } from '@/modules/pipeline/lib/record-types';
+import { PipelineEditor } from '@/modules/pipeline/components/PipelineEditor';
+import type { PipelineWithDetails } from '@vencore/types';
 
 export default function PipelinesSettingsPage() {
   const getToken = useApiToken();
   const qc = useQueryClient();
-  const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
-  const [inputFocused, setInputFocused] = useState(false);
-  const [createHovered, setCreateHovered] = useState(false);
-  const [addHovered, setAddHovered] = useState(false);
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
+  const [newName, setNewName] = useState('');
+  const [newTypeId, setNewTypeId] = useState('');
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  const { data: pipelines = [] } = useQuery({
+  const { data } = useQuery({
     queryKey: ['pipelines'],
     queryFn: async () => listPipelines(await getToken()),
   });
+  const { data: typesData } = useQuery({
+    queryKey: ['record-types'],
+    queryFn: async () => listRecordTypes(await getToken()),
+  });
+
+  const pipelines: PipelineWithDetails[] = data?.data ?? [];
+  const recordTypes = typesData?.data ?? [];
 
   const createMut = useMutation({
-    mutationFn: async () => createPipeline(await getToken(), { name: newName }),
+    mutationFn: async () => createPipeline(await getToken(), { name: newName.trim(), record_type_id: newTypeId }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['pipelines'] });
-      setNewName('');
+      qc.invalidateQueries({ queryKey: ['pipelines'] });
       setCreating(false);
+      setNewName('');
+      setNewTypeId('');
     },
   });
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => deletePipeline(await getToken(), id),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['pipelines'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['pipelines'] }),
   });
 
-  const eyebrow: React.CSSProperties = {
-    fontSize: 11,
-    fontWeight: 600,
-    textTransform: 'uppercase',
-    letterSpacing: '0.6px',
-    color: 'var(--text3)',
-    fontFamily: 'var(--font-sans)',
-    marginBottom: 6,
-    display: 'block',
-  };
-
   return (
-    <div style={{ maxWidth: 580, padding: '32px 0' }}>
-      {/* Page header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
-        <div>
-          <h1 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 22,
-            fontWeight: 600,
-            letterSpacing: '-0.4px',
-            color: 'var(--text)',
-            margin: '0 0 4px',
-          }}>
-            Pipelines
-          </h1>
-          <p style={{ fontSize: 13, color: 'var(--text3)', fontFamily: 'var(--font-sans)', margin: 0 }}>
-            Create and configure pipelines for your team.
-          </p>
-        </div>
+    <div style={{ padding: '32px 40px', maxWidth: 720 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--text)', margin: 0 }}>
+          Pipelines
+        </h1>
         <button
           onClick={() => setCreating(true)}
-          onMouseEnter={() => setAddHovered(true)}
-          onMouseLeave={() => setAddHovered(false)}
           style={{
-            padding: '9px 18px',
-            background: addHovered ? '#1a2244' : 'var(--text)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 12,
-            cursor: 'pointer',
-            fontSize: 13,
-            fontFamily: 'var(--font-sans)',
-            fontWeight: 600,
-            transition: 'all .15s ease',
+            padding: '8px 16px', background: 'var(--text)', color: '#fff',
+            border: 'none', borderRadius: 8, cursor: 'pointer',
+            fontFamily: 'var(--font-sans)', fontSize: 14,
           }}
-        >
-          + New pipeline
-        </button>
+        >+ New pipeline</button>
       </div>
 
-      {/* Create form */}
       {creating && (
         <div style={{
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 16,
-          padding: '16px 20px',
-          marginBottom: 16,
-          display: 'flex',
-          gap: 10,
-          alignItems: 'flex-end',
+          padding: 16, background: 'var(--surface)',
+          border: '1px solid var(--border)', borderRadius: 12, marginBottom: 16,
         }}>
-          <div style={{ flex: 1 }}>
-            <label style={eyebrow}>Pipeline name</label>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
             <input
               autoFocus
               value={newName}
               onChange={e => setNewName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && newName.trim()) createMut.mutate(); if (e.key === 'Escape') setCreating(false); }}
-              onFocus={() => setInputFocused(true)}
-              onBlur={() => setInputFocused(false)}
-              placeholder="e.g. Sales, Support, Recruitment"
+              placeholder="Pipeline name"
               style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: `1px solid ${inputFocused ? 'var(--text2)' : 'var(--border)'}`,
-                borderRadius: 10,
-                fontSize: 13,
-                fontFamily: 'var(--font-sans)',
-                background: 'var(--surface)',
-                color: 'var(--text)',
-                outline: 'none',
-                boxShadow: inputFocused ? '0 0 0 3px rgba(11,19,48,0.06)' : 'none',
-                transition: 'border-color .15s ease, box-shadow .15s ease',
-                boxSizing: 'border-box',
+                flex: 1, padding: '8px 12px', border: '1px solid var(--border)',
+                borderRadius: 8, fontFamily: 'var(--font-sans)', fontSize: 14,
               }}
             />
+            <select
+              value={newTypeId}
+              onChange={e => setNewTypeId(e.target.value)}
+              style={{
+                padding: '8px 12px', border: '1px solid var(--border)',
+                borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-sans)',
+              }}
+            >
+              <option value="">Record type…</option>
+              {recordTypes.map(rt => (
+                <option key={rt.id} value={rt.id}>{rt.icon ?? '📋'} {rt.name}</option>
+              ))}
+            </select>
           </div>
-          <button
-            onClick={() => createMut.mutate()}
-            disabled={!newName.trim() || createMut.isPending}
-            onMouseEnter={() => setCreateHovered(true)}
-            onMouseLeave={() => setCreateHovered(false)}
-            style={{
-              padding: '8px 18px',
-              background: !newName.trim() ? 'var(--text3)' : createHovered ? '#1a2244' : 'var(--text)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 10,
-              cursor: newName.trim() ? 'pointer' : 'not-allowed',
-              fontSize: 13,
-              fontFamily: 'var(--font-sans)',
-              fontWeight: 600,
-              transition: 'all .15s ease',
-            }}
-          >
-            {createMut.isPending ? 'Creating…' : 'Create'}
-          </button>
-          <button
-            onClick={() => setCreating(false)}
-            style={{
-              padding: '8px 14px',
-              border: '1px solid var(--border)',
-              borderRadius: 10,
-              cursor: 'pointer',
-              fontSize: 13,
-              fontFamily: 'var(--font-sans)',
-              background: 'var(--surface)',
-              color: 'var(--text2)',
-              transition: 'all .15s ease',
-            }}
-          >
-            Cancel
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => createMut.mutate()}
+              disabled={!newName.trim() || !newTypeId || createMut.isPending}
+              style={{
+                padding: '8px 16px', background: 'var(--text)', color: '#fff',
+                border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14,
+              }}
+            >Create</button>
+            <button
+              onClick={() => { setCreating(false); setNewName(''); setNewTypeId(''); }}
+              style={{
+                padding: '8px 16px', background: 'none',
+                border: '1px solid var(--border)', borderRadius: 8,
+                cursor: 'pointer', fontSize: 14, color: 'var(--text2)',
+              }}
+            >Cancel</button>
+          </div>
         </div>
       )}
 
-      {/* Pipeline list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {pipelines.map(p => (
           <div key={p.id} style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 16,
-            padding: '16px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
-            transition: 'box-shadow .15s ease',
-          }}
-          onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'; }}
-          onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => { e.currentTarget.style.boxShadow = 'none'; }}
-          >
-            <div style={{ flex: 1 }}>
-              <div style={{
-                fontFamily: 'var(--font-sans)',
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--text)',
-                marginBottom: 3,
-              }}>
+            background: 'var(--surface)', border: '1px solid var(--border)',
+            borderRadius: 12, overflow: 'hidden',
+          }}>
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', cursor: 'pointer' }}
+              onClick={() => setExpanded(expanded === p.id ? null : p.id)}
+            >
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 15, flex: 1, color: 'var(--text)' }}>
                 {p.name}
-                {p.is_default && (
-                  <span style={{
-                    marginLeft: 8,
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: 'var(--text3)',
-                    background: 'var(--surface2)',
-                    padding: '2px 7px',
-                    borderRadius: 999,
-                    verticalAlign: 'middle',
+              </span>
+              <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--font-sans)' }}>
+                {p.record_type?.name} · {p.stages.length} stages
+              </span>
+              <span style={{ color: 'var(--text3)', fontSize: 12 }}>{expanded === p.id ? '▲' : '▼'}</span>
+            </div>
+            {expanded === p.id && (
+              <div style={{ padding: '0 16px 16px', borderTop: '1px solid var(--border)' }}>
+                <div style={{ marginTop: 16 }}>
+                  <PipelineEditor pipelineId={p.id} />
+                </div>
+                <button
+                  onClick={() => askConfirm({ title: 'Delete pipeline', message: `Delete pipeline "${p.name}"? All stages and records will be lost.`, confirmLabel: 'Delete', variant: 'danger', onConfirm: () => deleteMut.mutate(p.id) })}
+                  style={{
+                    marginTop: 16, padding: '6px 12px',
+                    background: 'var(--red-bg)', color: 'var(--red)',
+                    border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13,
                     fontFamily: 'var(--font-sans)',
-                  }}>
-                    DEFAULT
-                  </span>
-                )}
+                  }}
+                >Delete pipeline</button>
               </div>
-              <div style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--font-sans)' }}>
-                {p.stages.length} stage{p.stages.length !== 1 ? 's' : ''}
-                {' · '}
-                {p.fields.length} field{p.fields.length !== 1 ? 's' : ''}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <Link
-                href={`/settings/pipelines/${p.id}`}
-                style={{
-                  fontSize: 13,
-                  color: 'var(--text2)',
-                  fontFamily: 'var(--font-sans)',
-                  fontWeight: 500,
-                  textDecoration: 'none',
-                  padding: '6px 14px',
-                  border: '1px solid var(--border)',
-                  borderRadius: 10,
-                  transition: 'all .15s ease',
-                  display: 'inline-block',
-                }}
-                onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.background = 'var(--surface2)'; e.currentTarget.style.color = 'var(--text)'; }}
-                onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text2)'; }}
-              >
-                Configure →
-              </Link>
-              <button
-                onClick={() => {
-                  if (confirm(`Delete "${p.name}"? All items in this pipeline will be permanently deleted.`))
-                    deleteMut.mutate(p.id);
-                }}
-                style={{
-                  fontSize: 12,
-                  color: 'var(--red, #991b1b)',
-                  fontFamily: 'var(--font-sans)',
-                  fontWeight: 500,
-                  background: 'none',
-                  border: '1px solid transparent',
-                  borderRadius: 8,
-                  cursor: 'pointer',
-                  padding: '6px 10px',
-                  transition: 'all .15s ease',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--red-bg, #fee2e2)'; e.currentTarget.style.borderColor = 'var(--red-bg, #fee2e2)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.borderColor = 'transparent'; }}
-              >
-                Delete
-              </button>
-            </div>
+            )}
           </div>
         ))}
-
-        {pipelines.length === 0 && (
-          <div style={{
-            padding: 48,
-            textAlign: 'center',
-            background: 'var(--surface)',
-            border: '1px dashed var(--border)',
-            borderRadius: 16,
-          }}>
-            <p style={{ color: 'var(--text3)', fontFamily: 'var(--font-sans)', fontSize: 13, margin: 0 }}>
-              No pipelines yet. Create one above.
-            </p>
+        {pipelines.length === 0 && !creating && (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text3)', fontFamily: 'var(--font-sans)' }}>
+            No pipelines yet. Create your first pipeline above.
           </div>
         )}
       </div>
+      {confirmEl}
     </div>
   );
 }
