@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { Icon } from '@/modules/shared/components/ui/Icon';
-import { pmApi, type TaskWithAssignees, type TaskStatus } from '@/modules/projects/lib/api';
+import { pmApi, type Task, type TaskWithAssignees, type TaskStatus } from '@/modules/projects/lib/api';
 import { TaskDetailPanel } from '@/modules/projects/components/TaskDetailPanel';
 import { AvatarGroup } from '@/modules/projects/components/AvatarGroup';
 import { TaskCreateModal } from '@/modules/projects/components/TaskCreateModal';
@@ -98,7 +98,7 @@ export default function ProjectBoardPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ taskId, patch }: { taskId: string; patch: Partial<TaskWithAssignees> }) => {
+    mutationFn: async ({ taskId, patch }: { taskId: string; patch: Partial<Task> }) => {
       const token = await getToken();
       return pmApi.updateTask(token, projectId, taskId, patch);
     },
