@@ -42,22 +42,22 @@ export function RecordCard({
       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'; }}
     >
       {record.record_number && (
-        <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4, fontFamily: 'DM Sans, sans-serif' }}>
+        <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4, fontFamily: 'var(--font-sans)' }}>
           {record.record_number}
         </div>
       )}
-      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', fontFamily: 'DM Sans, sans-serif', marginBottom: 6, lineHeight: '1.3' }}>
+      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', fontFamily: 'var(--font-sans)', marginBottom: 6, lineHeight: '1.3' }}>
         {record.name}
       </div>
       {(contactName || fmtValue) && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           {contactName && (
-            <span style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: 12, color: 'var(--text2)', fontFamily: 'var(--font-sans)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {contactName}
             </span>
           )}
           {fmtValue && (
-            <span style={{ fontSize: 13, fontFamily: 'Instrument Serif, serif', color: 'var(--text)', flexShrink: 0 }}>
+            <span style={{ fontSize: 13, fontFamily: 'var(--font-display)', color: 'var(--text)', flexShrink: 0 }}>
               {fmtValue}
             </span>
           )}
@@ -69,7 +69,7 @@ export function RecordCard({
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: 22, height: 22, borderRadius: '50%',
             background: 'var(--surface2)', fontSize: 11, color: 'var(--text2)',
-            fontFamily: 'DM Sans, sans-serif', border: '1px solid var(--border)',
+            fontFamily: 'var(--font-sans)', border: '1px solid var(--border)',
             fontWeight: 600,
           }}>
             {ownerName.charAt(0).toUpperCase()}

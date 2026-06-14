@@ -67,7 +67,7 @@ export function ConversionWizard({
           padding: '20px 24px', borderBottom: '1px solid var(--border)',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
-          <h2 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 20, color: 'var(--text)', margin: 0 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--text)', margin: 0 }}>
             Convert record
           </h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 20 }}>×</button>
@@ -79,7 +79,7 @@ export function ConversionWizard({
             <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               {i > 0 && <span style={{ color: 'var(--text3)', margin: '0 4px', fontSize: 12 }}>›</span>}
               <span style={{
-                fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+                fontSize: 13, fontFamily: 'var(--font-sans)',
                 color: step === s ? 'var(--text)' : 'var(--text3)',
                 fontWeight: step === s ? 600 : 400,
               }}>
@@ -93,7 +93,7 @@ export function ConversionWizard({
           {error && (
             <div style={{
               padding: '10px 14px', background: 'var(--red-bg)', color: 'var(--red)',
-              borderRadius: 8, fontSize: 13, marginBottom: 16, fontFamily: 'DM Sans, sans-serif',
+              borderRadius: 8, fontSize: 13, marginBottom: 16, fontFamily: 'var(--font-sans)',
             }}>{error}</div>
           )}
 
@@ -110,7 +110,7 @@ export function ConversionWizard({
                     background: selectedId === t.id ? 'var(--surface2)' : 'var(--surface)',
                   }}
                 >
-                  <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>
                     {t.name}
                   </div>
                 </div>
@@ -121,7 +121,7 @@ export function ConversionWizard({
           {/* Step: preview */}
           {step === 'preview' && template && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif' }}>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--text2)', fontFamily: 'var(--font-sans)' }}>
                 Review pre-filled values. Edit any field before converting.
               </p>
               {template.field_mappings.filter(m => m.target_field_id || m.target_builtin).map((m, i) => {
@@ -132,7 +132,7 @@ export function ConversionWizard({
                   <div key={i}>
                     <label style={{
                       display: 'block', fontSize: 12, fontWeight: 600,
-                      color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif', marginBottom: 4,
+                      color: 'var(--text2)', fontFamily: 'var(--font-sans)', marginBottom: 4,
                     }}>
                       {m.target_builtin ?? `Field ${i + 1}`}
                     </label>
@@ -141,7 +141,7 @@ export function ConversionWizard({
                       onChange={e => setOverrides(prev => ({ ...prev, [targetKey]: e.target.value }))}
                       style={{
                         width: '100%', padding: '8px 12px', border: '1px solid var(--border)',
-                        borderRadius: 8, fontSize: 14, fontFamily: 'DM Sans, sans-serif',
+                        borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-sans)',
                         boxSizing: 'border-box',
                       }}
                     />
@@ -154,7 +154,7 @@ export function ConversionWizard({
           {/* Step: confirm */}
           {step === 'confirm' && template && (
             <div>
-              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: 'var(--text2)', marginTop: 0 }}>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: 14, color: 'var(--text2)', marginTop: 0 }}>
                 This will create a new record using template <strong>{template.name}</strong> from record <strong>{record.name}</strong>.
               </p>
             </div>
@@ -173,7 +173,7 @@ export function ConversionWizard({
                 padding: '8px 16px', background: 'none',
                 border: '1px solid var(--border)', borderRadius: 8,
                 cursor: 'pointer', fontSize: 14, color: 'var(--text2)',
-                fontFamily: 'DM Sans, sans-serif',
+                fontFamily: 'var(--font-sans)',
               }}
             >Back</button>
           )}
@@ -183,7 +183,7 @@ export function ConversionWizard({
               style={{
                 padding: '8px 20px', background: 'var(--text)', color: '#fff',
                 border: 'none', borderRadius: 8, cursor: 'pointer',
-                fontSize: 14, fontFamily: 'DM Sans, sans-serif',
+                fontSize: 14, fontFamily: 'var(--font-sans)',
               }}
             >Continue</button>
           )}
@@ -194,7 +194,7 @@ export function ConversionWizard({
               style={{
                 padding: '8px 20px', background: 'var(--text)', color: '#fff',
                 border: 'none', borderRadius: 8, cursor: 'pointer',
-                fontSize: 14, fontFamily: 'DM Sans, sans-serif',
+                fontSize: 14, fontFamily: 'var(--font-sans)',
               }}
             >{convertMut.isPending ? 'Converting…' : 'Convert'}</button>
           )}

@@ -59,7 +59,7 @@ export function FieldMappingEditor({
               </optgroup>
             )}
           </select>
-          <span style={{ color: 'var(--text3)', fontFamily: 'DM Sans, sans-serif' }}>→</span>
+          <span style={{ color: 'var(--text3)', fontFamily: 'var(--font-sans)' }}>→</span>
           <select
             value={m.target_builtin ?? m.target_field_id ?? ''}
             onChange={e => {
@@ -91,7 +91,7 @@ export function FieldMappingEditor({
           padding: '6px 12px', background: 'none',
           border: '1px dashed var(--border)', borderRadius: 8,
           cursor: 'pointer', color: 'var(--text2)', fontSize: 13,
-          fontFamily: 'DM Sans, sans-serif', textAlign: 'left',
+          fontFamily: 'var(--font-sans)', textAlign: 'left',
         }}
       >+ Add mapping</button>
     </div>

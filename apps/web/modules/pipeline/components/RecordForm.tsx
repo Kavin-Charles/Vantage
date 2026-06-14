@@ -70,7 +70,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
     width: 480, background: 'var(--surface)',
     borderRadius: 12, border: '1px solid var(--border)',
     boxShadow: '0 8px 40px rgba(26,24,20,0.12)',
-    fontFamily: 'DM Sans, sans-serif',
+    fontFamily: 'var(--font-sans)',
     overflow: 'hidden',
   };
 
@@ -79,7 +79,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
     fontSize: 14, color: 'var(--text)',
     border: '1px solid var(--border)', borderRadius: 7,
     padding: '8px 11px', background: 'var(--surface)',
-    fontFamily: 'DM Sans, sans-serif', outline: 'none',
+    fontFamily: 'var(--font-sans)', outline: 'none',
   };
 
   return (
@@ -169,7 +169,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
                 fontSize: 14, padding: '8px 18px',
                 background: 'none', border: '1px solid var(--border)',
                 borderRadius: 7, cursor: 'pointer',
-                color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif',
+                color: 'var(--text2)', fontFamily: 'var(--font-sans)',
               }}
             >
               Cancel
@@ -182,7 +182,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
                 background: 'var(--text)', color: '#fff',
                 border: 'none', borderRadius: 7,
                 cursor: submitting ? 'not-allowed' : 'pointer',
-                fontFamily: 'DM Sans, sans-serif', fontWeight: 500,
+                fontFamily: 'var(--font-sans)', fontWeight: 500,
                 opacity: submitting || !name.trim() ? 0.55 : 1,
               }}
             >

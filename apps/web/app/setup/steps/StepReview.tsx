@@ -139,7 +139,7 @@ export function StepReview({ state, dispatch }: Props) {
             background: deployStatus === 'error' ? 'var(--red)' : 'var(--text)',
             color: '#fff', border: 'none', borderRadius: 8,
             fontSize: 15, fontWeight: 600, cursor: deployStatus === 'deploying' ? 'wait' : 'pointer',
-            fontFamily: 'Bricolage Grotesque, sans-serif',
+            fontFamily: 'var(--font-display)',
           }}
         >
           {deployStatus === 'idle' && '🚀 Deploy Vencore'}
@@ -166,6 +166,6 @@ function summarize(state: SetupState, stepId: StepId): string {
   }
 }
 
-const heading: React.CSSProperties = { margin: '0 0 4px', fontSize: 20, fontWeight: 700, color: 'var(--text)', fontFamily: 'Bricolage Grotesque, sans-serif' };
+const heading: React.CSSProperties = { margin: '0 0 4px', fontSize: 20, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-display)' };
 const subtext: React.CSSProperties = { margin: '0 0 20px', color: 'var(--text2)', fontSize: 14 };
 const editBtn: React.CSSProperties = { padding: '3px 10px', fontSize: 12, background: 'transparent', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', color: 'var(--text2)', fontFamily: 'IBM Plex Sans, sans-serif' };

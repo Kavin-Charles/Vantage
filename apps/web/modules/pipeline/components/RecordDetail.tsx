@@ -66,7 +66,7 @@ export function RecordDetail({ recordId, onClose }: { recordId: string; onClose:
         position: 'fixed', right: 0, top: 0, bottom: 0, width: 480,
         background: '#fff', boxShadow: '-4px 0 24px rgba(0,0,0,0.08)',
         zIndex: 950, display: 'flex', flexDirection: 'column',
-        fontFamily: 'DM Sans, sans-serif',
+        fontFamily: 'var(--font-sans)',
       }}>
         {/* Header */}
         <div style={{ padding: 24, borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -87,7 +87,7 @@ export function RecordDetail({ recordId, onClose }: { recordId: string; onClose:
                 }}
                 autoFocus
                 style={{
-                  fontFamily: 'Instrument Serif, serif', fontSize: 20, fontWeight: 400,
+                  fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 400,
                   border: 'none', borderBottom: '2px solid var(--text)', outline: 'none',
                   width: '100%', padding: 0, background: 'transparent',
                 }}
@@ -95,7 +95,7 @@ export function RecordDetail({ recordId, onClose }: { recordId: string; onClose:
             ) : (
               <h2
                 onClick={() => setEditName(record.name)}
-                style={{ fontFamily: 'Instrument Serif, serif', fontSize: 20, fontWeight: 400, margin: 0, cursor: 'text' }}
+                style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 400, margin: 0, cursor: 'text' }}
               >
                 {record.name}
               </h2>

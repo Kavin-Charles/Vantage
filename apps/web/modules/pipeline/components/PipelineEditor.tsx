@@ -83,7 +83,7 @@ export function PipelineEditor({ pipelineId }: { pipelineId: string }) {
             onBlur={e => { if (e.target.value !== stage.name) updateMut.mutate({ id: stage.id, name: e.target.value }); }}
             style={{
               flex: 1, border: 'none', outline: 'none', background: 'transparent',
-              fontFamily: 'DM Sans, sans-serif', fontSize: 14, color: 'var(--text)',
+              fontFamily: 'var(--font-sans)', fontSize: 14, color: 'var(--text)',
             }}
           />
           <div style={{ display: 'flex', gap: 3 }}>
@@ -139,7 +139,7 @@ export function PipelineEditor({ pipelineId }: { pipelineId: string }) {
             placeholder="Stage name"
             style={{
               flex: 1, border: 'none', outline: 'none', background: 'transparent',
-              fontFamily: 'DM Sans, sans-serif', fontSize: 14,
+              fontFamily: 'var(--font-sans)', fontSize: 14,
             }}
           />
           <button
@@ -161,7 +161,7 @@ export function PipelineEditor({ pipelineId }: { pipelineId: string }) {
             padding: '8px 12px', background: 'none',
             border: '1px dashed var(--border)', borderRadius: 8,
             cursor: 'pointer', color: 'var(--text2)',
-            fontFamily: 'DM Sans, sans-serif', fontSize: 14, textAlign: 'left',
+            fontFamily: 'var(--font-sans)', fontSize: 14, textAlign: 'left',
           }}
         >+ Add stage</button>
       )}

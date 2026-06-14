@@ -47,7 +47,7 @@ export function PipelineWidget() {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
         <span style={{
           fontSize: 22, fontWeight: 700, color: 'var(--text)',
-          fontFamily: 'var(--font-display, "Instrument Serif", serif)',
+          fontFamily: 'var(--font-display)',
         }}>
           {firstPipeline.name}
         </span>

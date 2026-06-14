@@ -106,7 +106,7 @@ export function RecordKanban({ recordTypeId, pipelineId }: { recordTypeId: strin
                       ];
                       openMenu(e, items);
                     }}
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', cursor: 'grab', fontFamily: 'DM Sans, sans-serif' }}
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', cursor: 'grab', fontFamily: 'var(--font-sans)' }}
                     onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}
                     onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}>
                     {record.record_number && (

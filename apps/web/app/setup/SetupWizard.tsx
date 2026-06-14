@@ -57,7 +57,7 @@ export function SetupWizard() {
         padding: '0 28px',
         flexShrink: 0,
       }}>
-        <span style={{ fontFamily: 'Bricolage Grotesque, sans-serif', fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: 'var(--text)' }}>
           Vencore Setup
         </span>
         {state.currentStep !== 'complete' && (

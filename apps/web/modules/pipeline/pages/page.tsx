@@ -23,7 +23,7 @@ export default function PipelinePage() {
 
   if (isLoading) {
     return (
-      <div style={{ padding: 40, color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif', fontSize: 14 }}>
+      <div style={{ padding: 40, color: 'var(--text2)', fontFamily: 'var(--font-sans)', fontSize: 14 }}>
         Loading…
       </div>
     );
@@ -31,10 +31,10 @@ export default function PipelinePage() {
 
   return (
     <div style={{ padding: 40, textAlign: 'center' }}>
-      <h2 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 24, color: 'var(--text)', marginBottom: 12 }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--text)', marginBottom: 12 }}>
         No pipelines yet
       </h2>
-      <p style={{ color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif', marginBottom: 24, fontSize: 15 }}>
+      <p style={{ color: 'var(--text2)', fontFamily: 'var(--font-sans)', marginBottom: 24, fontSize: 15 }}>
         Create your first pipeline in settings.
       </p>
       <a
@@ -42,7 +42,7 @@ export default function PipelinePage() {
         style={{
           padding: '10px 20px', background: 'var(--text)', color: '#fff',
           borderRadius: 8, textDecoration: 'none',
-          fontFamily: 'DM Sans, sans-serif', fontSize: 14,
+          fontFamily: 'var(--font-sans)', fontSize: 14,
         }}
       >Go to pipeline settings</a>
     </div>

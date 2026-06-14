@@ -68,7 +68,7 @@ export default function PipelineViewPage() {
           placeholder="Search records…"
           style={{
             padding: '6px 12px', border: '1px solid var(--border)',
-            borderRadius: 8, fontSize: 13, fontFamily: 'DM Sans, sans-serif', width: 200,
+            borderRadius: 8, fontSize: 13, fontFamily: 'var(--font-sans)', width: 200,
           }}
         />
         {pipeline && (
@@ -91,7 +91,7 @@ export default function PipelineViewPage() {
           style={{
             padding: '8px 16px', background: 'var(--text)', color: '#fff',
             border: 'none', borderRadius: 8, cursor: 'pointer',
-            fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+            fontSize: 13, fontFamily: 'var(--font-sans)',
           }}
         >+ Add record</button>
       </div>
@@ -99,7 +99,7 @@ export default function PipelineViewPage() {
       {/* View content */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {!pipeline && (
-          <div style={{ padding: 40, color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif' }}>Loading…</div>
+          <div style={{ padding: 40, color: 'var(--text2)', fontFamily: 'var(--font-sans)' }}>Loading…</div>
         )}
         {pipeline && view === 'kanban' && (
           <PipelineKanban pipeline={pipeline} search={search} addTrigger={addTrigger} />

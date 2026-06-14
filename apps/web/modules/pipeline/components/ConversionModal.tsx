@@ -57,7 +57,7 @@ const inputStyle = (invalid: boolean): React.CSSProperties => ({
   fontSize: 14,
   outline: 'none',
   boxSizing: 'border-box',
-  fontFamily: 'DM Sans, sans-serif',
+  fontFamily: 'var(--font-sans)',
 });
 
 const labelStyle: React.CSSProperties = {
@@ -199,7 +199,7 @@ export function ConversionModal({ recordId, recordTypeId, onClose, onConverted }
   const panel: React.CSSProperties = {
     background: '#fff', borderRadius: 12, padding: 32,
     width: 520, maxHeight: '80vh', overflowY: 'auto',
-    fontFamily: 'DM Sans, sans-serif',
+    fontFamily: 'var(--font-sans)',
   };
   const btnSecondary: React.CSSProperties = {
     background: 'none', border: '1px solid var(--border)',
@@ -213,7 +213,7 @@ export function ConversionModal({ recordId, recordTypeId, onClose, onConverted }
   return (
     <div style={overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={panel}>
-        <h2 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 20, fontWeight: 400, margin: '0 0 20px' }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 400, margin: '0 0 20px' }}>
           {selectedTemplateId ? 'Review & Convert' : 'Convert Record'}
         </h2>
 

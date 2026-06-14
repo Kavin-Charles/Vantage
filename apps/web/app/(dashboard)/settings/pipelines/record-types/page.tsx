@@ -49,7 +49,7 @@ export default function RecordTypesPage() {
   return (
     <div style={{ padding: '32px 40px', maxWidth: 720 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'Instrument Serif, serif', fontSize: 24, color: 'var(--text)', margin: 0 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--text)', margin: 0 }}>
           Record Types
         </h1>
         <button
@@ -57,7 +57,7 @@ export default function RecordTypesPage() {
           style={{
             padding: '8px 16px', background: 'var(--text)', color: '#fff',
             border: 'none', borderRadius: 8, cursor: 'pointer',
-            fontFamily: 'DM Sans, sans-serif', fontSize: 14,
+            fontFamily: 'var(--font-sans)', fontSize: 14,
           }}
         >+ New type</button>
       </div>
@@ -75,7 +75,7 @@ export default function RecordTypesPage() {
             placeholder="Type name (e.g. Lead, Support Ticket)"
             style={{
               width: '100%', padding: '8px 12px', border: '1px solid var(--border)',
-              borderRadius: 8, fontFamily: 'DM Sans, sans-serif', fontSize: 14,
+              borderRadius: 8, fontFamily: 'var(--font-sans)', fontSize: 14,
               marginBottom: 12, boxSizing: 'border-box',
             }}
           />
@@ -110,7 +110,7 @@ export default function RecordTypesPage() {
               onClick={() => setExpanded(expanded === rt.id ? null : rt.id)}
             >
               <span style={{ fontSize: 18 }}>{rt.icon ?? '📋'}</span>
-              <span style={{ flex: 1, fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 15, color: 'var(--text)' }}>
+              <span style={{ flex: 1, fontFamily: 'var(--font-sans)', fontWeight: 500, fontSize: 15, color: 'var(--text)' }}>
                 {rt.name}
               </span>
               <span style={{ color: 'var(--text3)', fontSize: 12 }}>{expanded === rt.id ? '▲' : '▼'}</span>
@@ -124,7 +124,7 @@ export default function RecordTypesPage() {
                       onClick={() => setTabs(prev => ({ ...prev, [rt.id]: t }))}
                       style={{
                         padding: '10px 20px', background: 'none', border: 'none',
-                        cursor: 'pointer', fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+                        cursor: 'pointer', fontSize: 13, fontFamily: 'var(--font-sans)',
                         borderBottom: tab(rt.id) === t ? '2px solid var(--text)' : '2px solid transparent',
                         color: tab(rt.id) === t ? 'var(--text)' : 'var(--text2)',
                         marginBottom: -1,
@@ -190,10 +190,10 @@ function ConversionsSection({
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '10px 0', borderBottom: '1px solid var(--border)',
         }}>
-          <span style={{ flex: 1, fontSize: 14, fontFamily: 'DM Sans, sans-serif', color: 'var(--text)' }}>
+          <span style={{ flex: 1, fontSize: 14, fontFamily: 'var(--font-sans)', color: 'var(--text)' }}>
             {c.name}
           </span>
-          <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'DM Sans, sans-serif' }}>
+          <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--font-sans)' }}>
             → {types.find(t => t.id === c.target_type_id)?.name ?? 'Unknown'}
           </span>
           <button
@@ -212,7 +212,7 @@ function ConversionsSection({
             placeholder="Template name"
             style={{
               padding: '8px 12px', border: '1px solid var(--border)',
-              borderRadius: 8, fontSize: 14, fontFamily: 'DM Sans, sans-serif',
+              borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-sans)',
             }}
           />
           <select
@@ -220,7 +220,7 @@ function ConversionsSection({
             onChange={e => setForm(f => ({ ...f, target_type_id: e.target.value }))}
             style={{
               padding: '8px 12px', border: '1px solid var(--border)',
-              borderRadius: 8, fontSize: 14, fontFamily: 'DM Sans, sans-serif',
+              borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-sans)',
             }}
           >
             <option value="">Target record type…</option>
@@ -233,7 +233,7 @@ function ConversionsSection({
             onChange={e => setForm(f => ({ ...f, target_pipeline_id: e.target.value, target_stage_id: '' }))}
             style={{
               padding: '8px 12px', border: '1px solid var(--border)',
-              borderRadius: 8, fontSize: 14, fontFamily: 'DM Sans, sans-serif',
+              borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-sans)',
             }}
           >
             <option value="">Target pipeline…</option>
@@ -244,7 +244,7 @@ function ConversionsSection({
             onChange={e => setForm(f => ({ ...f, target_stage_id: e.target.value }))}
             style={{
               padding: '8px 12px', border: '1px solid var(--border)',
-              borderRadius: 8, fontSize: 14, fontFamily: 'DM Sans, sans-serif',
+              borderRadius: 8, fontSize: 14, fontFamily: 'var(--font-sans)',
             }}
           >
             <option value="">Initial stage…</option>
@@ -252,7 +252,7 @@ function ConversionsSection({
           </select>
           {form.target_type_id && (
             <div>
-              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', fontFamily: 'DM Sans, sans-serif', marginBottom: 8 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text2)', fontFamily: 'var(--font-sans)', marginBottom: 8 }}>
                 Field mappings
               </div>
               <FieldMappingEditor
@@ -270,7 +270,7 @@ function ConversionsSection({
               style={{
                 padding: '8px 16px', background: 'var(--text)', color: '#fff',
                 border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13,
-                fontFamily: 'DM Sans, sans-serif',
+                fontFamily: 'var(--font-sans)',
               }}
             >Save</button>
             <button
@@ -279,7 +279,7 @@ function ConversionsSection({
                 padding: '8px 16px', background: 'none',
                 border: '1px solid var(--border)', borderRadius: 8,
                 cursor: 'pointer', fontSize: 13, color: 'var(--text2)',
-                fontFamily: 'DM Sans, sans-serif',
+                fontFamily: 'var(--font-sans)',
               }}
             >Cancel</button>
           </div>
@@ -290,7 +290,7 @@ function ConversionsSection({
           style={{
             marginTop: 8, padding: '8px 0', background: 'none',
             border: 'none', cursor: 'pointer', color: 'var(--blue)',
-            fontSize: 13, fontFamily: 'DM Sans, sans-serif',
+            fontSize: 13, fontFamily: 'var(--font-sans)',
           }}
         >+ Add conversion</button>
       )}

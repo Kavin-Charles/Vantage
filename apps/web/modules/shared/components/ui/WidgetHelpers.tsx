@@ -28,7 +28,7 @@ export function WidgetError({ onRetry }: { onRetry: () => void }) {
 export function Stat({ label, value, color }: { label: string; value: number; color?: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <span style={{ fontSize: 22, fontWeight: 700, color: color ?? 'var(--text)', fontFamily: 'var(--font-display, "Instrument Serif", serif)' }}>
+      <span style={{ fontSize: 22, fontWeight: 700, color: color ?? 'var(--text)', fontFamily: 'var(--font-display)' }}>
         {value}
       </span>
       <span style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
