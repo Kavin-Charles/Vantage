@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { pmApi, type TaskStatus, type ProjectMember } from '@/modules/projects/lib/api';
@@ -34,18 +34,13 @@ export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) 
     titleRef.current?.focus();
   }, []);
 
-  const handleClose = useCallback(() => {
-    setVisible(false);
-    setTimeout(onClose, 150);
-  }, [onClose]);
-
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') handleClose();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [handleClose]);
+  }, []);
 
   const { data: statuses = [] } = useQuery<TaskStatus[]>({
     queryKey: ['statuses', projectId],
@@ -79,6 +74,11 @@ export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) 
       onClose();
     },
   });
+
+  function handleClose() {
+    setVisible(false);
+    setTimeout(onClose, 150);
+  }
 
   function toggleMember(userId: string) {
     setSelectedIds(prev =>
@@ -129,8 +129,6 @@ export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontFamily: 'Instrument Serif', fontSize: 18, color: 'var(--text)' }}>New Task</span>
           <button
-            type="button"
-            aria-label="Close"
             onClick={handleClose}
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
@@ -145,8 +143,6 @@ export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) 
           <label style={labelStyle}>Title *</label>
           <input
             ref={titleRef}
-            autoFocus
-            required
             value={title}
             onChange={e => setTitle(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && canSubmit) createMutation.mutate(); }}
@@ -175,7 +171,6 @@ export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) 
               {PRIORITIES.map(p => (
                 <button
                   key={p}
-                  type="button"
                   onClick={() => setPriority(p)}
                   style={{
                     flex: 1, padding: '7px 0', border: '1px solid var(--border)',
@@ -197,7 +192,6 @@ export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) 
         <div style={{ position: 'relative' }}>
           <label style={labelStyle}>Assignees</label>
           <button
-            type="button"
             onClick={() => setMemberPickerOpen(o => !o)}
             style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: 8,
@@ -231,7 +225,6 @@ export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) 
                 return (
                   <button
                     key={m.user_id}
-                    type="button"
                     onClick={() => toggleMember(m.user_id)}
                     style={{
                       width: '100%', display: 'flex', alignItems: 'center', gap: 10,
@@ -277,7 +270,6 @@ export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) 
         {/* Footer */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
           <button
-            type="button"
             onClick={handleClose}
             style={{
               padding: '8px 16px', border: '1px solid var(--border)', borderRadius: 8,
@@ -288,7 +280,6 @@ export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) 
             Cancel
           </button>
           <button
-            type="button"
             onClick={() => createMutation.mutate()}
             disabled={!canSubmit}
             style={{
