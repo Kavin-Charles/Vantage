@@ -28,8 +28,9 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
   const record: PipelineRecordWithValues | undefined = data?.data;
 
   const { data: conversionsData } = useQuery({
-    queryKey: ['conversions', pipeline.record_type.id],
-    queryFn: async () => listConversions(await getToken(), pipeline.record_type.id),
+    queryKey: ['conversions', pipeline.record_type?.id],
+    queryFn: async () => listConversions(await getToken(), pipeline.record_type!.id),
+    enabled: !!pipeline.record_type,
   });
 
   const conversions = conversionsData?.data ?? [];
@@ -155,10 +156,12 @@ export function RecordDetailPanel({ recordId, pipeline, onClose }: Props) {
           {fields.map(field => (
             <FieldRow key={field.id} field={field} value={getFieldValue(field.id)} onBlur={handleFieldBlur} />
           ))}
-          <PluginPanelSlot
-            recordType={pipeline.record_type.name.toLowerCase()}
-            recordId={recordId}
-          />
+          {pipeline.record_type && (
+            <PluginPanelSlot
+              recordType={pipeline.record_type.name.toLowerCase()}
+              recordId={recordId}
+            />
+          )}
         </div>
 
         {/* Footer */}

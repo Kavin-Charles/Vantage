@@ -28,11 +28,11 @@ export function PipelineKanban({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (addTrigger > 0) {
+    if (addTrigger > 0 && pipeline.record_type) {
       const firstActive = pipeline.stages.find(s => !s.is_won && !s.is_lost);
       setCreateStageId(firstActive?.id ?? null);
     }
-  }, [addTrigger, pipeline.stages]);
+  }, [addTrigger, pipeline.record_type, pipeline.stages]);
 
   const { data: recordsData } = useQuery({
     queryKey: ['records', pipeline.id],
@@ -162,16 +162,18 @@ export function PipelineKanban({
                 ))}
               </div>
 
-              {/* Add in column */}
-              <button
-                onClick={() => setCreateStageId(stage.id)}
-                style={{
-                  padding: '8px', background: 'none',
-                  border: '1px dashed var(--border)', borderRadius: 8,
-                  cursor: 'pointer', color: 'var(--text3)', fontSize: 13,
-                  fontFamily: 'DM Sans, sans-serif', textAlign: 'left',
-                }}
-              >+ Add</button>
+              {/* Add in column — only available when pipeline has a record type */}
+              {pipeline.record_type && (
+                <button
+                  onClick={() => setCreateStageId(stage.id)}
+                  style={{
+                    padding: '8px', background: 'none',
+                    border: '1px dashed var(--border)', borderRadius: 8,
+                    cursor: 'pointer', color: 'var(--text3)', fontSize: 13,
+                    fontFamily: 'DM Sans, sans-serif', textAlign: 'left',
+                  }}
+                >+ Add</button>
+              )}
             </div>
           );
         })}

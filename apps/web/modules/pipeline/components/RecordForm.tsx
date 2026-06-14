@@ -23,7 +23,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
 
   const { data: meData } = useQuery({
     queryKey: ['me'],
-    queryFn: async () => apiFetch<{ data: { id: string; name: string } }>('/api/me', { token: await getToken() }),
+    queryFn: async () => apiFetch<{ data: { user: { id: string; name: string } } }>('/api/me', { token: await getToken() }),
   });
 
   const activeStages = pipeline.stages.filter(s => !s.is_won && !s.is_lost);
@@ -32,7 +32,11 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    const ownerId = meData?.data?.id;
+    if (!pipeline.record_type) {
+      setError('This pipeline has no record type configured. Set one up in Settings → Record Types.');
+      return;
+    }
+    const ownerId = meData?.data?.user?.id;
     if (!ownerId) {
       setError('Could not determine current user');
       return;
@@ -87,7 +91,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
           <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)' }}>
-            New {pipeline.record_type.name}
+            New {pipeline.record_type?.name ?? 'Record'}
           </span>
           <button
             onClick={onClose}
@@ -108,7 +112,7 @@ export function RecordForm({ pipeline, defaultStageId, onClose, onSuccess }: Pro
               <input
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder={`${pipeline.record_type.name} name`}
+                placeholder={`${pipeline.record_type?.name ?? 'Record'} name`}
                 required
                 style={inputStyle}
                 autoFocus
