@@ -27,6 +27,7 @@ import { createCompaniesRouter } from './routes/companies';
 import { createPipelinesRouter } from './routes/pipelines';
 import { createPipelineFieldsRouter } from './routes/pipeline-fields';
 import { createPipelineItemsRouter, createItemRouter } from './routes/pipeline-items';
+import { createPipelineAutomationsRouter } from './routes/pipeline-automations';
 import { createTasksRouter } from './routes/tasks';
 import { createActivityRouter } from './routes/activity';
 import { createAlertsRouter } from './routes/alerts';
@@ -239,6 +240,12 @@ app.use('/api/pipelines', requireAuth, requireModule('pipelines'), createPipelin
 app.use('/api/pipelines/:pipelineId/fields', requireAuth, requireModule('pipelines'), createPipelineFieldsRouter(db, requirePermission));
 app.use('/api/pipelines/:pipelineId/items', requireAuth, requireModule('pipelines'), createPipelineItemsRouter(db, requirePermission));
 app.use('/api/items', requireAuth, requireModule('pipelines'), createItemRouter(db, requirePermission));
+app.use(
+  '/api/pipelines/:pipelineId/automations',
+  requireAuth,
+  requireModule('pipelines'),
+  createPipelineAutomationsRouter(db, requirePermission),
+);
 app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db, requirePermission));
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
 app.use('/api/alerts', requireAuth, createAlertsRouter(db));
