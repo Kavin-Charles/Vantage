@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listItems, updateItem } from '@/modules/pipeline/lib/items';
@@ -23,10 +23,12 @@ export function PipelineTable({ pipeline, search, addTrigger }: Props) {
   const [lastTrigger, setLastTrigger] = useState(addTrigger);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
-  if (addTrigger !== lastTrigger) {
-    setLastTrigger(addTrigger);
-    setShowForm(true);
-  }
+  useEffect(() => {
+    if (addTrigger !== lastTrigger) {
+      setLastTrigger(addTrigger);
+      setShowForm(true);
+    }
+  }, [addTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: items = [] } = useQuery({
     queryKey: ['items', pipeline.id],

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listItems, moveItem } from '@/modules/pipeline/lib/items';
@@ -24,10 +24,13 @@ export function KanbanBoard({ pipeline, search, addTrigger }: Props) {
 
   // addTrigger from parent opens the form for any stage
   const [lastTrigger, setLastTrigger] = useState(addTrigger);
-  if (addTrigger !== lastTrigger) {
-    setLastTrigger(addTrigger);
-    setFormStageId(pipeline.stages[0]?.id ?? null);
-  }
+  // Moved to useEffect to avoid setState-during-render
+  useEffect(() => {
+    if (addTrigger !== lastTrigger) {
+      setLastTrigger(addTrigger);
+      setFormStageId(pipeline.stages[0]?.id ?? null);
+    }
+  }, [addTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: items = [] } = useQuery({
     queryKey: ['items', pipeline.id],

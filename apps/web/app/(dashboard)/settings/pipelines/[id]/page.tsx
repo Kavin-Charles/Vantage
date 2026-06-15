@@ -42,7 +42,10 @@ export default function PipelineConfigPage() {
     queryFn: async () => getPipeline(await getToken(), id),
   });
 
-  const invalidate = () => void qc.invalidateQueries({ queryKey: ['pipeline', id] });
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ['pipeline', id] });
+    void qc.invalidateQueries({ queryKey: ['pipelines'] });
+  };
 
   const createStageMut = useMutation({
     mutationFn: async () => createStage(await getToken(), id, { name: stageName.trim(), color: stageColor }),

@@ -50,6 +50,7 @@ export function ItemDetail({ itemId, pipeline, onClose }: Props) {
     mutationFn: async () => deleteItem(await getToken(), itemId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['items', pipeline.id] });
+      void qc.invalidateQueries({ queryKey: ['item', itemId] });
       onClose();
     },
   });
