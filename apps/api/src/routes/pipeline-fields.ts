@@ -10,7 +10,7 @@ const createFieldSchema = z.object({
   label: z.string().min(1),
   key: z.string().min(1).regex(/^[a-z_][a-z0-9_]*$/, 'key must be snake_case'),
   type: fieldTypeEnum,
-  options: z.array(z.object({ label: z.string(), value: z.string() })).optional(),
+  options: z.array(z.object({ label: z.string(), value: z.string() })).nullish(),
   position: z.number().int().default(0),
   required: z.boolean().default(false),
 });

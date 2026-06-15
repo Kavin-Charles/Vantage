@@ -34,8 +34,12 @@ export default function PipelineConfigPage() {
   const [fieldLabel, setFieldLabel] = useState('');
   const [fieldKey, setFieldKey] = useState('');
   const [fieldType, setFieldType] = useState<PipelineField['type']>('text');
+  const [fieldRequired, setFieldRequired] = useState(false);
+  const [fieldOptions, setFieldOptions] = useState<{ label: string; value: string }[]>([]);
+  const [optionInput, setOptionInput] = useState('');
   const [fieldLabelFocused, setFieldLabelFocused] = useState(false);
   const [fieldKeyFocused, setFieldKeyFocused] = useState(false);
+  const [optionInputFocused, setOptionInputFocused] = useState(false);
 
   const { data: pipeline, isLoading } = useQuery({
     queryKey: ['pipeline', id],
@@ -57,6 +61,16 @@ export default function PipelineConfigPage() {
     onSuccess: invalidate,
   });
 
+  const isOptionType = fieldType === 'select' || fieldType === 'multiselect';
+
+  const addOption = () => {
+    const trimmed = optionInput.trim();
+    if (!trimmed) return;
+    const value = trimmed.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+    setFieldOptions(prev => [...prev, { label: trimmed, value }]);
+    setOptionInput('');
+  };
+
   const createFieldMut = useMutation({
     mutationFn: async () => {
       const key = fieldKey.trim() || fieldLabel.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
@@ -65,11 +79,15 @@ export default function PipelineConfigPage() {
         key,
         type: fieldType,
         position: pipeline?.fields.length ?? 0,
-        required: false,
-        options: null,
+        required: fieldRequired,
+        options: isOptionType ? fieldOptions : null,
       });
     },
-    onSuccess: () => { invalidate(); setFieldLabel(''); setFieldKey(''); setFieldType('text'); },
+    onSuccess: () => {
+      invalidate();
+      setFieldLabel(''); setFieldKey(''); setFieldType('text');
+      setFieldRequired(false); setFieldOptions([]); setOptionInput('');
+    },
   });
 
   const deleteFieldMut = useMutation({
@@ -446,12 +464,12 @@ export default function PipelineConfigPage() {
                 />
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', marginBottom: isOptionType ? 10 : 0 }}>
               <div style={{ flex: 1 }}>
                 <label style={eyebrow}>Type</label>
                 <select
                   value={fieldType}
-                  onChange={e => setFieldType(e.target.value as PipelineField['type'])}
+                  onChange={e => { setFieldType(e.target.value as PipelineField['type']); setFieldOptions([]); setOptionInput(''); }}
                   style={inputStyle(false)}
                 >
                   {FIELD_TYPES.map(t => (
@@ -459,16 +477,35 @@ export default function PipelineConfigPage() {
                   ))}
                 </select>
               </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingBottom: 10 }}>
+                <input
+                  type="checkbox"
+                  id="field-required"
+                  checked={fieldRequired}
+                  onChange={e => setFieldRequired(e.target.checked)}
+                  style={{ cursor: 'pointer', width: 14, height: 14, accentColor: 'var(--text)' }}
+                />
+                <label htmlFor="field-required" style={{
+                  fontSize: 13,
+                  fontFamily: 'var(--font-sans)',
+                  color: 'var(--text2)',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  whiteSpace: 'nowrap',
+                }}>
+                  Required
+                </label>
+              </div>
               <button
                 onClick={() => createFieldMut.mutate()}
-                disabled={!fieldLabel.trim() || createFieldMut.isPending}
+                disabled={!fieldLabel.trim() || createFieldMut.isPending || (isOptionType && fieldOptions.length === 0)}
                 style={{
                   padding: '8px 18px',
-                  background: !fieldLabel.trim() ? 'var(--text3)' : 'var(--text)',
+                  background: (!fieldLabel.trim() || (isOptionType && fieldOptions.length === 0)) ? 'var(--text3)' : 'var(--text)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: 10,
-                  cursor: fieldLabel.trim() ? 'pointer' : 'not-allowed',
+                  cursor: (fieldLabel.trim() && (!isOptionType || fieldOptions.length > 0)) ? 'pointer' : 'not-allowed',
                   fontSize: 13,
                   fontFamily: 'var(--font-sans)',
                   fontWeight: 600,
@@ -479,6 +516,62 @@ export default function PipelineConfigPage() {
                 {createFieldMut.isPending ? 'Adding…' : 'Add field'}
               </button>
             </div>
+
+            {isOptionType && (
+              <div>
+                <label style={eyebrow}>Options</label>
+                {fieldOptions.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {fieldOptions.map((opt, i) => (
+                      <span key={i} style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        background: 'var(--surface2)', border: '1px solid var(--border)',
+                        borderRadius: 999, padding: '3px 6px 3px 10px',
+                        fontSize: 12, fontFamily: 'var(--font-sans)', color: 'var(--text)',
+                      }}>
+                        {opt.label}
+                        <button
+                          onClick={() => setFieldOptions(prev => prev.filter((_, j) => j !== i))}
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            padding: '0 2px', color: 'var(--text3)', fontSize: 14, lineHeight: 1,
+                          }}
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    value={optionInput}
+                    onChange={e => setOptionInput(e.target.value)}
+                    onFocus={() => setOptionInputFocused(true)}
+                    onBlur={() => setOptionInputFocused(false)}
+                    onKeyDown={e => { if (e.key === 'Enter') addOption(); }}
+                    placeholder="Option label"
+                    style={inputStyle(optionInputFocused)}
+                  />
+                  <button
+                    onClick={addOption}
+                    disabled={!optionInput.trim()}
+                    style={{
+                      padding: '8px 14px',
+                      background: 'var(--surface2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 10,
+                      cursor: optionInput.trim() ? 'pointer' : 'not-allowed',
+                      fontSize: 12,
+                      fontFamily: 'var(--font-sans)',
+                      fontWeight: 600,
+                      color: optionInput.trim() ? 'var(--text2)' : 'var(--text3)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Add option
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
