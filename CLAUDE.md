@@ -1,5 +1,14 @@
 # Vencore — Project Brief
 
+## Codebase Navigation — graphify
+
+A knowledge graph of this codebase lives at `graphify-out/graph.json`. **Always query it before reading files.**
+
+- Any question about architecture, data flow, file relationships, or "where is X" → run `/graphify query "<question>"` first
+- Do not `Read` or `Grep` across the codebase when the graph can answer it
+- To rebuild after major changes: `/graphify . --update`
+- Graph outputs: `graphify-out/graph.html` (visual), `graphify-out/GRAPH_REPORT.md` (audit)
+
 ## What is Vencore?
 
 Vencore is a modular white-label company management platform. Companies deploy it under their own brand and configure only the modules their teams need — covering every department: sales (CRM), engineering (infra monitoring), HR, management, and more. The platform is fully brandable; end users see the customer's name and logo, not Vencore.
@@ -28,7 +37,7 @@ Vencore is a modular white-label company management platform. Companies deploy i
 
 ## Design System
 
-The UI reference file is `vencore-full.html` in the project root. **Match it exactly.** Do not invent new components or deviate from the established patterns.
+The UI reference folder is `_design` in the project root. **Match it exactly.** Do not invent new components or deviate from the established patterns.
 
 Key design tokens:
 - `--bg: #f7f6f2` — warm off-white page background

@@ -8,6 +8,7 @@ import { Button } from '@/modules/shared/components/ui/Button';
 import { Modal } from '@/modules/shared/components/ui/Modal';
 import { FormField, Input } from '@/modules/shared/components/ui/FormField';
 import { Icon } from '@/modules/shared/components/ui/Icon';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
@@ -42,6 +43,7 @@ export default function TasksPage() {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState({ title: '', due_date: '', assignee_id: '' });
   const [filter, setFilter] = useState<'all' | 'todo' | 'done'>('todo');
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data: usersData } = useQuery({
     queryKey: ['workspace-users'],
@@ -167,11 +169,23 @@ export default function TasksPage() {
                 onToggle={() => toggleMut.mutate({ id: task.id, status: done ? 'todo' : 'done' })}
                 onDelete={() => deleteTask(task)}
                 assigneeName={task.assignee_id ? userMap[task.assignee_id] : undefined}
+                onContextMenu={(e) => {
+                  const items: ContextMenuItem[] = [
+                    done
+                      ? { icon: 'refresh', label: 'Mark todo',  onClick: () => toggleMut.mutate({ id: task.id, status: 'todo' }) }
+                      : { icon: 'check',   label: 'Mark done', shortcut: '⌘↵', onClick: () => toggleMut.mutate({ id: task.id, status: 'done' }) },
+                    { type: 'separator' },
+                    { icon: 'copy', label: 'Copy title', onClick: () => navigator.clipboard.writeText(task.title) },
+                  ];
+                  openMenu(e, items);
+                }}
               />
             );
           })}
         </div>
       </div>
+
+      <ContextMenu menu={menu} onClose={closeMenu} />
 
       {modal && isAdmin && (
         <Modal title="Add task" onClose={() => setModal(false)}>
@@ -223,13 +237,14 @@ function Avatar({ name, size = 24 }: { name: string; size?: number }) {
 
 const TASK_STATUS_COLOR: Record<string, 'green' | 'amber'> = { done: 'green', todo: 'amber' };
 
-function TaskRow({ task, last, isOverdue, onToggle, assigneeName }: { task: Task; last: boolean; isOverdue: boolean; onToggle: () => void; assigneeName?: string }) {
+function TaskRow({ task, last, isOverdue, onToggle, assigneeName, onContextMenu }: { task: Task; last: boolean; isOverdue: boolean; onToggle: () => void; assigneeName?: string; onContextMenu: (e: React.MouseEvent) => void }) {
   const [hover, setHover] = useState(false);
   const done = task.status === 'done';
   return (
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onContextMenu={onContextMenu}
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
         padding: '13px 18px',

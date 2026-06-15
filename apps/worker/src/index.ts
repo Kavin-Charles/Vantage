@@ -6,6 +6,10 @@ import { runAlertEval } from './jobs/alert-eval';
 import { runDbHealth } from './jobs/db-health';
 import { runServerStaleness } from './jobs/server-staleness';
 import { runWebhookDelivery } from './jobs/webhook-delivery';
+import { runDueDateAlerts } from './jobs/pm/due-date-alerts';
+import { runOverdueScan } from './jobs/pm/overdue-scan';
+import { runHealthRecalc } from './jobs/pm/health-recalc';
+import { runSprintRollover } from './jobs/pm/sprint-rollover';
 
 const config = readConfig();
 const db = createDb(process.env['DATABASE_URL']!);
@@ -28,6 +32,10 @@ setInterval(async () => {
         await runDbHealth(db);
         await runServerStaleness(db);
       }
+      await runDueDateAlerts(db);
+      await runOverdueScan(db);
+      await runHealthRecalc(db);
+      await runSprintRollover(db);
     } catch (err) {
       logger.error({ err }, 'job error');
     } finally {

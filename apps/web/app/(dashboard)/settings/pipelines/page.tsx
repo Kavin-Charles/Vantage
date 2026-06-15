@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listPipelines, createPipeline, deletePipeline } from '@/modules/pipeline/lib/pipelines';
 import { listRecordTypes } from '@/modules/pipeline/lib/record-types';
@@ -11,6 +12,7 @@ export default function PipelinesSettingsPage() {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
   const [newName, setNewName] = useState('');
   const [newTypeId, setNewTypeId] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -133,7 +135,7 @@ export default function PipelinesSettingsPage() {
                   <PipelineEditor pipelineId={p.id} />
                 </div>
                 <button
-                  onClick={() => { if (window.confirm(`Delete pipeline "${p.name}"?`)) deleteMut.mutate(p.id); }}
+                  onClick={() => askConfirm({ title: 'Delete pipeline', message: `Delete pipeline "${p.name}"? All stages and records will be lost.`, confirmLabel: 'Delete', variant: 'danger', onConfirm: () => deleteMut.mutate(p.id) })}
                   style={{
                     marginTop: 16, padding: '6px 12px',
                     background: 'var(--red-bg)', color: 'var(--red)',
@@ -151,6 +153,7 @@ export default function PipelinesSettingsPage() {
           </div>
         )}
       </div>
+      {confirmEl}
     </div>
   );
 }

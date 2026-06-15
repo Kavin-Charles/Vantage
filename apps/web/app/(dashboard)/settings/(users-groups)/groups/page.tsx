@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import Link from 'next/link';
 
 interface Group {
@@ -20,6 +21,7 @@ export default function GroupsPage() {
   const getToken = useApiToken();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newColor, setNewColor] = useState('#6b665c');
@@ -128,7 +130,7 @@ export default function GroupsPage() {
                 <span style={{ fontSize: 12, color: 'var(--text3)' }}>{g.member_count} member{Number(g.member_count) !== 1 ? 's' : ''}</span>
                 <Link href={`/settings/groups/${g.id}`} style={{ fontSize: 12, color: 'var(--blue)', textDecoration: 'none' }}>Edit</Link>
                 <button
-                  onClick={() => { if (confirm(`Delete group "${g.name}"?`)) deleteGroup.mutate(g.id); }}
+                  onClick={() => askConfirm({ title: 'Delete group', message: `Delete group "${g.name}"? This cannot be undone.`, confirmLabel: 'Delete', variant: 'danger', onConfirm: () => deleteGroup.mutate(g.id) })}
                   style={{ fontSize: 12, color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   Delete
@@ -138,6 +140,7 @@ export default function GroupsPage() {
           ))}
         </div>
       )}
+      {confirmEl}
     </div>
   );
 }

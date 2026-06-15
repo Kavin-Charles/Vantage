@@ -83,7 +83,7 @@ export function DashboardGrid({ layoutRows, isEditMode, pluginWidgets, onLayoutC
   }
 
   return (
-    <div ref={containerRef} style={{ minHeight: isEditMode ? 400 : undefined }}>
+    <div ref={containerRef} style={{ width: '100%', minHeight: isEditMode ? 400 : undefined }}>
       {mounted && (
         <ResponsiveGridLayout
           width={width}

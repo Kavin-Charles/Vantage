@@ -9,6 +9,7 @@ export * from './databases';
 export * from './analytics';
 export * from './activity';
 export * from './dashboard';
+export * from './projects';
 
 import { CONTACTS_MODULE } from './contacts';
 import { COMPANIES_MODULE } from './companies';
@@ -20,6 +21,7 @@ import { DATABASES_MODULE } from './databases';
 import { ANALYTICS_MODULE } from './analytics';
 import { ACTIVITY_MODULE } from './activity';
 import { DASHBOARD_MODULE } from './dashboard';
+import { PROJECTS_MODULE } from './projects';
 import type { ModuleDefinition, PermissionDef, UserRole } from './types';
 
 export const MODULE_REGISTRY: ModuleDefinition[] = [
@@ -33,6 +35,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
   DATABASES_MODULE,
   ANALYTICS_MODULE,
   ACTIVITY_MODULE,
+  PROJECTS_MODULE,
 ];
 
 export const MODULE_IDS: string[] = MODULE_REGISTRY.map(m => m.id);

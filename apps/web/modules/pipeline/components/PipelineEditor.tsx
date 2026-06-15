@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { getPipeline, addStage, updateStage, deleteStage, reorderStages } from '@/modules/pipeline/lib/pipelines';
 import type { PipelineStage } from '@vencore/types';
 
@@ -11,6 +12,7 @@ export function PipelineEditor({ pipelineId }: { pipelineId: string }) {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
   const [newName, setNewName] = useState('');
   const [dragId, setDragId] = useState<string | null>(null);
 
@@ -116,7 +118,7 @@ export function PipelineEditor({ pipelineId }: { pipelineId: string }) {
             }}
           >Lost</button>
           <button
-            onClick={() => { if (window.confirm(`Delete stage "${stage.name}"?`)) deleteMut.mutate(stage.id); }}
+            onClick={() => askConfirm({ title: 'Delete stage', message: `Delete stage "${stage.name}"? Records in this stage will need to be moved.`, confirmLabel: 'Delete', variant: 'danger', onConfirm: () => deleteMut.mutate(stage.id) })}
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, lineHeight: 1, padding: '0 2px' }}
           >×</button>
         </div>
@@ -163,6 +165,7 @@ export function PipelineEditor({ pipelineId }: { pipelineId: string }) {
           }}
         >+ Add stage</button>
       )}
+      {confirmEl}
     </div>
   );
 }

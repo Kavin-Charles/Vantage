@@ -732,6 +732,240 @@ export interface DashboardGroupAssignmentTable {
   group_id: string;
 }
 
+export interface ProjectTable {
+  id: Generated<string>
+  workspace_id: string
+  name: string
+  description: string | null
+  color: string | null
+  status: Generated<'ACTIVE' | 'ARCHIVED' | 'DELETED'>
+  health: Generated<'ON_TRACK' | 'AT_RISK' | 'OFF_TRACK'>
+  start_date: Date | null
+  end_date: Date | null
+  created_by: string
+  created_at: Generated<Date>
+  updated_at: Generated<Date>
+}
+
+export interface ProjectTaskStatusTable {
+  id: Generated<string>
+  project_id: string
+  name: string
+  color: string
+  position: Generated<number>
+  is_done: Generated<boolean>
+}
+
+export interface ProjectTaskTable {
+  id: Generated<string>
+  project_id: string
+  parent_id: string | null
+  status_id: string
+  title: string
+  description: string | null
+  priority: Generated<'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE'>
+  due_date: Date | null
+  start_date: Date | null
+  estimated_minutes: number | null
+  client_visible: Generated<boolean>
+  position: Generated<number>
+  created_by: string
+  created_at: Generated<Date>
+  updated_at: Generated<Date>
+}
+
+export interface ProjectTaskAssigneeTable {
+  task_id: string
+  user_id: string
+}
+
+export interface ProjectTaskDependencyTable {
+  task_id: string
+  depends_on_task_id: string
+  type: Generated<string>
+}
+
+export interface TaskLabelTable {
+  id: Generated<string>
+  project_id: string
+  name: string
+  color: string
+}
+
+export interface ProjectTaskLabelAssignmentTable {
+  task_id: string
+  label_id: string
+}
+
+export interface CustomFieldTable {
+  id: Generated<string>
+  project_id: string
+  name: string
+  field_type: string
+  options: unknown | null
+  created_at: Generated<Date>
+}
+
+export interface CustomFieldValueTable {
+  task_id: string
+  custom_field_id: string
+  value: string | null
+}
+
+export interface ProjectTaskChecklistTable {
+  id: Generated<string>
+  task_id: string
+  title: string
+  is_done: Generated<boolean>
+  position: Generated<number>
+}
+
+export interface TimeLogTable {
+  id: Generated<string>
+  task_id: string
+  user_id: string
+  minutes: number
+  logged_at: Generated<Date>
+  note: string | null
+}
+
+export interface ProjectTaskAttachmentTable {
+  id: Generated<string>
+  task_id: string
+  filename: string
+  url: string
+  size_bytes: number | null
+  is_deliverable: Generated<boolean>
+  uploaded_by: string
+  uploaded_at: Generated<Date>
+}
+
+export interface ProjectTaskCommentTable {
+  id: Generated<string>
+  task_id: string
+  user_id: string | null
+  portal_session_id: string | null
+  body: string
+  parent_id: string | null
+  created_at: Generated<Date>
+  updated_at: Generated<Date>
+}
+
+export interface MilestoneTable {
+  id: Generated<string>
+  project_id: string
+  name: string
+  description: string | null
+  due_date: Date
+  status: Generated<string>
+  client_visible: Generated<boolean>
+  position: Generated<number>
+}
+
+export interface MilestoneTaskTable {
+  milestone_id: string
+  task_id: string
+}
+
+export interface SprintTable {
+  id: Generated<string>
+  project_id: string
+  name: string
+  start_date: Date
+  end_date: Date
+  status: Generated<string>
+  goal: string | null
+  velocity: number | null
+}
+
+export interface SprintTaskTable {
+  sprint_id: string
+  task_id: string
+  points: number | null
+}
+
+export interface ProjectMemberTable {
+  id: Generated<string>
+  project_id: string
+  user_id: string
+  role: Generated<string>
+  joined_at: Generated<Date>
+}
+
+export interface PortalAccessTable {
+  id: Generated<string>
+  project_id: string
+  label: string
+  token: string
+  password_hash: string | null
+  is_active: Generated<boolean>
+  last_accessed: Date | null
+  created_by: string
+  created_at: Generated<Date>
+}
+
+export interface ClientPortalSessionTable {
+  id: Generated<string>
+  portal_id: string
+  ip: string | null
+  user_agent: string | null
+  started_at: Generated<Date>
+  last_seen: Generated<Date>
+}
+
+export interface ApprovalRequestTable {
+  id: Generated<string>
+  project_id: string
+  portal_id: string
+  task_id: string | null
+  milestone_id: string | null
+  attachment_id: string | null
+  status: Generated<string>
+  note: string | null
+  responded_at: Date | null
+  created_at: Generated<Date>
+}
+
+export interface AutomationRuleTable {
+  id: Generated<string>
+  project_id: string
+  name: string
+  is_active: Generated<boolean>
+  trigger: unknown
+  actions: unknown
+  created_by: string
+  created_at: Generated<Date>
+}
+
+export interface AutomationLogTable {
+  id: Generated<string>
+  rule_id: string
+  triggered_at: Generated<Date>
+  success: boolean
+  detail: string | null
+}
+
+export interface ProjectDocTable {
+  id: Generated<string>
+  project_id: string
+  title: string
+  content: unknown | null
+  created_by: string
+  created_at: Generated<Date>
+  updated_at: Generated<Date>
+}
+
+export interface ProjectTemplateTable {
+  id: Generated<string>
+  workspace_id: string
+  name: string
+  description: string | null
+  is_public: Generated<boolean>
+  template_data: unknown
+  created_by: string
+  created_at: Generated<Date>
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -792,6 +1026,31 @@ export interface Database {
   dashboards: DashboardTable;
   dashboard_layouts: DashboardLayoutTable;
   dashboard_group_assignments: DashboardGroupAssignmentTable;
+  projects: ProjectTable
+  project_task_statuses: ProjectTaskStatusTable
+  project_tasks: ProjectTaskTable
+  project_task_assignees: ProjectTaskAssigneeTable
+  project_task_dependencies: ProjectTaskDependencyTable
+  task_labels: TaskLabelTable
+  project_task_label_assignments: ProjectTaskLabelAssignmentTable
+  custom_fields: CustomFieldTable
+  custom_field_values: CustomFieldValueTable
+  project_task_checklists: ProjectTaskChecklistTable
+  time_logs: TimeLogTable
+  project_task_attachments: ProjectTaskAttachmentTable
+  project_task_comments: ProjectTaskCommentTable
+  milestones: MilestoneTable
+  milestone_tasks: MilestoneTaskTable
+  sprints: SprintTable
+  sprint_tasks: SprintTaskTable
+  project_members: ProjectMemberTable
+  portal_access: PortalAccessTable
+  client_portal_sessions: ClientPortalSessionTable
+  approval_requests: ApprovalRequestTable
+  automation_rules: AutomationRuleTable
+  automation_logs: AutomationLogTable
+  project_docs: ProjectDocTable
+  project_templates: ProjectTemplateTable
 }
 
 // Convenience types
@@ -980,3 +1239,16 @@ export type NewGroupPermission = Insertable<GroupPermissionTable>;
 
 export type Invite = Selectable<InviteTable>;
 export type NewInvite = Insertable<InviteTable>;
+
+export type Project = Selectable<ProjectTable>
+export type ProjectTaskStatus = Selectable<ProjectTaskStatusTable>
+export type ProjectTask = Selectable<ProjectTaskTable>
+export type ProjectMember = Selectable<ProjectMemberTable>
+export type Milestone = Selectable<MilestoneTable>
+export type Sprint = Selectable<SprintTable>
+export type PortalAccess = Selectable<PortalAccessTable>
+export type ClientPortalSession = Selectable<ClientPortalSessionTable>
+export type ApprovalRequest = Selectable<ApprovalRequestTable>
+export type AutomationRule = Selectable<AutomationRuleTable>
+export type ProjectDoc = Selectable<ProjectDocTable>
+export type ProjectTemplate = Selectable<ProjectTemplateTable>
