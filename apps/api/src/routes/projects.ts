@@ -154,6 +154,87 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
   return router
 }
 
+export function createProjectLabelsRouter(db: Kysely<Database>): Router {
+  const router = Router({ mergeParams: true })
+  const labelSchema = z.object({
+    name: z.string().min(1).max(100),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  })
+
+  async function verifyProject(projectId: string, workspaceId: string) {
+    return db.selectFrom('projects').select('id')
+      .where('id', '=', projectId)
+      .where('workspace_id', '=', workspaceId)
+      .executeTakeFirst()
+  }
+
+  router.get('/', async (req, res) => {
+    const { workspace } = req as unknown as AuthenticatedRequest
+    const { projectId } = req.params as { projectId: string }
+    if (!await verifyProject(projectId, workspace.id)) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+    try {
+      const labels = await db.selectFrom('task_labels').selectAll()
+        .where('project_id', '=', projectId)
+        .orderBy('name', 'asc')
+        .execute()
+      return res.json({ data: labels, error: null })
+    } catch (err) {
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+    }
+  })
+
+  router.post('/', async (req, res) => {
+    const { workspace } = req as unknown as AuthenticatedRequest
+    const { projectId } = req.params as { projectId: string }
+    const parsed = labelSchema.safeParse(req.body)
+    if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
+    if (!await verifyProject(projectId, workspace.id)) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+    try {
+      const label = await db.insertInto('task_labels')
+        .values({ project_id: projectId, name: parsed.data.name, color: parsed.data.color })
+        .returningAll().executeTakeFirstOrThrow()
+      return res.status(201).json({ data: label, error: null })
+    } catch (err) {
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+    }
+  })
+
+  router.patch('/:labelId', async (req, res) => {
+    const { workspace } = req as unknown as AuthenticatedRequest
+    const { projectId, labelId } = req.params as { projectId: string; labelId: string }
+    const parsed = labelSchema.partial().safeParse(req.body)
+    if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
+    if (!await verifyProject(projectId, workspace.id)) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+    try {
+      const label = await db.updateTable('task_labels')
+        .set(parsed.data)
+        .where('id', '=', labelId)
+        .where('project_id', '=', projectId)
+        .returningAll().executeTakeFirstOrThrow()
+      return res.json({ data: label, error: null })
+    } catch {
+      return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Label not found' } })
+    }
+  })
+
+  router.delete('/:labelId', async (req, res) => {
+    const { workspace } = req as unknown as AuthenticatedRequest
+    const { projectId, labelId } = req.params as { projectId: string; labelId: string }
+    if (!await verifyProject(projectId, workspace.id)) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+    try {
+      await db.deleteFrom('task_labels')
+        .where('id', '=', labelId)
+        .where('project_id', '=', projectId)
+        .executeTakeFirstOrThrow()
+      return res.json({ data: { success: true }, error: null })
+    } catch {
+      return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Label not found' } })
+    }
+  })
+
+  return router
+}
+
 export function createProjectStatusesRouter(db: Kysely<Database>): Router {
   const router = Router({ mergeParams: true })
 

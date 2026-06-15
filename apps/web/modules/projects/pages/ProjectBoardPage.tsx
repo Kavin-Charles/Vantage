@@ -13,6 +13,12 @@ import { TaskCreateModal } from '@/modules/projects/components/TaskCreateModal';
 const PRIORITY_COLORS: Record<string, string> = {
   LOW: 'var(--text3)', MEDIUM: 'var(--amber)', HIGH: 'var(--red)', URGENT: 'var(--red)',
 };
+const PRIORITY_BG: Record<string, string> = {
+  LOW: 'var(--surface2)', MEDIUM: 'var(--amber-bg)', HIGH: 'var(--red-bg)', URGENT: 'var(--red-bg)',
+};
+const PRIORITY_BORDER: Record<string, string> = {
+  LOW: '#c8c4bb', MEDIUM: '#f59e0b', HIGH: '#ef4444', URGENT: '#ef4444',
+};
 
 function TaskCard({
   task,
@@ -27,6 +33,9 @@ function TaskCard({
   const now = new Date();
   const dueDate = task.due_date ? new Date(task.due_date) : null;
   const overdue = dueDate && dueDate < now;
+  const priorityBorder = task.priority && task.priority !== 'NONE'
+    ? PRIORITY_BORDER[task.priority] ?? 'var(--border)'
+    : 'var(--border)';
 
   return (
     <div
@@ -36,34 +45,68 @@ function TaskCard({
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
-        background: hover ? 'var(--surface2)' : 'var(--surface)',
-        border: '1px solid var(--border)', borderRadius: 10,
-        padding: '10px 12px', cursor: 'pointer', marginBottom: 8,
-        boxShadow: hover ? '0 2px 8px rgba(0,0,0,0.06)' : 'none',
-        transition: 'background 0.15s ease, box-shadow 0.15s ease',
+        background: '#ffffff',
+        border: `1px solid ${hover ? priorityBorder : 'var(--border)'}`,
+        borderLeft: `3px solid ${priorityBorder}`,
+        borderRadius: 10,
+        padding: '11px 13px 11px 11px',
+        cursor: 'pointer', marginBottom: 8,
+        boxShadow: hover ? '0 4px 14px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.04)',
+        transition: 'box-shadow 0.15s ease, border-color 0.15s ease, transform 0.12s ease',
+        transform: hover ? 'translateY(-1px)' : 'none',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
-        <p style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)', margin: 0, lineHeight: 1.4, flex: 1 }}>
-          {task.title}
-        </p>
+      {/* Title */}
+      <p style={{
+        fontFamily: 'DM Sans', fontSize: 13, fontWeight: 500,
+        color: 'var(--text)', margin: '0 0 10px', lineHeight: 1.45,
+      }}>
+        {task.title}
+      </p>
+
+      {/* Meta row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        {/* Priority chip */}
         {task.priority && task.priority !== 'NONE' && (
           <span style={{
-            fontFamily: 'DM Sans', fontSize: 10, color: PRIORITY_COLORS[task.priority] ?? 'var(--text3)',
-            fontWeight: 700, flexShrink: 0, textTransform: 'uppercase', letterSpacing: '0.03em',
+            fontFamily: 'DM Sans', fontSize: 10, fontWeight: 700,
+            color: PRIORITY_COLORS[task.priority] ?? 'var(--text3)',
+            background: PRIORITY_BG[task.priority] ?? 'var(--surface2)',
+            borderRadius: 6, padding: '2px 7px',
+            textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0,
           }}>
             {task.priority}
           </span>
         )}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        {dueDate ? (
-          <span style={{ fontFamily: 'DM Sans', fontSize: 11, color: overdue ? 'var(--red)' : 'var(--text3)', fontWeight: overdue ? 600 : 400 }}>
-            {dueDate.toLocaleDateString()}
+
+        {/* Due date chip */}
+        {dueDate && (
+          <span style={{
+            fontFamily: 'DM Sans', fontSize: 11,
+            color: overdue ? 'var(--red)' : 'var(--text3)',
+            background: overdue ? 'var(--red-bg)' : 'var(--surface2)',
+            borderRadius: 6, padding: '2px 7px', flexShrink: 0,
+            fontWeight: overdue ? 600 : 400,
+          }}>
+            {overdue ? '⚠ ' : ''}{dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
-        ) : <span />}
+        )}
+
+        {/* Client visible dot */}
+        {task.client_visible && (
+          <span title="Client visible" style={{
+            fontFamily: 'DM Sans', fontSize: 10, color: 'var(--blue)',
+            background: 'var(--blue-bg)', borderRadius: 6, padding: '2px 7px', flexShrink: 0,
+          }}>
+            Client
+          </span>
+        )}
+
+        {/* Avatars pushed to end */}
         {task.assignees.length > 0 && (
-          <AvatarGroup assignees={task.assignees} size={22} max={3} />
+          <span style={{ marginLeft: 'auto', flexShrink: 0 }}>
+            <AvatarGroup assignees={task.assignees} size={20} max={3} />
+          </span>
         )}
       </div>
     </div>
@@ -120,55 +163,147 @@ export default function ProjectBoardPage() {
   }
 
   return (
-    <div style={{ padding: 20, overflowX: 'auto', height: '100%', boxSizing: 'border-box' }}>
-      <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', minWidth: 'max-content' }}>
-        {statuses.map(status => {
-          const columnTasks = tasks.filter(t => t.status_id === status.id).sort((a, b) => a.position - b.position);
-          return (
-            <div
-              key={status.id}
-              onDragOver={e => e.preventDefault()}
-              onDrop={e => handleDrop(e, status.id)}
-              style={{ width: 270, background: 'var(--bg)', borderRadius: 14, padding: 12, flexShrink: 0 }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: status.color, flexShrink: 0 }} />
-                <span style={{ fontFamily: 'DM Sans', fontSize: 13, fontWeight: 600, color: 'var(--text)', flex: 1 }}>{status.name}</span>
-                <span style={{ fontFamily: 'DM Sans', fontSize: 11, color: 'var(--text3)', background: 'var(--surface2)', borderRadius: 10, padding: '1px 7px' }}>
-                  {columnTasks.length}
-                </span>
-              </div>
-
-              {columnTasks.map(task => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onClick={() => void openTask(task)}
-                  onDragStart={() => setDraggedTaskId(task.id)}
-                />
-              ))}
-
-              <button
-                onClick={() => setCreateForStatus(status.id)}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
+      <div style={{
+        flex: 1, overflowX: 'auto', overflowY: 'hidden',
+        padding: '20px 24px 24px',
+      }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', height: '100%', minWidth: 'max-content' }}>
+          {statuses.map(status => {
+            const columnTasks = tasks.filter(t => t.status_id === status.id).sort((a, b) => a.position - b.position);
+            return (
+              <div
+                key={status.id}
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => handleDrop(e, status.id)}
                 style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: 6,
-                  background: 'none', border: '1px dashed var(--border)', borderRadius: 8,
-                  padding: '7px 10px', cursor: 'pointer', color: 'var(--text3)',
-                  fontFamily: 'DM Sans', fontSize: 12,
-                  transition: 'border-color 0.15s ease, color 0.15s ease',
+                  width: 290,
+                  display: 'flex', flexDirection: 'column',
+                  flexShrink: 0,
+                  maxHeight: 'calc(100vh - 160px)',
                 }}
               >
-                <Icon name="plus" size={13} /> Add task
-              </button>
-            </div>
-          );
-        })}
+                {/* Column header — free-floating, not a box */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '0 4px 10px',
+                }}>
+                  <div style={{
+                    width: 10, height: 10, borderRadius: 3,
+                    background: status.color, flexShrink: 0,
+                  }} />
+                  <span style={{
+                    fontFamily: 'DM Sans', fontSize: 13, fontWeight: 700,
+                    color: 'var(--text)', flex: 1, letterSpacing: '-0.01em',
+                  }}>
+                    {status.name}
+                  </span>
+                  <span style={{
+                    fontFamily: 'DM Sans', fontSize: 11, fontWeight: 600,
+                    color: 'var(--text3)', minWidth: 18, textAlign: 'right',
+                  }}>
+                    {columnTasks.length}
+                  </span>
+                  <button
+                    onClick={() => setCreateForStatus(status.id)}
+                    style={{
+                      width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'var(--surface)', border: '1px solid var(--border)',
+                      cursor: 'pointer', color: 'var(--text3)',
+                      transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+                    }}
+                    onMouseEnter={e => {
+                      const el = e.currentTarget as HTMLElement;
+                      el.style.background = status.color;
+                      el.style.color = '#fff';
+                      el.style.borderColor = status.color;
+                    }}
+                    onMouseLeave={e => {
+                      const el = e.currentTarget as HTMLElement;
+                      el.style.background = 'var(--surface)';
+                      el.style.color = 'var(--text3)';
+                      el.style.borderColor = 'var(--border)';
+                    }}
+                  >
+                    <Icon name="plus" size={13} />
+                  </button>
+                </div>
 
-        {statuses.length === 0 && (
-          <div style={{ color: 'var(--text3)', fontFamily: 'DM Sans', fontSize: 14, padding: '40px 0' }}>
-            No statuses configured for this project.
-          </div>
-        )}
+                {/* Scrollable task list */}
+                <div style={{
+                  flex: 1, overflowY: 'auto',
+                  background: 'var(--surface)',
+                  borderRadius: 14,
+                  border: `1px solid var(--border)`,
+                  borderTop: `3px solid ${status.color}`,
+                  padding: '10px 10px 6px',
+                  display: 'flex', flexDirection: 'column',
+                }}>
+                  {columnTasks.length === 0 ? (
+                    <button
+                      onClick={() => setCreateForStatus(status.id)}
+                      style={{
+                        flex: 1, minHeight: 80,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexDirection: 'column', gap: 6,
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: 'var(--text3)', borderRadius: 10,
+                        transition: 'background 0.15s',
+                        fontFamily: 'DM Sans', fontSize: 12,
+                      }}
+                      onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = 'var(--surface2)')}
+                      onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'none')}
+                    >
+                      <Icon name="plus" size={16} />
+                      Add first task
+                    </button>
+                  ) : (
+                    <>
+                      {columnTasks.map(task => (
+                        <TaskCard
+                          key={task.id}
+                          task={task}
+                          onClick={() => void openTask(task)}
+                          onDragStart={() => setDraggedTaskId(task.id)}
+                        />
+                      ))}
+                      <button
+                        onClick={() => setCreateForStatus(status.id)}
+                        style={{
+                          width: '100%', display: 'flex', alignItems: 'center', gap: 6,
+                          background: 'none', border: 'none', borderRadius: 8,
+                          padding: '7px 8px', cursor: 'pointer', color: 'var(--text3)',
+                          fontFamily: 'DM Sans', fontSize: 12, marginTop: 2,
+                          transition: 'color 0.15s, background 0.15s',
+                        }}
+                        onMouseEnter={e => {
+                          (e.currentTarget as HTMLElement).style.color = 'var(--text)';
+                          (e.currentTarget as HTMLElement).style.background = 'var(--surface2)';
+                        }}
+                        onMouseLeave={e => {
+                          (e.currentTarget as HTMLElement).style.color = 'var(--text3)';
+                          (e.currentTarget as HTMLElement).style.background = 'none';
+                        }}
+                      >
+                        <Icon name="plus" size={13} /> Add task
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {statuses.length === 0 && (
+            <div style={{
+              color: 'var(--text3)', fontFamily: 'DM Sans', fontSize: 14,
+              padding: '80px 0', textAlign: 'center', flex: 1,
+            }}>
+              No statuses configured for this project yet.
+            </div>
+          )}
+        </div>
       </div>
 
       {selectedTask && (
