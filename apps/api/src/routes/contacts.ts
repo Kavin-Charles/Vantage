@@ -9,37 +9,59 @@ import { logActivity } from '../lib/log-activity';
 import { logger } from '../lib/logger';
 import { queueWebhook } from '../lib/queue-webhook';
 
+const contactStatusEnum = z.enum(['prospect', 'customer', 'cold', 'churned']);
+
 const createContactSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-  phone: z.string().optional(),
-  status: z.enum(['prospect', 'customer', 'cold', 'churned']).default('prospect'),
+  name: z.string().min(1).max(255),
+  email: z.string().email().max(255),
+  phone: z.string().max(50).optional(),
+  status: contactStatusEnum.default('prospect'),
   company_id: z.string().uuid().optional(),
 });
 
 const updateContactSchema = createContactSchema.partial();
 
 const listQuerySchema = z.object({
-  page: z.coerce.number().default(1),
-  per_page: z.coerce.number().max(100).default(25),
-  status: z.enum(['prospect', 'customer', 'cold', 'churned']).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  per_page: z.coerce.number().int().min(1).max(100).default(25),
+  status: contactStatusEnum.optional(),
   owner_id: z.string().uuid().optional(),
-  q: z.string().optional(),
+  q: z.string().max(200).optional(),
+  sort: z.enum(['name', 'created_at', 'last_contacted_at']).default('created_at'),
+  order: z.enum(['asc', 'desc']).default('desc'),
 });
-
 
 const CONTACT_HEADERS = ['name', 'email', 'phone', 'status'];
+const IMPORT_MAX_ROWS = 1000;
 
-const importContactSchema = z.object({
-  rows: z.array(z.object({
-    name: z.string().min(1),
-    email: z.string().email(),
-    phone: z.string().optional(),
-    status: z.enum(['prospect', 'customer', 'cold', 'churned']).default('prospect'),
-  })).min(1),
+const importRowSchema = z.object({
+  name: z.string().min(1).max(255),
+  email: z.string().email().max(255),
+  phone: z.string().max(50).optional(),
+  status: contactStatusEnum.default('prospect'),
 });
 
-export function createContactsRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): ExpressRouter {
+type ValidRow = z.infer<typeof importRowSchema>;
+
+async function validateCompanyScope(
+  db: Kysely<Database>,
+  companyId: string,
+  workspaceId: string,
+): Promise<boolean> {
+  const company = await db
+    .selectFrom('companies')
+    .where('id', '=', companyId)
+    .where('workspace_id', '=', workspaceId)
+    .where('deleted_at', 'is', null)
+    .select('id')
+    .executeTakeFirst();
+  return !!company;
+}
+
+export function createContactsRouter(
+  db: Kysely<Database>,
+  requirePermission: (p: string) => import('express').RequestHandler,
+): ExpressRouter {
   const router = Router();
 
   // GET /export — CSV download
@@ -56,7 +78,9 @@ export function createContactsRouter(db: Kysely<Database>, requirePermission: (p
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', 'attachment; filename="contacts.csv"');
       res.send(toCSV(CONTACT_HEADERS, contacts));
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   });
 
   // POST /import — bulk create from parsed CSV rows
@@ -64,25 +88,21 @@ export function createContactsRouter(db: Kysely<Database>, requirePermission: (p
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
 
-      const outerParsed = z.object({ rows: z.array(z.unknown()).min(1) }).safeParse(req.body);
+      const outerParsed = z
+        .object({ rows: z.array(z.unknown()).min(1).max(IMPORT_MAX_ROWS) })
+        .safeParse(req.body);
       if (!outerParsed.success) {
-        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: outerParsed.error.message } });
+        res
+          .status(400)
+          .json({ data: null, error: { code: 'INVALID_INPUT', message: outerParsed.error.message } });
         return;
       }
 
-      const rowSchema = z.object({
-        name: z.string().min(1),
-        email: z.string().email(),
-        phone: z.string().optional(),
-        status: z.enum(['prospect', 'customer', 'cold', 'churned']).default('prospect'),
-      });
-
-      type ValidRow = { name: string; email: string; phone?: string; status: 'prospect' | 'customer' | 'cold' | 'churned' };
       const validRows: ValidRow[] = [];
       const errors: string[] = [];
 
       for (const raw of outerParsed.data.rows) {
-        const parsed = rowSchema.safeParse(raw);
+        const parsed = importRowSchema.safeParse(raw);
         if (parsed.success) {
           validRows.push(parsed.data);
         } else {
@@ -92,80 +112,103 @@ export function createContactsRouter(db: Kysely<Database>, requirePermission: (p
       }
 
       let created = 0;
-      if (validRows.length > 0) {
-        const result = await db
-          .insertInto('contacts')
-          .values(validRows.map(row => ({
-            name: row.name,
-            email: row.email,
-            phone: row.phone ?? null,
-            status: row.status,
-            workspace_id: workspace.id,
-            owner_id: user.id,
-          })))
-          .execute();
-        created = result[0]?.numInsertedOrUpdatedRows ? Number(result[0].numInsertedOrUpdatedRows) : validRows.length;
 
-        if (created > 0) {
-          await db.updateTable('workspaces')
-            .set({ contact_count: sql`contact_count + ${created}` })
-            .where('id', '=', workspace.id).execute();
+      if (validRows.length > 0) {
+        // Dedupe against existing emails in this workspace
+        const existingEmails = await db
+          .selectFrom('contacts')
+          .where('workspace_id', '=', workspace.id)
+          .where('deleted_at', 'is', null)
+          .select('email')
+          .execute();
+        const existingSet = new Set(existingEmails.map(r => r.email.toLowerCase()));
+
+        const newRows = validRows.filter(r => {
+          if (existingSet.has(r.email.toLowerCase())) {
+            errors.push(`${r.email}: already exists`);
+            return false;
+          }
+          return true;
+        });
+
+        if (newRows.length > 0) {
+          // Atomic: insert + count update in one transaction
+          await db.transaction().execute(async trx => {
+            const result = await trx
+              .insertInto('contacts')
+              .values(
+                newRows.map(row => ({
+                  name: row.name,
+                  email: row.email,
+                  phone: row.phone ?? null,
+                  status: row.status,
+                  workspace_id: workspace.id,
+                  owner_id: user.id,
+                })),
+              )
+              .execute();
+            created = result[0]?.numInsertedOrUpdatedRows
+              ? Number(result[0].numInsertedOrUpdatedRows)
+              : newRows.length;
+
+            if (created > 0) {
+              await trx
+                .updateTable('workspaces')
+                .set({ contact_count: sql`contact_count + ${created}` })
+                .where('id', '=', workspace.id)
+                .execute();
+            }
+          });
         }
       }
 
+      logger.info({ workspace_id: workspace.id, created, errors: errors.length }, 'contacts.import');
       res.json({ data: { created, errors }, error: null });
-    } catch (err) { next(err); }
+    } catch (err) {
+      next(err);
+    }
   });
 
+  // GET / — list contacts with search, filter, sort, pagination
   router.get('/', requirePermission('contacts:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      const { page, per_page, status, owner_id, q } = listQuerySchema.parse(req.query);
+      const parsed = listQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        res
+          .status(400)
+          .json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
+        return;
+      }
+      const { page, per_page, status, owner_id, q, sort, order } = parsed.data;
 
-      let query = db
+      const base = db
         .selectFrom('contacts')
         .where('workspace_id', '=', workspace.id)
-        .where('deleted_at', 'is', null)
-        .selectAll()
-        .orderBy('created_at', 'desc')
+        .where('deleted_at', 'is', null);
+
+      const applyFilters = <T extends typeof base>(qb: T) => {
+        let q2 = qb;
+        if (status) q2 = q2.where('status', '=', status) as T;
+        if (owner_id) q2 = q2.where('owner_id', '=', owner_id) as T;
+        if (q) {
+          const pattern = `%${q}%`;
+          q2 = q2.where(eb =>
+            eb.or([eb('name', 'ilike', pattern), eb('email', 'ilike', pattern)]),
+          ) as T;
+        }
+        return q2;
+      };
+
+      const contacts = await applyFilters(base.selectAll())
+        .orderBy(sort, order)
         .limit(per_page)
-        .offset((page - 1) * per_page);
+        .offset((page - 1) * per_page)
+        .execute();
 
-      if (status) query = query.where('status', '=', status);
-      if (owner_id) query = query.where('owner_id', '=', owner_id);
-
-      if (q) {
-        const pattern = `%${q}%`;
-        query = query.where(eb =>
-          eb.or([
-            eb('name', 'ilike', pattern),
-            eb('email', 'ilike', pattern),
-          ]),
-        );
-      }
-
-      const contacts = await query.execute();
-
-      let countQuery = db
-        .selectFrom('contacts')
-        .where('workspace_id', '=', workspace.id)
-        .where('deleted_at', 'is', null)
-        .select(db.fn.countAll<number>().as('count'));
-
-      if (status) countQuery = countQuery.where('status', '=', status);
-      if (owner_id) countQuery = countQuery.where('owner_id', '=', owner_id);
-
-      if (q) {
-        const pattern = `%${q}%`;
-        countQuery = countQuery.where(eb =>
-          eb.or([
-            eb('name', 'ilike', pattern),
-            eb('email', 'ilike', pattern),
-          ]),
-        );
-      }
-
-      const { count } = await countQuery.executeTakeFirstOrThrow();
+      const { count } = await applyFilters(
+        base.select(db.fn.countAll<number>().as('count')),
+      ).executeTakeFirstOrThrow();
 
       res.json({ data: contacts, total: Number(count), page, per_page, error: null });
     } catch (err) {
@@ -173,6 +216,7 @@ export function createContactsRouter(db: Kysely<Database>, requirePermission: (p
     }
   });
 
+  // GET /:id — single contact
   router.get('/:id', requirePermission('contacts:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
@@ -194,23 +238,59 @@ export function createContactsRouter(db: Kysely<Database>, requirePermission: (p
     }
   });
 
+  // POST / — create contact
   router.post('/', requirePermission('contacts:create'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
-      const body = createContactSchema.parse(req.body);
+      const parsed = createContactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res
+          .status(400)
+          .json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
+        return;
+      }
+      const body = parsed.data;
 
-      const contact = await db
-        .insertInto('contacts')
-        .values({ ...body, workspace_id: workspace.id, owner_id: user.id })
-        .returningAll()
-        .executeTakeFirstOrThrow();
+      // Validate company_id belongs to this workspace
+      if (body.company_id) {
+        const valid = await validateCompanyScope(db, body.company_id, workspace.id);
+        if (!valid) {
+          res.status(400).json({ data: null, error: { code: 'INVALID_COMPANY', message: 'company_id not found in workspace' } });
+          return;
+        }
+      }
 
-      // Update workspace contact count
-      await db
-        .updateTable('workspaces')
-        .set({ contact_count: sql`contact_count + 1` })
-        .where('id', '=', workspace.id)
-        .execute();
+      // Check for duplicate email
+      const dupe = await db
+        .selectFrom('contacts')
+        .where('workspace_id', '=', workspace.id)
+        .where(eb => eb(eb.fn('lower', ['email']), '=', body.email.toLowerCase()))
+        .where('deleted_at', 'is', null)
+        .select('id')
+        .executeTakeFirst();
+      if (dupe) {
+        res.status(409).json({ data: null, error: { code: 'DUPLICATE_EMAIL', message: 'A contact with this email already exists' } });
+        return;
+      }
+
+      // Atomic: insert + count update
+      const contact = await db.transaction().execute(async trx => {
+        const row = await trx
+          .insertInto('contacts')
+          .values({ ...body, workspace_id: workspace.id, owner_id: user.id })
+          .returningAll()
+          .executeTakeFirstOrThrow();
+
+        await trx
+          .updateTable('workspaces')
+          .set({ contact_count: sql`contact_count + 1` })
+          .where('id', '=', workspace.id)
+          .execute();
+
+        return row;
+      });
+
+      logger.info({ workspace_id: workspace.id, contact_id: contact.id }, 'contacts.create');
 
       void logActivity(db, {
         workspace_id: workspace.id,
@@ -235,10 +315,43 @@ export function createContactsRouter(db: Kysely<Database>, requirePermission: (p
     }
   });
 
+  // PATCH /:id — update contact
   router.patch('/:id', requirePermission('contacts:edit'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
-      const body = updateContactSchema.parse(req.body);
+      const parsed = updateContactSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res
+          .status(400)
+          .json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
+        return;
+      }
+      const body = parsed.data;
+
+      // Validate company_id belongs to this workspace
+      if (body.company_id) {
+        const valid = await validateCompanyScope(db, body.company_id, workspace.id);
+        if (!valid) {
+          res.status(400).json({ data: null, error: { code: 'INVALID_COMPANY', message: 'company_id not found in workspace' } });
+          return;
+        }
+      }
+
+      // Check email uniqueness if email is being changed
+      if (body.email) {
+        const dupe = await db
+          .selectFrom('contacts')
+          .where('workspace_id', '=', workspace.id)
+          .where(eb => eb(eb.fn('lower', ['email']), '=', body.email!.toLowerCase()))
+          .where('id', '!=', req.params['id']!)
+          .where('deleted_at', 'is', null)
+          .select('id')
+          .executeTakeFirst();
+        if (dupe) {
+          res.status(409).json({ data: null, error: { code: 'DUPLICATE_EMAIL', message: 'A contact with this email already exists' } });
+          return;
+        }
+      }
 
       const contact = await db
         .updateTable('contacts')
@@ -253,6 +366,8 @@ export function createContactsRouter(db: Kysely<Database>, requirePermission: (p
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Contact not found' } });
         return;
       }
+
+      logger.info({ workspace_id: workspace.id, contact_id: contact.id }, 'contacts.update');
 
       void logActivity(db, {
         workspace_id: workspace.id,
@@ -277,31 +392,39 @@ export function createContactsRouter(db: Kysely<Database>, requirePermission: (p
     }
   });
 
+  // DELETE /:id — soft delete
   router.delete('/:id', requirePermission('contacts:delete'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
 
-      const contact = await db
-        .updateTable('contacts')
-        .set({ deleted_at: new Date() })
-        .where('id', '=', req.params['id']!)
-        .where('workspace_id', '=', workspace.id)
-        .where('deleted_at', 'is', null)
-        .returningAll()
-        .executeTakeFirst();
+      // Atomic: soft-delete + count decrement
+      const contact = await db.transaction().execute(async trx => {
+        const row = await trx
+          .updateTable('contacts')
+          .set({ deleted_at: new Date() })
+          .where('id', '=', req.params['id']!)
+          .where('workspace_id', '=', workspace.id)
+          .where('deleted_at', 'is', null)
+          .returningAll()
+          .executeTakeFirst();
+
+        if (row) {
+          await trx
+            .updateTable('workspaces')
+            .set({ contact_count: sql`GREATEST(contact_count - 1, 0)` })
+            .where('id', '=', workspace.id)
+            .execute();
+        }
+
+        return row;
+      });
 
       if (!contact) {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Contact not found' } });
         return;
       }
 
-      // Decrement contact count
-      await db
-        .updateTable('workspaces')
-        .set({ contact_count: sql`contact_count - 1` })
-        .where('id', '=', workspace.id)
-        .execute();
-
+      logger.info({ workspace_id: workspace.id, contact_id: contact.id }, 'contacts.delete');
       res.json({ data: { success: true }, error: null });
     } catch (err) {
       next(err);
@@ -313,11 +436,26 @@ export function createContactsRouter(db: Kysely<Database>, requirePermission: (p
 
 import { bridgeRegistry } from '@vencore/plugin-runtime';
 
+const bridgeCreateSchema = z.object({
+  name: z.string().min(1).max(255),
+  email: z.string().email().max(255),
+  phone: z.string().max(50).optional(),
+  status: z.enum(['prospect', 'customer', 'cold', 'churned']).default('prospect'),
+  company_id: z.string().uuid().optional(),
+  owner_id: z.string().uuid(),
+});
+
+const bridgeUpdateSchema = bridgeCreateSchema.omit({ owner_id: true }).partial();
+
 export function registerContactsBridgeMethods(): void {
   bridgeRegistry
     .register('contacts.list', 'contacts:read', async (ctx, p, db) => {
       const filter = (p.filter ?? {}) as Record<string, unknown>;
-      let q = db.selectFrom('contacts').selectAll().where('workspace_id', '=', ctx.workspaceId);
+      let q = db
+        .selectFrom('contacts')
+        .selectAll()
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('deleted_at', 'is', null);
       if (filter.status) q = q.where('status', '=', filter.status as string);
       if (filter.company_id) q = q.where('company_id', '=', filter.company_id as string);
       if (filter.limit) q = q.limit(Number(filter.limit));
@@ -325,35 +463,70 @@ export function registerContactsBridgeMethods(): void {
       return q.execute();
     })
     .register('contacts.get', 'contacts:read', async (ctx, p, db) => {
-      const row = await db.selectFrom('contacts').selectAll()
+      const row = await db
+        .selectFrom('contacts')
+        .selectAll()
         .where('workspace_id', '=', ctx.workspaceId)
         .where('id', '=', p.id as string)
+        .where('deleted_at', 'is', null)
         .executeTakeFirst();
       if (!row) throw { code: 'NOT_FOUND', message: 'Contact not found' };
       return row;
     })
     .register('contacts.create', 'contacts:write', async (ctx, p, db) => {
-      const data = p.data as Record<string, unknown>;
-      const [row] = await db.insertInto('contacts')
-        .values({ ...data, workspace_id: ctx.workspaceId } as any)
-        .returningAll().execute();
-      return row;
+      const parsed = bridgeCreateSchema.safeParse(p.data);
+      if (!parsed.success) throw { code: 'INVALID_INPUT', message: parsed.error.message };
+
+      return db.transaction().execute(async trx => {
+        const row = await trx
+          .insertInto('contacts')
+          .values({ ...parsed.data, workspace_id: ctx.workspaceId })
+          .returningAll()
+          .executeTakeFirstOrThrow();
+
+        await trx
+          .updateTable('workspaces')
+          .set({ contact_count: sql`contact_count + 1` })
+          .where('id', '=', ctx.workspaceId)
+          .execute();
+
+        return row;
+      });
     })
     .register('contacts.update', 'contacts:write', async (ctx, p, db) => {
-      const data = p.data as Record<string, unknown>;
-      const [row] = await db.updateTable('contacts')
-        .set({ ...data, updated_at: new Date() } as any)
+      const parsed = bridgeUpdateSchema.safeParse(p.data);
+      if (!parsed.success) throw { code: 'INVALID_INPUT', message: parsed.error.message };
+
+      const row = await db
+        .updateTable('contacts')
+        .set({ ...parsed.data, updated_at: new Date() })
         .where('workspace_id', '=', ctx.workspaceId)
         .where('id', '=', p.id as string)
-        .returningAll().execute();
+        .where('deleted_at', 'is', null)
+        .returningAll()
+        .executeTakeFirst();
       if (!row) throw { code: 'NOT_FOUND', message: 'Contact not found' };
       return row;
     })
     .register('contacts.delete', 'contacts:write', async (ctx, p, db) => {
-      await db.deleteFrom('contacts')
-        .where('workspace_id', '=', ctx.workspaceId)
-        .where('id', '=', p.id as string)
-        .execute();
+      await db.transaction().execute(async trx => {
+        const row = await trx
+          .updateTable('contacts')
+          .set({ deleted_at: new Date() })
+          .where('workspace_id', '=', ctx.workspaceId)
+          .where('id', '=', p.id as string)
+          .where('deleted_at', 'is', null)
+          .returningAll()
+          .executeTakeFirst();
+
+        if (row) {
+          await trx
+            .updateTable('workspaces')
+            .set({ contact_count: sql`GREATEST(contact_count - 1, 0)` })
+            .where('id', '=', ctx.workspaceId)
+            .execute();
+        }
+      });
       return null;
     });
 }

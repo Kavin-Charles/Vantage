@@ -164,3 +164,7 @@ GEMINI.md
 
 # Knowledge graph (local only)
 graphify-out/
+
+# Local seed / test data scripts
+scripts/test-contacts.csv
+scripts/list-workspaces.ts

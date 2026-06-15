@@ -11,6 +11,7 @@ const listQuerySchema = z.object({
   per_page: z.coerce.number().int().min(1).max(100).default(25),
   status: z.enum(['todo', 'done']).optional(),
   assignee_id: z.string().uuid().optional(),
+  contact_id: z.string().uuid().optional(),
   show_all: z.coerce.boolean().optional(),
 });
 
@@ -41,10 +42,11 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
         res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
         return;
       }
-      const { page, per_page, status, assignee_id, show_all } = parsed.data;
+      const { page, per_page, status, assignee_id, contact_id, show_all } = parsed.data;
       // show_all=true (admin only) returns all workspace tasks regardless of assignee
       const showAll = show_all === true && user.role === 'admin';
-      const effectiveAssignee = showAll ? null : (assignee_id ?? user.id);
+      // When filtering by contact_id, skip the assignee scope so all tasks for that contact are returned
+      const effectiveAssignee = contact_id ? null : (showAll ? null : (assignee_id ?? user.id));
 
       let query = db
         .selectFrom('tasks')
@@ -57,6 +59,7 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
 
       if (status) query = query.where('status', '=', status);
       if (effectiveAssignee) query = query.where('assignee_id', '=', effectiveAssignee);
+      if (contact_id) query = query.where('contact_id', '=', contact_id);
 
       const tasks = await query.execute();
 
@@ -67,6 +70,7 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
 
       if (status) countQuery = countQuery.where('status', '=', status);
       if (effectiveAssignee) countQuery = countQuery.where('assignee_id', '=', effectiveAssignee);
+      if (contact_id) countQuery = countQuery.where('contact_id', '=', contact_id);
 
       const { count } = await countQuery.executeTakeFirstOrThrow();
 
