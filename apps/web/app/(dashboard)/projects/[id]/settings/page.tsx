@@ -1,1 +1,1 @@
-export { default } from '@/modules/projects/pages/MembersPage';
+export { default } from '@/modules/projects/pages/SettingsPage';
