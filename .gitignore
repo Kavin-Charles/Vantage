@@ -1,6 +1,9 @@
 # Worktrees
 .clone/
 
+# Local scratch / brainstorm artifacts
+artifacts/
+
 # Logs
 logs
 *.log
