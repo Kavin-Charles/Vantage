@@ -1,7 +1,4 @@
 'use client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { updatePipeline } from '@/modules/pipeline/lib/pipelines';
 
 type View = 'kanban' | 'table' | 'list';
 
@@ -12,16 +9,8 @@ const VIEWS: { id: View; icon: string; label: string }[] = [
 ];
 
 export function ViewSwitcher({
-  pipelineId, current, onChange,
+  current, onChange,
 }: { pipelineId: string; current: View; onChange: (v: View) => void }) {
-  const getToken = useApiToken();
-  const qc = useQueryClient();
-
-  const mut = useMutation({
-    mutationFn: async (view: View) => updatePipeline(await getToken(), pipelineId, { view }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['pipeline', pipelineId] }),
-  });
-
   return (
     <div style={{
       display: 'flex', gap: 2,
@@ -30,7 +19,7 @@ export function ViewSwitcher({
       {VIEWS.map(v => (
         <button
           key={v.id}
-          onClick={() => { onChange(v.id); mut.mutate(v.id); }}
+          onClick={() => onChange(v.id)}
           title={v.label}
           style={{
             padding: '5px 10px', border: 'none', borderRadius: 6, cursor: 'pointer',

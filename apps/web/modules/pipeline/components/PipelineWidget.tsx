@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
 import { listPipelines } from '@/modules/pipeline/lib/pipelines';
+import type { Pipeline } from '@/modules/pipeline/lib/pipelines';
 import { Badge } from '@/modules/shared/components/ui/Badge';
 import { WidgetSkeleton, WidgetError, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
-import type { PipelineWithDetails } from '@vencore/types';
 
 export function PipelineWidget() {
   const { isEnabled } = useModules();
@@ -25,7 +25,7 @@ export function PipelineWidget() {
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
 
-  const firstPipeline: PipelineWithDetails | undefined = pipelinesData?.data?.[0];
+  const firstPipeline: Pipeline | undefined = pipelinesData?.[0];
 
   if (!firstPipeline) {
     return <EmptyState href="/pipeline" label="Create your first pipeline" />;

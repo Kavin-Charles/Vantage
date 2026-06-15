@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listPipelines, createPipeline, deletePipeline } from '@/modules/pipeline/lib/pipelines';
-import type { PipelineWithDetails } from '@vencore/types';
+import type { Pipeline } from '@/modules/pipeline/lib/pipelines';
 
 export default function PipelinesSettingsPage() {
   const getToken = useApiToken();
@@ -19,7 +19,7 @@ export default function PipelinesSettingsPage() {
     queryFn: async () => listPipelines(await getToken()),
   });
 
-  const pipelines: PipelineWithDetails[] = data?.data ?? [];
+  const pipelines: Pipeline[] = data ?? [];
 
   const createMut = useMutation({
     mutationFn: async () => createPipeline(await getToken(), { name: newName.trim() }),
@@ -103,7 +103,7 @@ export default function PipelinesSettingsPage() {
                 {p.name}
               </span>
               <span style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'DM Sans, sans-serif' }}>
-                {p.record_type?.name} · {p.stages.length} stages
+                {p.stages.length} stages
               </span>
               <span style={{ color: 'var(--text3)', fontSize: 12 }}>{expanded === p.id ? '▲' : '▼'}</span>
             </div>

@@ -16,7 +16,7 @@ export default function PipelinePage() {
 
   useEffect(() => {
     if (!data) return;
-    const pipelines = data.data ?? [];
+    const pipelines = data;
     const def = pipelines.find(p => p.is_default) ?? pipelines[0];
     if (def) router.replace(`/pipeline/${def.id}`);
   }, [data, router]);
