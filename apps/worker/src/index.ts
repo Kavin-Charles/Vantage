@@ -10,6 +10,7 @@ import { runDueDateAlerts } from './jobs/pm/due-date-alerts';
 import { runOverdueScan } from './jobs/pm/overdue-scan';
 import { runHealthRecalc } from './jobs/pm/health-recalc';
 import { runSprintRollover } from './jobs/pm/sprint-rollover';
+import { runPipelineReminders } from './jobs/pipeline-reminders';
 
 const config = readConfig();
 const db = createDb(process.env['DATABASE_URL']!);
@@ -36,6 +37,7 @@ setInterval(async () => {
       await runOverdueScan(db);
       await runHealthRecalc(db);
       await runSprintRollover(db);
+      await runPipelineReminders(db);
     } catch (err) {
       logger.error({ err }, 'job error');
     } finally {
