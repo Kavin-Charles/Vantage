@@ -24,7 +24,7 @@ const updateFieldSchema = z.object({
 
 const reorderSchema = z.object({ ids: z.array(z.string().uuid()) });
 
-function fail(res: any, s: number, code: string, msg: string) {
+function fail(res: import('express').Response, s: number, code: string, msg: string) {
   return res.status(s).json({ data: null, error: { code, message: msg } });
 }
 
@@ -46,8 +46,10 @@ export function createPipelineFieldsRouter(
   // List fields
   router.get('/', view, async (req, res, next) => {
     try {
+      const pipeline = await getPipeline(db, req.params['pipelineId']!, (req as AuthenticatedRequest).workspace.id);
+      if (!pipeline) return fail(res, 404, 'NOT_FOUND', 'Pipeline not found');
       const fields = await db.selectFrom('pipeline_fields').selectAll()
-        .where('pipeline_id', '=', req.params['pipelineId']!)
+        .where('pipeline_id', '=', pipeline.id)
         .orderBy('position', 'asc').execute();
       res.json({ data: fields, error: null });
     } catch (e) { next(e); }
@@ -74,7 +76,12 @@ export function createPipelineFieldsRouter(
       if (!pipeline) return fail(res, 404, 'NOT_FOUND', 'Pipeline not found');
 
       const body = updateFieldSchema.parse(req.body);
-      const field = await db.updateTable('pipeline_fields').set(body as any)
+      const field = await db.updateTable('pipeline_fields').set({
+        ...(body.label !== undefined && { label: body.label }),
+        ...(body.options !== undefined && { options: body.options as any }),
+        ...(body.position !== undefined && { position: body.position }),
+        ...(body.required !== undefined && { required: body.required }),
+      })
         .where('id', '=', req.params['fieldId']!)
         .where('pipeline_id', '=', pipeline.id)
         .returningAll().executeTakeFirst();
