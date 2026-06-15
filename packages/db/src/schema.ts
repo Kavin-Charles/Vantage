@@ -269,9 +269,9 @@ export interface PipelineAutomationTable {
   pipeline_id: string;
   name: string;
   trigger_type: 'stage_changed' | 'field_changed' | 'item_created' | 'date_approaching';
-  trigger_conditions: Record<string, unknown>;
+  trigger_conditions: Generated<Record<string, unknown>>;
   action_type: 'notify_assignee' | 'assign_user' | 'move_stage';
-  action_params: Record<string, unknown>;
+  action_params: Generated<Record<string, unknown>>;
   enabled: Generated<boolean>;
   last_fired_at: Date | null;
   created_at: Generated<Date>;
@@ -284,7 +284,7 @@ export interface PipelineActivityTable {
   workspace_id: string;
   user_id: string | null;
   event_type: string;
-  payload: Record<string, unknown>;
+  payload: Generated<Record<string, unknown>>;
   created_at: Generated<Date>;
 }
 
