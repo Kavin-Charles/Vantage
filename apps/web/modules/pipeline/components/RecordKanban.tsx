@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { RecordDetail } from './RecordDetail';
-import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 
 interface PipelineRecord { id: string; name: string; record_number: string | null; stage_id: string; }
 interface Stage { id: string; name: string; color: string | null; is_won: boolean; is_lost: boolean; position: number; }
@@ -27,7 +26,6 @@ export function RecordKanban({ recordTypeId, pipelineId }: { recordTypeId: strin
   const [dragId, setDragId] = useState<string | null>(null);
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
   const [stageError, setStageError] = useState<string | null>(null);
-  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data: pipelineData } = useQuery<{ data: PipelineWithStages }>({
     queryKey: ['pipeline', pipelineId],
@@ -82,31 +80,8 @@ export function RecordKanban({ recordTypeId, pipelineId }: { recordTypeId: strin
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 60 }}>
                 {col.map(record => (
-                  <div
-                    key={record.id}
-                    draggable
-                    onDragStart={() => setDragId(record.id)}
-                    onClick={() => setSelectedRecordId(record.id)}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const items: ContextMenuItem[] = [
-                        { icon: 'open',  label: 'Open record', onClick: () => setSelectedRecordId(record.id) },
-                        { type: 'separator' },
-                        {
-                          type: 'submenu', icon: 'stage', label: 'Move to stage',
-                          items: stages.map(s => ({
-                            label: s.name,
-                            swatch: stageColor(s),
-                            onClick: () => stageMut.mutate({ id: record.id, stage_id: s.id }),
-                          })),
-                        },
-                        { type: 'separator' },
-                        { icon: 'link', label: 'Copy link', onClick: () => navigator.clipboard.writeText(`${window.location.origin}/pipeline?record=${record.id}`) },
-                      ];
-                      openMenu(e, items);
-                    }}
-                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', cursor: 'grab', fontFamily: 'var(--font-sans)' }}
+                  <div key={record.id} draggable onDragStart={() => setDragId(record.id)} onClick={() => setSelectedRecordId(record.id)}
+                    style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', cursor: 'grab', fontFamily: 'DM Sans, sans-serif' }}
                     onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}
                     onMouseLeave={e => (e.currentTarget.style.boxShadow = '')}>
                     {record.record_number && (
@@ -122,7 +97,6 @@ export function RecordKanban({ recordTypeId, pipelineId }: { recordTypeId: strin
         })}
       </div>
       {selectedRecordId && <RecordDetail recordId={selectedRecordId} onClose={() => setSelectedRecordId(null)} />}
-      <ContextMenu menu={menu} onClose={closeMenu} />
     </>
   );
 }

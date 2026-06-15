@@ -56,6 +56,20 @@ Most feature work touches `apps/api/src/routes/` (data + validation) and `apps/w
 
 ---
 
+## Contribution Rules
+
+To help keep reviews efficient and maintain the quality of the project, please follow these rules before opening a pull request:
+
+* **Open an issue before opening a pull request.** This allows maintainers and contributors to discuss the proposed change, confirm that it aligns with the project's direction, and avoid duplicate work. Small fixes such as typo corrections or obvious bug fixes may be exempt from this requirement.
+
+* **Include screenshots or recordings for UI changes.** If your pull request affects the user interface, attach before-and-after screenshots (or a short screen recording when appropriate) so reviewers can easily understand and verify the changes.
+
+* **Keep pull requests focused.** A pull request should address a single feature, fix, or improvement. Large PRs that combine unrelated changes are harder to review and may be asked to be split.
+
+* **Update documentation when necessary.** If your change modifies behavior, configuration, workflows, or introduces new functionality, update the relevant documentation as part of the same pull request.
+
+---
+
 ## Making changes
 
 **Branches:** work off a feature branch, not main.
