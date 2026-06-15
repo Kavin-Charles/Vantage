@@ -48,15 +48,7 @@ async function backfill() {
       ] as never).execute();
     }
 
-    // 3. Link pipelines to deal type
-    await db
-      .updateTable('pipelines')
-      .set({ record_type_id: dealType.id } as never)
-      .where('workspace_id', '=', ws.id)
-      .where('record_type_id', 'is', null)
-      .execute();
-
-    // 4. Migrate stage_fields → record_type_fields
+    // 3. Migrate stage_fields → record_type_fields
     // Find all stages belonging to this workspace's pipelines
     const workspacePipelines = await db
       .selectFrom('pipelines')
