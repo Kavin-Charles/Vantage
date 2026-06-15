@@ -10,8 +10,10 @@ import * as path from 'path';
 import * as fs from 'fs';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
-import { dispatchBridgeCall, runMigrations } from '@vencore/plugin-runtime';
+import { dispatchBridgeCall, runMigrations, dropPluginTables } from '@vencore/plugin-runtime';
 import { savePluginFile, loadPluginBackend, invalidatePlugin } from '../lib/plugin-loader';
+import { encryptSettingValue, isEncryptedValue, decryptSettingValue } from '../lib/plugin-settings-crypto';
+import { logger } from '../lib/logger';
 
 // ── Esbuild Global Shim Plugin ────────────────────────────────────────────────
 const globalExternalsPlugin: esbuild.Plugin = {
@@ -79,21 +81,44 @@ const settingsFieldSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('select'), key: z.string(), label: z.string(), secret: z.boolean().optional(), options: z.array(z.string()), default: z.string().optional() }),
 ]);
 
+// Allowed column types — enforced at manifest parse time, no arbitrary SQL types
+const PLUGIN_COLUMN_TYPES = ['uuid', 'text', 'integer', 'bigint', 'boolean', 'decimal', 'timestamptz', 'jsonb'] as const;
+
+// Valid plugin/table/column identifier: lowercase, starts with letter, alphanumeric + underscore
+const identifierSchema = z.string().min(1).max(63).regex(/^[a-z][a-z0-9_]*$/, 'Must be lowercase, start with a letter, use only a-z 0-9 _');
+
+const columnSchema = z.object({
+  name: identifierSchema,
+  type: z.enum(PLUGIN_COLUMN_TYPES),
+  nullable: z.boolean().optional(),
+  primary: z.boolean().optional(),
+  unique: z.boolean().optional(),
+  // default intentionally omitted — no raw SQL defaults from plugin manifests
+});
+
+const tableSchema = z.object({
+  name: identifierSchema,
+  columns: z.array(columnSchema).min(1),
+  indexes: z.array(z.object({
+    columns: z.array(identifierSchema).min(1),
+    unique: z.boolean().optional(),
+  })).optional(),
+  drop_on_uninstall: z.boolean().optional(),
+});
+
 const manifestSchema = z.object({
-  id: z.string().min(1).max(128),
+  id: z.string().min(1).max(128).regex(/^[a-z][a-z0-9-]*$/, 'Plugin ID must be lowercase kebab-case'),
   name: z.string().min(1).max(255),
-  version: z.string().min(1).max(32),
+  version: z.string().min(1).max(32).regex(/^\d+\.\d+\.\d+/, 'Version must start with semver'),
+  sdk_version: z.string().max(32).optional(),
   description: z.string().max(512).optional(),
   icon: z.string().max(64).optional(),
   author: z.string().max(255).optional(),
   homepage: z.string().url().optional(),
   permissions: z.array(permissionDefSchema).optional().default([]),
   data_access: z.array(z.string()).optional().default([]),
-  tables: z.array(z.object({
-    name: z.string(),
-    columns: z.array(z.object({ name: z.string(), type: z.string(), nullable: z.boolean().optional(), primary: z.boolean().optional(), unique: z.boolean().optional(), default: z.string().optional() })),
-    drop_on_uninstall: z.boolean().optional(),
-  })).optional().default([]),
+  tables: z.array(tableSchema).optional().default([]),
+  // migrations field accepted for backward compat but ignored — DDL is generated from tables
   migrations: z.array(z.object({ version: z.string(), up: z.string(), down: z.string().optional() })).optional().default([]),
   hooks: z.array(z.string()).optional().default([]),
   emits: z.array(z.string()).optional().default([]),
@@ -308,7 +333,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       }
 
       savePluginFile(mf.id, 'plugin.json', Buffer.from(JSON.stringify(mf)));
-      await runMigrations(db as Kysely<any>, mf.id, workspace.id, mf.migrations);
+      await runMigrations(db as Kysely<any>, mf.id, workspace.id, mf.tables);
 
       const isPaid = mp.pricing_type === 'paid';
       const plugin = await db
@@ -340,7 +365,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         .returningAll()
         .executeTakeFirstOrThrow();
 
-      loadPluginBackend(mf.id, db);
+      loadPluginBackend(mf.id, workspace.id, db);
       return res.status(201).json({ data: plugin, error: null });
     } catch (err) {
       return next(err);
@@ -397,8 +422,9 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
   router.get('/:id/client.js', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
+      // The iframe fetches by plugin_id (slug), not the row UUID
       const plugin = await db.selectFrom('workspace_plugins').select(['plugin_id', 'enabled'])
-        .where('id', '=', req.params['id']!)
+        .where('plugin_id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
         .executeTakeFirst();
       if (!plugin || !plugin.enabled) {
@@ -407,12 +433,15 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       const storageDir = process.env['PLUGIN_STORAGE_DIR'] ?? path.join(process.cwd(), 'plugin-storage');
       const filePath = path.join(storageDir, plugin.plugin_id, 'client.js');
       if (!fs.existsSync(filePath)) {
+        logger.warn({ pluginId: plugin.plugin_id, filePath }, 'client.js not found on disk');
         return res.status(404).json({ data: null, error: { code: 'NO_CLIENT', message: 'No client bundle for this plugin' } });
       }
-      res.setHeader('Content-Type', 'application/javascript');
+      const content = fs.readFileSync(filePath, 'utf8');
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
       res.setHeader('Cache-Control', 'no-cache');
-      return res.sendFile(filePath);
+      return res.send(content);
     } catch (err) {
+      logger.error({ err }, 'Error serving plugin client.js');
       return next(err);
     }
   });
@@ -437,14 +466,17 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       const secretKeys = new Set(schema.filter((f) => f.secret).map((f) => f.key));
 
       const rows = await (db as any).selectFrom('plugin_settings')
-        .select(['key', 'value'])
+        .select(['key', 'value', 'encrypted'])
         .where('workspace_id', '=', workspace.id)
         .where('plugin_id', '=', plugin.plugin_id)
-        .execute() as Array<{ key: string; value: unknown }>;
+        .execute() as Array<{ key: string; value: unknown; encrypted: boolean }>;
 
       const settings: Record<string, unknown> = {};
       for (const row of rows) {
-        if (!secretKeys.has(row.key)) {
+        if (secretKeys.has(row.key)) {
+          // Never expose secret values in GET — return a placeholder
+          settings[row.key] = row.encrypted ? '__encrypted__' : '••••••••';
+        } else {
           settings[row.key] = row.value;
         }
       }
@@ -478,16 +510,23 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
 
       for (const [key, value] of Object.entries(body)) {
         if (!validKeys.has(key)) continue;
+        const isSecret = secretKeys.has(key);
+        let storedValue: unknown = value;
+        let encrypted = false;
+        if (isSecret && typeof value === 'string' && process.env['PLUGIN_SETTINGS_KEY']) {
+          storedValue = encryptSettingValue(value as string);
+          encrypted = true;
+        }
         await (db as any).insertInto('plugin_settings')
           .values({
             workspace_id: workspace.id,
             plugin_id: plugin.plugin_id,
             key,
-            value: value as any,
-            encrypted: secretKeys.has(key),
+            value: storedValue,
+            encrypted,
           })
           .onConflict((oc: any) =>
-            oc.columns(['workspace_id', 'plugin_id', 'key']).doUpdateSet({ value: value as any, updated_at: new Date() })
+            oc.columns(['workspace_id', 'plugin_id', 'key']).doUpdateSet({ value: storedValue, encrypted, updated_at: new Date() })
           )
           .execute();
       }
@@ -579,8 +618,8 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       // Save plugin.json
       savePluginFile(mf.id, 'plugin.json', Buffer.from(JSON.stringify(mf)));
 
-      // Run DB migrations
-      await runMigrations(db as Kysely<any>, mf.id, workspace.id, mf.migrations);
+      // Run table migrations (DDL generated from typed schema — no raw SQL)
+      await runMigrations(db as Kysely<any>, mf.id, workspace.id, mf.tables);
 
       // Upsert workspace_plugins
       const plugin = await db
@@ -605,7 +644,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         .executeTakeFirstOrThrow();
 
       // Load backend bundle
-      loadPluginBackend(mf.id, db);
+      loadPluginBackend(mf.id, workspace.id, db);
 
       return res.status(201).json({ data: plugin, error: null });
     } catch (err) {
@@ -690,7 +729,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
       }
 
-      if (!enabled) invalidatePlugin(plugin.plugin_id);
+      if (!enabled) invalidatePlugin(plugin.plugin_id, workspace.id);
 
       return res.json({ data: plugin, error: null });
     } catch (err) {
@@ -700,24 +739,64 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
 
   /**
    * DELETE /api/plugins/:id
-   * Removes a plugin from the workspace.
+   * Removes a plugin from the workspace and cleans up all associated data.
    */
   router.delete('/:id', requireAdmin, async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
 
-      const deleted = await db
-        .deleteFrom('workspace_plugins')
+      const existing = await db
+        .selectFrom('workspace_plugins')
+        .selectAll()
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
-        .returningAll()
         .executeTakeFirst();
 
-      if (!deleted) {
+      if (!existing) {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
       }
 
-      invalidatePlugin(deleted.plugin_id);
+      const pluginId = existing.plugin_id;
+      const manifest = existing.manifest as unknown as import('@vencore/plugin-types').PluginManifest;
+
+      // Drop plugin-owned tables marked for cleanup
+      if (manifest?.tables && manifest.tables.length > 0) {
+        await dropPluginTables(db as Kysely<any>, pluginId, workspace.id, manifest.tables).catch((err) => {
+          logger.warn({ err, pluginId }, 'Failed to drop plugin tables during uninstall');
+        });
+      }
+
+      // Clean up all plugin data for this workspace
+      await Promise.allSettled([
+        (db as any).deleteFrom('plugin_storage')
+          .where('workspace_id', '=', workspace.id)
+          .where('key', 'like', `${pluginId}:%`)
+          .execute(),
+        (db as any).deleteFrom('plugin_settings')
+          .where('workspace_id', '=', workspace.id)
+          .where('plugin_id', '=', pluginId)
+          .execute(),
+        (db as any).deleteFrom('plugin_cron_jobs')
+          .where('workspace_id', '=', workspace.id)
+          .where('plugin_id', '=', pluginId)
+          .execute(),
+        (db as any).deleteFrom('plugin_notifications')
+          .where('workspace_id', '=', workspace.id)
+          .where('plugin_id', '=', pluginId)
+          .execute(),
+        (db as any).deleteFrom('plugin_files')
+          .where('workspace_id', '=', workspace.id)
+          .where('plugin_id', '=', pluginId)
+          .execute(),
+      ]);
+
+      await db
+        .deleteFrom('workspace_plugins')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .execute();
+
+      invalidatePlugin(pluginId, workspace.id);
 
       return res.json({ data: { ok: true }, error: null });
     } catch (err) {

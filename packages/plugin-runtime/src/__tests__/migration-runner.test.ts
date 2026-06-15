@@ -1,82 +1,90 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { runMigrations } from '../migration-runner';
-import type { PluginMigration } from '@vencore/plugin-types';
+import type { PluginTableDef } from '@vencore/plugin-types';
 import type { Kysely } from 'kysely';
 
-// Mock kysely's sql tag so sql.raw(...).execute() is a no-op in unit tests
-vi.mock('kysely', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('kysely')>();
-  return {
-    ...actual,
-    sql: Object.assign(
-      vi.fn(),
-      {
-        raw: vi.fn().mockReturnValue({ execute: vi.fn().mockResolvedValue(undefined) }),
-      },
-    ),
-  };
-});
-
-const MIGRATIONS: PluginMigration[] = [
-  { version: '1.0.0', up: 'CREATE TABLE plugin_test_t1 (id uuid PRIMARY KEY)' },
-  { version: '1.1.0', up: 'ALTER TABLE plugin_test_t1 ADD COLUMN name text' },
+const TABLES: PluginTableDef[] = [
+  {
+    name: 'items',
+    columns: [
+      { name: 'id', type: 'uuid', primary: true },
+      { name: 'label', type: 'text', nullable: false },
+    ],
+  },
+  {
+    name: 'tags',
+    columns: [
+      { name: 'id', type: 'uuid', primary: true },
+      { name: 'name', type: 'text', nullable: false },
+    ],
+    drop_on_uninstall: true,
+  },
 ];
 
 function makeMockDb(appliedVersions: string[] = []) {
-  const sqlExecute = vi.fn().mockResolvedValue(undefined);
-  const insertExecute = vi.fn().mockResolvedValue(undefined);
-
+  const tableExecute = vi.fn().mockResolvedValue(undefined);
+  const insertExecute = vi.fn().mockResolvedValue({ id: '1' });
   const selectResult = appliedVersions.map((v) => ({ version: v }));
 
-  const db = {
-    selectFrom: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      execute: vi.fn().mockResolvedValue(selectResult),
-    }),
-    insertInto: vi.fn().mockReturnValue({
-      values: vi.fn().mockReturnThis(),
-      execute: insertExecute,
-    }),
-    schema: {
-      createTable: vi.fn().mockReturnValue({
-        ifNotExists: vi.fn().mockReturnThis(),
-        addColumn: vi.fn().mockReturnThis(),
-        addUniqueConstraint: vi.fn().mockReturnThis(),
-        execute: sqlExecute,
-      }),
-    },
+  const onConflictChain = { doNothing: vi.fn().mockReturnThis(), execute: insertExecute };
+  const insertChain = { values: vi.fn().mockReturnThis(), onConflict: vi.fn().mockReturnValue(onConflictChain), execute: insertExecute };
+  const selectChain = { select: vi.fn().mockReturnThis(), where: vi.fn().mockReturnThis(), execute: vi.fn().mockResolvedValue(selectResult) };
+
+  const createColChain = {
+    ifNotExists: vi.fn().mockReturnThis(),
+    addColumn: vi.fn().mockReturnThis(),
+    execute: tableExecute,
+  };
+  const createIdxChain = {
+    ifNotExists: vi.fn().mockReturnThis(),
+    on: vi.fn().mockReturnThis(),
+    columns: vi.fn().mockReturnThis(),
+    unique: vi.fn().mockReturnThis(),
+    execute: tableExecute,
   };
 
-  return { db: db as unknown as Kysely<any>, sqlExecute, insertExecute };
+  const advisoryLockExecute = vi.fn().mockResolvedValue(undefined);
+
+  const db = {
+    selectFrom: vi.fn().mockReturnValue(selectChain),
+    insertInto: vi.fn().mockReturnValue(insertChain),
+    schema: {
+      createTable: vi.fn().mockReturnValue(createColChain),
+      createIndex: vi.fn().mockReturnValue(createIdxChain),
+    },
+    transaction: vi.fn().mockImplementation((cb: any) => ({
+      execute: (fn: (trx: any) => Promise<void>) => fn({
+        selectFrom: vi.fn().mockReturnValue(selectChain),
+        insertInto: vi.fn().mockReturnValue(insertChain),
+        schema: {
+          createTable: vi.fn().mockReturnValue(createColChain),
+          createIndex: vi.fn().mockReturnValue(createIdxChain),
+        },
+      } as unknown as Kysely<any>),
+    })),
+  } as unknown as Kysely<any>;
+
+  return { db, tableExecute, insertExecute };
 }
 
-describe('runMigrations', () => {
-  it('runs all migrations when none applied yet', async () => {
-    const { db, insertExecute } = makeMockDb([]);
-    await runMigrations(db, 'com.example.test', 'ws-1', MIGRATIONS);
-    expect(insertExecute).toHaveBeenCalledTimes(2);
+describe('runMigrations (generated DDL)', () => {
+  it('is a no-op with empty tables array', async () => {
+    const { db, tableExecute } = makeMockDb([]);
+    await runMigrations(db, 'test-plugin', 'ws-1', []);
+    expect(tableExecute).not.toHaveBeenCalled();
   });
 
-  it('skips already-applied migrations', async () => {
-    const { db, insertExecute } = makeMockDb(['1.0.0']);
-    await runMigrations(db, 'com.example.test', 'ws-1', MIGRATIONS);
-    expect(insertExecute).toHaveBeenCalledTimes(1);
+  it('creates tables that have not yet been applied', async () => {
+    const { db, tableExecute } = makeMockDb([]);
+    await runMigrations(db, 'test-plugin', 'ws-1', TABLES);
+    expect(tableExecute).toHaveBeenCalled();
   });
 
-  it('runs migrations in version sort order', async () => {
-    const shuffled: PluginMigration[] = [
-      { version: '1.1.0', up: 'ALTER TABLE t1 ADD COLUMN name text' },
-      { version: '1.0.0', up: 'CREATE TABLE t1 (id uuid PRIMARY KEY)' },
-    ];
-    const { db, insertExecute } = makeMockDb([]);
-    await runMigrations(db, 'com.example.test', 'ws-1', shuffled);
-    expect(insertExecute).toHaveBeenCalledTimes(2);
-  });
-
-  it('is a no-op when all migrations already applied', async () => {
-    const { db, insertExecute } = makeMockDb(['1.0.0', '1.1.0']);
-    await runMigrations(db, 'com.example.test', 'ws-1', MIGRATIONS);
-    expect(insertExecute).toHaveBeenCalledTimes(0);
+  it('skips tables already in the migration log', async () => {
+    const { db, tableExecute } = makeMockDb(['table:items', 'table:tags']);
+    await runMigrations(db, 'test-plugin', 'ws-1', TABLES);
+    // Schema createTable should NOT be called because both versions are already applied
+    // The mock transaction calls the fn inline; tableExecute comes from createTable chain
+    expect(tableExecute).not.toHaveBeenCalled();
   });
 });

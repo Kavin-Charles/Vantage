@@ -1,0 +1,133 @@
+# Bridge and Permissions
+
+Source files:
+
+- `packages/plugin-sdk/src/bridge.ts`
+- `packages/plugin-sdk/src/permissions.ts`
+
+## Bridge Protocol
+
+`BridgeCall` is the outbound request shape:
+
+```ts
+{
+  method: string;
+  payload: unknown;
+}
+```
+
+`BridgeResult<T>` is the response shape:
+
+```ts
+{ data: T; error: null } | { data: null; error: PluginError }
+```
+
+`BridgeFn` is the transport function injected by the runtime:
+
+```ts
+type BridgeFn = (call: BridgeCall) => Promise<BridgeResult>;
+```
+
+The SDK does not know how data is actually fetched or persisted. It only names methods and passes payloads to the bridge.
+
+## PostMessage Bridge
+
+`createPostMessageBridge(timeoutMs = 30_000, targetOrigin = '*')` creates a browser bridge for iframe-based frontend plugins.
+
+Call flow:
+
+1. Generate a request ID with `crypto.randomUUID()` when available.
+2. Fall back to `Math.random().toString(36).slice(2)` when UUIDs are unavailable.
+3. Add a `message` event listener.
+4. Send `{ type: 'bridge:request', id, method, payload }` to `window.parent`.
+5. Resolve when a matching parent response arrives.
+6. Remove the listener on success or timeout.
+
+Expected response:
+
+```ts
+{
+  type: 'bridge:response',
+  id: string,
+  result: BridgeResult
+}
+```
+
+The handler accepts a response only when:
+
+- `event.source === window.parent`
+- `event.data?.type === 'bridge:response'`
+- `event.data?.id === id`
+
+## Timeout Behavior
+
+If the runtime does not respond before `timeoutMs`, the bridge resolves with:
+
+```ts
+{
+  data: null,
+  error: {
+    code: 'TIMEOUT',
+    message: "[plugin-sdk] bridge call '<method>' timed out after <timeoutMs>ms"
+  }
+}
+```
+
+The bridge resolves with an error result instead of throwing. SDK API wrappers decide whether to throw or return a safe result.
+
+## Target Origin
+
+`targetOrigin` defaults to `'*'`. Runtime integrations should pass a specific origin when the host origin is known.
+
+```ts
+const bridge = createPostMessageBridge(30_000, 'https://app.vantage.local');
+```
+
+## Permission Namespace Types
+
+`packages/plugin-sdk/src/permissions.ts` contains namespace interfaces used by the SDK and type tests.
+
+### StorageReadNamespace
+
+Read-only storage:
+
+```ts
+interface StorageReadNamespace {
+  get<T = unknown>(key: string): Promise<T | null>;
+}
+```
+
+### StorageNamespace
+
+Read/write storage extends `StorageReadNamespace`:
+
+```ts
+interface StorageNamespace extends StorageReadNamespace {
+  set(key: string, value: unknown): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+```
+
+### HttpNamespace
+
+Runtime-backed HTTP:
+
+```ts
+interface HttpNamespace {
+  fetch(url: string, options?: HttpFetchOptions): Promise<HttpResponse>;
+}
+```
+
+### ModalNamespace
+
+Modal controls:
+
+```ts
+interface ModalNamespace {
+  open(opts: { title: string; content?: string }): Promise<void>;
+  close(): Promise<void>;
+}
+```
+
+These interfaces are small by design. They let future permission-aware APIs expose restricted namespace shapes without duplicating method signatures.
+

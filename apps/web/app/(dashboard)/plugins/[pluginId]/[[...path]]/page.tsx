@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import { usePluginRegistry } from '@/modules/shared/contexts/PluginRuntimeContext';
+import { usePluginRegistry, PluginIframeSlot } from '@/modules/shared/contexts/PluginRuntimeContext';
 import { useInstalledPlugins } from '@/modules/shared/hooks/useInstalledPlugins';
 
 export default function PluginPage() {
@@ -39,9 +39,10 @@ export default function PluginPage() {
     );
   }
 
-  const Component = registry.pages.get(subPath) ?? registry.pages.get('/');
+  // Check if the plugin has registered a page surface for this path
+  const pageSurface = registry.pages.get(`${pluginId}:${subPath}`) ?? registry.pages.get(`${pluginId}:/`);
 
-  if (!Component) {
+  if (!pageSurface && !plugin.manifest?.build?.client) {
     return (
       <div style={{ padding: 32, textAlign: 'center' }}>
         <p style={{ color: 'var(--text3)', fontSize: 13 }}>
@@ -56,12 +57,13 @@ export default function PluginPage() {
   }
 
   return (
-    <React.Suspense
-      fallback={<div style={{ padding: 32, color: 'var(--text3)', fontSize: 13 }}>Loading…</div>}
-    >
-      <div className="plugin-surface-root" style={{ width: '100%', height: '100%' }}>
-        <Component />
-      </div>
-    </React.Suspense>
+    <div className="plugin-surface-root" style={{ width: '100%', height: '100%', minHeight: 400 }}>
+      <PluginIframeSlot
+        pluginId={pluginId}
+        surfaceType="page"
+        surfaceId={subPath}
+        style={{ width: '100%', height: '100%', minHeight: 400 }}
+      />
+    </div>
   );
 }

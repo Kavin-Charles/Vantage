@@ -1,6 +1,9 @@
 # Worktrees
 .clone/
-docs/
+
+# Local scratch / brainstorm artifacts
+artifacts/
+
 # Logs
 logs
 *.log
@@ -158,3 +161,6 @@ vite.config.ts.timestamp-*
 .claude/
 AGENTS.md
 GEMINI.md
+
+# Knowledge graph (local only)
+graphify-out/

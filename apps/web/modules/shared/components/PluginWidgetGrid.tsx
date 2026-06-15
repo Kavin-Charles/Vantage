@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { usePluginRegistry } from '@/modules/shared/contexts/PluginRuntimeContext';
+import { usePluginRegistry, PluginIframeSlot } from '@/modules/shared/contexts/PluginRuntimeContext';
 import { useInstalledPlugins } from '@/modules/shared/hooks/useInstalledPlugins';
 
 export function PluginWidgetGrid() {
@@ -12,7 +12,7 @@ export function PluginWidgetGrid() {
     plugins.flatMap((p) => (p.manifest?.surfaces?.widgets ?? []).map((w) => w.id)),
   );
 
-  const widgets = [...registry.widgets.entries()].filter(([id]) => installedWidgetIds.has(id));
+  const widgets = [...registry.widgets.entries()].filter(([, w]) => installedWidgetIds.has(w.id));
 
   if (loading || widgets.length === 0) return null;
 
@@ -37,22 +37,23 @@ export function PluginWidgetGrid() {
           gap: 16,
         }}
       >
-        {widgets.map(([id, Component]) => (
+        {widgets.map(([, widget]) => (
           <div
-            key={id}
+            key={`${widget.pluginId}:${widget.id}`}
             style={{
               background: 'var(--surface)',
               border: '1px solid var(--border)',
               borderRadius: 12,
-              padding: 16,
-              minHeight: 120,
+              overflow: 'hidden',
+              minHeight: 200,
             }}
           >
-            <React.Suspense
-              fallback={<div style={{ fontSize: 13, color: 'var(--text3)' }}>Loading…</div>}
-            >
-              <Component />
-            </React.Suspense>
+            <PluginIframeSlot
+              pluginId={widget.pluginId}
+              surfaceType="widget"
+              surfaceId={widget.id}
+              style={{ width: '100%', height: '100%', minHeight: 200 }}
+            />
           </div>
         ))}
       </div>

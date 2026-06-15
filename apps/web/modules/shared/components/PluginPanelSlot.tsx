@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { usePluginRegistry } from '@/modules/shared/contexts/PluginRuntimeContext';
+import { usePluginRegistry, PluginIframeSlot } from '@/modules/shared/contexts/PluginRuntimeContext';
 import { useInstalledPlugins } from '@/modules/shared/hooks/useInstalledPlugins';
 
 interface Props {
@@ -32,7 +32,6 @@ export function PluginPanelSlot({ recordType, recordId }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
       {panels.map((panel) => {
         const isOpen = openPanels.has(panel.id);
-        const Component = panel.component;
 
         return (
           <div
@@ -71,14 +70,13 @@ export function PluginPanelSlot({ recordType, recordId }: Props) {
               <span style={{ color: 'var(--text3)', fontSize: 11 }}>{isOpen ? '▲' : '▼'}</span>
             </button>
             {isOpen && (
-              <div style={{ borderTop: '1px solid var(--border)' }}>
-                <React.Suspense
-                  fallback={
-                    <div style={{ padding: 16, fontSize: 13, color: 'var(--text3)' }}>Loading…</div>
-                  }
-                >
-                  <Component recordId={recordId} recordType={recordType} />
-                </React.Suspense>
+              <div style={{ borderTop: '1px solid var(--border)', height: 300 }}>
+                <PluginIframeSlot
+                  pluginId={panel.pluginId}
+                  surfaceType="panel"
+                  surfaceId={`${panel.recordType}:${panel.id}`}
+                  style={{ width: '100%', height: '100%' }}
+                />
               </div>
             )}
           </div>

@@ -5,4 +5,4 @@ export { bridgeRegistry } from './bridge-registry';
 export type { BridgeHandlerDef, BridgeHandlerFn } from './bridge-registry';
 export { pluginEventBus, PluginEventBus } from './bus';
 export { slugify, physicalTableName, dispatchTableCall } from './table-client';
-export { runMigrations, rollbackMigrations, ensureMigrationLog } from './migration-runner';
+export { runMigrations, dropPluginTables, ensureMigrationLog } from './migration-runner';
