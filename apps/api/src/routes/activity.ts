@@ -20,19 +20,34 @@ export function createActivityRouter(db: Kysely<Database>, requirePermission: (p
       const { workspace } = req as unknown as AuthenticatedRequest;
       const page = Number(req.query['page'] ?? 1);
       const per_page = Math.min(Number(req.query['per_page'] ?? 25), 100);
+      const contact_id = req.query['contact_id'] as string | undefined;
+      const deal_id = req.query['deal_id'] as string | undefined;
+      const limit = req.query['limit'] ? Math.min(Number(req.query['limit']), 100) : per_page;
 
-      const activities = await db
+      let query = db
         .selectFrom('activities')
         .where('workspace_id', '=', workspace.id)
-        .selectAll()
+        .selectAll();
+      let countQuery = db
+        .selectFrom('activities')
+        .where('workspace_id', '=', workspace.id);
+
+      if (contact_id) {
+        query = query.where('contact_id', '=', contact_id);
+        countQuery = countQuery.where('contact_id', '=', contact_id);
+      }
+      if (deal_id) {
+        query = query.where('deal_id', '=', deal_id);
+        countQuery = countQuery.where('deal_id', '=', deal_id);
+      }
+
+      const activities = await query
         .orderBy('created_at', 'desc')
-        .limit(per_page)
-        .offset((page - 1) * per_page)
+        .limit(limit)
+        .offset((page - 1) * limit)
         .execute();
 
-      const { count } = await db
-        .selectFrom('activities')
-        .where('workspace_id', '=', workspace.id)
+      const { count } = await countQuery
         .select(db.fn.countAll<number>().as('count'))
         .executeTakeFirstOrThrow();
 
@@ -60,6 +75,17 @@ export function createActivityRouter(db: Kysely<Database>, requirePermission: (p
         })
         .returningAll()
         .executeTakeFirstOrThrow();
+
+      // Keep last_contacted_at in sync whenever an activity is logged for a contact
+      if (body.contact_id) {
+        await db
+          .updateTable('contacts')
+          .set({ last_contacted_at: new Date(), updated_at: new Date() })
+          .where('id', '=', body.contact_id)
+          .where('workspace_id', '=', workspace.id)
+          .where('deleted_at', 'is', null)
+          .execute();
+      }
 
       res.status(201).json({ data: activity, error: null });
     } catch (err) {
