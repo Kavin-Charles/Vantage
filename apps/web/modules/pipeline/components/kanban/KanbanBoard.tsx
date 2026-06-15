@@ -4,8 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listItems, moveItem } from '@/modules/pipeline/lib/items';
 import { KanbanColumn } from './KanbanColumn';
-// import { ItemDetail } from '@/modules/pipeline/components/detail/ItemDetail';
-// TODO: uncomment when ItemDetail is implemented (Task 8)
+import { ItemDetail } from '@/modules/pipeline/components/detail/ItemDetail';
 import { ItemForm } from '@/modules/pipeline/components/shared/ItemForm';
 import type { Pipeline } from '@/modules/pipeline/lib/pipelines';
 
@@ -92,8 +91,7 @@ export function KanbanBoard({ pipeline, search, addTrigger }: Props) {
       </div>
 
       {selectedId && (
-        // ItemDetail will be rendered here once Task 8 is complete
-        null
+        <ItemDetail itemId={selectedId} pipeline={pipeline} onClose={() => setSelectedId(null)} />
       )}
 
       {formStageId !== null && (

@@ -7,8 +7,7 @@ import { TableCell } from './TableCell';
 import { ItemForm } from '@/modules/pipeline/components/shared/ItemForm';
 import type { Pipeline } from '@/modules/pipeline/lib/pipelines';
 
-// ItemDetail is implemented in Task 8 — import commented until then
-// import { ItemDetail } from '@/modules/pipeline/components/detail/ItemDetail';
+import { ItemDetail } from '@/modules/pipeline/components/detail/ItemDetail';
 
 interface Props {
   pipeline: Pipeline;
@@ -176,10 +175,9 @@ export function PipelineTable({ pipeline, search, addTrigger }: Props) {
         </div>
       </div>
 
-      {/* ItemDetail: uncomment when Task 8 is complete */}
-      {/* {selectedId && (
+      {selectedId && (
         <ItemDetail itemId={selectedId} pipeline={pipeline} onClose={() => setSelectedId(null)} />
-      )} */}
+      )}
 
       {showForm && (
         <ItemForm
