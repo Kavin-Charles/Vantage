@@ -31,6 +31,7 @@ export async function runPipelineReminders(db: Kysely<Database>): Promise<void> 
       .where('deleted_at', 'is', null)
       .execute()
 
+    let fired = false
     for (const item of items) {
       const fieldValues = item.field_values as Record<string, unknown>
       const dateVal = fieldValues[cond.field_key]
@@ -50,12 +51,15 @@ export async function runPipelineReminders(db: Kysely<Database>): Promise<void> 
       }).execute()
 
       logger.info({ automationId: automation.id, itemId: item.id }, 'Pipeline reminder fired')
+      fired = true
     }
 
-    await db.updateTable('pipeline_automations')
-      .set({ last_fired_at: now })
-      .where('id', '=', automation.id)
-      .execute()
+    if (fired) {
+      await db.updateTable('pipeline_automations')
+        .set({ last_fired_at: now })
+        .where('id', '=', automation.id)
+        .execute()
+    }
   }
 
   logger.info('pipeline reminder run complete')
