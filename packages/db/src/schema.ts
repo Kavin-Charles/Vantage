@@ -603,6 +603,25 @@ export interface WorkspacePluginTable {
   platform_plugin_id: string | null;
 }
 
+export interface PluginStorageTable {
+  id: Generated<string>;
+  workspace_id: string;
+  key: string;
+  value: unknown;
+  updated_at: Generated<Date>;
+}
+
+export interface PluginFilesTable {
+  id: Generated<string>;
+  workspace_id: string;
+  plugin_id: string;
+  name: string;
+  mime: string;
+  size: number;
+  r2_key: string;
+  created_at: Generated<Date>;
+}
+
 export interface PluginSettingsTable {
   id: Generated<string>;
   workspace_id: string;
@@ -760,6 +779,8 @@ export interface Database {
   workspace_imap_config: WorkspaceImapConfigTable;
   workspace_modules: WorkspaceModuleTable;
   workspace_plugins: WorkspacePluginTable;
+  plugin_storage: PluginStorageTable;
+  plugin_files: PluginFilesTable;
   plugin_settings: PluginSettingsTable;
   plugin_cron_jobs: PluginCronJobTable;
   plugin_notifications: PluginNotificationTable;

@@ -158,3 +158,6 @@ vite.config.ts.timestamp-*
 .claude/
 AGENTS.md
 GEMINI.md
+
+# Knowledge graph (local only)
+graphify-out/

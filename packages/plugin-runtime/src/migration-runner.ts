@@ -1,15 +1,41 @@
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
-import type { PluginMigration } from '@vencore/plugin-types';
+import type { PluginTableDef, PluginColumnType } from '@vencore/plugin-types';
 
 type DB = Kysely<any>;
 
 const MIGRATION_LOG_TABLE = 'plugin_migration_log';
+const IDENTIFIER_RE = /^[a-z][a-z0-9_]{0,62}$/;
+const MAX_IDENTIFIER_LEN = 63;
 
-/**
- * Creates plugin_migration_log if it doesn't exist.
- * Safe to call repeatedly — uses IF NOT EXISTS.
- */
+const COLUMN_TYPE_MAP: Record<PluginColumnType, string> = {
+  uuid: 'uuid',
+  text: 'text',
+  integer: 'integer',
+  bigint: 'bigint',
+  boolean: 'boolean',
+  decimal: 'decimal(18,6)',
+  timestamptz: 'timestamptz',
+  jsonb: 'jsonb',
+};
+
+function validateIdentifier(name: string, context: string): void {
+  if (!IDENTIFIER_RE.test(name)) {
+    throw Object.assign(new Error(`Invalid identifier for ${context}: "${name}". Must match ^[a-z][a-z0-9_]{0,62}$`), {
+      code: 'INVALID_IDENTIFIER',
+    });
+  }
+  if (name.length > MAX_IDENTIFIER_LEN) {
+    throw Object.assign(new Error(`Identifier too long for ${context}: "${name}" (${name.length} > ${MAX_IDENTIFIER_LEN})`), {
+      code: 'IDENTIFIER_TOO_LONG',
+    });
+  }
+}
+
+function physicalTableName(pluginSlug: string, name: string): string {
+  return `plugin_${pluginSlug.replace(/-/g, '_')}_${name}`;
+}
+
 export async function ensureMigrationLog(db: DB): Promise<void> {
   await (db as any).schema
     .createTable(MIGRATION_LOG_TABLE)
@@ -25,84 +51,132 @@ export async function ensureMigrationLog(db: DB): Promise<void> {
 }
 
 /**
- * Runs all missing migrations for a plugin in a workspace, in ascending version order.
- * Idempotent — already-applied versions are skipped.
- *
- * @note Not safe for concurrent calls with identical (pluginSlug, workspaceId).
- * The unique constraint on plugin_migration_log prevents duplicate log entries,
- * but DDL in migration.up may still execute twice under concurrent load.
- * Install endpoints should serialize calls per plugin+workspace.
+ * Generates and runs CREATE TABLE DDL from a PluginTableDef using Kysely's schema builder.
+ * No raw SQL. All identifiers are validated before use.
+ */
+async function createPluginTable(db: DB, pluginSlug: string, tableDef: PluginTableDef): Promise<void> {
+  validateIdentifier(pluginSlug.replace(/-/g, '_'), 'plugin slug');
+  validateIdentifier(tableDef.name, `table "${tableDef.name}"`);
+
+  const fullName = physicalTableName(pluginSlug, tableDef.name);
+  if (fullName.length > MAX_IDENTIFIER_LEN) {
+    throw Object.assign(new Error(`Physical table name too long: "${fullName}"`), { code: 'IDENTIFIER_TOO_LONG' });
+  }
+
+  let builder = (db as any).schema.createTable(fullName).ifNotExists();
+
+  // Always add workspace_id as first column for row-level tenant scoping
+  builder = builder.addColumn('workspace_id', 'uuid', (col: any) => col.notNull());
+
+  for (const col of tableDef.columns) {
+    validateIdentifier(col.name, `column "${col.name}" in table "${tableDef.name}"`);
+
+    if (!(col.type in COLUMN_TYPE_MAP)) {
+      throw Object.assign(new Error(`Unsupported column type "${col.type}" in column "${col.name}"`), {
+        code: 'UNSUPPORTED_COLUMN_TYPE',
+      });
+    }
+
+    const pgType = COLUMN_TYPE_MAP[col.type];
+
+    builder = builder.addColumn(col.name, pgType, (c: any) => {
+      if (col.primary) c = c.primaryKey();
+      if (col.type === 'uuid' && col.primary) c = c.defaultTo(sql`gen_random_uuid()`);
+      if (!col.nullable && !col.primary) c = c.notNull();
+      if (col.unique) c = c.unique();
+      // col.default is intentionally NOT passed through — plugins cannot supply raw SQL defaults
+      return c;
+    });
+  }
+
+  await builder.execute();
+
+  // Indexes
+  if (tableDef.indexes) {
+    for (let i = 0; i < tableDef.indexes.length; i++) {
+      const idx = tableDef.indexes[i]!;
+      for (const col of idx.columns) {
+        validateIdentifier(col, `index column "${col}" in table "${tableDef.name}"`);
+      }
+      const idxName = `${fullName}_idx_${i}`;
+      let idxBuilder = (db as any).schema.createIndex(idxName).ifNotExists().on(fullName).columns(idx.columns);
+      if (idx.unique) idxBuilder = idxBuilder.unique();
+      await idxBuilder.execute();
+    }
+  }
+}
+
+/**
+ * Runs table migrations for a plugin in a workspace.
+ * Generates DDL from PluginTableDef — no raw SQL accepted.
+ * Idempotent: already-created tables are skipped.
+ * Uses pg_advisory_xact_lock to prevent concurrent creation races.
  */
 export async function runMigrations(
   db: DB,
   pluginSlug: string,
   workspaceId: string,
-  migrations: PluginMigration[],
+  tables: PluginTableDef[],
 ): Promise<void> {
-  if (migrations.length === 0) return;
+  if (tables.length === 0) return;
 
   await ensureMigrationLog(db);
 
-  const applied = await (db as any)
-    .selectFrom(MIGRATION_LOG_TABLE)
-    .select('version')
-    .where('plugin_slug', '=', pluginSlug)
-    .where('workspace_id', '=', workspaceId)
-    .where('direction', '=', 'up')
-    .execute() as Array<{ version: string }>;
+  await db.transaction().execute(async (trx) => {
+    // Advisory lock scoped to this plugin+workspace combo, released at transaction end
+    const lockKey = sql`hashtext(${`${pluginSlug}:${workspaceId}`})`;
+    await sql`SELECT pg_advisory_xact_lock(${lockKey})`.execute(trx);
 
-  const appliedVersions = new Set(applied.map((r: { version: string }) => r.version));
+    const applied = await (trx as any)
+      .selectFrom(MIGRATION_LOG_TABLE)
+      .select('version')
+      .where('plugin_slug', '=', pluginSlug)
+      .where('workspace_id', '=', workspaceId)
+      .where('direction', '=', 'up')
+      .execute() as Array<{ version: string }>;
 
-  const sorted = [...migrations].sort((a, b) => a.version.localeCompare(b.version));
+    const appliedVersions = new Set(applied.map((r: { version: string }) => r.version));
 
-  for (const migration of sorted) {
-    if (appliedVersions.has(migration.version)) continue;
+    for (const tableDef of tables) {
+      const versionKey = `table:${tableDef.name}`;
+      if (appliedVersions.has(versionKey)) continue;
 
-    // Execute plugin-supplied DDL
-    await (sql.raw(migration.up) as any).execute(db);
+      await createPluginTable(trx, pluginSlug, tableDef);
 
-    await (db as any)
-      .insertInto(MIGRATION_LOG_TABLE)
-      .values({
-        plugin_slug: pluginSlug,
-        workspace_id: workspaceId,
-        version: migration.version,
-        direction: 'up',
-      })
-      .execute();
-  }
+      await (trx as any)
+        .insertInto(MIGRATION_LOG_TABLE)
+        .values({
+          plugin_slug: pluginSlug,
+          workspace_id: workspaceId,
+          version: versionKey,
+          direction: 'up',
+        })
+        .onConflict((oc: any) => oc.constraint('plugin_migration_log_unique').doNothing())
+        .execute();
+    }
+  });
 }
 
 /**
- * Rolls back migrations in reverse order.
- * No-op for migrations without a `down` SQL.
- *
- * @param toVersion Roll back all migrations at or below this version.
+ * Drops all plugin-owned tables for a workspace (only those with drop_on_uninstall: true).
  */
-export async function rollbackMigrations(
+export async function dropPluginTables(
   db: DB,
   pluginSlug: string,
   workspaceId: string,
-  migrations: PluginMigration[],
-  toVersion: string,
+  tables: PluginTableDef[],
 ): Promise<void> {
-  await ensureMigrationLog(db);
-
-  const sorted = [...migrations]
-    .sort((a, b) => b.version.localeCompare(a.version))
-    .filter((m) => m.version.localeCompare(toVersion) <= 0 && m.down);
-
-  for (const migration of sorted) {
-    if (!migration.down) continue;
-    await (sql.raw(migration.down) as any).execute(db);
-    await (db as any)
-      .insertInto(MIGRATION_LOG_TABLE)
-      .values({
-        plugin_slug: pluginSlug,
-        workspace_id: workspaceId,
-        version: migration.version,
-        direction: 'down',
-      })
-      .execute();
+  for (const tableDef of tables) {
+    if (!tableDef.drop_on_uninstall) continue;
+    validateIdentifier(pluginSlug.replace(/-/g, '_'), 'plugin slug');
+    validateIdentifier(tableDef.name, `table "${tableDef.name}"`);
+    const fullName = physicalTableName(pluginSlug, tableDef.name);
+    await (db as any).schema.dropTable(fullName).ifExists().execute();
   }
+
+  await (db as any)
+    .deleteFrom(MIGRATION_LOG_TABLE)
+    .where('plugin_slug', '=', pluginSlug)
+    .where('workspace_id', '=', workspaceId)
+    .execute();
 }

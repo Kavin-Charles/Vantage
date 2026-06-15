@@ -1,0 +1,373 @@
+# Type Reference
+
+Source file: `packages/plugin-types/src/index.ts`.
+
+This package holds the shared contract between plugin authors, the SDK, and the Vantage runtime.
+
+## CRM Domain Models
+
+### Contacts
+
+`ContactInput` is the payload used to create or update contacts. Required fields are `name` and `email`; optional fields are `phone`, `status`, and `company_id`.
+
+`Contact` is the stored row shape. It includes `id`, `name`, `email`, nullable `phone`, `status`, nullable `company_id`, `owner_id`, nullable `last_contacted_at`, `created_at`, and `updated_at`.
+
+`ContactFilter` supports filtering and paging with `status`, `company_id`, `limit`, and `offset`.
+
+Statuses:
+
+```ts
+'prospect' | 'customer' | 'cold' | 'churned'
+```
+
+### Deals
+
+`DealInput` describes deal writes. It accepts `name`, optional `value`, `stage_id`, `pipeline_id`, `probability`, `close_date`, `contact_id`, and `company_id`.
+
+`Deal` is the stored row shape with ownership, pipeline, stage, probability, close date, linked contact/company IDs, and timestamps.
+
+`DealFilter` supports `stage_id`, `pipeline_id`, `contact_id`, `owner_id`, `limit`, and `offset`.
+
+### Companies
+
+`CompanyInput` accepts `name`, `industry`, `location`, `employee_count`, and `website`.
+
+`Company` stores those values plus `id`, `created_at`, and `updated_at`. Optional input fields become nullable row fields.
+
+`CompanyFilter` supports `limit` and `offset`.
+
+### Tasks
+
+`TaskInput` accepts `title`, `due_date`, `assignee_id`, `contact_id`, and `deal_id`.
+
+`Task` stores a task with status:
+
+```ts
+'todo' | 'done'
+```
+
+It also includes assigned user, related contact/deal IDs, and timestamps.
+
+`TaskFilter` supports `status`, `assignee_id`, `contact_id`, `deal_id`, and `limit`.
+
+### Activity
+
+`ActivityInput` accepts an event `type`, optional `body`, optional `meta`, and optional contact/deal IDs.
+
+`ActivityRecord` stores activity with type:
+
+```ts
+'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert'
+```
+
+It also includes `user_id`, related IDs, body, metadata, and `created_at`.
+
+`ActivityFilter` supports `contact_id`, `deal_id`, `type`, and `limit`.
+
+## Infrastructure Domain Models
+
+### Servers
+
+`Server` describes infrastructure status. It includes identity, region, IP address, current status, CPU/memory/disk percentages, uptime, and last ping time.
+
+Server statuses:
+
+```ts
+'online' | 'degraded' | 'offline' | 'stopped'
+```
+
+`ServerFilter` supports `status` and `limit`.
+
+### Websites
+
+`Website` describes monitored website state. It includes URL, label, status, response time, 30-day uptime, SSL expiry date, and last checked time.
+
+Website statuses:
+
+```ts
+'online' | 'degraded' | 'offline'
+```
+
+`WebsiteFilter` supports `status` and `limit`.
+
+## Runtime Context
+
+`PluginContext` tells a plugin where it is running:
+
+```ts
+{
+  workspace_id: string;
+  user_id: string;
+  page: string;
+  record_id: string | null;
+  record_type: string | null;
+}
+```
+
+Use it in frontend plugins when a page, panel, or widget needs current workspace, user, route, or record information.
+
+## Error and Result Types
+
+`PluginError` is a structured runtime error:
+
+```ts
+{
+  code: string;
+  message: string;
+}
+```
+
+`PluginResult<T>` represents success or failure without throwing:
+
+```ts
+{ data: T; error: null } | { data: null; error: PluginError }
+```
+
+Backend `safe.*` methods use this result type.
+
+## HTTP Bridge Types
+
+`HttpFetchOptions` configures bridge-backed HTTP calls:
+
+- `method`
+- `headers`
+- `body`
+- `timeout`
+
+`HttpResponse` returns:
+
+- `status`
+- `headers`
+- `body`
+- `ok`
+
+## Plugin Tables
+
+`PluginColumnType` accepts:
+
+```ts
+'uuid' | 'text' | 'integer' | 'bigint' | 'boolean' | 'decimal' | 'timestamptz' | 'jsonb'
+```
+
+`PluginColumnDef` defines a table column:
+
+- `name`
+- `type`
+- optional `nullable`
+- optional `primary`
+- optional `unique`
+- optional `default`
+
+`PluginIndexDef` defines index columns and optional uniqueness.
+
+`PluginTableDef` defines a plugin-owned table:
+
+- `name`
+- `columns`
+- optional `indexes`
+- optional `drop_on_uninstall`
+
+`PluginMigration` describes raw SQL migration text:
+
+- `version`
+- `up`
+- optional `down`
+
+## Bridge Types
+
+`BridgeCall` is the method/payload envelope sent to the runtime.
+
+`BridgeResult` mirrors `PluginResult<unknown>` and carries runtime data or a `PluginError`.
+
+## Plugin Table Client
+
+`PluginTableClient` is the backend table helper returned by `vantage.table(name)`.
+
+Available methods:
+
+- `list(opts?)`
+- `get(id)`
+- `insert(data)`
+- `update(id, data)`
+- `delete(id)`
+- `upsert(data, { on_conflict })`
+- `count(where?)`
+
+`list` accepts `where`, `orderBy`, `order`, `limit`, and `offset`.
+
+## Permissions
+
+`PluginPermission` is the data-access permission union used by `PluginManifest.data_access`.
+
+Supported values:
+
+```ts
+'contacts:read' | 'contacts:write'
+'companies:read' | 'companies:write'
+'deals:read' | 'deals:write'
+'tasks:read' | 'tasks:write'
+'activity:read' | 'activity:write'
+'servers:read'
+'websites:read'
+'storage:read' | 'storage:write'
+'http:fetch'
+```
+
+`PluginPermissionDef` is the user-facing permission shape shown in Users and Groups settings:
+
+- `key`
+- `label`
+- `defaultRoles`, containing `admin`, `member`, or both
+
+## Hook Events
+
+`PluginHookEvent` includes built-in events:
+
+```ts
+'contact.created' | 'contact.updated' | 'contact.deleted'
+'deal.created' | 'deal.updated' | 'deal.deleted'
+'task.created' | 'task.updated'
+```
+
+It also accepts custom string events while preserving hints for known events.
+
+## Surfaces
+
+`PluginNavItem` adds navigation:
+
+- `label`
+- `path`
+- optional `icon`
+- optional `group`: `crm`, `infra`, or `general`
+
+`PluginPageDef` declares plugin pages with `path` and `title`.
+
+`PluginWidgetDef` declares dashboard widgets with `id` and `label`.
+
+`PluginPanelDef` declares record panels with `record_type`, `id`, and `label`.
+
+`PluginSurfaces` groups optional `nav`, `pages`, `widgets`, and `panels`.
+
+## Settings Schema
+
+All settings fields extend a shared base with:
+
+- `key`
+- `label`
+- optional `secret`
+
+Field variants:
+
+- `PluginSettingsTextField`: `type: 'text'`, optional string `default`
+- `PluginSettingsBooleanField`: `type: 'boolean'`, optional boolean `default`
+- `PluginSettingsNumberField`: `type: 'number'`, optional number `default`, `min`, and `max`
+- `PluginSettingsSelectField`: `type: 'select'`, `options`, optional string `default`
+
+`PluginSettingsField` is the union of those four variants.
+
+## Build Config
+
+`PluginBuildConfig` optionally names backend and frontend entry files:
+
+- `server`
+- `client`
+
+## Runtime Namespace Types
+
+`VantageUser` contains `id`, `name`, `email`, and role:
+
+```ts
+'admin' | 'member'
+```
+
+`VantageWorkspace` contains `id`, `name`, and `plan`.
+
+`VantageFileRecord` contains file `id`, `name`, `mime`, `size`, and `url`.
+
+`VantageNotifyOptions` accepts notification `title`, optional `body`, and optional type:
+
+```ts
+'info' | 'success' | 'warning' | 'error'
+```
+
+`VantageSettingsNamespace` exposes async `get` and `set`.
+
+`VantageBusNamespace` exposes async `emit` and local `on`.
+
+`VantageFilesNamespace` exposes `upload`, `getUrl`, and `delete`.
+
+`VantageCronNamespace` exposes `register(schedule, name, handler)`.
+
+`VantagePermissionsNamespace` exposes `check(userId, permissionKey)`.
+
+## Manifest
+
+`PluginManifest` describes the plugin package:
+
+- `id`, `name`, and `version` are required.
+- `description`, `icon`, `author`, and `homepage` are optional metadata.
+- `permissions` are user-facing permission definitions.
+- `data_access` controls bridge access to CRM, infra, storage, and HTTP capabilities.
+- `tables`, `migrations`, and `hooks` describe backend runtime needs.
+- `emits` declares bus events emitted by the plugin.
+- `surfaces` declares UI contributions.
+- `settings_schema` declares configurable settings.
+- `build` declares backend/client entry points.
+
+For practical `plugin.json` examples and field-by-field authoring guidance, see [plugin.json](./plugin-json.mdx).
+
+## Backend API
+
+`VantageBackendAPI` is the full backend surface passed into `createPlugin({ setup })`.
+
+Core data methods:
+
+- `list(resource, filter?)`
+- `get(resource, id)`
+- `create(resource, data)`
+- `update(resource, id, data)`
+- `delete(resource, id)`
+- `action(resource, action, payload?)`
+
+Runtime namespaces:
+
+- `table(name)`
+- `on(event, handler)`
+- `storage`
+- `http`
+- `settings`
+- `bus`
+- `user`
+- `workspace`
+- `files`
+- `notify`
+- `cron`
+- `permissions`
+- `safe`
+
+The `safe` namespace mirrors core data methods and returns `PluginResult<T>` instead of throwing.
+
+## Plugin Definition
+
+`PluginDefinition` is the backend bundle shape:
+
+```ts
+{
+  setup(vantage: VantageBackendAPI): void | Promise<void>;
+}
+```
+
+## Resource Map
+
+`ResourceTypeMap` maps known resource names to row, input, and filter types:
+
+- `contacts`
+- `companies`
+- `deals`
+- `tasks`
+- `activity`
+- `servers`
+- `websites`
+
+`KnownResource` is `keyof ResourceTypeMap`.
+

@@ -1,0 +1,334 @@
+# plugin.json
+
+`plugin.json` is the manifest file for a Vantage plugin. It is the runtime source of truth for plugin identity, permissions, data access, database setup, hooks, UI surfaces, settings, emitted events, and build entry points.
+
+The SDK type for this file is `PluginManifest` in `packages/plugin-types/src/index.ts`.
+
+## Minimal Manifest
+
+```json
+{
+  "id": "com.example.my-plugin",
+  "name": "My Plugin",
+  "version": "1.0.0"
+}
+```
+
+Required fields:
+
+- `id`: stable plugin identifier. Use a unique reverse-DNS style value.
+- `name`: human-readable plugin name.
+- `version`: plugin version string.
+
+## Full Example
+
+```json
+{
+  "id": "com.example.calendar",
+  "name": "Calendar",
+  "version": "1.0.0",
+  "description": "Workspace calendar with events and milestones.",
+  "icon": "Calendar",
+  "author": "Vantage",
+  "homepage": "https://example.com/calendar",
+  "permissions": [
+    {
+      "key": "calendar:view",
+      "label": "View calendar events",
+      "defaultRoles": ["admin", "member"]
+    },
+    {
+      "key": "calendar:manage",
+      "label": "Manage calendar events",
+      "defaultRoles": ["admin"]
+    }
+  ],
+  "data_access": ["contacts:read", "storage:read", "storage:write"],
+  "tables": [
+    {
+      "name": "calendar_events",
+      "columns": [
+        { "name": "id", "type": "uuid", "primary": true, "default": "gen_random_uuid()" },
+        { "name": "title", "type": "text" },
+        { "name": "starts_at", "type": "timestamptz" },
+        { "name": "meta", "type": "jsonb", "nullable": true }
+      ],
+      "indexes": [
+        { "columns": ["starts_at"] }
+      ],
+      "drop_on_uninstall": false
+    }
+  ],
+  "migrations": [
+    {
+      "version": "1.0.0",
+      "up": "CREATE TABLE IF NOT EXISTS calendar_events (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), title TEXT NOT NULL, starts_at TIMESTAMPTZ NOT NULL, meta JSONB);",
+      "down": "DROP TABLE IF EXISTS calendar_events;"
+    }
+  ],
+  "hooks": ["contact.created"],
+  "emits": ["com.example.calendar.event.created"],
+  "surfaces": {
+    "nav": [
+      { "label": "Calendar", "path": "/calendar", "icon": "Calendar", "group": "general" }
+    ],
+    "pages": [
+      { "path": "/calendar", "title": "Calendar" }
+    ],
+    "widgets": [
+      { "id": "calendar-today", "label": "Today" }
+    ],
+    "panels": [
+      { "record_type": "contact", "id": "calendar-contact-panel", "label": "Calendar" }
+    ]
+  },
+  "settings_schema": [
+    { "key": "show_holidays", "type": "boolean", "label": "Show public holidays", "default": true },
+    { "key": "default_region", "type": "select", "label": "Default region", "options": ["US", "EU"], "default": "US" }
+  ],
+  "build": {
+    "server": "src/server.ts",
+    "client": "src/client.tsx"
+  }
+}
+```
+
+## Identity Fields
+
+`description`, `icon`, `author`, and `homepage` are optional metadata fields.
+
+`icon` is a string name. Plugin authors should use icon names the host app knows how to render.
+
+## User-Facing Permissions
+
+`permissions` defines plugin-specific permissions shown in Users and Groups settings.
+
+```json
+{
+  "key": "calendar:manage",
+  "label": "Manage calendar events",
+  "defaultRoles": ["admin"]
+}
+```
+
+Fields:
+
+- `key`: stable permission key used by `vantage.permissions.check(...)`.
+- `label`: user-facing label.
+- `defaultRoles`: `admin`, `member`, or both.
+
+These permissions are different from `data_access`. They describe plugin feature permissions, not core Vantage data permissions.
+
+## Data Access
+
+`data_access` declares core resources and runtime capabilities the plugin wants to use through the bridge.
+
+Supported values:
+
+```ts
+'contacts:read' | 'contacts:write'
+'companies:read' | 'companies:write'
+'deals:read' | 'deals:write'
+'tasks:read' | 'tasks:write'
+'activity:read' | 'activity:write'
+'servers:read'
+'websites:read'
+'storage:read' | 'storage:write'
+'http:fetch'
+```
+
+Examples:
+
+- Use `contacts:read` before calling `vantage.list('contacts')`.
+- Use `contacts:write` before calling `vantage.create('contacts', ...)`.
+- Use `storage:read` and `storage:write` before using `vantage.storage`.
+- Use `http:fetch` before using `vantage.http.fetch(...)`.
+
+## Tables
+
+`tables` declares plugin-owned tables.
+
+Each table has:
+
+- `name`
+- `columns`
+- optional `indexes`
+- optional `drop_on_uninstall`
+
+Column types:
+
+```ts
+'uuid' | 'text' | 'integer' | 'bigint' | 'boolean' | 'decimal' | 'timestamptz' | 'jsonb'
+```
+
+Column fields:
+
+- `name`
+- `type`
+- optional `nullable`
+- optional `primary`
+- optional `unique`
+- optional `default`
+
+Indexes contain `columns` and optional `unique`.
+
+Use `vantage.table(name)` in backend code to read and write these tables.
+
+## Migrations
+
+`migrations` contains raw SQL migration entries.
+
+```json
+{
+  "version": "1.0.0",
+  "up": "CREATE TABLE IF NOT EXISTS example_table (id UUID PRIMARY KEY);",
+  "down": "DROP TABLE IF EXISTS example_table;"
+}
+```
+
+Fields:
+
+- `version`: migration version.
+- `up`: SQL applied when installing or upgrading.
+- `down`: optional SQL for rollback or uninstall paths.
+
+Use migrations when table setup needs SQL beyond the declarative `tables` shape.
+
+## Hooks
+
+`hooks` declares system events the backend plugin handles.
+
+Built-in hook events:
+
+```ts
+'contact.created' | 'contact.updated' | 'contact.deleted'
+'deal.created' | 'deal.updated' | 'deal.deleted'
+'task.created' | 'task.updated'
+```
+
+Custom string hooks are also accepted by the type.
+
+Backend code handles hooks with:
+
+```ts
+vantage.on('contact.created', async (payload) => {
+  // handle event
+});
+```
+
+## Emitted Events
+
+`emits` declares bus events this plugin may emit.
+
+```json
+{
+  "emits": ["com.example.calendar.event.created"]
+}
+```
+
+Backend code emits events with:
+
+```ts
+await vantage.bus.emit('com.example.calendar.event.created', payload);
+```
+
+The manifest declaration is for discovery and integration.
+
+## Surfaces
+
+`surfaces` declares frontend contributions.
+
+Navigation items:
+
+```json
+{ "label": "Calendar", "path": "/calendar", "icon": "Calendar", "group": "general" }
+```
+
+`group` can be `crm`, `infra`, or `general`.
+
+Pages:
+
+```json
+{ "path": "/calendar", "title": "Calendar" }
+```
+
+Widgets:
+
+```json
+{ "id": "calendar-today", "label": "Today" }
+```
+
+Panels:
+
+```json
+{ "record_type": "contact", "id": "calendar-contact-panel", "label": "Calendar" }
+```
+
+Frontend code must still register matching components:
+
+```tsx
+vantage.registerPage('/calendar', CalendarPage);
+vantage.registerWidget('calendar-today', TodayWidget);
+vantage.registerPanel('contact', 'calendar-contact-panel', CalendarPanel);
+```
+
+## Settings Schema
+
+`settings_schema` declares settings the host can render.
+
+Text:
+
+```json
+{ "key": "api_url", "type": "text", "label": "API URL", "default": "https://api.example.com" }
+```
+
+Boolean:
+
+```json
+{ "key": "enabled", "type": "boolean", "label": "Enabled", "default": true }
+```
+
+Number:
+
+```json
+{ "key": "sync_limit", "type": "number", "label": "Sync limit", "default": 100, "min": 1, "max": 1000 }
+```
+
+Select:
+
+```json
+{ "key": "region", "type": "select", "label": "Region", "options": ["US", "EU"], "default": "US" }
+```
+
+All settings fields support `secret: true` for sensitive values.
+
+Backend code can read and write settings:
+
+```ts
+const region = await vantage.settings.get<string>('region');
+await vantage.settings.set('region', 'EU');
+```
+
+Frontend code can read settings:
+
+```ts
+const region = await vantage.settings.get<string>('region');
+```
+
+## Build Entries
+
+`build` tells the runtime or build tooling where plugin bundles start.
+
+```json
+{
+  "build": {
+    "server": "src/server.ts",
+    "client": "src/client.tsx"
+  }
+}
+```
+
+`server` points to backend plugin code that exports `createPlugin(...)`.
+
+`client` points to frontend plugin code that exports `createFrontendPlugin(...)`.
+

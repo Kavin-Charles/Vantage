@@ -1,0 +1,56 @@
+# File Coverage
+
+This checklist proves every file currently present in `vantage-plugin-sdk` has documentation coverage.
+
+## Root Files
+
+| File | Covered in |
+| --- | --- |
+| `package.json` | [Tests and config](./tests-and-config.mdx#root-package) |
+| `pnpm-workspace.yaml` | [Tests and config](./tests-and-config.mdx#workspace) |
+| `pnpm-lock.yaml` | [Tests and config](./tests-and-config.mdx#lockfile) |
+| `turbo.json` | [Tests and config](./tests-and-config.mdx#turbo) |
+| `tsconfig.base.json` | [Tests and config](./tests-and-config.mdx#base-typescript-config) |
+
+## Type Package Files
+
+| File | Covered in |
+| --- | --- |
+| `packages/plugin-types/package.json` | [Tests and config](./tests-and-config.mdx#types-package-manifest) |
+| `packages/plugin-types/tsconfig.json` | [Tests and config](./tests-and-config.mdx#types-package-typescript-config) |
+| `packages/plugin-types/src/index.ts` | [Type reference](./types.mdx) |
+
+## SDK Package Files
+
+| File | Covered in |
+| --- | --- |
+| `packages/plugin-sdk/package.json` | [Tests and config](./tests-and-config.mdx#sdk-package-manifest) |
+| `packages/plugin-sdk/tsconfig.json` | [Tests and config](./tests-and-config.mdx#sdk-package-typescript-config) |
+| `packages/plugin-sdk/vitest.config.ts` | [Tests and config](./tests-and-config.mdx#vitest-config) |
+| `packages/plugin-sdk/src/index.ts` | [Frontend SDK](./frontend.mdx#root-index) |
+| `packages/plugin-sdk/src/backend.ts` | [Backend SDK](./backend.mdx) |
+| `packages/plugin-sdk/src/bridge.ts` | [Bridge and permissions](./bridge-and-permissions.mdx#bridge-protocol) |
+| `packages/plugin-sdk/src/frontend.ts` | [Frontend SDK](./frontend.mdx#vantagefrontendimpl) |
+| `packages/plugin-sdk/src/react.ts` | [Frontend SDK](./frontend.mdx#react-entry-point) |
+| `packages/plugin-sdk/src/permissions.ts` | [Bridge and permissions](./bridge-and-permissions.mdx#permission-namespace-types) |
+| `packages/plugin-sdk/src/_store.ts` | [Frontend SDK](./frontend.mdx#frontend-singleton-store) |
+| `packages/plugin-sdk/src/__tests__/backend.test.ts` | [Tests and config](./tests-and-config.mdx#backend-tests) |
+| `packages/plugin-sdk/src/__tests__/react.test.tsx` | [Tests and config](./tests-and-config.mdx#frontend-tests) |
+| `packages/plugin-sdk/src/__tests__/permissions.test.ts` | [Tests and config](./tests-and-config.mdx#permission-type-tests) |
+
+## Coverage Rule
+
+When a new file is added to this repo, update this checklist in the same change as the docs for that file. If the new file exports runtime behavior, document both the public API and the bridge/runtime side effects.
+
+## Documentation Files
+
+| File | Covered in |
+| --- | --- |
+| `docs/index.mdx` | This page lists it as the documentation entry point. |
+| `docs/plugin-json.mdx` | This page lists it as the manifest reference. |
+| `docs/types.mdx` | This page lists it as the type reference. |
+| `docs/backend.mdx` | This page lists it as the backend SDK reference. |
+| `docs/frontend.mdx` | This page lists it as the frontend SDK reference. |
+| `docs/bridge-and-permissions.mdx` | This page lists it as the bridge and permission reference. |
+| `docs/tests-and-config.mdx` | This page lists it as the tests and config reference. |
+| `docs/file-coverage.mdx` | This page is the coverage checklist. |

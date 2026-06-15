@@ -1,0 +1,292 @@
+# Frontend SDK
+
+Source files:
+
+- `packages/plugin-sdk/src/frontend.ts`
+- `packages/plugin-sdk/src/react.ts`
+- `packages/plugin-sdk/src/_store.ts`
+- `packages/plugin-sdk/src/index.ts`
+
+The frontend SDK gives plugin bundles a typed API for registering UI surfaces and using runtime services from an iframe.
+
+## React Entry Point
+
+Source file: `packages/plugin-sdk/src/react.ts`.
+
+`createFrontendPlugin(config)` returns the config unchanged as a `FrontendPluginDefinition`.
+
+```tsx
+import { createFrontendPlugin } from '@vantage/plugin-sdk/react';
+
+export default createFrontendPlugin({
+  setup(vantage) {
+    vantage.registerPage('/my-plugin', MyPage);
+    vantage.registerWidget('my-widget', MyWidget);
+    vantage.registerPanel('contact', 'my-panel', MyPanel);
+  },
+});
+```
+
+The runtime calls `setup(vantage)`.
+
+## Frontend Types
+
+`AnyComponent` is a React component type:
+
+```ts
+import('react').ComponentType<any>
+```
+
+`FrontendSurfaceRegistry` stores registered UI:
+
+- `pages`: `Map<string, AnyComponent>`
+- `widgets`: `Map<string, AnyComponent>`
+- `panels`: `Map<string, { recordType; id; label; component }>`
+
+Panel keys use `${recordType}:${id}`.
+
+`VantageFrontendAPI` is the object passed to frontend plugin setup.
+
+## VantageFrontendImpl
+
+Source file: `packages/plugin-sdk/src/frontend.ts`.
+
+Constructor inputs:
+
+- `bridge`: the runtime `BridgeFn`.
+- `registry`: the `FrontendSurfaceRegistry` that receives registered pages, widgets, and panels.
+
+Internal state:
+
+- `_bridge`: bridge transport.
+- `_registry`: UI surface registry.
+- `_busHandlers`: local bus handlers by event name.
+
+## Surface Registration
+
+Pages:
+
+```ts
+vantage.registerPage('/calendar', CalendarPage);
+```
+
+Stores the component at `registry.pages.get('/calendar')`.
+
+Widgets:
+
+```ts
+vantage.registerWidget('calendar-today', TodayWidget);
+```
+
+Stores the component at `registry.widgets.get('calendar-today')`.
+
+Panels:
+
+```ts
+vantage.registerPanel('contact', 'calendar-events', EventsPanel);
+```
+
+Stores panel data at `registry.panels.get('contact:calendar-events')`.
+
+The panel label currently defaults to the `id`.
+
+## Context
+
+`getContext()` asks the runtime for current plugin context.
+
+```ts
+const context = await vantage.getContext();
+```
+
+Bridge method:
+
+- `context.get` with `{}`
+
+It throws the runtime `PluginError` if the bridge returns an error.
+
+## Navigation and Toasts
+
+`navigate(path)` dispatches a browser event:
+
+```ts
+vantage.navigate('/contacts/c1');
+```
+
+Event:
+
+- `vantage:navigate`
+- detail: `{ path }`
+
+`toast(message, type?)` dispatches:
+
+```ts
+vantage.toast('Saved', 'success');
+```
+
+Event:
+
+- `vantage:toast`
+- detail: `{ message, type }`
+
+Default type is `info`.
+
+Both methods no-op when `window` is unavailable.
+
+## Modal
+
+`modal.open(opts)` dispatches:
+
+- `vantage:modal:open`
+- detail: modal options
+
+`modal.close()` dispatches:
+
+- `vantage:modal:close`
+
+Example:
+
+```ts
+vantage.modal.open({
+  title: 'Confirm sync',
+  content: 'Start sync now?',
+});
+```
+
+## Settings
+
+`settings.get<T>(key)` reads a setting through the bridge.
+
+```ts
+const color = await vantage.settings.get<string>('accent_color');
+```
+
+Bridge method:
+
+- `settings.get` with `{ key }`
+
+Frontend settings reads are forgiving. If the bridge returns an error, the SDK returns `null`.
+
+## User and Workspace
+
+`user.get()` and `workspace.get()` read runtime identity data.
+
+```ts
+const user = await vantage.user.get();
+const workspace = await vantage.workspace.get();
+```
+
+Bridge methods:
+
+- `user.get` with `{}`
+- `workspace.get` with `{}`
+
+Both throw the runtime `PluginError` on bridge error.
+
+## Bus
+
+`bus.on(event, handler)` registers a local handler and returns an unsubscribe function.
+
+```ts
+const unsubscribe = vantage.bus.on('calendar.changed', (payload) => {
+  console.log(payload);
+});
+
+unsubscribe();
+```
+
+Runtime code can call `_dispatchBusEvent(event, payload)` to invoke matching handlers.
+
+## Data Reads
+
+Frontend resource helpers expose read-only resource access:
+
+```ts
+const contacts = await vantage.list('contacts', { limit: 10 });
+const contact = await vantage.get('contacts', 'c1');
+```
+
+Bridge methods:
+
+- `${resource}.list` with `{ filter }`
+- `${resource}.get` with `{ id }`
+
+Both throw on bridge error.
+
+## Table Reads
+
+Frontend table access currently supports `list` only.
+
+```ts
+const rows = await vantage.table('calendar_events').list({ limit: 10 });
+```
+
+Bridge method:
+
+- `table.list` with `{ name, ...opts }`
+
+Options include `where`, `limit`, and `offset`.
+
+## Search
+
+`search.register(handler)` dispatches a registration event:
+
+```ts
+vantage.search.register(async (query) => [
+  {
+    label: `Search result for ${query}`,
+    description: 'From my plugin',
+    href: '/my-plugin/result',
+  },
+]);
+```
+
+Event:
+
+- `vantage:search:register`
+- detail: handler function
+
+## Commands
+
+`commands.register(label, handler)` dispatches a command registration event:
+
+```ts
+vantage.commands.register('Run plugin sync', () => {
+  void runSync();
+});
+```
+
+Event:
+
+- `vantage:commands:register`
+- detail: `{ label, handler }`
+
+## Frontend Singleton Store
+
+Source file: `packages/plugin-sdk/src/_store.ts`.
+
+This module stores one `VantageFrontendImpl` instance per plugin iframe.
+
+```ts
+setVantageInstance(vantage);
+const sameInstance = getVantageInstance();
+```
+
+`getVantageInstance()` throws if the SDK has not been initialized. The error tells plugin authors to import `createPlugin` from `@vantage/plugin-sdk/frontend` and call it before using hooks.
+
+Note: the current package exports `./react`, while the error text mentions `./frontend`.
+
+## Root Index
+
+Source file: `packages/plugin-sdk/src/index.ts`.
+
+The root index re-exports:
+
+- Backend helpers: `createPlugin`, `createVantageBackend`, `VantageBackendImpl`
+- Bridge helper: `createPostMessageBridge`
+- Bridge types: `BridgeFn`, `BridgeCall`, `BridgeResult`
+- Permission namespace types: `StorageNamespace`, `StorageReadNamespace`, `HttpNamespace`, `ModalNamespace`
+- Frontend helper: `createFrontendPlugin`
+- Frontend types: `VantageFrontendAPI`, `FrontendPluginDefinition`, `FrontendSurfaceRegistry`, `AnyComponent`
+- Frontend implementation: `VantageFrontendImpl`
+- All types from `@vantage/plugin-types`
+
