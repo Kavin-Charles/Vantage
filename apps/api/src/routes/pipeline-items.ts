@@ -23,7 +23,6 @@ const moveItemSchema = z.object({
 
 const listSchema = z.object({
   stage_id: z.string().uuid().optional(),
-  search: z.string().optional(),
   page: z.coerce.number().int().default(1),
   limit: z.coerce.number().int().max(200).default(100),
 });
@@ -54,7 +53,8 @@ export function createPipelineItemsRouter(
 
       if (q.stage_id) query = query.where('stage_id', '=', q.stage_id);
 
-      const items = await query.execute();
+      const offset = (q.page - 1) * q.limit;
+      const items = await query.limit(q.limit).offset(offset).execute();
       res.json({ data: items, error: null });
     } catch (e) { next(e); }
   });
@@ -84,6 +84,11 @@ export function createPipelineItemsRouter(
 
   return router;
 }
+
+const activityQuerySchema = z.object({
+  page: z.coerce.number().int().default(1),
+  limit: z.coerce.number().int().max(100).default(50),
+});
 
 export function createItemRouter(
   db: Kysely<Database>,
@@ -129,6 +134,7 @@ export function createItemRouter(
         })
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspaceId)
+        .where('deleted_at', 'is', null)
         .returningAll().executeTakeFirstOrThrow();
 
       if (body.stage_id && body.stage_id !== current.stage_id) {
@@ -172,7 +178,9 @@ export function createItemRouter(
 
       await db.updateTable('pipeline_items')
         .set({ stage_id, position, updated_at: new Date() })
-        .where('id', '=', req.params['id']!).execute();
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspaceId)
+        .execute();
 
       if (stage_id !== current.stage_id) {
         await logStageChanged({
@@ -203,11 +211,14 @@ export function createItemRouter(
   // Activity feed for item
   router.get('/:id/activity', view, async (req, res, next) => {
     try {
+      const q = activityQuerySchema.parse(req.query);
       const activity = await db.selectFrom('pipeline_activity').selectAll()
         .where('item_id', '=', req.params['id']!)
         .where('workspace_id', '=', (req as AuthenticatedRequest).workspace.id)
         .orderBy('created_at', 'desc')
-        .limit(50).execute();
+        .limit(q.limit)
+        .offset((q.page - 1) * q.limit)
+        .execute();
       res.json({ data: activity, error: null });
     } catch (e) { next(e); }
   });
