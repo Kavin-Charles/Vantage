@@ -18,6 +18,10 @@ export interface TaskWithAssignees extends Task { assignees: { id: string; name:
 export interface Comment { id: string; task_id: string; body: string | null; parent_id: string | null; created_at: string; author_name: string | null }
 export interface ProjectMember { id: string; project_id: string; user_id: string; role: string; joined_at: string; name: string | null; email: string | null }
 
+export interface TaskLabel {
+  id: string; project_id: string; name: string; color: string;
+}
+
 export interface Milestone {
   id: string; project_id: string; name: string; description: string | null;
   due_date: string; status: string; client_visible: boolean; position: number;
@@ -32,6 +36,14 @@ export interface CreateTaskBody {
 }
 
 export const pmApi = {
+  listLabels: (token: string, projectId: string) =>
+    apiFetch<{ data: TaskLabel[] }>(`/api/projects/${projectId}/labels`, { token }),
+  createLabel: (token: string, projectId: string, body: { name: string; color: string }) =>
+    apiFetch<{ data: TaskLabel }>(`/api/projects/${projectId}/labels`, { token, method: 'POST', body: JSON.stringify(body) }),
+  updateLabel: (token: string, projectId: string, labelId: string, body: Partial<TaskLabel>) =>
+    apiFetch<{ data: TaskLabel }>(`/api/projects/${projectId}/labels/${labelId}`, { token, method: 'PATCH', body: JSON.stringify(body) }),
+  deleteLabel: (token: string, projectId: string, labelId: string) =>
+    apiFetch<{ data: { success: boolean } }>(`/api/projects/${projectId}/labels/${labelId}`, { token, method: 'DELETE' }),
   listMilestones: (token: string, projectId: string) =>
     apiFetch<{ data: Milestone[] }>(`/api/projects/${projectId}/milestones`, { token }),
   createMilestone: (token: string, projectId: string, body: { name: string; due_date: string; description?: string; client_visible?: boolean }) =>
