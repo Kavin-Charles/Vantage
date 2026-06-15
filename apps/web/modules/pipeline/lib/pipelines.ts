@@ -9,7 +9,7 @@ export function getPipeline(token: string, id: string) {
   return apiFetch<{ data: PipelineWithDetails }>(`/api/pipelines/${id}`, { token });
 }
 
-export function createPipeline(token: string, body: { name: string; record_type_id: string; view?: string }) {
+export function createPipeline(token: string, body: { name: string; record_type_id?: string; view?: string }) {
   return apiFetch<{ data: Pipeline }>('/api/pipelines', {
     method: 'POST', body: JSON.stringify(body), token,
   });
