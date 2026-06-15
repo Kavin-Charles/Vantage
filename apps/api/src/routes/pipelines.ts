@@ -94,7 +94,7 @@ export function createPipelinesRouter(
   router.patch('/:id', edit, async (req, res, next) => {
     try {
       const body = updatePipelineSchema.parse(req.body);
-      const p = await db.updateTable('pipelines').set(body)
+      const p = await db.updateTable('pipelines').set({ ...body, updated_at: new Date() })
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', ws(req as AuthenticatedRequest))
         .returningAll().executeTakeFirst();
@@ -135,10 +135,16 @@ export function createPipelinesRouter(
 
   router.patch('/:id/stages/:stageId', edit, async (req, res, next) => {
     try {
+      const pipeline = await db.selectFrom('pipelines').select('id')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', ws(req as AuthenticatedRequest))
+        .executeTakeFirst();
+      if (!pipeline) return fail(res, 404, 'NOT_FOUND', 'Pipeline not found');
+
       const body = updateStageSchema.parse(req.body);
       const stage = await db.updateTable('pipeline_stages').set(body)
         .where('id', '=', req.params['stageId']!)
-        .where('pipeline_id', '=', req.params['id']!)
+        .where('pipeline_id', '=', pipeline.id)
         .returningAll().executeTakeFirst();
       if (!stage) return fail(res, 404, 'NOT_FOUND', 'Stage not found');
       res.json({ data: stage, error: null });
@@ -147,9 +153,15 @@ export function createPipelinesRouter(
 
   router.delete('/:id/stages/:stageId', edit, async (req, res, next) => {
     try {
+      const pipeline = await db.selectFrom('pipelines').select('id')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', ws(req as AuthenticatedRequest))
+        .executeTakeFirst();
+      if (!pipeline) return fail(res, 404, 'NOT_FOUND', 'Pipeline not found');
+
       const stage = await db.deleteFrom('pipeline_stages')
         .where('id', '=', req.params['stageId']!)
-        .where('pipeline_id', '=', req.params['id']!)
+        .where('pipeline_id', '=', pipeline.id)
         .returningAll().executeTakeFirst();
       if (!stage) return fail(res, 404, 'NOT_FOUND', 'Stage not found');
       res.json({ data: { id: stage.id }, error: null });
@@ -158,11 +170,17 @@ export function createPipelinesRouter(
 
   router.post('/:id/stages/reorder', edit, async (req, res, next) => {
     try {
+      const pipeline = await db.selectFrom('pipelines').select('id')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', ws(req as AuthenticatedRequest))
+        .executeTakeFirst();
+      if (!pipeline) return fail(res, 404, 'NOT_FOUND', 'Pipeline not found');
+
       const { ids } = reorderSchema.parse(req.body);
       await Promise.all(ids.map((stageId, i) =>
         db.updateTable('pipeline_stages').set({ position: i })
           .where('id', '=', stageId)
-          .where('pipeline_id', '=', req.params['id']!)
+          .where('pipeline_id', '=', pipeline.id)
           .execute()
       ));
       res.json({ data: { reordered: ids.length }, error: null });
