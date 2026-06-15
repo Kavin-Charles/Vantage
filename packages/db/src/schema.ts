@@ -219,7 +219,6 @@ export interface SshCommandLogTable {
 export interface PipelineTable {
   id: Generated<string>;
   workspace_id: string;
-  record_type_id: string | null;
   name: string;
   is_default: Generated<boolean>;
   position: Generated<number>;
@@ -239,6 +238,54 @@ export interface PipelineStageTable {
   is_lost: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
+}
+
+export interface PipelineFieldTable {
+  id: Generated<string>;
+  pipeline_id: string;
+  label: string;
+  key: string;
+  type: 'text' | 'number' | 'date' | 'select' | 'multiselect' | 'user' | 'checkbox' | 'url';
+  options: Record<string, unknown>[] | null;
+  position: Generated<number>;
+  required: Generated<boolean>;
+  created_at: Generated<Date>;
+}
+
+export interface PipelineItemTable {
+  id: Generated<string>;
+  pipeline_id: string;
+  stage_id: string;
+  workspace_id: string;
+  position: Generated<number>;
+  field_values: Generated<Record<string, unknown>>;
+  deleted_at: Date | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface PipelineAutomationTable {
+  id: Generated<string>;
+  pipeline_id: string;
+  name: string;
+  trigger_type: 'stage_changed' | 'field_changed' | 'item_created' | 'date_approaching';
+  trigger_conditions: Record<string, unknown>;
+  action_type: 'notify_assignee' | 'assign_user' | 'move_stage';
+  action_params: Record<string, unknown>;
+  enabled: Generated<boolean>;
+  last_fired_at: Date | null;
+  created_at: Generated<Date>;
+}
+
+export interface PipelineActivityTable {
+  id: Generated<string>;
+  item_id: string;
+  pipeline_id: string;
+  workspace_id: string;
+  user_id: string | null;
+  event_type: string;
+  payload: Record<string, unknown>;
+  created_at: Generated<Date>;
 }
 
 export interface StageFieldTable {
@@ -985,6 +1032,10 @@ export interface Database {
   ssh_command_log: SshCommandLogTable;
   pipelines: PipelineTable;
   pipeline_stages: PipelineStageTable;
+  pipeline_fields: PipelineFieldTable;
+  pipeline_items: PipelineItemTable;
+  pipeline_automations: PipelineAutomationTable;
+  pipeline_activity: PipelineActivityTable;
   stage_fields: StageFieldTable;
   deal_field_values: DealFieldValueTable;
   item_groups: ItemGroupTable;
