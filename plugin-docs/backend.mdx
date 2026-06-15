@@ -1,0 +1,286 @@
+# Backend SDK
+
+Source file: `packages/plugin-sdk/src/backend.ts`.
+
+The backend SDK wraps a runtime `BridgeFn` in `VantageBackendImpl`. Plugin authors usually see this through `createPlugin(...)`; runtime code can create an instance through `createVantageBackend(bridge)`.
+
+## Exports
+
+```ts
+export class VantageBackendImpl implements VantageBackendAPI
+export function createVantageBackend(bridge: BridgeFn): VantageBackendImpl
+export function createPlugin(config: { setup(vantage): void | Promise<void> }): PluginDefinition
+```
+
+## Construction
+
+`VantageBackendImpl` receives one `BridgeFn`. Every API call eventually becomes a bridge call:
+
+```ts
+await bridge({
+  method: 'contacts.list',
+  payload: { filter: { limit: 10 } },
+});
+```
+
+Internal state:
+
+- `_bridge`: runtime call transport.
+- `_hookHandlers`: local map for hook handlers and bus handlers.
+- `_cronJobs`: local list of registered cron jobs.
+
+## Core Bridge Helper
+
+`_call<T>(method, payload)` sends the bridge request and enforces error behavior:
+
+- If `result.error !== null`, it throws the `PluginError`.
+- Otherwise it returns `result.data as T`.
+
+All throwing backend APIs use `_call`.
+
+## Resource Methods
+
+Core resource methods build method names from the resource string.
+
+```ts
+await vantage.list('contacts', { limit: 10 });
+// method: contacts.list
+// payload: { filter: { limit: 10 } }
+
+await vantage.get('contacts', 'c1');
+// method: contacts.get
+// payload: { id: 'c1' }
+
+await vantage.create('tasks', { title: 'Follow up' });
+// method: tasks.create
+// payload: { data: { title: 'Follow up' } }
+
+await vantage.update('contacts', 'c1', { name: 'Ada' });
+// method: contacts.update
+// payload: { id: 'c1', data: { name: 'Ada' } }
+
+await vantage.delete('contacts', 'c1');
+// method: contacts.delete
+// payload: { id: 'c1' }
+
+await vantage.action('deals', 'advance', { id: 'd1' });
+// method: deals.advance
+// payload: { payload: { id: 'd1' } }
+```
+
+The SDK does not validate resource names. The runtime enforces availability and permissions.
+
+## Safe Methods
+
+`safe` mirrors core methods and converts thrown errors into `PluginResult`.
+
+```ts
+const result = await vantage.safe.get('contacts', 'missing');
+
+if (result.error) {
+  console.log(result.error.code);
+} else {
+  console.log(result.data);
+}
+```
+
+Safe methods:
+
+- `safe.list`
+- `safe.get`
+- `safe.create`
+- `safe.update`
+- `safe.delete`
+- `safe.action`
+
+## Storage Namespace
+
+`storage` is a plugin key-value namespace:
+
+```ts
+await vantage.storage.set('sync-state', { cursor: 'abc' });
+const state = await vantage.storage.get<{ cursor: string }>('sync-state');
+await vantage.storage.delete('sync-state');
+```
+
+Bridge methods:
+
+- `storage.get` with `{ key }`
+- `storage.set` with `{ key, value }`
+- `storage.delete` with `{ key }`
+
+## HTTP Namespace
+
+`http.fetch(url, options?)` sends an HTTP request through the runtime:
+
+```ts
+const response = await vantage.http.fetch('https://example.com/api', {
+  method: 'POST',
+  headers: { Authorization: 'Bearer token' },
+  body: JSON.stringify({ ok: true }),
+  timeout: 10_000,
+});
+```
+
+Bridge method:
+
+- `http.fetch` with `{ url, ...options }`
+
+Plugins should declare `http:fetch` in manifest `data_access`.
+
+## Settings Namespace
+
+`settings` reads and writes plugin settings:
+
+```ts
+const region = await vantage.settings.get<string>('region');
+await vantage.settings.set('region', 'us-east-1');
+```
+
+Bridge methods:
+
+- `settings.get` with `{ key }`
+- `settings.set` with `{ key, value }`
+
+## Bus Namespace
+
+`bus.emit(event, payload)` sends an event through the runtime:
+
+```ts
+await vantage.bus.emit('deployments.changed', { deploymentId: 'dep_1' });
+```
+
+Bridge method:
+
+- `bus.emit` with `{ event, payload }`
+
+`bus.on(event, handler)` stores a local handler under `bus:${event}`. The runtime can call `_dispatchBusEvent(event, payload)` to invoke those handlers.
+
+## Files Namespace
+
+`files.upload(buffer, opts)` uploads binary data. The SDK base64-encodes `Uint8Array` data before bridging.
+
+```ts
+const file = await vantage.files.upload(bytes, {
+  name: 'report.csv',
+  mime: 'text/csv',
+});
+
+const url = await vantage.files.getUrl(file.id);
+await vantage.files.delete(file.id);
+```
+
+Bridge methods:
+
+- `files.upload` with `{ buffer, name, mime }`
+- `files.getUrl` with `{ fileId }`
+- `files.delete` with `{ fileId }`
+
+## Cron Namespace
+
+`cron.register(schedule, name, handler)` stores local cron jobs.
+
+```ts
+vantage.cron.register('0 * * * *', 'hourly-sync', async () => {
+  await sync();
+});
+```
+
+The SDK does not parse or run cron schedules. Runtime code reads jobs with `getCronJobs()` and decides when to invoke handlers.
+
+## Permissions Namespace
+
+`permissions.check(userId, permissionKey)` asks the runtime whether a user has a permission.
+
+```ts
+const allowed = await vantage.permissions.check(user.id, 'calendar:manage');
+```
+
+Bridge method:
+
+- `permissions.check` with `{ userId, permissionKey }`
+
+## User and Workspace
+
+The backend API exposes current user and workspace lookups:
+
+```ts
+const user = await vantage.user.get();
+const workspace = await vantage.workspace.get();
+```
+
+Bridge methods:
+
+- `user.get` with `{}`
+- `workspace.get` with `{}`
+
+## Tables
+
+`table(name)` returns a `PluginTableClient` scoped to one plugin table.
+
+```ts
+const cache = vantage.table('sync_cache');
+
+await cache.insert({ id: 'x', value: 1 });
+await cache.update('x', { value: 2 });
+await cache.upsert({ id: 'x', value: 3 }, { on_conflict: 'id' });
+const row = await cache.get('x');
+const rows = await cache.list({ where: { active: true }, limit: 20 });
+const count = await cache.count({ active: true });
+await cache.delete('x');
+```
+
+Bridge methods:
+
+- `table.list`
+- `table.get`
+- `table.insert`
+- `table.update`
+- `table.delete`
+- `table.upsert`
+- `table.count`
+
+Every table payload includes `name`.
+
+## Hooks
+
+`on(event, handler)` stores local handlers for runtime hook events.
+
+```ts
+vantage.on('contact.created', async (payload) => {
+  await handleContact(payload);
+});
+```
+
+The runtime calls `_dispatchHook(event, payload)` when a system event fires. The SDK uses `Promise.allSettled`, so one failing handler does not stop other handlers from running.
+
+## Notifications
+
+`notify(opts)` sends a host notification:
+
+```ts
+await vantage.notify({
+  title: 'Sync complete',
+  body: '42 records updated',
+  type: 'success',
+});
+```
+
+Bridge method:
+
+- `notify` with the notification options as payload.
+
+## Backend Entry Point
+
+`createPlugin(config)` returns the config as a `PluginDefinition`.
+
+```ts
+export default createPlugin({
+  setup(vantage) {
+    vantage.on('task.updated', console.log);
+  },
+});
+```
+
+There is no manifest parameter. Manifest data belongs in `plugin.json`.
+

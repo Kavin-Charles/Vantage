@@ -1,0 +1,119 @@
+# Vantage Plugin SDK
+
+The Vantage Plugin SDK is the TypeScript toolkit for building plugins that run inside the Vantage app. It is split into two workspace packages:
+
+- `@vantage/plugin-types`: shared domain, manifest, bridge, table, permission, and API types.
+- `@vantage/plugin-sdk`: backend and frontend helpers that turn a runtime bridge into a plugin authoring API.
+
+Use these docs when you are creating a plugin, wiring a runtime host, or checking what each SDK file is responsible for.
+
+## Manifest First
+
+Every plugin should include a `plugin.json` file. The manifest declares what the plugin is, what it can access, what UI it contributes, what settings it exposes, and which backend/client entry files the runtime should load.
+
+Start with [plugin.json](./plugin-json.mdx) when creating a new plugin.
+
+## Install Shape
+
+This repo is a pnpm workspace. The SDK package depends on the types package through `workspace:*`.
+
+```json
+{
+  "dependencies": {
+    "@vantage/plugin-sdk": "workspace:*",
+    "@vantage/plugin-types": "workspace:*"
+  }
+}
+```
+
+The package exports are source-first during local development:
+
+```ts
+import { createPlugin, createVantageBackend } from '@vantage/plugin-sdk';
+import { createFrontendPlugin } from '@vantage/plugin-sdk/react';
+```
+
+## Backend Plugin
+
+Backend bundles export `createPlugin(...)`. The runtime provides a `vantage` object that implements `VantageBackendAPI`.
+
+```ts
+import { createPlugin } from '@vantage/plugin-sdk';
+
+export default createPlugin({
+  async setup(vantage) {
+    vantage.on('contact.created', async (payload) => {
+      await vantage.storage.set('last-contact-event', payload);
+    });
+
+    await vantage.notify({
+      title: 'Plugin ready',
+      type: 'success',
+    });
+  },
+});
+```
+
+`plugin.json` is the source of truth for identity, permissions, surfaces, settings, tables, migrations, hooks, and build entry points. `createPlugin` only captures the backend setup function.
+
+## Frontend Plugin
+
+Frontend bundles export `createFrontendPlugin(...)`. The runtime calls `setup(vantage)` after it creates a frontend API instance.
+
+```tsx
+import { createFrontendPlugin } from '@vantage/plugin-sdk/react';
+
+function DashboardWidget() {
+  return <div>Deals this week</div>;
+}
+
+export default createFrontendPlugin({
+  setup(vantage) {
+    vantage.registerWidget('deals-this-week', DashboardWidget);
+    vantage.toast('Widget registered', 'info');
+  },
+});
+```
+
+Frontend plugins can register pages, widgets, panels, search handlers, command handlers, modal actions, bus subscriptions, and bridge-backed reads.
+
+## Runtime Bridge
+
+Both backend and frontend APIs are thin wrappers over a bridge function:
+
+```ts
+type BridgeFn = (call: {
+  method: string;
+  payload: unknown;
+}) => Promise<{ data: unknown; error: null } | { data: null; error: PluginError }>;
+```
+
+The SDK converts developer-friendly calls into bridge methods such as `contacts.list`, `table.insert`, `storage.get`, `settings.get`, and `context.get`.
+
+## Repo Scripts
+
+Run commands from the SDK root:
+
+```sh
+pnpm install
+pnpm build
+pnpm test
+pnpm lint
+```
+
+Package scripts:
+
+- Root `build`, `dev`, `lint`, and `test` delegate through Turbo.
+- `packages/plugin-types` runs TypeScript build, watch, and no-emit lint.
+- `packages/plugin-sdk` runs TypeScript build, watch, no-emit lint, and Vitest tests.
+
+## Docs Map
+
+- [Type reference](./types.mdx): every exported type from `@vantage/plugin-types`.
+- [plugin.json](./plugin-json.mdx): manifest schema, examples, permissions, surfaces, settings, hooks, migrations, and build entries.
+- [Backend SDK](./backend.mdx): backend implementation, safe APIs, table API, hooks, bus, cron, files, storage, HTTP, settings, users, workspace, and notifications.
+- [Frontend SDK](./frontend.mdx): frontend implementation, React entry point, surface registry, DOM events, bridge reads, and singleton store.
+- [Bridge and permissions](./bridge-and-permissions.mdx): bridge protocol, iframe postMessage bridge, permission namespace types.
+- [Tests and config](./tests-and-config.mdx): test files, package files, TypeScript configs, Turbo config, workspace file, and lockfile.
+- [File coverage](./file-coverage.mdx): explicit checklist proving every repo file is documented.
+

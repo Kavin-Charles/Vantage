@@ -49,6 +49,7 @@ export async function dispatchTableCall(
   try {
     switch (verb) {
       case 'list': {
+        const MAX_LIMIT = 1000;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let q = (db as any).selectFrom(physical).selectAll().where('workspace_id', '=', ctx.workspaceId);
         if (p.where) {
@@ -57,8 +58,9 @@ export async function dispatchTableCall(
           }
         }
         if (p.orderBy) q = q.orderBy(p.orderBy as string, (p.order ?? 'asc') as 'asc' | 'desc');
-        if (p.limit) q = q.limit(p.limit as number);
-        if (p.offset) q = q.offset(p.offset as number);
+        const limit = Math.min(Number(p.limit ?? MAX_LIMIT), MAX_LIMIT);
+        q = q.limit(limit);
+        if (p.offset) q = q.offset(Number(p.offset));
         return { data: await q.execute(), error: null };
       }
 

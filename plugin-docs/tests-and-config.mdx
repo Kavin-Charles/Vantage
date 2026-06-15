@@ -1,0 +1,239 @@
+# Tests and Config
+
+This page documents the non-runtime files in the SDK repo: tests, package manifests, TypeScript config, Turbo config, workspace config, and lockfile.
+
+## Root Package
+
+Source file: `package.json`.
+
+The root package is private and named `vantage-plugin-sdk-root`.
+
+Scripts:
+
+- `build`: `turbo build`
+- `dev`: `turbo dev`
+- `lint`: `turbo lint`
+- `test`: `turbo test`
+
+Dev dependencies:
+
+- `turbo`
+- `typescript`
+
+Engines require Node `>=20.0.0` and pnpm `>=9.0.0`.
+
+The package manager is pinned to `pnpm@10.33.2`.
+
+## Workspace
+
+Source file: `pnpm-workspace.yaml`.
+
+The workspace includes every package under:
+
+```yaml
+packages:
+  - 'packages/*'
+```
+
+## Turbo
+
+Source file: `turbo.json`.
+
+Tasks:
+
+- `build`: depends on parent package builds and outputs `dist/**`.
+- `dev`: uncached and persistent.
+- `lint`: no custom options.
+- `test`: depends on parent package builds.
+
+## Base TypeScript Config
+
+Source file: `tsconfig.base.json`.
+
+Shared compiler options:
+
+- `strict`
+- `esModuleInterop`
+- `skipLibCheck`
+- `forceConsistentCasingInFileNames`
+- `resolveJsonModule`
+- `target: ES2022`
+- `lib: ES2022`
+- declaration files and declaration maps enabled
+- source maps enabled
+
+## Types Package Manifest
+
+Source file: `packages/plugin-types/package.json`.
+
+Package name: `@vantage/plugin-types`.
+
+Version: `0.0.1`.
+
+Private: `true`.
+
+Outputs:
+
+- main: `./dist/index.js`
+- types: `./dist/index.d.ts`
+
+Scripts:
+
+- `build`: `tsc`
+- `dev`: `tsc --watch`
+- `lint`: `tsc --noEmit`
+
+Dev dependency:
+
+- `typescript`
+
+## Types Package TypeScript Config
+
+Source file: `packages/plugin-types/tsconfig.json`.
+
+Extends `../../tsconfig.base.json`.
+
+Compiler options:
+
+- `outDir: ./dist`
+- `rootDir: ./src`
+- `module: CommonJS`
+
+Includes:
+
+- `src`
+
+## SDK Package Manifest
+
+Source file: `packages/plugin-sdk/package.json`.
+
+Package name: `@vantage/plugin-sdk`.
+
+Version: `0.0.1`.
+
+Private: `true`.
+
+Outputs:
+
+- main: `./dist/index.js`
+- types: `./dist/index.d.ts`
+
+Exports:
+
+- `.` -> `./src/index.ts`
+- `./react` -> `./src/react.ts`
+
+Scripts:
+
+- `build`: `tsc`
+- `dev`: `tsc --watch`
+- `lint`: `tsc --noEmit`
+- `test`: `vitest run`
+
+Dependencies:
+
+- `@vantage/plugin-types: workspace:*`
+
+Peer dependencies:
+
+- optional `react >=18.0.0`
+
+Dev dependencies include Vitest, jsdom, React test/runtime packages, React types, and TypeScript.
+
+## SDK Package TypeScript Config
+
+Source file: `packages/plugin-sdk/tsconfig.json`.
+
+Extends `../../tsconfig.base.json`.
+
+Compiler options:
+
+- `outDir: ./dist`
+- `rootDir: ./src`
+- `module: CommonJS`
+- `lib: ES2022, DOM`
+- `jsx: react`
+
+Includes:
+
+- `src`
+
+## Vitest Config
+
+Source file: `packages/plugin-sdk/vitest.config.ts`.
+
+Uses `defineConfig` from `vitest/config`.
+
+Test settings:
+
+- `globals: true`
+- `environment: jsdom`
+
+`jsdom` is needed because frontend code dispatches browser events and the bridge uses browser globals.
+
+## Backend Tests
+
+Source file: `packages/plugin-sdk/src/__tests__/backend.test.ts`.
+
+Test helpers:
+
+- `makeBridge(data)` returns a Vitest mock bridge that resolves with `{ data, error: null }`.
+- `makeErrorBridge(code, message)` returns a mock bridge that resolves with `{ data: null, error }`.
+
+Covered behavior:
+
+- `list` calls `{resource}.list` with `{ filter }`.
+- `get` calls `{resource}.get` with `{ id }`.
+- `create` calls `{resource}.create` with `{ data }`.
+- `update` calls `{resource}.update` with `{ id, data }`.
+- `delete` calls `{resource}.delete` with `{ id }`.
+- bridge errors are thrown by normal methods.
+- `safe.get` returns `{ data: null, error }` instead of throwing.
+- `safe.list` returns `{ data, error: null }` on success.
+- `storage.get` and `storage.set` dispatch expected bridge calls.
+- `on` plus `_dispatchHook` invokes registered hook handlers.
+- multiple handlers for one event all run.
+- handlers for unrelated events do not run.
+- `table(name).list(...)` dispatches `table.list` with the table name.
+
+## Frontend Tests
+
+Source file: `packages/plugin-sdk/src/__tests__/react.test.tsx`.
+
+Test helpers:
+
+- `makeBridge(data)` returns a successful mock bridge.
+- `makeRegistry()` creates empty `pages`, `widgets`, and `panels` maps.
+
+Covered behavior:
+
+- `createFrontendPlugin` returns the config object unchanged.
+- returned `setup` is callable with a `VantageFrontendImpl`.
+- `registerPage` stores a component in the registry.
+- `registerWidget` stores a component in the registry.
+- `registerPanel` stores panel data under a composite key.
+- `settings.get` returns `null` on bridge error.
+- `list` calls `{resource}.list`.
+- `get` calls `{resource}.get`.
+- `bus.on` registers a handler and its unsubscribe removes it.
+- frontend `table(name).list(...)` dispatches `table.list` with the table name.
+
+## Permission Type Tests
+
+Source file: `packages/plugin-sdk/src/__tests__/permissions.test.ts`.
+
+The file contains a TODO noting older permission generics were removed and type tests will be rewritten once frontend namespace types are introduced.
+
+Current assertions:
+
+- `StorageNamespace` matches `StorageReadNamespace`.
+- `StorageReadNamespace` does not match full `StorageNamespace`.
+
+These are type-level Vitest assertions using `expectTypeOf`.
+
+## Lockfile
+
+Source file: `pnpm-lock.yaml`.
+
+The lockfile pins the resolved dependency graph for the workspace. It is generated by pnpm and should not be hand-edited. It covers root dev dependencies, workspace package links, SDK test dependencies, React dependencies, TypeScript, Turbo, jsdom, and transitive packages.
+
