@@ -35,6 +35,13 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: 'Work',
+    feature: null,
+    items: [
+      { href: '/projects', label: 'Projects', icon: 'tasks' as const, moduleId: 'projects' },
+    ],
+  },
+  {
     label: 'General',
     feature: null,
     items: [

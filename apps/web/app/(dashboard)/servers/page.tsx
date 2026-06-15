@@ -11,6 +11,8 @@ import { FormField, Input } from '@/modules/shared/components/ui/FormField';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { AgentInstallInstructions } from '@/modules/shared/components/ui/AgentInstallInstructions';
 import { listServers, createServer, deleteServer } from '@/modules/servers/lib/servers';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
 import type { Server } from '@vencore/types';
@@ -38,6 +40,8 @@ export default function ServersPage() {
   const router = useRouter();
   const [modal, setModal] = useState<'create' | { token: string; name: string } | null>(null);
   const [form, setForm] = useState({ name: '', region: '', ip_address: '' });
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
 
   const { data, isLoading } = useQuery({
     queryKey: ['servers'],
@@ -86,7 +90,18 @@ export default function ServersPage() {
               server={s}
               last={i === servers.length - 1}
               onClick={() => router.push(`/servers/${s.id}`)}
-              onDelete={() => { if (confirm('Deregister this server?')) deleteMut.mutate(s.id); }}
+              onDelete={() => askConfirm({ title: 'Deregister server', message: `Deregister "${s.name}"? The monitoring agent will stop sending data.`, confirmLabel: 'Deregister', variant: 'danger', onConfirm: () => deleteMut.mutate(s.id) })}
+              onContextMenu={(e) => {
+                const items: ContextMenuItem[] = [
+                  { icon: 'open',     label: 'Open server',       onClick: () => router.push(`/servers/${s.id}`) },
+                  { type: 'separator' },
+                  ...(s.ip_address ? [{ icon: 'copy', label: 'Copy IP address',  onClick: () => navigator.clipboard.writeText(s.ip_address!) } as ContextMenuItem] : []),
+                  { icon: 'copy',     label: 'Copy agent token',  onClick: () => navigator.clipboard.writeText(s.agent_token ?? '') },
+                  { type: 'separator' },
+                  { icon: 'trash',    label: 'Remove server',     danger: true, onClick: () => askConfirm({ title: 'Deregister server', message: `Deregister "${s.name}"? The monitoring agent will stop sending data.`, confirmLabel: 'Deregister', variant: 'danger', onConfirm: () => deleteMut.mutate(s.id) }) },
+                ];
+                openMenu(e, items);
+              }}
             />
           ))}
         </div>
@@ -128,6 +143,8 @@ export default function ServersPage() {
           </div>
         </Modal>
       )}
+      <ContextMenu menu={menu} onClose={closeMenu} />
+      {confirmEl}
     </ModuleGuard>
   );
 }
@@ -135,9 +152,9 @@ export default function ServersPage() {
 const metricColor = (n: number | null) =>
   n === null ? 'var(--text3)' : n > 85 ? 'var(--red)' : n > 70 ? 'var(--amber)' : 'var(--text)';
 
-function ServerRow({ server: s, last, onClick, onDelete }: {
+function ServerRow({ server: s, last, onClick, onDelete, onContextMenu }: {
   server: Server; last: boolean;
-  onClick: () => void; onDelete: () => void;
+  onClick: () => void; onDelete: () => void; onContextMenu: (e: React.MouseEvent) => void;
 }) {
   const [hover, setHover] = useState(false);
   const live = useServerMetrics(s.id);
@@ -153,6 +170,7 @@ function ServerRow({ server: s, last, onClick, onDelete }: {
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       onClick={onClick}
+      onContextMenu={onContextMenu}
       style={{
         display: 'grid', gridTemplateColumns: COLS,
         gap: 14, alignItems: 'center',

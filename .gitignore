@@ -1,6 +1,6 @@
 # Worktrees
 .clone/
-
+docs/
 # Logs
 logs
 *.log

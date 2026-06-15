@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/modules/shared/components/Topbar';
 import { Badge } from '@/modules/shared/components/ui/Badge';
 import { Button } from '@/modules/shared/components/ui/Button';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import type { Alert } from '@vencore/types';
@@ -31,6 +32,7 @@ export default function AlertsPage() {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [tab, setTab] = useState<FilterTab>('unresolved');
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data, isLoading } = useQuery({
     queryKey: ['alerts-all'],
@@ -108,22 +110,54 @@ export default function AlertsPage() {
               last={i === filtered.length - 1}
               onAck={() => ackMut.mutate(alert.id)}
               onResolve={() => resolveMut.mutate(alert.id)}
+              onContextMenu={(e) => {
+                const items: ContextMenuItem[] = [
+                  {
+                    icon: 'check',
+                    label: 'Acknowledge',
+                    disabled: alert.acknowledged || alert.resolved,
+                    onClick: () => ackMut.mutate(alert.id),
+                  },
+                  {
+                    icon: 'shield',
+                    label: 'Resolve',
+                    disabled: alert.resolved,
+                    onClick: () => resolveMut.mutate(alert.id),
+                  },
+                  { type: 'separator' },
+                  {
+                    type: 'submenu',
+                    icon: 'snooze',
+                    label: 'Snooze',
+                    items: [
+                      { label: '1 hour',       onClick: () => {} },
+                      { label: '4 hours',      onClick: () => {} },
+                      { label: 'Until tomorrow', onClick: () => {} },
+                    ],
+                  },
+                  { type: 'separator' },
+                  { icon: 'copy', label: 'Copy message', onClick: () => navigator.clipboard.writeText(alert.message) },
+                ];
+                openMenu(e, items);
+              }}
             />
           ))}
         </div>
       </div>
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </>
   );
 }
 
-function AlertRow({ alert, last, onAck, onResolve }: {
-  alert: Alert; last: boolean; onAck: () => void; onResolve: () => void;
+function AlertRow({ alert, last, onAck, onResolve, onContextMenu }: {
+  alert: Alert; last: boolean; onAck: () => void; onResolve: () => void; onContextMenu: (e: React.MouseEvent) => void;
 }) {
   const [hover, setHover] = useState(false);
   return (
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onContextMenu={onContextMenu}
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
         padding: '12px 18px',

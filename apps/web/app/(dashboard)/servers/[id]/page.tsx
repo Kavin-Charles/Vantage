@@ -7,6 +7,7 @@ import { Topbar } from '@/modules/shared/components/Topbar';
 import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { getServer, updateServer, regenToken } from '@/modules/servers/lib/servers';
 import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
 import { openSshStream, getSshHistory } from '@/modules/servers/lib/ssh';
@@ -484,6 +485,7 @@ function FilesTab({ serverId }: { serverId: string }) {
   const [opError, setOpError] = useState<string | null>(null);
   const sftpRef = useRef<SftpClient | null>(null);
   const uploadRef = useRef<HTMLInputElement | null>(null);
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
 
   // Connect on mount, disconnect on unmount
   useEffect(() => {
@@ -587,10 +589,20 @@ function FilesTab({ serverId }: { serverId: string }) {
     setSaving(false);
   }
 
-  async function deleteEntry(entryPath: string, isDir: boolean) {
+  function deleteEntry(entryPath: string, isDir: boolean) {
+    askConfirm({
+      title: `Delete ${isDir ? 'directory' : 'file'}`,
+      message: `Delete "${entryPath}"? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+      onConfirm: () => void doDeleteEntry(entryPath, isDir),
+    });
+  }
+
+  async function doDeleteEntry(entryPath: string, isDir: boolean) {
     const sftp = sftpRef.current;
     if (!sftp) return;
-    if (!confirm(`Delete ${isDir ? 'directory' : 'file'} "${entryPath}"?`)) return;
+    void isDir;
     setOpError(null);
     const res = await sftp.delete(entryPath);
     if (res.ok) {
@@ -658,6 +670,7 @@ function FilesTab({ serverId }: { serverId: string }) {
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 0, minHeight: 400, border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', fontFamily: 'var(--font-sans)' }}>
+      {confirmEl}
       {/* Directory pane */}
       <div style={{ borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', background: 'var(--surface)' }}>
         {/* Breadcrumb */}

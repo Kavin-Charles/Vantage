@@ -1,0 +1,3077 @@
+{
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-workflow\\scripts\\record_activation.py": {
+    "mtime": 1780830035.314919,
+    "ast_hash": "2749b69c804e32f588eef4fa9418d08b",
+    "semantic_hash": "2749b69c804e32f588eef4fa9418d08b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-workflow\\scripts\\spawn_subagent.py": {
+    "mtime": 1780830035.3169324,
+    "ast_hash": "63293f7fe8b42e7bbfd5fc28ec0e78d9",
+    "semantic_hash": "63293f7fe8b42e7bbfd5fc28ec0e78d9"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-workflow\\scripts\\write_artifact.py": {
+    "mtime": 1780830035.3169324,
+    "ast_hash": "de4ba475b29ad132e88b9d54e49f3aa9",
+    "semantic_hash": "de4ba475b29ad132e88b9d54e49f3aa9"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\android-frame.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "d6b24460e9dbbf023a11834530269517",
+    "semantic_hash": "d6b24460e9dbbf023a11834530269517"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\app.jsx": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "1207c40c6033065bca884286d231d0fa",
+    "semantic_hash": "1207c40c6033065bca884286d231d0fa"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\data.jsx": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "d79d40726e22ab2aed28088a78571de1",
+    "semantic_hash": "d79d40726e22ab2aed28088a78571de1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\design-canvas.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "d56628bd4c01ffa4e8be853b4bc13d63",
+    "semantic_hash": "d56628bd4c01ffa4e8be853b4bc13d63"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\icons.jsx": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "bdcd0421c1ad48f896fb23518c377131",
+    "semantic_hash": "bdcd0421c1ad48f896fb23518c377131"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\ios-frame.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "84447dbb61dbfedb904d674738350f66",
+    "semantic_hash": "84447dbb61dbfedb904d674738350f66"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\mobile-ui.jsx": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "c6e1cd3694ad0d1184803824285ab7b5",
+    "semantic_hash": "c6e1cd3694ad0d1184803824285ab7b5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\screens-crm.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "9341072ffed104f14476ed0024201775",
+    "semantic_hash": "9341072ffed104f14476ed0024201775"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\screens-home.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "57ad5a244e352a34a952ca31b472cf53",
+    "semantic_hash": "57ad5a244e352a34a952ca31b472cf53"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\screens-infra.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "4b8e252bdff73fb4d845151317d9bee5",
+    "semantic_hash": "4b8e252bdff73fb4d845151317d9bee5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\screens-misc.jsx": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "95fbf124c2ef9f86f146f3d71bbf4aa7",
+    "semantic_hash": "95fbf124c2ef9f86f146f3d71bbf4aa7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\tweaks-panel.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "916f49d6c8a857cf6c9b5732e9854d51",
+    "semantic_hash": "916f49d6c8a857cf6c9b5732e9854d51"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Activity.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "e0b61e961a2378b891e99af33a1b69c9",
+    "semantic_hash": "e0b61e961a2378b891e99af33a1b69c9"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Alerts.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "faa8b7cc7ff911213ce929dca9118d91",
+    "semantic_hash": "faa8b7cc7ff911213ce929dca9118d91"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Analytics.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "051bd707806036620a8a7c5b0d84002b",
+    "semantic_hash": "051bd707806036620a8a7c5b0d84002b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Companies.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "b79789a8680cff0a3f72624e9405c17f",
+    "semantic_hash": "b79789a8680cff0a3f72624e9405c17f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Contacts.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "bafa4e865a215dfac0549c2666d1c4bd",
+    "semantic_hash": "bafa4e865a215dfac0549c2666d1c4bd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Databases.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "957f767abd2c46f5f40134f8ea5096ad",
+    "semantic_hash": "957f767abd2c46f5f40134f8ea5096ad"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Files.jsx": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "682fc02fb5dda7a6a80e1566250ee781",
+    "semantic_hash": "682fc02fb5dda7a6a80e1566250ee781"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Mail.jsx": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "a4815b554fa721737c29d06c15ae9a67",
+    "semantic_hash": "a4815b554fa721737c29d06c15ae9a67"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Pipeline.jsx": {
+    "mtime": 1780559231.7126667,
+    "ast_hash": "5ebef8573b465d523fad8f427410be29",
+    "semantic_hash": "5ebef8573b465d523fad8f427410be29"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\ServerDetail.jsx": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "0205f55e46b1dff39111ae45a31f9f0f",
+    "semantic_hash": "0205f55e46b1dff39111ae45a31f9f0f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Servers.jsx": {
+    "mtime": 1780559231.7144861,
+    "ast_hash": "fff6a4ffa4fe5f73f1215d75272e07e9",
+    "semantic_hash": "fff6a4ffa4fe5f73f1215d75272e07e9"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Settings.jsx": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "28dbdc01755810ac8da673d55699acd7",
+    "semantic_hash": "28dbdc01755810ac8da673d55699acd7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Shell.jsx": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "1de0f916995d6d35e38fe828dc50499b",
+    "semantic_hash": "1de0f916995d6d35e38fe828dc50499b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Tasks.jsx": {
+    "mtime": 1780559231.7144861,
+    "ast_hash": "335226f3855968de82da65f3409b3e4d",
+    "semantic_hash": "335226f3855968de82da65f3409b3e4d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\Websites.jsx": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "05c52e857fab1fb0e3b5cf1667c347bd",
+    "semantic_hash": "05c52e857fab1fb0e3b5cf1667c347bd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\app.jsx": {
+    "mtime": 1780559231.7144861,
+    "ast_hash": "3ea71974185883feffb9630ca7ac0b49",
+    "semantic_hash": "3ea71974185883feffb9630ca7ac0b49"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\ui.jsx": {
+    "mtime": 1780559231.7144861,
+    "ast_hash": "8e9d0c8ce7ca3e61ad2ebfa9850992b1",
+    "semantic_hash": "8e9d0c8ce7ca3e61ad2ebfa9850992b1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\agent\\package.json": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "cfdba7ea2faea78b2218178b88b3e76c",
+    "semantic_hash": "cfdba7ea2faea78b2218178b88b3e76c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\agent\\src\\collect.ts": {
+    "mtime": 1780556116.4667065,
+    "ast_hash": "13cbf58c66c275673f2a6649af264bd1",
+    "semantic_hash": "13cbf58c66c275673f2a6649af264bd1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\agent\\src\\db-checks.ts": {
+    "mtime": 1780559231.7144861,
+    "ast_hash": "43e0663cc881c119798ac1c9b7ca5469",
+    "semantic_hash": "43e0663cc881c119798ac1c9b7ca5469"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\agent\\src\\index.ts": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "867b11f24541bf30b2cd01de699e0830",
+    "semantic_hash": "867b11f24541bf30b2cd01de699e0830"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\agent\\src\\reporter.ts": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "447fd652c9900c23c98b0d35dd63e0a4",
+    "semantic_hash": "447fd652c9900c23c98b0d35dd63e0a4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\agent\\tsconfig.json": {
+    "mtime": 1780556116.472011,
+    "ast_hash": "423a12568d058bb35079f440efc7a398",
+    "semantic_hash": "423a12568d058bb35079f440efc7a398"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\package.json": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "b928f1cc782b9aed7480f30b830cff14",
+    "semantic_hash": "b928f1cc782b9aed7480f30b830cff14"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\api-key-auth.test.ts": {
+    "mtime": 1780559231.7144861,
+    "ast_hash": "bb9bc4c0f4640cd4d37ce5c179201445",
+    "semantic_hash": "bb9bc4c0f4640cd4d37ce5c179201445"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\auth.test.ts": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "65a91be34b09bb9958f5dec529d77110",
+    "semantic_hash": "65a91be34b09bb9958f5dec529d77110"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\contacts-import.test.ts": {
+    "mtime": 1780559231.7144861,
+    "ast_hash": "223ba8343b0712eb65e3e656cc390f4d",
+    "semantic_hash": "223ba8343b0712eb65e3e656cc390f4d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\infra-databases-route.test.ts": {
+    "mtime": 1780559231.7144861,
+    "ast_hash": "a230bee4478c50f2ce3e40cfff1cae4a",
+    "semantic_hash": "a230bee4478c50f2ce3e40cfff1cae4a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\infra-db-client.test.ts": {
+    "mtime": 1780565028.3546557,
+    "ast_hash": "3b6a4376fcf1b18e89f6851338cde402",
+    "semantic_hash": "3b6a4376fcf1b18e89f6851338cde402"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\installer\\caddy-generator.test.ts": {
+    "mtime": 1781065310.304287,
+    "ast_hash": "d69f388743af52d2d4edfa74285d8a78",
+    "semantic_hash": "d69f388743af52d2d4edfa74285d8a78"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\installer\\compose-generator.test.ts": {
+    "mtime": 1781065310.304287,
+    "ast_hash": "2b88796acc5e2c98f107e9c849ef05ad",
+    "semantic_hash": "2b88796acc5e2c98f107e9c849ef05ad"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\installer\\env-writer.test.ts": {
+    "mtime": 1781065310.304287,
+    "ast_hash": "3dafafe4b71109719570bd38b3bd4cfb",
+    "semantic_hash": "3dafafe4b71109719570bd38b3bd4cfb"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\item-groups.test.ts": {
+    "mtime": 1780565028.3546557,
+    "ast_hash": "30c43bd4d799970c8be3ff1c437a0359",
+    "semantic_hash": "30c43bd4d799970c8be3ff1c437a0359"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\log-activity.test.ts": {
+    "mtime": 1780559231.7144861,
+    "ast_hash": "6a64c282acb8942300f02ec4a8e0b51e",
+    "semantic_hash": "6a64c282acb8942300f02ec4a8e0b51e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\module-middleware.test.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "ce876c3ecfb517617d52039d30b71d6b",
+    "semantic_hash": "ce876c3ecfb517617d52039d30b71d6b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\notifications.test.ts": {
+    "mtime": 1780559231.7231052,
+    "ast_hash": "73f998c63980a14511d5c92431ba55e8",
+    "semantic_hash": "73f998c63980a14511d5c92431ba55e8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\send-alert-email.test.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "7ebe68b18af4b53bd0be661bdcdd1cdf",
+    "semantic_hash": "7ebe68b18af4b53bd0be661bdcdd1cdf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\setup-crypto.test.ts": {
+    "mtime": 1780559231.7231052,
+    "ast_hash": "d079b8c5ebf76c8076aff7c53c253d37",
+    "semantic_hash": "d079b8c5ebf76c8076aff7c53c253d37"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\setup-db.test.ts": {
+    "mtime": 1780559231.7231052,
+    "ast_hash": "bef2624c2c9ca1e28a1925cd8b61b519",
+    "semantic_hash": "bef2624c2c9ca1e28a1925cd8b61b519"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\setup-route.test.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "2ab6523e6b7bb8e4a54ca7e8f5a5b7af",
+    "semantic_hash": "2ab6523e6b7bb8e4a54ca7e8f5a5b7af"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\sse-registry.test.ts": {
+    "mtime": 1780559231.7231052,
+    "ast_hash": "b5ec0dc4d86494a0d3c01c5acf5db8d7",
+    "semantic_hash": "b5ec0dc4d86494a0d3c01c5acf5db8d7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\tasks-list.test.ts": {
+    "mtime": 1780559231.725111,
+    "ast_hash": "b7bb7c96d0c901df571ca043c791e810",
+    "semantic_hash": "b7bb7c96d0c901df571ca043c791e810"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\v1-infra-pagination.test.ts": {
+    "mtime": 1780559231.725111,
+    "ast_hash": "ca2f9130fc044bd3529b0e9f0e99686a",
+    "semantic_hash": "ca2f9130fc044bd3529b0e9f0e99686a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\webhook-delivery.test.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "d8fe8e101c8fe59b977e956608186431",
+    "semantic_hash": "d8fe8e101c8fe59b977e956608186431"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\webhook-events.test.ts": {
+    "mtime": 1780556116.6360464,
+    "ast_hash": "0cd75f3e7ae36212c7bb838704b90917",
+    "semantic_hash": "0cd75f3e7ae36212c7bb838704b90917"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\__tests__\\workspace-modules.test.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "e28482d93872bc1c1ccd4f1a67d51047",
+    "semantic_hash": "e28482d93872bc1c1ccd4f1a67d51047"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\index.ts": {
+    "mtime": 1781174050.1744287,
+    "ast_hash": "642d97b2db52f5ba4fcd60f3583097a6",
+    "semantic_hash": "642d97b2db52f5ba4fcd60f3583097a6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\auto-number.test.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "84d70ca22c5e4e9e4e4489501da5cb01",
+    "semantic_hash": "84d70ca22c5e4e9e4e4489501da5cb01"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\auto-number.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "35b24d1d093f1af4570e1bcc3905aac1",
+    "semantic_hash": "35b24d1d093f1af4570e1bcc3905aac1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\csv.ts": {
+    "mtime": 1780556116.476941,
+    "ast_hash": "1d3fcd44bcd86789d2abdbe287243da5",
+    "semantic_hash": "1d3fcd44bcd86789d2abdbe287243da5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\infra-db-client.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "373b3389374db45504948a6a8f5f41e4",
+    "semantic_hash": "373b3389374db45504948a6a8f5f41e4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\installer\\caddy-generator.ts": {
+    "mtime": 1781065310.304287,
+    "ast_hash": "1cccefa89a0a8df681721d39e15f3302",
+    "semantic_hash": "1cccefa89a0a8df681721d39e15f3302"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\installer\\compose-generator.ts": {
+    "mtime": 1781065310.3106525,
+    "ast_hash": "c76405fd60fc56ca09dd4a99156dd4ba",
+    "semantic_hash": "c76405fd60fc56ca09dd4a99156dd4ba"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\installer\\deploy-job.ts": {
+    "mtime": 1781174050.1754534,
+    "ast_hash": "5338578816705521336f5571810e70a1",
+    "semantic_hash": "5338578816705521336f5571810e70a1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\installer\\docker-client.ts": {
+    "mtime": 1781065310.3106525,
+    "ast_hash": "3d2f0edbd80304097c3d18440f8f8875",
+    "semantic_hash": "3d2f0edbd80304097c3d18440f8f8875"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\installer\\env-writer.ts": {
+    "mtime": 1781065310.3106525,
+    "ast_hash": "5ffe603c7d65738d54bcccf2a3d7edc0",
+    "semantic_hash": "5ffe603c7d65738d54bcccf2a3d7edc0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\log-activity.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "e7d069ee55e2a9741cc50ce119896c27",
+    "semantic_hash": "e7d069ee55e2a9741cc50ce119896c27"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\logger.ts": {
+    "mtime": 1780556116.4834018,
+    "ast_hash": "ae520fbdf4196f7713f34d3c1770427a",
+    "semantic_hash": "ae520fbdf4196f7713f34d3c1770427a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\plugin-loader.ts": {
+    "mtime": 1781058796.4863124,
+    "ast_hash": "71e5b65d180b9125598657dfede51eb0",
+    "semantic_hash": "71e5b65d180b9125598657dfede51eb0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\push-notify.ts": {
+    "mtime": 1780559231.727116,
+    "ast_hash": "4324259ca72c020a25d8a49a15b45968",
+    "semantic_hash": "4324259ca72c020a25d8a49a15b45968"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\queue-webhook.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "a9c8f15f44c5a7189c90d56bc1b4f056",
+    "semantic_hash": "a9c8f15f44c5a7189c90d56bc1b4f056"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\record-type-permission.test.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "33f5eacb9bd707b3657b0cf618426b6d",
+    "semantic_hash": "33f5eacb9bd707b3657b0cf618426b6d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\record-type-permission.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "2fa371c35b03a3ed6d960e38f4e1641e",
+    "semantic_hash": "2fa371c35b03a3ed6d960e38f4e1641e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\seed-demo.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "309d046f1e45fed5da75a609d8010e03",
+    "semantic_hash": "309d046f1e45fed5da75a609d8010e03"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\seed-modules.ts": {
+    "mtime": 1781174050.1790893,
+    "ast_hash": "06a339553c69580a74035a0591eb340d",
+    "semantic_hash": "06a339553c69580a74035a0591eb340d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\seed-pipeline.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "ce3a44238790d0ddb1bf17e7ad2d3206",
+    "semantic_hash": "ce3a44238790d0ddb1bf17e7ad2d3206"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\seed.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "e326ceb11a1ac580c0a1552ce237ccf1",
+    "semantic_hash": "e326ceb11a1ac580c0a1552ce237ccf1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\send-alert-email.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "f437d72a1a5bcb72119709db49e32230",
+    "semantic_hash": "f437d72a1a5bcb72119709db49e32230"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\setup-crypto.ts": {
+    "mtime": 1780559231.7312024,
+    "ast_hash": "b269b3afea38c646e46c46aa612b11f6",
+    "semantic_hash": "b269b3afea38c646e46c46aa612b11f6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\setup-db.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "5556ac145eb2872d011f970dd2460d55",
+    "semantic_hash": "5556ac145eb2872d011f970dd2460d55"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\sse-registry.ts": {
+    "mtime": 1780559231.7312024,
+    "ast_hash": "213d7809dc0b493abbdb212cc52766ad",
+    "semantic_hash": "213d7809dc0b493abbdb212cc52766ad"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\ssh-crypto.ts": {
+    "mtime": 1780559231.7312024,
+    "ast_hash": "347db1dc61997085a4397b6083f3740e",
+    "semantic_hash": "347db1dc61997085a4397b6083f3740e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\lib\\ssh-exec.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "165d4805fd5521e77ca311ece9f00347",
+    "semantic_hash": "165d4805fd5521e77ca311ece9f00347"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\middleware\\agentAuth.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "b3ff4c5eea2eb3a66b888656ce09c33b",
+    "semantic_hash": "b3ff4c5eea2eb3a66b888656ce09c33b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\middleware\\api-key-auth.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "c20a6bfe49908d98a500acc9df03055f",
+    "semantic_hash": "c20a6bfe49908d98a500acc9df03055f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\middleware\\auth.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "a6989c390d3a1e5a70f2d675f4369ebf",
+    "semantic_hash": "a6989c390d3a1e5a70f2d675f4369ebf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\middleware\\errors.ts": {
+    "mtime": 1780559231.7312024,
+    "ast_hash": "ab78f5bdcd8decc4782b95b8a8af4552",
+    "semantic_hash": "ab78f5bdcd8decc4782b95b8a8af4552"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\middleware\\module.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "ee7a72f9976225dc618d5eadf9def937",
+    "semantic_hash": "ee7a72f9976225dc618d5eadf9def937"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\middleware\\permission.test.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "564956fe4c0c8bd44021465736ccb419",
+    "semantic_hash": "564956fe4c0c8bd44021465736ccb419"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\middleware\\permission.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "381115976dea4336ee8a938bdf5b5185",
+    "semantic_hash": "381115976dea4336ee8a938bdf5b5185"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\modules\\manifests.ts": {
+    "mtime": 1781084912.570322,
+    "ast_hash": "d16cf4aeebc5a799afc4a2e2f0ac6f3c",
+    "semantic_hash": "d16cf4aeebc5a799afc4a2e2f0ac6f3c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\modules\\registry.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "656ae47fe385cef766ca645b9b83bca5",
+    "semantic_hash": "656ae47fe385cef766ca645b9b83bca5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\activity.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "792fa76ccd928a742889b6bfd7f4ecfc",
+    "semantic_hash": "792fa76ccd928a742889b6bfd7f4ecfc"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\agent.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "9531e25cfae8e343c8e28251f5a98b73",
+    "semantic_hash": "9531e25cfae8e343c8e28251f5a98b73"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\alert-thresholds.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "1c3f6698256d159d3f743da0c155496e",
+    "semantic_hash": "1c3f6698256d159d3f743da0c155496e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\alerts.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "8872629caf2cced370a33e2faab2b9f2",
+    "semantic_hash": "8872629caf2cced370a33e2faab2b9f2"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\analytics.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "2a0a850fc1b3c20f524071e581e01ba0",
+    "semantic_hash": "2a0a850fc1b3c20f524071e581e01ba0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\api-keys.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "fb7c1e980cf8efe6852e7eef16fe1290",
+    "semantic_hash": "fb7c1e980cf8efe6852e7eef16fe1290"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\auth.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "3d5d1e385f2ee8623050904eac332d37",
+    "semantic_hash": "3d5d1e385f2ee8623050904eac332d37"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\companies.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "55a69f5b507da620c251b6ca6990229c",
+    "semantic_hash": "55a69f5b507da620c251b6ca6990229c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\config.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "0feefa0c1b3223bb3b621f7e47255c45",
+    "semantic_hash": "0feefa0c1b3223bb3b621f7e47255c45"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\contacts.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "805d9dddd43e2cb1c8e8b2a77175aed9",
+    "semantic_hash": "805d9dddd43e2cb1c8e8b2a77175aed9"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\dashboards.ts": {
+    "mtime": 1781084553.62272,
+    "ast_hash": "e1642e576e72bbfb94e61216d17916d3",
+    "semantic_hash": "e1642e576e72bbfb94e61216d17916d3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\groups.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "ac97dff0b1297435b29a4f19d4b03f9b",
+    "semantic_hash": "ac97dff0b1297435b29a4f19d4b03f9b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\infra-databases.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "ec0b88fa778463bbc8c88c62ae14167c",
+    "semantic_hash": "ec0b88fa778463bbc8c88c62ae14167c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\installer.ts": {
+    "mtime": 1781065310.3106525,
+    "ast_hash": "928a0c08c0be8c3edd620f905617f864",
+    "semantic_hash": "928a0c08c0be8c3edd620f905617f864"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\internal.ts": {
+    "mtime": 1780565028.3556201,
+    "ast_hash": "38b6faae9d79a3533a88035e2cf4e3ee",
+    "semantic_hash": "38b6faae9d79a3533a88035e2cf4e3ee"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\invites.ts": {
+    "mtime": 1780565028.3713183,
+    "ast_hash": "77894f0cd4d26649c3df397f00e3c61e",
+    "semantic_hash": "77894f0cd4d26649c3df397f00e3c61e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\item-groups.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "7777707e027bf4ce73e000936a31c021",
+    "semantic_hash": "7777707e027bf4ce73e000936a31c021"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\items.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "e87fa1ce2cfc6a260808f23906dce5b8",
+    "semantic_hash": "e87fa1ce2cfc6a260808f23906dce5b8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\me.ts": {
+    "mtime": 1780556116.5433779,
+    "ast_hash": "5e44f23c93de98fb7d5a82835d69ffad",
+    "semantic_hash": "5e44f23c93de98fb7d5a82835d69ffad"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\notifications.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "fd5974cb2606b712a407f538ad2fca79",
+    "semantic_hash": "fd5974cb2606b712a407f538ad2fca79"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\pipelines.test.ts": {
+    "mtime": 1780559231.7478814,
+    "ast_hash": "2365fa043f3c178923b6db744007eaaf",
+    "semantic_hash": "2365fa043f3c178923b6db744007eaaf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\pipelines.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "e03c8d36a0022e8b3f48651b9bdb1ffc",
+    "semantic_hash": "e03c8d36a0022e8b3f48651b9bdb1ffc"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\pipelines.views.test.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "396a160273454b91fd4c2cfe2c9e90fe",
+    "semantic_hash": "396a160273454b91fd4c2cfe2c9e90fe"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\plugins.ts": {
+    "mtime": 1781174050.1811664,
+    "ast_hash": "a7bf6f6ec39fee0e1f7af4dee70e7e5e",
+    "semantic_hash": "a7bf6f6ec39fee0e1f7af4dee70e7e5e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\record-types.test.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "9ca77f120c9101d06a04f432d326c487",
+    "semantic_hash": "9ca77f120c9101d06a04f432d326c487"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\record-types.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "c1331b1cbe0ef159ecb9d2616e46dc3e",
+    "semantic_hash": "c1331b1cbe0ef159ecb9d2616e46dc3e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\records.test.ts": {
+    "mtime": 1780559231.7478814,
+    "ast_hash": "cc508c7e4d729439b479b639a4216bcd",
+    "semantic_hash": "cc508c7e4d729439b479b639a4216bcd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\records.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "0f5512004919ab9f573c1b8fcdf28881",
+    "semantic_hash": "0f5512004919ab9f573c1b8fcdf28881"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\servers.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "642797b8b49b556aa778d702384381eb",
+    "semantic_hash": "642797b8b49b556aa778d702384381eb"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\setup.ts": {
+    "mtime": 1781174050.1827283,
+    "ast_hash": "ed141c2804ad1a9e026d93cdd8b1d9bd",
+    "semantic_hash": "ed141c2804ad1a9e026d93cdd8b1d9bd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\sse.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "0bc6993f8e99a78f2919f8476303a83e",
+    "semantic_hash": "0bc6993f8e99a78f2919f8476303a83e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\ssh-actions.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "72e8fdeaefcc636eeb3d0c37dff4f40f",
+    "semantic_hash": "72e8fdeaefcc636eeb3d0c37dff4f40f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\ssh-keypair.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "4200bdac8428b1a6343083f3a673f97d",
+    "semantic_hash": "4200bdac8428b1a6343083f3a673f97d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\tasks.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "75091c5169d3843d5950436a4b1b64e5",
+    "semantic_hash": "75091c5169d3843d5950436a4b1b64e5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\user-permissions.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "ff4425b8fa4314104d285aa010b18d15",
+    "semantic_hash": "ff4425b8fa4314104d285aa010b18d15"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\users.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "0b326aa2a5f1cec8bd2fd9b34a4a471b",
+    "semantic_hash": "0b326aa2a5f1cec8bd2fd9b34a4a471b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\v1\\companies.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "0b09656946063cde65526c521cc6852b",
+    "semantic_hash": "0b09656946063cde65526c521cc6852b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\v1\\contacts.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "bc94bf722f7f02ba0e67425be924bdc9",
+    "semantic_hash": "bc94bf722f7f02ba0e67425be924bdc9"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\v1\\index.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "322abbf20a7b3ec48dcfb10f6e0899bb",
+    "semantic_hash": "322abbf20a7b3ec48dcfb10f6e0899bb"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\v1\\infra.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "d63519c2017a4fe8350b73e3856a283e",
+    "semantic_hash": "d63519c2017a4fe8350b73e3856a283e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\v1\\tasks.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "6e5531c409ab7f50c965afd547dbf41a",
+    "semantic_hash": "6e5531c409ab7f50c965afd547dbf41a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\webhooks.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "580b3edc04ad26705b9504a4f1f2bc63",
+    "semantic_hash": "580b3edc04ad26705b9504a4f1f2bc63"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\websites.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "9ee786995bb65c67ba39d985988971e4",
+    "semantic_hash": "9ee786995bb65c67ba39d985988971e4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\routes\\workspace-modules.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "e133aa75b2ece6f9a0a0e29ea687ecd6",
+    "semantic_hash": "e133aa75b2ece6f9a0a0e29ea687ecd6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\scripts\\add-atp-fields.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "889811f364ece9449f156c51a61bd043",
+    "semantic_hash": "889811f364ece9449f156c51a61bd043"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\scripts\\backfill-modules.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "2aa229b7af4d6522884323f4c5fd1343",
+    "semantic_hash": "2aa229b7af4d6522884323f4c5fd1343"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\scripts\\backfill-pipeline-engine.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "7aeb4e8e26f99cf265fc076a229b4359",
+    "semantic_hash": "7aeb4e8e26f99cf265fc076a229b4359"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\scripts\\cleanup-atp-fields.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "c32bf69c5120aeea27b5c13924a81bde",
+    "semantic_hash": "c32bf69c5120aeea27b5c13924a81bde"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\scripts\\fix-atp-stages.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "e875a12cabcea1b215fcfc58ad8c4911",
+    "semantic_hash": "e875a12cabcea1b215fcfc58ad8c4911"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\scripts\\list-record-types.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "463c7681a4bf428f86c253292897e481",
+    "semantic_hash": "463c7681a4bf428f86c253292897e481"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\scripts\\show-stages.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "7766cc726187c71131388ff8e284e23a",
+    "semantic_hash": "7766cc726187c71131388ff8e284e23a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\workers\\task-due-notifier.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "3aad2f371efdd044e323a656768ea857",
+    "semantic_hash": "3aad2f371efdd044e323a656768ea857"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\workers\\webhook-delivery.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "eca02b70a80a950376a8d756a854de14",
+    "semantic_hash": "eca02b70a80a950376a8d756a854de14"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\workers\\website-checker.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "617223f1f8220702e87a5ea58b098e71",
+    "semantic_hash": "617223f1f8220702e87a5ea58b098e71"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\ws\\sftp-session.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "4a1388d3a0d9be8315eb70c71f937655",
+    "semantic_hash": "4a1388d3a0d9be8315eb70c71f937655"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\src\\ws\\ssh-terminal.ts": {
+    "mtime": 1780565028.3719592,
+    "ast_hash": "76273dfb841624d7df01d1fa3df6c080",
+    "semantic_hash": "76273dfb841624d7df01d1fa3df6c080"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\api\\tsconfig.json": {
+    "mtime": 1780556116.6390586,
+    "ast_hash": "bbcff48f2eb8e71156c390431135b144",
+    "semantic_hash": "bbcff48f2eb8e71156c390431135b144"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\mobile\\expo-env.d.ts": {
+    "mtime": 1780556116.7123492,
+    "ast_hash": "0dd9dccdb4b08595bc83df70d6a154d3",
+    "semantic_hash": "0dd9dccdb4b08595bc83df70d6a154d3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\.clerk\\.tmp\\keyless.json": {
+    "mtime": 1780556116.7317765,
+    "ast_hash": "867634aae6a5383bf72d39771a0ff6f6",
+    "semantic_hash": "867634aae6a5383bf72d39771a0ff6f6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\.clerk\\.tmp\\telemetry.json": {
+    "mtime": 1780556116.7317765,
+    "ast_hash": "b873066424adb7661899f6caa70aeed5",
+    "semantic_hash": "b873066424adb7661899f6caa70aeed5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\[slug]\\page.tsx": {
+    "mtime": 1780556116.8112433,
+    "ast_hash": "32e2e55001e2818da7527cb6e246b441",
+    "semantic_hash": "32e2e55001e2818da7527cb6e246b441"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\activity\\page.tsx": {
+    "mtime": 1780556116.7317765,
+    "ast_hash": "f66048ba687add9194ab114d2308b0cb",
+    "semantic_hash": "f66048ba687add9194ab114d2308b0cb"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\alerts\\page.tsx": {
+    "mtime": 1780556116.7451677,
+    "ast_hash": "548647bd37806641d78dc3c6b44137a9",
+    "semantic_hash": "548647bd37806641d78dc3c6b44137a9"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\analytics\\page.tsx": {
+    "mtime": 1780556116.746168,
+    "ast_hash": "dcb618511883077660180c65095b75bf",
+    "semantic_hash": "dcb618511883077660180c65095b75bf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\companies\\page.tsx": {
+    "mtime": 1780556116.7481697,
+    "ast_hash": "6b80bd7608d6801eec6cc955231f366c",
+    "semantic_hash": "6b80bd7608d6801eec6cc955231f366c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\contacts\\page.tsx": {
+    "mtime": 1780556116.7501712,
+    "ast_hash": "9745fc617de622a5b9725fa49466ad41",
+    "semantic_hash": "9745fc617de622a5b9725fa49466ad41"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\dashboard\\[id]\\page.tsx": {
+    "mtime": 1781084553.630287,
+    "ast_hash": "1a93c7bc0e7310d7fd377900e7c0af41",
+    "semantic_hash": "1a93c7bc0e7310d7fd377900e7c0af41"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\dashboard\\page.tsx": {
+    "mtime": 1781084553.632304,
+    "ast_hash": "f3475bcc5002220309dc2faa78304cb6",
+    "semantic_hash": "f3475bcc5002220309dc2faa78304cb6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\databases\\[id]\\page.tsx": {
+    "mtime": 1781174050.1847658,
+    "ast_hash": "d8a5118ce4bd4546cf55ce1e8b16a65a",
+    "semantic_hash": "d8a5118ce4bd4546cf55ce1e8b16a65a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\databases\\page.tsx": {
+    "mtime": 1781174050.1847658,
+    "ast_hash": "e2c55e3b8d8bc274ee755592efb147b1",
+    "semantic_hash": "e2c55e3b8d8bc274ee755592efb147b1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\layout.tsx": {
+    "mtime": 1780559231.7842672,
+    "ast_hash": "1dc4729995ae766dec98683c2779b8b7",
+    "semantic_hash": "1dc4729995ae766dec98683c2779b8b7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\pipeline\\[pipelineId]\\page.tsx": {
+    "mtime": 1780556116.75818,
+    "ast_hash": "b2a528f63acd64673f7a2fe4b92d0080",
+    "semantic_hash": "b2a528f63acd64673f7a2fe4b92d0080"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\pipeline\\page.tsx": {
+    "mtime": 1780556116.75818,
+    "ast_hash": "c79fc3c48fcd6bd594304d25d5a810f2",
+    "semantic_hash": "c79fc3c48fcd6bd594304d25d5a810f2"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\plugins\\[pluginId]\\[[...path]]\\page.tsx": {
+    "mtime": 1780828070.3748312,
+    "ast_hash": "db87ccfa5d972470cdc4859a1dd12c1e",
+    "semantic_hash": "db87ccfa5d972470cdc4859a1dd12c1e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\servers\\[id]\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "9700b1ae4838ac148781e144088ea558",
+    "semantic_hash": "9700b1ae4838ac148781e144088ea558"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\servers\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "54df9271149a7bca994904362238d7a8",
+    "semantic_hash": "54df9271149a7bca994904362238d7a8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\(users-groups)\\groups\\[groupId]\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "13096cee78df014455f5370c99419b59",
+    "semantic_hash": "13096cee78df014455f5370c99419b59"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\(users-groups)\\groups\\page.tsx": {
+    "mtime": 1780559231.7842672,
+    "ast_hash": "e14004637767e23145de284c4dfa3c72",
+    "semantic_hash": "e14004637767e23145de284c4dfa3c72"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\(users-groups)\\layout.tsx": {
+    "mtime": 1780559231.7842672,
+    "ast_hash": "207b1774d19df4dfea4bcb5eea6c01d3",
+    "semantic_hash": "207b1774d19df4dfea4bcb5eea6c01d3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\(users-groups)\\users\\[userId]\\permissions\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "8653aa7204525a66822b09742cbbfcc3",
+    "semantic_hash": "8653aa7204525a66822b09742cbbfcc3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\(users-groups)\\users\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "58ed23d0bdec03755717117e26686292",
+    "semantic_hash": "58ed23d0bdec03755717117e26686292"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\api-keys\\page.tsx": {
+    "mtime": 1780559231.7842672,
+    "ast_hash": "4b2a521cac4402943196a3b96751740a",
+    "semantic_hash": "4b2a521cac4402943196a3b96751740a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\conversions\\page.tsx": {
+    "mtime": 1780559231.7842672,
+    "ast_hash": "179d085ecafbab098faf65d50915eaaa",
+    "semantic_hash": "179d085ecafbab098faf65d50915eaaa"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\layout.tsx": {
+    "mtime": 1781176077.498758,
+    "ast_hash": "d9d38f09268f79b35ef4423410480dfd",
+    "semantic_hash": "d9d38f09268f79b35ef4423410480dfd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\modules\\page.tsx": {
+    "mtime": 1781176108.236821,
+    "ast_hash": "9a74056be5fc3f745c2e85beef069e14",
+    "semantic_hash": "9a74056be5fc3f745c2e85beef069e14"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\page.tsx": {
+    "mtime": 1780556116.788592,
+    "ast_hash": "2898d640d9d7ef2b84d0d807914742dd",
+    "semantic_hash": "2898d640d9d7ef2b84d0d807914742dd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\pipelines\\layout.tsx": {
+    "mtime": 1780559231.7842672,
+    "ast_hash": "584832a442f3333281d4f90f42327d02",
+    "semantic_hash": "584832a442f3333281d4f90f42327d02"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\pipelines\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "aa5a122050794bef865d996fa6c7db50",
+    "semantic_hash": "aa5a122050794bef865d996fa6c7db50"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\pipelines\\record-types\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "d65117e7f934f3a98603b4aca9bc9798",
+    "semantic_hash": "d65117e7f934f3a98603b4aca9bc9798"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\plugins\\[pluginId]\\page.tsx": {
+    "mtime": 1780827707.1338844,
+    "ast_hash": "e8aff68dfdb4b611fa64782dd0c1cbc0",
+    "semantic_hash": "e8aff68dfdb4b611fa64782dd0c1cbc0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\plugins\\page.tsx": {
+    "mtime": 1781174050.1867764,
+    "ast_hash": "fd3bf31010fa75ad2464221947fe054f",
+    "semantic_hash": "fd3bf31010fa75ad2464221947fe054f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\profile\\page.tsx": {
+    "mtime": 1780827504.422177,
+    "ast_hash": "0621848a844c5ccc1bfe1eebb8cef36c",
+    "semantic_hash": "0621848a844c5ccc1bfe1eebb8cef36c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\record-types\\page.tsx": {
+    "mtime": 1780559231.7842672,
+    "ast_hash": "08c70fff7c15dcdaa26b8584204b48ff",
+    "semantic_hash": "08c70fff7c15dcdaa26b8584204b48ff"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\ssh\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "86762634c08f5a924124f20390b06a9b",
+    "semantic_hash": "86762634c08f5a924124f20390b06a9b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\tasks\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "9e6f93a5bca4b12f939eecbcaf1c1937",
+    "semantic_hash": "9e6f93a5bca4b12f939eecbcaf1c1937"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\team\\[userId]\\permissions\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "143d004bd8ebcbb7388f66fdfe239891",
+    "semantic_hash": "143d004bd8ebcbb7388f66fdfe239891"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\settings\\team\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "4a1c8f7fe301eb608d263ac9035677db",
+    "semantic_hash": "4a1c8f7fe301eb608d263ac9035677db"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\tasks\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "c667796d6ec1f8f514be3a02d83d3f36",
+    "semantic_hash": "c667796d6ec1f8f514be3a02d83d3f36"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\(dashboard)\\websites\\page.tsx": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "c17e8e851bc4b56b352203105808fc68",
+    "semantic_hash": "c17e8e851bc4b56b352203105808fc68"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\api\\setup\\activate\\route.ts": {
+    "mtime": 1780565028.4026196,
+    "ast_hash": "61938490cbda4e9c6d1c96c1b4b62284",
+    "semantic_hash": "61938490cbda4e9c6d1c96c1b4b62284"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\forgot-password\\page.tsx": {
+    "mtime": 1780559231.7990122,
+    "ast_hash": "c079dfde010a1e1cb98afa606cac7d05",
+    "semantic_hash": "c079dfde010a1e1cb98afa606cac7d05"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\invite\\[token]\\page.tsx": {
+    "mtime": 1780559231.7990122,
+    "ast_hash": "2cf1ec399435b6cc3d056a4feed45d2e",
+    "semantic_hash": "2cf1ec399435b6cc3d056a4feed45d2e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\layout.tsx": {
+    "mtime": 1780827049.8151753,
+    "ast_hash": "2a1ad4eb367335266dab683541915cf8",
+    "semantic_hash": "2a1ad4eb367335266dab683541915cf8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\login\\page.tsx": {
+    "mtime": 1780559231.7990122,
+    "ast_hash": "d3aae840f318e77cd0f72f63f6370f37",
+    "semantic_hash": "d3aae840f318e77cd0f72f63f6370f37"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\page.tsx": {
+    "mtime": 1780556116.8269117,
+    "ast_hash": "01d7cb546b711fa8bd2f37384050b527",
+    "semantic_hash": "01d7cb546b711fa8bd2f37384050b527"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\reset-password\\page.tsx": {
+    "mtime": 1780559231.7990122,
+    "ast_hash": "61ab54bdba2fe1f7333b75a7e720abbc",
+    "semantic_hash": "61ab54bdba2fe1f7333b75a7e720abbc"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\SetupWizard.tsx": {
+    "mtime": 1781174050.1907935,
+    "ast_hash": "602af04d93220da145d31ba504b5311a",
+    "semantic_hash": "602af04d93220da145d31ba504b5311a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\Sidebar.tsx": {
+    "mtime": 1781065310.3160222,
+    "ast_hash": "b3f33e2fb073ba18f2038be94edbeeb2",
+    "semantic_hash": "b3f33e2fb073ba18f2038be94edbeeb2"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\__tests__\\types.test.ts": {
+    "mtime": 1781065310.3171003,
+    "ast_hash": "713329a908bbd5d0cf34c7bf70cc56b1",
+    "semantic_hash": "713329a908bbd5d0cf34c7bf70cc56b1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\layout.tsx": {
+    "mtime": 1781065310.3171003,
+    "ast_hash": "0f710091e4c3d006d4a938cb2bddbdcd",
+    "semantic_hash": "0f710091e4c3d006d4a938cb2bddbdcd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\page.tsx": {
+    "mtime": 1781065310.318637,
+    "ast_hash": "7bea6e7670e7410a2cddb93d68c6b2cb",
+    "semantic_hash": "7bea6e7670e7410a2cddb93d68c6b2cb"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\steps\\StepAdminAccount.tsx": {
+    "mtime": 1781174050.1927483,
+    "ast_hash": "11c7f622ca54d77a8f8e27a6b89451a3",
+    "semantic_hash": "11c7f622ca54d77a8f8e27a6b89451a3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\steps\\StepBranding.tsx": {
+    "mtime": 1781174050.193926,
+    "ast_hash": "572ddfc4aeff6cb2a949a63f8e77778b",
+    "semantic_hash": "572ddfc4aeff6cb2a949a63f8e77778b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\steps\\StepComplete.tsx": {
+    "mtime": 1781029879.3766072,
+    "ast_hash": "9f2903bd18a58ce5038d43a4a3bc17ee",
+    "semantic_hash": "9f2903bd18a58ce5038d43a4a3bc17ee"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\steps\\StepDatabase.tsx": {
+    "mtime": 1781065310.319709,
+    "ast_hash": "c6fad93e510a95fec66d7164b9bf5242",
+    "semantic_hash": "c6fad93e510a95fec66d7164b9bf5242"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\steps\\StepDomainSsl.tsx": {
+    "mtime": 1781029774.0081651,
+    "ast_hash": "ac55c2823fc21dbb41cd6f90b7d0ce70",
+    "semantic_hash": "ac55c2823fc21dbb41cd6f90b7d0ce70"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\steps\\StepFeatures.tsx": {
+    "mtime": 1781174050.1949577,
+    "ast_hash": "bb0085616e84086f442431ca00e30b21",
+    "semantic_hash": "bb0085616e84086f442431ca00e30b21"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\steps\\StepInfrastructure.tsx": {
+    "mtime": 1781065310.3240511,
+    "ast_hash": "184aca040c4efedfaf4b778e41a14e55",
+    "semantic_hash": "184aca040c4efedfaf4b778e41a14e55"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\steps\\StepRedis.tsx": {
+    "mtime": 1781065310.3240511,
+    "ast_hash": "1923af25b323738570f4ce0cfce0143f",
+    "semantic_hash": "1923af25b323738570f4ce0cfce0143f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\steps\\StepReview.tsx": {
+    "mtime": 1781065310.3240511,
+    "ast_hash": "235e9dea089c26f54b6ab8d7a16f4eba",
+    "semantic_hash": "235e9dea089c26f54b6ab8d7a16f4eba"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\steps\\StepSmtp.tsx": {
+    "mtime": 1781029807.282926,
+    "ast_hash": "a634032c2219cd734df20ebfa46169f7",
+    "semantic_hash": "a634032c2219cd734df20ebfa46169f7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\setup\\types.ts": {
+    "mtime": 1781174050.1960073,
+    "ast_hash": "9e2b2d640ee07a545acac05d80d37ee0",
+    "semantic_hash": "9e2b2d640ee07a545acac05d80d37ee0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\sign-in\\[[...sign-in]]\\page.tsx": {
+    "mtime": 1780556116.8438647,
+    "ast_hash": "b8818591aa88601eac42d2092cbfb1af",
+    "semantic_hash": "b8818591aa88601eac42d2092cbfb1af"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\sign-up\\[[...sign-up]]\\page.tsx": {
+    "mtime": 1780556116.845874,
+    "ast_hash": "81601aade473ad6e2836ae0732692e75",
+    "semantic_hash": "81601aade473ad6e2836ae0732692e75"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\eslint.config.mjs": {
+    "mtime": 1778236370.1672409,
+    "ast_hash": "dfa1f5f6a7037bf39dc510f30b180002",
+    "semantic_hash": "dfa1f5f6a7037bf39dc510f30b180002"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\middleware.ts": {
+    "mtime": 1781030248.5758197,
+    "ast_hash": "525a831ec3e7174aff69fe5670e8abc2",
+    "semantic_hash": "525a831ec3e7174aff69fe5670e8abc2"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\activity\\lib\\activity.ts": {
+    "mtime": 1780565028.40565,
+    "ast_hash": "7f4588e3bd931ae5d16349bf94f71da5",
+    "semantic_hash": "7f4588e3bd931ae5d16349bf94f71da5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\activity\\pages\\page.tsx": {
+    "mtime": 1780565028.407887,
+    "ast_hash": "487042d27f2113a46412c08711dc66a0",
+    "semantic_hash": "487042d27f2113a46412c08711dc66a0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\alerts\\pages\\page.tsx": {
+    "mtime": 1780565028.407887,
+    "ast_hash": "3c0839bca77cc2af20a61f636edfbdd4",
+    "semantic_hash": "3c0839bca77cc2af20a61f636edfbdd4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\analytics\\components\\KpiCards.tsx": {
+    "mtime": 1780559231.7990122,
+    "ast_hash": "0065a4f75ee8c80553ec46820f996d97",
+    "semantic_hash": "0065a4f75ee8c80553ec46820f996d97"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\analytics\\components\\PipelineChart.tsx": {
+    "mtime": 1780559231.7990122,
+    "ast_hash": "3b6622d0245576fa994030e679f6007f",
+    "semantic_hash": "3b6622d0245576fa994030e679f6007f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\analytics\\components\\RepLeaderboard.tsx": {
+    "mtime": 1780559231.7990122,
+    "ast_hash": "ffa649588e18d4f5d4eb52493f826fc8",
+    "semantic_hash": "ffa649588e18d4f5d4eb52493f826fc8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\analytics\\components\\RevenueChart.tsx": {
+    "mtime": 1780559231.7990122,
+    "ast_hash": "33da1b378be61aa11144c5c4ed942c5a",
+    "semantic_hash": "33da1b378be61aa11144c5c4ed942c5a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\analytics\\lib\\analytics.ts": {
+    "mtime": 1780559231.7990122,
+    "ast_hash": "734469708932046e47edd304bceb39e7",
+    "semantic_hash": "734469708932046e47edd304bceb39e7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\analytics\\pages\\page.tsx": {
+    "mtime": 1780559231.7990122,
+    "ast_hash": "f2ed9664fe3c294357094917152fbcf6",
+    "semantic_hash": "f2ed9664fe3c294357094917152fbcf6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\companies\\components\\CompanyForm.tsx": {
+    "mtime": 1780565028.407887,
+    "ast_hash": "ed4f224875a81ec3f19af7001542075c",
+    "semantic_hash": "ed4f224875a81ec3f19af7001542075c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\companies\\lib\\companies.ts": {
+    "mtime": 1780565028.407887,
+    "ast_hash": "2a5b911d3ea8e9bd6c2f115fddf5aef4",
+    "semantic_hash": "2a5b911d3ea8e9bd6c2f115fddf5aef4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\companies\\pages\\page.tsx": {
+    "mtime": 1780565028.407887,
+    "ast_hash": "7f2fd46aac7a3d6bd51bc5edac3288b0",
+    "semantic_hash": "7f2fd46aac7a3d6bd51bc5edac3288b0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\contacts\\components\\ContactForm.tsx": {
+    "mtime": 1780565028.407887,
+    "ast_hash": "f2c75af408b0299a695bc6db3f30ddab",
+    "semantic_hash": "f2c75af408b0299a695bc6db3f30ddab"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\contacts\\components\\ContactsTable.tsx": {
+    "mtime": 1780565028.4128041,
+    "ast_hash": "4f83a9b62ecbcce45f458bd602588236",
+    "semantic_hash": "4f83a9b62ecbcce45f458bd602588236"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\contacts\\components\\ContactsWidget.tsx": {
+    "mtime": 1781174050.19705,
+    "ast_hash": "7196878e160bbbb8767c572003826af5",
+    "semantic_hash": "7196878e160bbbb8767c572003826af5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\contacts\\lib\\contacts.ts": {
+    "mtime": 1780565028.4128041,
+    "ast_hash": "3acab8bcaabe84abc2cb8ad9ccfa74b4",
+    "semantic_hash": "3acab8bcaabe84abc2cb8ad9ccfa74b4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\contacts\\pages\\page.tsx": {
+    "mtime": 1780559231.814758,
+    "ast_hash": "6e18759b43e5e6c5270e019e51045d28",
+    "semantic_hash": "6e18759b43e5e6c5270e019e51045d28"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\dashboard\\components\\AddWidgetPanel.tsx": {
+    "mtime": 1781084553.6363566,
+    "ast_hash": "536856d1b1113dbc9009709c10992782",
+    "semantic_hash": "536856d1b1113dbc9009709c10992782"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\dashboard\\components\\CreateDashboardModal.tsx": {
+    "mtime": 1781084553.6383734,
+    "ast_hash": "2ed929825b29d095641b37a58fd07f29",
+    "semantic_hash": "2ed929825b29d095641b37a58fd07f29"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\dashboard\\components\\DashboardGrid.tsx": {
+    "mtime": 1781174050.197567,
+    "ast_hash": "9a3c4cb5b11ce9b2c430ce307f65f149",
+    "semantic_hash": "9a3c4cb5b11ce9b2c430ce307f65f149"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\dashboard\\components\\DashboardHeader.tsx": {
+    "mtime": 1781084553.6413686,
+    "ast_hash": "97174e32242f19a57e4684b9e873817b",
+    "semantic_hash": "97174e32242f19a57e4684b9e873817b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\dashboard\\components\\DashboardTabs.tsx": {
+    "mtime": 1781084553.6413686,
+    "ast_hash": "a9253c879d3d4ed336f0ffb5484bb4d7",
+    "semantic_hash": "a9253c879d3d4ed336f0ffb5484bb4d7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\dashboard\\components\\GroupAssignModal.tsx": {
+    "mtime": 1781084553.6494336,
+    "ast_hash": "87b29c9ccc8023f4552ad6d34df8ffaf",
+    "semantic_hash": "87b29c9ccc8023f4552ad6d34df8ffaf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\dashboard\\components\\WidgetCard.tsx": {
+    "mtime": 1781084553.6494336,
+    "ast_hash": "f88a02b7f48c1f3cdc917c7fc8134fd3",
+    "semantic_hash": "f88a02b7f48c1f3cdc917c7fc8134fd3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\dashboard\\lib\\dashboard-api.ts": {
+    "mtime": 1781084553.6494336,
+    "ast_hash": "eaaff2477c135e8d67efb472a7c025c6",
+    "semantic_hash": "eaaff2477c135e8d67efb472a7c025c6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\dashboard\\pages\\[id]\\page.tsx": {
+    "mtime": 1781084553.655257,
+    "ast_hash": "c8a1907a6849257fec549d54a7c5a406",
+    "semantic_hash": "c8a1907a6849257fec549d54a7c5a406"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\dashboard\\pages\\page.tsx": {
+    "mtime": 1781084553.6594992,
+    "ast_hash": "5776888397ded4077d27867054b00e13",
+    "semantic_hash": "5776888397ded4077d27867054b00e13"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\databases\\lib\\infra-databases.ts": {
+    "mtime": 1780565028.4128041,
+    "ast_hash": "00bb602c66c6ab04c68937339249c9ae",
+    "semantic_hash": "00bb602c66c6ab04c68937339249c9ae"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\databases\\pages\\[id]\\page.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "f9f7c2cbf06e1ac7632eba1712bcc748",
+    "semantic_hash": "f9f7c2cbf06e1ac7632eba1712bcc748"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\databases\\pages\\page.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "8a16ac8c2d83cce238c819fdf575306a",
+    "semantic_hash": "8a16ac8c2d83cce238c819fdf575306a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\ConversionModal.tsx": {
+    "mtime": 1780559231.814758,
+    "ast_hash": "23d1e5f1518e2d26c14a3ef5035ea54f",
+    "semantic_hash": "23d1e5f1518e2d26c14a3ef5035ea54f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\ConversionWizard.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "bec3f51a323239857126a65ae5429990",
+    "semantic_hash": "bec3f51a323239857126a65ae5429990"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\FieldMappingEditor.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "93078ff3c2198169fc5099ada2b29ddb",
+    "semantic_hash": "93078ff3c2198169fc5099ada2b29ddb"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\PipelineEditor.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "66331dd6fe2ea896570b481e9197695c",
+    "semantic_hash": "66331dd6fe2ea896570b481e9197695c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\PipelineKanban.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "a8fba1351fbe3593816d9c199708f5f8",
+    "semantic_hash": "a8fba1351fbe3593816d9c199708f5f8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\PipelineList.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "fce3ec521672515cabd5e715862f72cc",
+    "semantic_hash": "fce3ec521672515cabd5e715862f72cc"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\PipelineTable.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "59e0a5ccd0193fb6451514f62f93f610",
+    "semantic_hash": "59e0a5ccd0193fb6451514f62f93f610"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\PipelineWidget.tsx": {
+    "mtime": 1781174050.1985939,
+    "ast_hash": "5955922e37ad4fbca00203bdc44e86b2",
+    "semantic_hash": "5955922e37ad4fbca00203bdc44e86b2"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\RecordCard.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "cc8f434dc678d76cf1675fb5a7c1feef",
+    "semantic_hash": "cc8f434dc678d76cf1675fb5a7c1feef"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\RecordDetail.tsx": {
+    "mtime": 1780559231.814758,
+    "ast_hash": "a89c6b67a0b8308fcb33f513a2cd8d0d",
+    "semantic_hash": "a89c6b67a0b8308fcb33f513a2cd8d0d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\RecordDetailPanel.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "2c29ee594dd328094100d767e4c5d8b5",
+    "semantic_hash": "2c29ee594dd328094100d767e4c5d8b5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\RecordForm.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "619c822d3681115684ca3a315484cd7e",
+    "semantic_hash": "619c822d3681115684ca3a315484cd7e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\RecordKanban.tsx": {
+    "mtime": 1780559231.814758,
+    "ast_hash": "b711bd3d476c9251f1dd8d6a82207f28",
+    "semantic_hash": "b711bd3d476c9251f1dd8d6a82207f28"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\RecordList.tsx": {
+    "mtime": 1780559231.814758,
+    "ast_hash": "df815d116099986f053d7adaf8b1890b",
+    "semantic_hash": "df815d116099986f053d7adaf8b1890b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\RecordTable.tsx": {
+    "mtime": 1780559231.814758,
+    "ast_hash": "d8a45a4ec957096756dda84a04f25e7c",
+    "semantic_hash": "d8a45a4ec957096756dda84a04f25e7c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\RecordTypeEditor.tsx": {
+    "mtime": 1780565028.4148123,
+    "ast_hash": "a81497fc811bc99d36069dd98be9dc3b",
+    "semantic_hash": "a81497fc811bc99d36069dd98be9dc3b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\TemplateFieldMapper.tsx": {
+    "mtime": 1780559231.814758,
+    "ast_hash": "73951c67d795bc3aec22658c430053d6",
+    "semantic_hash": "73951c67d795bc3aec22658c430053d6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\components\\ViewSwitcher.tsx": {
+    "mtime": 1780559231.814758,
+    "ast_hash": "d9895c9633b131a51aabf1de783eb592",
+    "semantic_hash": "d9895c9633b131a51aabf1de783eb592"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\lib\\conversions.ts": {
+    "mtime": 1780559231.8299208,
+    "ast_hash": "e19b0f37a0e959689f70adc07bbf651a",
+    "semantic_hash": "e19b0f37a0e959689f70adc07bbf651a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\lib\\item-groups.ts": {
+    "mtime": 1780565028.4211829,
+    "ast_hash": "03c7d548812cb143fd9dc6144cfb2a72",
+    "semantic_hash": "03c7d548812cb143fd9dc6144cfb2a72"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\lib\\pipelines.ts": {
+    "mtime": 1780565028.4219215,
+    "ast_hash": "f51e81927c35793fe9b2549a81039906",
+    "semantic_hash": "f51e81927c35793fe9b2549a81039906"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\lib\\record-types.ts": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "cec7209a532820cf890e7c69f22d1706",
+    "semantic_hash": "cec7209a532820cf890e7c69f22d1706"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\lib\\records.ts": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "2646cb3208ab051d39ec85d52eb8f670",
+    "semantic_hash": "2646cb3208ab051d39ec85d52eb8f670"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\pages\\GroupTabs.tsx": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "5308f77e4818808a16b01e2e281f40c2",
+    "semantic_hash": "5308f77e4818808a16b01e2e281f40c2"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\pages\\ItemModal.tsx": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "0b7c701761411a95ebaccfc3af0bec56",
+    "semantic_hash": "0b7c701761411a95ebaccfc3af0bec56"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\pages\\PipelineSwitcher.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "0f9ac25afe511d3597874628aefd6bd1",
+    "semantic_hash": "0f9ac25afe511d3597874628aefd6bd1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\pages\\[pipelineId]\\page.tsx": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "0813831681cce58ec2991d5873004514",
+    "semantic_hash": "0813831681cce58ec2991d5873004514"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\pipeline\\pages\\page.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "f49e3ee2a4034e2e8e401cee6fccf01f",
+    "semantic_hash": "f49e3ee2a4034e2e8e401cee6fccf01f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\servers\\components\\ServersWidget.tsx": {
+    "mtime": 1781174050.199655,
+    "ast_hash": "4441b7b408ef072d84110f8844203e61",
+    "semantic_hash": "4441b7b408ef072d84110f8844203e61"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\servers\\components\\SshTerminal.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "4ac3ffd9ffc4c8d7fceff40639cfab49",
+    "semantic_hash": "4ac3ffd9ffc4c8d7fceff40639cfab49"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\servers\\lib\\servers.ts": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "505d837749cf603b513d89f5cd58f9ba",
+    "semantic_hash": "505d837749cf603b513d89f5cd58f9ba"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\servers\\lib\\sftp.ts": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "5b84bcc6d578ba96c5f49e4e9d60d092",
+    "semantic_hash": "5b84bcc6d578ba96c5f49e4e9d60d092"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\servers\\lib\\ssh.ts": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "5d458950bc2a52536a55db3b0e8f81a5",
+    "semantic_hash": "5d458950bc2a52536a55db3b0e8f81a5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\settings\\components\\ApiKeyTable.tsx": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "1e144c4955411c1cbd6749e7d60c3dfd",
+    "semantic_hash": "1e144c4955411c1cbd6749e7d60c3dfd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\settings\\components\\CreateApiKeyModal.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "2826ad9857db0f50701893b3e223e50c",
+    "semantic_hash": "2826ad9857db0f50701893b3e223e50c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\settings\\components\\GroupPermissionsEditor.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "5f07ba7bf2b1f814d633950e6a9960ca",
+    "semantic_hash": "5f07ba7bf2b1f814d633950e6a9960ca"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\settings\\components\\InviteUserModal.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "91dc02d90efab37632fddedbbfdb82bd",
+    "semantic_hash": "91dc02d90efab37632fddedbbfdb82bd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\settings\\components\\PermissionBlock.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "133bc517f3cded909cd013bf80efe515",
+    "semantic_hash": "133bc517f3cded909cd013bf80efe515"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\settings\\components\\UserPermissionsEditor.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "911168fbc0c08cba0b77aa60d617ecc0",
+    "semantic_hash": "911168fbc0c08cba0b77aa60d617ecc0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\AlertBar.tsx": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "346b6f98db7a6213242f70932b2305ec",
+    "semantic_hash": "346b6f98db7a6213242f70932b2305ec"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\CsvImportExport.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "44c47f59bf7cfc651e0d2630784d47ce",
+    "semantic_hash": "44c47f59bf7cfc651e0d2630784d47ce"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\ModuleGuard.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "c5ece48c32e356f40cd0f9f6b5968dd7",
+    "semantic_hash": "c5ece48c32e356f40cd0f9f6b5968dd7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\NotificationBell.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "b9be8bfa178927605c513aa7a095520b",
+    "semantic_hash": "b9be8bfa178927605c513aa7a095520b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\PluginPanelSlot.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "fa83fb1bfc2365764edc58d34af8b7ac",
+    "semantic_hash": "fa83fb1bfc2365764edc58d34af8b7ac"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\PluginWidgetGrid.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "cf451407cbac3a022d1aca28e962a4a1",
+    "semantic_hash": "cf451407cbac3a022d1aca28e962a4a1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\Providers.tsx": {
+    "mtime": 1781174050.2006755,
+    "ast_hash": "cbf846e4f8a09591d79cdf791482898e",
+    "semantic_hash": "cbf846e4f8a09591d79cdf791482898e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\Sidebar.tsx": {
+    "mtime": 1781174050.201225,
+    "ast_hash": "3356bb0d6b3bc25038e2eb0938a04b8e",
+    "semantic_hash": "3356bb0d6b3bc25038e2eb0938a04b8e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\Topbar.tsx": {
+    "mtime": 1781174050.2029288,
+    "ast_hash": "2398ff1f31aa4850424e39827918eaff",
+    "semantic_hash": "2398ff1f31aa4850424e39827918eaff"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\ui\\AgentInstallInstructions.tsx": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "665fad16fdb2c777aaf9a23f4face119",
+    "semantic_hash": "665fad16fdb2c777aaf9a23f4face119"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\ui\\Badge.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "12d86a8fa9183b2e3cfb7139b3dea76e",
+    "semantic_hash": "12d86a8fa9183b2e3cfb7139b3dea76e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\ui\\Button.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "0809bf8179b41f5853ae44b919d68724",
+    "semantic_hash": "0809bf8179b41f5853ae44b919d68724"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\ui\\FormField.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "d1c54da38aa5cd80648b571e389bb56d",
+    "semantic_hash": "d1c54da38aa5cd80648b571e389bb56d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\ui\\Icon.tsx": {
+    "mtime": 1781174050.203461,
+    "ast_hash": "7e24a928db97cc97e138a20ddcb7c0c4",
+    "semantic_hash": "7e24a928db97cc97e138a20ddcb7c0c4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\ui\\Modal.tsx": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "8e7f97adece708a03eef10b3a12d5436",
+    "semantic_hash": "8e7f97adece708a03eef10b3a12d5436"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\components\\ui\\WidgetHelpers.tsx": {
+    "mtime": 1781174050.2044826,
+    "ast_hash": "fdb867519357c23d5401c30c5d92ef00",
+    "semantic_hash": "fdb867519357c23d5401c30c5d92ef00"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\contexts\\PluginRuntimeContext.tsx": {
+    "mtime": 1781084553.6659575,
+    "ast_hash": "d0b21d250b50377823076eea8979f6be",
+    "semantic_hash": "d0b21d250b50377823076eea8979f6be"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\contexts\\ServerMetricsContext.tsx": {
+    "mtime": 1781174050.2044826,
+    "ast_hash": "8908dac342ff8998476181d163b8811e",
+    "semantic_hash": "8908dac342ff8998476181d163b8811e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\contexts\\modules.tsx": {
+    "mtime": 1781174050.2064924,
+    "ast_hash": "d7f71c7cb1f96dec85e1571e8736aff2",
+    "semantic_hash": "d7f71c7cb1f96dec85e1571e8736aff2"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\hooks\\useInstalledPlugins.ts": {
+    "mtime": 1780559231.83212,
+    "ast_hash": "2bd2d31a7553102b0e9b72977005b8f8",
+    "semantic_hash": "2bd2d31a7553102b0e9b72977005b8f8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\hooks\\useMailSocket.ts": {
+    "mtime": 1780559231.8473868,
+    "ast_hash": "0d45f24ef7dd345698cf56a71449c60e",
+    "semantic_hash": "0d45f24ef7dd345698cf56a71449c60e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\lib\\AuthContext.tsx": {
+    "mtime": 1780559231.8478923,
+    "ast_hash": "d535927e4177164ecc5ea6d826aea0e5",
+    "semantic_hash": "d535927e4177164ecc5ea6d826aea0e5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\lib\\api-keys.ts": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "6460ca67256bec85374219bbe32a100b",
+    "semantic_hash": "6460ca67256bec85374219bbe32a100b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\lib\\api.ts": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "0435223295daa544fe11c43fb2e9d709",
+    "semantic_hash": "0435223295daa544fe11c43fb2e9d709"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\lib\\calendar.ts": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "e06e3b4223579dd7c268f7675a82b6cf",
+    "semantic_hash": "e06e3b4223579dd7c268f7675a82b6cf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\lib\\csv.ts": {
+    "mtime": 1780559231.8478923,
+    "ast_hash": "bf4b0347bd98f86ae333f0d84f7dfcc6",
+    "semantic_hash": "bf4b0347bd98f86ae333f0d84f7dfcc6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\lib\\dashboard-registry.ts": {
+    "mtime": 1781084553.6711073,
+    "ast_hash": "ce697b12fc857aafb3ee7cd11525fd00",
+    "semantic_hash": "ce697b12fc857aafb3ee7cd11525fd00"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\lib\\deployments.ts": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "d059943c7703a4d4cb8753e971bc6ca4",
+    "semantic_hash": "d059943c7703a4d4cb8753e971bc6ca4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\lib\\register-module-widgets.ts": {
+    "mtime": 1781174050.2064924,
+    "ast_hash": "e8561cf86f01b73073b1562e3a883e08",
+    "semantic_hash": "e8561cf86f01b73073b1562e3a883e08"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\lib\\useApiToken.ts": {
+    "mtime": 1781174050.2190092,
+    "ast_hash": "525eb67d5d86249c8c56f37fa9721ff4",
+    "semantic_hash": "525eb67d5d86249c8c56f37fa9721ff4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\lib\\useConfig.ts": {
+    "mtime": 1781174050.2190092,
+    "ast_hash": "44960ad4d788a34c2d68a89d18a9ba35",
+    "semantic_hash": "44960ad4d788a34c2d68a89d18a9ba35"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\lib\\websites.ts": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "76d6f406f511567cec29835a90823f3c",
+    "semantic_hash": "76d6f406f511567cec29835a90823f3c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\modules\\shared\\pages\\[slug]\\page.tsx": {
+    "mtime": 1780559231.8478923,
+    "ast_hash": "15b4d1027f64e92555aba21e83299a40",
+    "semantic_hash": "15b4d1027f64e92555aba21e83299a40"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\next-env.d.ts": {
+    "mtime": 1780831731.2958245,
+    "ast_hash": "d0f8375ae1199dc7acd3977fc33b78b8",
+    "semantic_hash": "d0f8375ae1199dc7acd3977fc33b78b8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\next.config.ts": {
+    "mtime": 1780565028.422235,
+    "ast_hash": "c0f9c688a233d1c4fc5e7a18c40d5b8f",
+    "semantic_hash": "c0f9c688a233d1c4fc5e7a18c40d5b8f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\package.json": {
+    "mtime": 1781084553.6711073,
+    "ast_hash": "caeccaba4078519fab385c8924e92e2a",
+    "semantic_hash": "caeccaba4078519fab385c8924e92e2a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\postcss.config.mjs": {
+    "mtime": 1778236370.727476,
+    "ast_hash": "239f3ebf717465dc636818a1a619398d",
+    "semantic_hash": "239f3ebf717465dc636818a1a619398d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\scripts\\migrate-imports.mjs": {
+    "mtime": 1780436128.1457262,
+    "ast_hash": "ff591ac461ecb8c8fa9ab47cd99576fd",
+    "semantic_hash": "ff591ac461ecb8c8fa9ab47cd99576fd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\store\\auth-slice.ts": {
+    "mtime": 1780565028.443652,
+    "ast_hash": "449e44b3d7e0a363dad1c24b53965a40",
+    "semantic_hash": "449e44b3d7e0a363dad1c24b53965a40"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\store\\index.ts": {
+    "mtime": 1780559231.8645113,
+    "ast_hash": "80c6e6d769a4d31a37c00921c276dc78",
+    "semantic_hash": "80c6e6d769a4d31a37c00921c276dc78"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\tsconfig.json": {
+    "mtime": 1780556117.2213824,
+    "ast_hash": "02fc19ad21338c2ab820a70136310db4",
+    "semantic_hash": "02fc19ad21338c2ab820a70136310db4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\worker\\package.json": {
+    "mtime": 1780565028.443652,
+    "ast_hash": "9eb3f676dd4432e1303c2bc5506415ff",
+    "semantic_hash": "9eb3f676dd4432e1303c2bc5506415ff"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\worker\\src\\index.ts": {
+    "mtime": 1780565028.443652,
+    "ast_hash": "6db83b94102e056563219b643528d6b0",
+    "semantic_hash": "6db83b94102e056563219b643528d6b0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\worker\\src\\jobs\\alert-eval.ts": {
+    "mtime": 1780556117.2313848,
+    "ast_hash": "bbec2b7a1cc14f11b57bfc631d2f1973",
+    "semantic_hash": "bbec2b7a1cc14f11b57bfc631d2f1973"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\worker\\src\\jobs\\db-health.ts": {
+    "mtime": 1780565028.443652,
+    "ast_hash": "0daaf6b35b6209c408bab4dc90813269",
+    "semantic_hash": "0daaf6b35b6209c408bab4dc90813269"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\worker\\src\\jobs\\server-staleness.ts": {
+    "mtime": 1780565028.443652,
+    "ast_hash": "c9f546dfc674701e8613be492fe6254f",
+    "semantic_hash": "c9f546dfc674701e8613be492fe6254f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\worker\\src\\jobs\\webhook-delivery.ts": {
+    "mtime": 1780565028.443652,
+    "ast_hash": "1b4fd81be1254e9c1ff460d86482b6f0",
+    "semantic_hash": "1b4fd81be1254e9c1ff460d86482b6f0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\worker\\src\\jobs\\website-ping.ts": {
+    "mtime": 1780565028.443652,
+    "ast_hash": "4d071e0afd7feb00c90fe66ea5abe73d",
+    "semantic_hash": "4d071e0afd7feb00c90fe66ea5abe73d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\worker\\src\\lib\\db.ts": {
+    "mtime": 1780565028.443652,
+    "ast_hash": "5e5d78a144dcd1cbeca07d6be91ba26e",
+    "semantic_hash": "5e5d78a144dcd1cbeca07d6be91ba26e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\worker\\src\\lib\\logger.ts": {
+    "mtime": 1780556117.2473917,
+    "ast_hash": "7cc6e8b2f33e5ccc1d394a495b4b7837",
+    "semantic_hash": "7cc6e8b2f33e5ccc1d394a495b4b7837"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\worker\\tsconfig.json": {
+    "mtime": 1780556117.2493896,
+    "ast_hash": "497cb0aa5522a26810719ef4850f30fd",
+    "semantic_hash": "497cb0aa5522a26810719ef4850f30fd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\package.json": {
+    "mtime": 1780565028.4641538,
+    "ast_hash": "115a3454df6693b5c5e15988c6c62283",
+    "semantic_hash": "115a3454df6693b5c5e15988c6c62283"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\package.json": {
+    "mtime": 1780565028.4661653,
+    "ast_hash": "167655edcd90021995cc358138032b5d",
+    "semantic_hash": "167655edcd90021995cc358138032b5d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\activity.ts": {
+    "mtime": 1780565028.4661653,
+    "ast_hash": "a6b2a483500e4e54fb7b5090c3e73b67",
+    "semantic_hash": "a6b2a483500e4e54fb7b5090c3e73b67"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\alerts.ts": {
+    "mtime": 1780565028.4661653,
+    "ast_hash": "d1a261bb6e3a7b18fdbb9e2396b759a6",
+    "semantic_hash": "d1a261bb6e3a7b18fdbb9e2396b759a6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\companies.ts": {
+    "mtime": 1780565028.4661653,
+    "ast_hash": "eeedaf44db45c0163b4bbf00477bd07a",
+    "semantic_hash": "eeedaf44db45c0163b4bbf00477bd07a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\contacts.ts": {
+    "mtime": 1780565028.4661653,
+    "ast_hash": "381f63e94e85b4750b1825c5dc5188fe",
+    "semantic_hash": "381f63e94e85b4750b1825c5dc5188fe"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\core.ts": {
+    "mtime": 1780560212.554858,
+    "ast_hash": "93405d4822c0b4dd713fe8a6e5beb09e",
+    "semantic_hash": "93405d4822c0b4dd713fe8a6e5beb09e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\deals.ts": {
+    "mtime": 1780565028.4661653,
+    "ast_hash": "1c8b9bfa35a174c21f948ab47ca2ce16",
+    "semantic_hash": "1c8b9bfa35a174c21f948ab47ca2ce16"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\groups.ts": {
+    "mtime": 1780560212.5568566,
+    "ast_hash": "1cb791186486130cfeb3638b4300dcdb",
+    "semantic_hash": "1cb791186486130cfeb3638b4300dcdb"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\index.ts": {
+    "mtime": 1780560212.5574248,
+    "ast_hash": "e626fd0fd5d69523ac08a7b361140506",
+    "semantic_hash": "e626fd0fd5d69523ac08a7b361140506"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\invites.ts": {
+    "mtime": 1780560212.5574248,
+    "ast_hash": "930c4ac0edc7684ae274c19fbd91467c",
+    "semantic_hash": "930c4ac0edc7684ae274c19fbd91467c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\me.ts": {
+    "mtime": 1780565028.4661653,
+    "ast_hash": "b96fc0167a7d5e4baa5b8b33621c4b11",
+    "semantic_hash": "b96fc0167a7d5e4baa5b8b33621c4b11"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\pipelines.ts": {
+    "mtime": 1780565028.4661653,
+    "ast_hash": "388c67469aabc84ee796c643959bf6fd",
+    "semantic_hash": "388c67469aabc84ee796c643959bf6fd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\servers.ts": {
+    "mtime": 1780565028.4698896,
+    "ast_hash": "47fb5d497588f2678ab04ea03d8d80fd",
+    "semantic_hash": "47fb5d497588f2678ab04ea03d8d80fd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\tasks.ts": {
+    "mtime": 1780565028.4698896,
+    "ast_hash": "df6306fcc3d8e37a1eea5df79ffb35c4",
+    "semantic_hash": "df6306fcc3d8e37a1eea5df79ffb35c4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\src\\user-permissions.ts": {
+    "mtime": 1780560212.5574248,
+    "ast_hash": "9d87c55f17fcd8eda30bf890987faa36",
+    "semantic_hash": "9d87c55f17fcd8eda30bf890987faa36"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\api-client\\tsconfig.json": {
+    "mtime": 1780559198.9334755,
+    "ast_hash": "9614732abecfaca63ec5335e3b19ddca",
+    "semantic_hash": "9614732abecfaca63ec5335e3b19ddca"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\config\\package.json": {
+    "mtime": 1780565028.4708967,
+    "ast_hash": "c3642f2bbe5493e3b3b3cce033b63c9e",
+    "semantic_hash": "c3642f2bbe5493e3b3b3cce033b63c9e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\config\\src\\__tests__\\read-config-from-db.test.ts": {
+    "mtime": 1780559198.9334755,
+    "ast_hash": "22f60102ba9f34839d9fdec2e237148a",
+    "semantic_hash": "22f60102ba9f34839d9fdec2e237148a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\config\\src\\__tests__\\read-config.test.ts": {
+    "mtime": 1781065310.3240511,
+    "ast_hash": "f342b430ed645d12caab9937c05c9bf8",
+    "semantic_hash": "f342b430ed645d12caab9937c05c9bf8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\config\\src\\config-schema.ts": {
+    "mtime": 1780559198.938209,
+    "ast_hash": "3169048ca20b7249bdd2d3e3f913aae8",
+    "semantic_hash": "3169048ca20b7249bdd2d3e3f913aae8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\config\\src\\index.ts": {
+    "mtime": 1780830035.334262,
+    "ast_hash": "00eac154fdc5d0ea7902e11c1ad091c8",
+    "semantic_hash": "00eac154fdc5d0ea7902e11c1ad091c8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\config\\src\\read-config-from-db.ts": {
+    "mtime": 1780559198.9389992,
+    "ast_hash": "c4a10f81003f06bf39638f30c50f52cf",
+    "semantic_hash": "c4a10f81003f06bf39638f30c50f52cf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\config\\src\\read-config.ts": {
+    "mtime": 1781065310.3240511,
+    "ast_hash": "d16061c94ec1011bb9df586ac03c8764",
+    "semantic_hash": "d16061c94ec1011bb9df586ac03c8764"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\config\\tsconfig.json": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "2bfefe9596e58aa5327fc08a94511b7c",
+    "semantic_hash": "2bfefe9596e58aa5327fc08a94511b7c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\list-migrations.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "79cb73c17039c8f6b025af609ba8f216",
+    "semantic_hash": "79cb73c17039c8f6b025af609ba8f216"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240101_001_initial_schema.d.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "554934e626e10229e7f2922a106d0483",
+    "semantic_hash": "554934e626e10229e7f2922a106d0483"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240101_001_initial_schema.js": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "5b6cd27d608cce7a2e05f374d636e363",
+    "semantic_hash": "5b6cd27d608cce7a2e05f374d636e363"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240101_001_initial_schema.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "b658f50f95e7545ff7528694153d35aa",
+    "semantic_hash": "b658f50f95e7545ff7528694153d35aa"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240102_002_infra_monitoring.d.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "37c732c2f7dd4235c8edb2d1bfe26c7c",
+    "semantic_hash": "37c732c2f7dd4235c8edb2d1bfe26c7c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240102_002_infra_monitoring.js": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "fb8b0921eb7be1a1de339fdf2a0203c3",
+    "semantic_hash": "fb8b0921eb7be1a1de339fdf2a0203c3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240102_002_infra_monitoring.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "223c5d292d14bd1f01bcaee1702b9629",
+    "semantic_hash": "223c5d292d14bd1f01bcaee1702b9629"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240103_001_self_hosted_refactor.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "55f525420848645ca718416323786d62",
+    "semantic_hash": "55f525420848645ca718416323786d62"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240103_002_pipeline_customization.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "3142c3935805218af089d3ddf403194c",
+    "semantic_hash": "3142c3935805218af089d3ddf403194c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240104_001_item_groups.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "bc35fcb31410066279c6bebda06d572d",
+    "semantic_hash": "bc35fcb31410066279c6bebda06d572d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240105_001_ssh_management.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "92b53995c4ff8278688d7e1f2ab40444",
+    "semantic_hash": "92b53995c4ff8278688d7e1f2ab40444"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240106_001_ssh_user.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "f9222cc12910a5436de76a5aee3e2e68",
+    "semantic_hash": "f9222cc12910a5436de76a5aee3e2e68"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240106_002_server_ssh_port.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "d033a0cfed7a37571fa039a458980226",
+    "semantic_hash": "d033a0cfed7a37571fa039a458980226"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240107_001_webhooks.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "ef9ead7ba0e7d64a090f760e429d384d",
+    "semantic_hash": "ef9ead7ba0e7d64a090f760e429d384d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240108_001_api_keys.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "d14e58b8009169eef7d257b0722e76d5",
+    "semantic_hash": "d14e58b8009169eef7d257b0722e76d5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240109_001_notifications.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "0297c59fef5f4b71c597a17483c0275e",
+    "semantic_hash": "0297c59fef5f4b71c597a17483c0275e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20240111_001_mail.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "38372c8a2276ad05de02b9424ebd28b4",
+    "semantic_hash": "38372c8a2276ad05de02b9424ebd28b4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260518_001_pipeline_engine.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "10caf0f0b0cc06717d4c35015b879a76",
+    "semantic_hash": "10caf0f0b0cc06717d4c35015b879a76"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260520_001_pipeline_views.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "148f9bdd6f77b5bdc92cbfea8889d464",
+    "semantic_hash": "148f9bdd6f77b5bdc92cbfea8889d464"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260522_001_calendar_events.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "38372c8a2276ad05de02b9424ebd28b4",
+    "semantic_hash": "38372c8a2276ad05de02b9424ebd28b4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260529_001_system_settings.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "61f20d5b78e518c2239da172b7b09d1b",
+    "semantic_hash": "61f20d5b78e518c2239da172b7b09d1b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260530_001_mail_update.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "38372c8a2276ad05de02b9424ebd28b4",
+    "semantic_hash": "38372c8a2276ad05de02b9424ebd28b4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260530_002_workspace_imap_config.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "38372c8a2276ad05de02b9424ebd28b4",
+    "semantic_hash": "38372c8a2276ad05de02b9424ebd28b4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260531_001_mail_body_drop.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "38372c8a2276ad05de02b9424ebd28b4",
+    "semantic_hash": "38372c8a2276ad05de02b9424ebd28b4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260531_002_deployments.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "38372c8a2276ad05de02b9424ebd28b4",
+    "semantic_hash": "38372c8a2276ad05de02b9424ebd28b4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260531_003_workspace_modules.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "2cb80ca61082067195a7fd14787504a7",
+    "semantic_hash": "2cb80ca61082067195a7fd14787504a7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260601_001_workspace_plugins.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "76a604e8c499448874f24fb0e9ad9989",
+    "semantic_hash": "76a604e8c499448874f24fb0e9ad9989"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260602_001_user_permissions.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "f14434e1564ce2e4b7aca2ec222f971c",
+    "semantic_hash": "f14434e1564ce2e4b7aca2ec222f971c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260602_002_users_groups.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "21e8ea1d69b9b46103c504ae502ee65b",
+    "semantic_hash": "21e8ea1d69b9b46103c504ae502ee65b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260602_003_migrate_deals_to_records.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "674561321edf6b0e9fbf0ef2d7e996f3",
+    "semantic_hash": "674561321edf6b0e9fbf0ef2d7e996f3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260603_001_plugin_tables.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "34ff04372ab07f6250ec0a24504508e1",
+    "semantic_hash": "34ff04372ab07f6250ec0a24504508e1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260610_001_dashboards.ts": {
+    "mtime": 1781084553.6711073,
+    "ast_hash": "a61f17be5fa887e28bb62dd032beae9e",
+    "semantic_hash": "a61f17be5fa887e28bb62dd032beae9e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\migrations\\20260610_002_workspace_plugins_marketplace.ts": {
+    "mtime": 1781174050.2230449,
+    "ast_hash": "5160197a7abe4c76ed838103762284bd",
+    "semantic_hash": "5160197a7abe4c76ed838103762284bd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\package.json": {
+    "mtime": 1780565028.471947,
+    "ast_hash": "e6ad0e1d5dd0270c571208d00647ad0a",
+    "semantic_hash": "e6ad0e1d5dd0270c571208d00647ad0a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\src\\client.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "0348da7c05afd634e883f85aafea1cb5",
+    "semantic_hash": "0348da7c05afd634e883f85aafea1cb5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\src\\index.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "1927abe9fcbd9b4545cdceb6714be63c",
+    "semantic_hash": "1927abe9fcbd9b4545cdceb6714be63c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\src\\migrate.ts": {
+    "mtime": 1780559198.9397068,
+    "ast_hash": "16abac8d91193824b52f103db19de70f",
+    "semantic_hash": "16abac8d91193824b52f103db19de70f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\src\\schema.ts": {
+    "mtime": 1781174050.230071,
+    "ast_hash": "93d32cfc6cede622a628f8b254bbba47",
+    "semantic_hash": "93d32cfc6cede622a628f8b254bbba47"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\db\\tsconfig.json": {
+    "mtime": 1780559198.9546888,
+    "ast_hash": "2bfefe9596e58aa5327fc08a94511b7c",
+    "semantic_hash": "2bfefe9596e58aa5327fc08a94511b7c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\package.json": {
+    "mtime": 1780565028.473956,
+    "ast_hash": "0d1f5f637d55aedf18108b183550d7ab",
+    "semantic_hash": "0d1f5f637d55aedf18108b183550d7ab"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\activity\\index.ts": {
+    "mtime": 1780559198.9563553,
+    "ast_hash": "0511819d1b207c549eedcce2a08aa7ea",
+    "semantic_hash": "0511819d1b207c549eedcce2a08aa7ea"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\analytics\\index.ts": {
+    "mtime": 1780559198.9563553,
+    "ast_hash": "e8ea850f146a34f35221a22226e36cca",
+    "semantic_hash": "e8ea850f146a34f35221a22226e36cca"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\companies\\index.ts": {
+    "mtime": 1780559198.9583883,
+    "ast_hash": "eed55b71c0a588932799ab25d63ddce8",
+    "semantic_hash": "eed55b71c0a588932799ab25d63ddce8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\contacts\\index.ts": {
+    "mtime": 1780559198.9583883,
+    "ast_hash": "9edbb8b9a42b0bea74095ed4c57a9647",
+    "semantic_hash": "9edbb8b9a42b0bea74095ed4c57a9647"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\dashboard\\index.ts": {
+    "mtime": 1781084912.5784562,
+    "ast_hash": "6786ed24033173991e79f7d3574bcadf",
+    "semantic_hash": "6786ed24033173991e79f7d3574bcadf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\databases\\index.ts": {
+    "mtime": 1781174050.2327104,
+    "ast_hash": "2d198b4420ef3e1db7a1e87a2a5895c6",
+    "semantic_hash": "2d198b4420ef3e1db7a1e87a2a5895c6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\index.test.ts": {
+    "mtime": 1780559198.9583883,
+    "ast_hash": "fa5e0dd9c28271220b2c70452dd81d08",
+    "semantic_hash": "fa5e0dd9c28271220b2c70452dd81d08"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\index.ts": {
+    "mtime": 1781174050.2347174,
+    "ast_hash": "5fe88401eb1c5018268bed4464c99a21",
+    "semantic_hash": "5fe88401eb1c5018268bed4464c99a21"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\pipelines\\index.ts": {
+    "mtime": 1780559198.9583883,
+    "ast_hash": "ceda7f06f9e9c6f56a13431af365bab3",
+    "semantic_hash": "ceda7f06f9e9c6f56a13431af365bab3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\servers\\index.ts": {
+    "mtime": 1780559198.9583883,
+    "ast_hash": "99f7d62ee7d944a6d69750083f91dbe0",
+    "semantic_hash": "99f7d62ee7d944a6d69750083f91dbe0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\tasks\\index.ts": {
+    "mtime": 1780559198.9583883,
+    "ast_hash": "e358ab6c907ed04259938c7dbf20bf81",
+    "semantic_hash": "e358ab6c907ed04259938c7dbf20bf81"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\types.ts": {
+    "mtime": 1780559198.9583883,
+    "ast_hash": "14f2550a5ddf6ec9c0dd27a140a0c293",
+    "semantic_hash": "14f2550a5ddf6ec9c0dd27a140a0c293"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\src\\websites\\index.ts": {
+    "mtime": 1780559198.9583883,
+    "ast_hash": "5561094f0d67a5ca2a7f8cef87d04a00",
+    "semantic_hash": "5561094f0d67a5ca2a7f8cef87d04a00"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\modules\\tsconfig.json": {
+    "mtime": 1780559198.9583883,
+    "ast_hash": "2bfefe9596e58aa5327fc08a94511b7c",
+    "semantic_hash": "2bfefe9596e58aa5327fc08a94511b7c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\package.json": {
+    "mtime": 1780565028.473956,
+    "ast_hash": "e0599730424e81092907717fcbaf8840",
+    "semantic_hash": "e0599730424e81092907717fcbaf8840"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\__tests__\\bridge-registry.test.ts": {
+    "mtime": 1780560212.57335,
+    "ast_hash": "336a853aab95622fbba881dc8dc83437",
+    "semantic_hash": "336a853aab95622fbba881dc8dc83437"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\__tests__\\bridge-router.test.ts": {
+    "mtime": 1780560212.5743518,
+    "ast_hash": "b65b466e292500b02bbc13fb1d216f64",
+    "semantic_hash": "b65b466e292500b02bbc13fb1d216f64"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\__tests__\\bus.test.ts": {
+    "mtime": 1780560212.5753505,
+    "ast_hash": "af5d9274a5d64262b1d4d31f0d00d499",
+    "semantic_hash": "af5d9274a5d64262b1d4d31f0d00d499"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\__tests__\\migration-runner.test.ts": {
+    "mtime": 1780565028.4749596,
+    "ast_hash": "c94f7fab40b9ade140861f4ab517b9ca",
+    "semantic_hash": "c94f7fab40b9ade140861f4ab517b9ca"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\__tests__\\permissions.test.ts": {
+    "mtime": 1780565028.4759583,
+    "ast_hash": "1cf839e7aa58ee32128c933cc7955a05",
+    "semantic_hash": "1cf839e7aa58ee32128c933cc7955a05"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\__tests__\\table-client.test.ts": {
+    "mtime": 1780560212.5783148,
+    "ast_hash": "f2a12c06392f3a600c280878be9e3dc3",
+    "semantic_hash": "f2a12c06392f3a600c280878be9e3dc3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\bridge-registry.ts": {
+    "mtime": 1780565028.4759583,
+    "ast_hash": "579684c9848ea18bf987230b04643316",
+    "semantic_hash": "579684c9848ea18bf987230b04643316"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\bridge-router.ts": {
+    "mtime": 1780565028.4769628,
+    "ast_hash": "29997959098c1c45979c4767a80fc6cd",
+    "semantic_hash": "29997959098c1c45979c4767a80fc6cd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\bus.ts": {
+    "mtime": 1780560212.568318,
+    "ast_hash": "47a7812509faf81ecfa781d407bc19fe",
+    "semantic_hash": "47a7812509faf81ecfa781d407bc19fe"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\index.ts": {
+    "mtime": 1780560212.5693147,
+    "ast_hash": "70b6b0c0c48067ee7499532194225ade",
+    "semantic_hash": "70b6b0c0c48067ee7499532194225ade"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\migration-runner.ts": {
+    "mtime": 1780565028.4769628,
+    "ast_hash": "57b698eb856fd68342f0794f52c72bb2",
+    "semantic_hash": "57b698eb856fd68342f0794f52c72bb2"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\permissions.ts": {
+    "mtime": 1780565028.477958,
+    "ast_hash": "e812c596e04843da27c64c3a4e258841",
+    "semantic_hash": "e812c596e04843da27c64c3a4e258841"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\src\\table-client.ts": {
+    "mtime": 1780565028.477958,
+    "ast_hash": "a6b89914ec4c6ee712ed88a765fc5e6f",
+    "semantic_hash": "a6b89914ec4c6ee712ed88a765fc5e6f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\tsconfig.json": {
+    "mtime": 1780559198.9723854,
+    "ast_hash": "06664d3d26bf22d959e0aa03829d9bcd",
+    "semantic_hash": "06664d3d26bf22d959e0aa03829d9bcd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-runtime\\vitest.config.ts": {
+    "mtime": 1780559198.9730842,
+    "ast_hash": "97349ee193c4c81aa1429a06137ceb68",
+    "semantic_hash": "97349ee193c4c81aa1429a06137ceb68"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-types\\package.json": {
+    "mtime": 1780565028.4789605,
+    "ast_hash": "3ccbfbbfef6373a249de51fe0a0e949f",
+    "semantic_hash": "3ccbfbbfef6373a249de51fe0a0e949f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-types\\src\\index.ts": {
+    "mtime": 1780559198.975096,
+    "ast_hash": "2f7eeba5c7168ec8ad623786ba1703d8",
+    "semantic_hash": "2f7eeba5c7168ec8ad623786ba1703d8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\plugin-types\\tsconfig.json": {
+    "mtime": 1780559198.975096,
+    "ast_hash": "cc83c3c4b914346f47b1dc9613f402c3",
+    "semantic_hash": "cc83c3c4b914346f47b1dc9613f402c3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\types\\package.json": {
+    "mtime": 1780565028.4789605,
+    "ast_hash": "dc1d40da154352b1e3a07dab068498c6",
+    "semantic_hash": "dc1d40da154352b1e3a07dab068498c6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\types\\src\\index.ts": {
+    "mtime": 1780559198.975096,
+    "ast_hash": "7431602f2a7d355c0852258238bf66c0",
+    "semantic_hash": "7431602f2a7d355c0852258238bf66c0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\packages\\types\\tsconfig.json": {
+    "mtime": 1780559198.975096,
+    "ast_hash": "2bfefe9596e58aa5327fc08a94511b7c",
+    "semantic_hash": "2bfefe9596e58aa5327fc08a94511b7c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\scripts\\db.ps1": {
+    "mtime": 1779769393.0534515,
+    "ast_hash": "fa790fdf99b1146d261ca673ee2f8e2d",
+    "semantic_hash": "fa790fdf99b1146d261ca673ee2f8e2d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\scripts\\deploy.sh": {
+    "mtime": 1780565028.4829571,
+    "ast_hash": "f5fd8a73c4c06ac359e98201b2dac5d6",
+    "semantic_hash": "f5fd8a73c4c06ac359e98201b2dac5d6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\scripts\\dev-api.ps1": {
+    "mtime": 1779769393.0534515,
+    "ast_hash": "64eccfefdb710fe2e3a285b9c7e98ca1",
+    "semantic_hash": "64eccfefdb710fe2e3a285b9c7e98ca1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\scripts\\dev-mobile.ps1": {
+    "mtime": 1779769393.0534515,
+    "ast_hash": "76f6e28754af566194665ca4c94443d6",
+    "semantic_hash": "76f6e28754af566194665ca4c94443d6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\scripts\\dev-web.ps1": {
+    "mtime": 1779769393.0544515,
+    "ast_hash": "4ce4adc7e4e582bf14b2610037846054",
+    "semantic_hash": "4ce4adc7e4e582bf14b2610037846054"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\scripts\\dev.ps1": {
+    "mtime": 1779769393.0544515,
+    "ast_hash": "15282881fc952173b54786b975683d10",
+    "semantic_hash": "15282881fc952173b54786b975683d10"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\scripts\\install.sh": {
+    "mtime": 1781065310.3374252,
+    "ast_hash": "425103109d6175ee63b01326c69aab4e",
+    "semantic_hash": "425103109d6175ee63b01326c69aab4e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\scripts\\migrate.ps1": {
+    "mtime": 1779769393.0544515,
+    "ast_hash": "e2e0026ad501620c2fc313532ca1e76f",
+    "semantic_hash": "e2e0026ad501620c2fc313532ca1e76f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\scripts\\setup-vm.sh": {
+    "mtime": 1780559231.897812,
+    "ast_hash": "4e58a4a1ede0244a93f4528980a2a77f",
+    "semantic_hash": "4e58a4a1ede0244a93f4528980a2a77f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\tsconfig.base.json": {
+    "mtime": 1780556117.7736797,
+    "ast_hash": "8306c5873cb0e6ebe3e6e814f2b28683",
+    "semantic_hash": "8306c5873cb0e6ebe3e6e814f2b28683"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\turbo.json": {
+    "mtime": 1780559231.897812,
+    "ast_hash": "9148bf2fbde956cd650599432f0db45e",
+    "semantic_hash": "9148bf2fbde956cd650599432f0db45e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\vencore.config.example.json": {
+    "mtime": 1780565028.4829571,
+    "ast_hash": "abfcbf93e3a0e4c48e74bb276601c8bf",
+    "semantic_hash": "abfcbf93e3a0e4c48e74bb276601c8bf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\vencore.config.json": {
+    "mtime": 1780565028.4829571,
+    "ast_hash": "136dd1fa3cb2542cf870797bf8498b2e",
+    "semantic_hash": "136dd1fa3cb2542cf870797bf8498b2e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\rules\\superpowers.md": {
+    "mtime": 1780830035.2975175,
+    "ast_hash": "5d9e365e7338b0abaeae1fa35416e196",
+    "semantic_hash": "5d9e365e7338b0abaeae1fa35416e196"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-brainstorm\\SKILL.md": {
+    "mtime": 1780830035.2995324,
+    "ast_hash": "9bea23b06d67441f8a04cbea3a5b2813",
+    "semantic_hash": "9bea23b06d67441f8a04cbea3a5b2813"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-debug\\SKILL.md": {
+    "mtime": 1780830035.2995324,
+    "ast_hash": "3f275a8b7ec87399ef284a8321f59ce8",
+    "semantic_hash": "3f275a8b7ec87399ef284a8321f59ce8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-finish\\SKILL.md": {
+    "mtime": 1780830035.3020692,
+    "ast_hash": "d53504a9e398970e951a95f9bc990424",
+    "semantic_hash": "d53504a9e398970e951a95f9bc990424"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-plan\\SKILL.md": {
+    "mtime": 1780830035.3020692,
+    "ast_hash": "6adaefdacfe4cb9f4f7ac9b243645e57",
+    "semantic_hash": "6adaefdacfe4cb9f4f7ac9b243645e57"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-python-automation\\SKILL.md": {
+    "mtime": 1780830035.3055696,
+    "ast_hash": "91d0c6aa0b4461898e6373a2b3ee4b02",
+    "semantic_hash": "91d0c6aa0b4461898e6373a2b3ee4b02"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-rest-automation\\SKILL.md": {
+    "mtime": 1780830035.3072438,
+    "ast_hash": "1c209f67e65c887c12e34b95cd283fbc",
+    "semantic_hash": "1c209f67e65c887c12e34b95cd283fbc"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-review\\SKILL.md": {
+    "mtime": 1780830035.309528,
+    "ast_hash": "05d6e29c2dfdb7721dea8f86a8bcd3cb",
+    "semantic_hash": "05d6e29c2dfdb7721dea8f86a8bcd3cb"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-tdd\\SKILL.md": {
+    "mtime": 1780830035.309528,
+    "ast_hash": "360139e5f2d5148e084c83c5eb2ea1ba",
+    "semantic_hash": "360139e5f2d5148e084c83c5eb2ea1ba"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\skills\\superpowers-workflow\\SKILL.md": {
+    "mtime": 1780830035.312078,
+    "ast_hash": "bfb60c4bb44d9e54569b1ebdea214619",
+    "semantic_hash": "bfb60c4bb44d9e54569b1ebdea214619"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\workflows\\superpowers-brainstorm.md": {
+    "mtime": 1780830035.3199234,
+    "ast_hash": "59f1e708b430b2b73c862d3fcf3f36fc",
+    "semantic_hash": "59f1e708b430b2b73c862d3fcf3f36fc"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\workflows\\superpowers-debug.md": {
+    "mtime": 1780830035.3199234,
+    "ast_hash": "b2abe665f4f0eb295f0c2ad2636d7c07",
+    "semantic_hash": "b2abe665f4f0eb295f0c2ad2636d7c07"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\workflows\\superpowers-execute-plan-parallel.md": {
+    "mtime": 1780830035.3199234,
+    "ast_hash": "eb73890d5ea2b3fe236b2d457ba859b5",
+    "semantic_hash": "eb73890d5ea2b3fe236b2d457ba859b5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\workflows\\superpowers-execute-plan.md": {
+    "mtime": 1780830035.3199234,
+    "ast_hash": "49b669580855d8dc1a46fbaabd67b2c7",
+    "semantic_hash": "49b669580855d8dc1a46fbaabd67b2c7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\workflows\\superpowers-finish.md": {
+    "mtime": 1780830035.323984,
+    "ast_hash": "121789f63c8028b8452844fa850056ad",
+    "semantic_hash": "121789f63c8028b8452844fa850056ad"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\workflows\\superpowers-reload.md": {
+    "mtime": 1780830035.3259974,
+    "ast_hash": "c7769edbdc70243e4de18944fc72315e",
+    "semantic_hash": "c7769edbdc70243e4de18944fc72315e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\workflows\\superpowers-review.md": {
+    "mtime": 1780830035.327068,
+    "ast_hash": "60486e60a3fc7bc552613c05b6db880c",
+    "semantic_hash": "60486e60a3fc7bc552613c05b6db880c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\.agent\\workflows\\superpowers-write-plan.md": {
+    "mtime": 1780830035.3288255,
+    "ast_hash": "7e483a3b1a0e03c3b66b10a0db7caa97",
+    "semantic_hash": "7e483a3b1a0e03c3b66b10a0db7caa97"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\CLAUDE.md": {
+    "mtime": 1781175063.3226905,
+    "ast_hash": "d15a6155dfd2a37e16ded278f93bce63",
+    "semantic_hash": "d15a6155dfd2a37e16ded278f93bce63"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\CODE_OF_CONDUCT.md": {
+    "mtime": 1780559231.6813443,
+    "ast_hash": "673a6ba640f36c196c3235cdb04f0c07",
+    "semantic_hash": "673a6ba640f36c196c3235cdb04f0c07"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\CONTRIBUTING.md": {
+    "mtime": 1780565028.3390787,
+    "ast_hash": "2bdb7dd351ddcf8bbd619c2550912b1d",
+    "semantic_hash": "2bdb7dd351ddcf8bbd619c2550912b1d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\README.md": {
+    "mtime": 1780565028.3390787,
+    "ast_hash": "822dc825f69bbcda39e1132f792541a8",
+    "semantic_hash": "822dc825f69bbcda39e1132f792541a8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\README.md": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "ccd12fc598018ad94061cb6a8c7366b5",
+    "semantic_hash": "ccd12fc598018ad94061cb6a8c7366b5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\chats\\chat1.md": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "6130795c21c3d8ef50ee93f095867060",
+    "semantic_hash": "6130795c21c3d8ef50ee93f095867060"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\chats\\chat2.md": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "2a9bdf2a2f00a4d9b5da229000c2d4b1",
+    "semantic_hash": "2a9bdf2a2f00a4d9b5da229000c2d4b1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\README.md": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "17b7c481eda574659779144adc6c90a5",
+    "semantic_hash": "17b7c481eda574659779144adc6c90a5"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\SKILL.md": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "55907f9e1ed76d7156c798e50ade3b4c",
+    "semantic_hash": "55907f9e1ed76d7156c798e50ade3b4c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\brand-activity-row.html": {
+    "mtime": 1780559231.6813443,
+    "ast_hash": "865d955f7c4e585a9c02c98f6c26f07c",
+    "semantic_hash": "865d955f7c4e585a9c02c98f6c26f07c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\brand-empty-state.html": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "d92c1b4ed356e664283adbde114e5e7e",
+    "semantic_hash": "d92c1b4ed356e664283adbde114e5e7e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\brand-icons.html": {
+    "mtime": 1780559231.6813443,
+    "ast_hash": "0961e9e226faca25ed0676b140e54896",
+    "semantic_hash": "0961e9e226faca25ed0676b140e54896"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\brand-logo.html": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "9073b85c1868f4ae0b5e6e4ba94bffcf",
+    "semantic_hash": "9073b85c1868f4ae0b5e6e4ba94bffcf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\colors-semantic.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "5c2719310452fbab4e1b3cb5a3f209f3",
+    "semantic_hash": "5c2719310452fbab4e1b3cb5a3f209f3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\colors-surfaces.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "26b55c7f6d89d7da05d56362b157ed2b",
+    "semantic_hash": "26b55c7f6d89d7da05d56362b157ed2b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\colors-text.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "2bf1911ac4ba0af0c7b90c01bb1b8df0",
+    "semantic_hash": "2bf1911ac4ba0af0c7b90c01bb1b8df0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\components-alertbar.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "e7ed21f4a0847153c1aa376bea0fb5c2",
+    "semantic_hash": "e7ed21f4a0847153c1aa376bea0fb5c2"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\components-badges.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "76ad0d37aa87fb15d3878e66957c7cd4",
+    "semantic_hash": "76ad0d37aa87fb15d3878e66957c7cd4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\components-buttons.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "91b468c5d23e7a8fde9ba26cf691269a",
+    "semantic_hash": "91b468c5d23e7a8fde9ba26cf691269a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\components-card.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "d18d41da7e372029c48b3ef450fc3dae",
+    "semantic_hash": "d18d41da7e372029c48b3ef450fc3dae"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\components-form.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "79996c86cdc1b561cf8bab54ee824346",
+    "semantic_hash": "79996c86cdc1b561cf8bab54ee824346"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\components-modal.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "745848f5666b2ce2c121055940eb5efc",
+    "semantic_hash": "745848f5666b2ce2c121055940eb5efc"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\components-sidebar.html": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "89b66770ac5f4304c3e349a641bb7f3d",
+    "semantic_hash": "89b66770ac5f4304c3e349a641bb7f3d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\components-tablerow.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "eaf721b54deade70350446fe474fa393",
+    "semantic_hash": "eaf721b54deade70350446fe474fa393"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\radii.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "5bcd59a64f1f77058de8500c6ff34641",
+    "semantic_hash": "5bcd59a64f1f77058de8500c6ff34641"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\shadows.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "2be179f4d5cf6dbd6ce6675ee5b4c6c6",
+    "semantic_hash": "2be179f4d5cf6dbd6ce6675ee5b4c6c6"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\spacing.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "9c414722c747d01929bee41dcaa6fbcf",
+    "semantic_hash": "9c414722c747d01929bee41dcaa6fbcf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\type-families.html": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "9ef895a9bd16025fb77799c246a2565d",
+    "semantic_hash": "9ef895a9bd16025fb77799c246a2565d"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\type-scale.html": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "d7954fc7b1078ae24a24e5fed4ebc6f9",
+    "semantic_hash": "d7954fc7b1078ae24a24e5fed4ebc6f9"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\preview\\type-specimens.html": {
+    "mtime": 1780559231.6978412,
+    "ast_hash": "4dac966dc8bdaf4fdc939fe17eb2fcc4",
+    "semantic_hash": "4dac966dc8bdaf4fdc939fe17eb2fcc4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\mobile\\index.html": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "69a6ca0f1aaff09b146ddd356bee4754",
+    "semantic_hash": "69a6ca0f1aaff09b146ddd356bee4754"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\README.md": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "c15eccf696ded36d79bf547a5e651b5b",
+    "semantic_hash": "c15eccf696ded36d79bf547a5e651b5b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\ui_kits\\web\\index.html": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "7aeb6dfca23ab651fd2bf615631e9cfb",
+    "semantic_hash": "7aeb6dfca23ab651fd2bf615631e9cfb"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\agent\\README.md": {
+    "mtime": 1780565028.3431313,
+    "ast_hash": "add1ece6221a852631659b172f28d004",
+    "semantic_hash": "add1ece6221a852631659b172f28d004"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\.clerk\\.tmp\\README.md": {
+    "mtime": 1780556116.7317765,
+    "ast_hash": "8be889edc1cfa414538461e4e93607cf",
+    "semantic_hash": "8be889edc1cfa414538461e4e93607cf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\README.md": {
+    "mtime": 1780565028.3888628,
+    "ast_hash": "f9b5393e3e0f32a80ace2000ed4b0d3a",
+    "semantic_hash": "f9b5393e3e0f32a80ace2000ed4b0d3a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docker-compose.prod.yml": {
+    "mtime": 1780565028.443652,
+    "ast_hash": "5a98118396b4c84203b08dd5fd052bea",
+    "semantic_hash": "5a98118396b4c84203b08dd5fd052bea"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docker-compose.yml": {
+    "mtime": 1780565028.443652,
+    "ast_hash": "ca7c4fc3f70df65b94d7542a5840c71a",
+    "semantic_hash": "ca7c4fc3f70df65b94d7542a5840c71a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\plans\\2026-06-06-vencore-plugin-mail-design.md": {
+    "mtime": 1780731847.1187801,
+    "ast_hash": "48b1af3fd82e0cbadc46c92160485a22",
+    "semantic_hash": "48b1af3fd82e0cbadc46c92160485a22"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\plans\\2026-06-06-vencore-plugin-mail-plan.md": {
+    "mtime": 1780732184.554321,
+    "ast_hash": "241671b72d8f5c87e808037f08380352",
+    "semantic_hash": "241671b72d8f5c87e808037f08380352"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\plans\\2026-06-08-plugins-mega-list-design.md": {
+    "mtime": 1780931567.4994597,
+    "ast_hash": "1260bdaa55c38edd34afc296c96e7b93",
+    "semantic_hash": "1260bdaa55c38edd34afc296c96e7b93"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\plans\\2026-06-10-plugin-http-endpoints-and-heap-fix.md": {
+    "mtime": 1781084553.6711073,
+    "ast_hash": "b6c0074fc805148c4e5381f95a73643a",
+    "semantic_hash": "b6c0074fc805148c4e5381f95a73643a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\plans\\task.md": {
+    "mtime": 1781066444.7425795,
+    "ast_hash": "21dbd1c5ee4136789dadd8ce89dc1439",
+    "semantic_hash": "21dbd1c5ee4136789dadd8ce89dc1439"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\superpowers\\plans\\2026-06-06-setup-wizard-backend.md": {
+    "mtime": 1780722033.6609864,
+    "ast_hash": "c8343c3900376768cc1afc68b6f377c1",
+    "semantic_hash": "c8343c3900376768cc1afc68b6f377c1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\superpowers\\plans\\2026-06-06-setup-wizard-ui.md": {
+    "mtime": 1780721908.8598475,
+    "ast_hash": "8739a8088291b459b5021296aab6ff3f",
+    "semantic_hash": "8739a8088291b459b5021296aab6ff3f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\superpowers\\plans\\2026-06-10-dashboard.md": {
+    "mtime": 1781067428.3808463,
+    "ast_hash": "52981c361a0956c4ba1bc7179168f46f",
+    "semantic_hash": "52981c361a0956c4ba1bc7179168f46f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\superpowers\\plans\\2026-06-11-module-widgets.md": {
+    "mtime": 1781174050.22102,
+    "ast_hash": "bcd1ef6bc1d9e82606e7dc38cde72877",
+    "semantic_hash": "bcd1ef6bc1d9e82606e7dc38cde72877"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\superpowers\\specs\\2026-06-05-white-label-setup-wizard-design.md": {
+    "mtime": 1780719592.5918598,
+    "ast_hash": "d4f2e990fbec6db4c906389041800029",
+    "semantic_hash": "d4f2e990fbec6db4c906389041800029"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\superpowers\\specs\\2026-06-10-dashboard-design.md": {
+    "mtime": 1781066768.0034935,
+    "ast_hash": "a094e2b7a1d3094a4c589a704b7a244c",
+    "semantic_hash": "a094e2b7a1d3094a4c589a704b7a244c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\docs\\superpowers\\specs\\2026-06-10-module-widgets-design.md": {
+    "mtime": 1781174050.22102,
+    "ast_hash": "9705c066bc8c91b208cdc6c5c2e4a4ec",
+    "semantic_hash": "9705c066bc8c91b208cdc6c5c2e4a4ec"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\pnpm-workspace.yaml": {
+    "mtime": 1780559231.897812,
+    "ast_hash": "d5be812a006874b28b001939398d22e8",
+    "semantic_hash": "d5be812a006874b28b001939398d22e8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\activity.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "6ec256a431f534b60dbe37446d41094c",
+    "semantic_hash": "6ec256a431f534b60dbe37446d41094c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\alerts.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "956dac161429257645b728b695e6d012",
+    "semantic_hash": "956dac161429257645b728b695e6d012"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\analytics.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "0e45a92e7c217f33caf29d1cd57ff7ac",
+    "semantic_hash": "0e45a92e7c217f33caf29d1cd57ff7ac"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\arrow-right.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "21a36d2cad92ef32a0002fba2558503c",
+    "semantic_hash": "21a36d2cad92ef32a0002fba2558503c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\bell.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "c9693926176fc0cea8a5964eb5fbdfa1",
+    "semantic_hash": "c9693926176fc0cea8a5964eb5fbdfa1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\check.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "4064fecac8eb6a3f98320da99c3296e7",
+    "semantic_hash": "4064fecac8eb6a3f98320da99c3296e7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\chevron-down.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "7d0f82ca075a3872d5a474ace77ed8c1",
+    "semantic_hash": "7d0f82ca075a3872d5a474ace77ed8c1"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\companies.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "5e5e3567e69a9afe101c914eca43f3f3",
+    "semantic_hash": "5e5e3567e69a9afe101c914eca43f3f3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\contacts.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "5a9c3abd1c3465310c19e1ed861d3aaa",
+    "semantic_hash": "5a9c3abd1c3465310c19e1ed861d3aaa"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\databases.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "ff110976b1a6cef7d48cb9984cdba6b8",
+    "semantic_hash": "ff110976b1a6cef7d48cb9984cdba6b8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\dot.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "c882c40e047681a2aa677c9543191079",
+    "semantic_hash": "c882c40e047681a2aa677c9543191079"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\files.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "af69f6f1fd068f8856e2f9ab54568652",
+    "semantic_hash": "af69f6f1fd068f8856e2f9ab54568652"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\filter.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "f8e1a3475c8095faefd8a0be4bc3a2bf",
+    "semantic_hash": "f8e1a3475c8095faefd8a0be4bc3a2bf"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\grip.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "c44522f497e5aec106d946196805ccd2",
+    "semantic_hash": "c44522f497e5aec106d946196805ccd2"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\logo-mark.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "b30018d44dfabcfe1c898ebde56c75c7",
+    "semantic_hash": "b30018d44dfabcfe1c898ebde56c75c7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\logout.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "7cdeb6efcc92caf9348692b143e1a860",
+    "semantic_hash": "7cdeb6efcc92caf9348692b143e1a860"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\mail.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "fd72c52578d5eade4f3b514004a9ed4c",
+    "semantic_hash": "fd72c52578d5eade4f3b514004a9ed4c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\meeting.svg": {
+    "mtime": 1780304065.050982,
+    "ast_hash": "8f685311004088b1c7621a9e24fbd12e",
+    "semantic_hash": "8f685311004088b1c7621a9e24fbd12e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\note.svg": {
+    "mtime": 1780304065.065904,
+    "ast_hash": "b6c3453dd1d79d2d6c77f4eddd4be154",
+    "semantic_hash": "b6c3453dd1d79d2d6c77f4eddd4be154"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\phone.svg": {
+    "mtime": 1780304065.065904,
+    "ast_hash": "8bfa066d23b70965a066f9d0dbc11836",
+    "semantic_hash": "8bfa066d23b70965a066f9d0dbc11836"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\pipeline.svg": {
+    "mtime": 1780304065.065904,
+    "ast_hash": "bf2a2e810129daf745a408b71cf19c72",
+    "semantic_hash": "bf2a2e810129daf745a408b71cf19c72"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\plus.svg": {
+    "mtime": 1780304065.065904,
+    "ast_hash": "df2919494f43fd4636b25b7e519353ef",
+    "semantic_hash": "df2919494f43fd4636b25b7e519353ef"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\search.svg": {
+    "mtime": 1780304065.0668094,
+    "ast_hash": "a0fc866997166fc68b43d5b4fddd3f17",
+    "semantic_hash": "a0fc866997166fc68b43d5b4fddd3f17"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\servers.svg": {
+    "mtime": 1780304065.0668094,
+    "ast_hash": "025d37e2d5367517b4670c074d81a9d4",
+    "semantic_hash": "025d37e2d5367517b4670c074d81a9d4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\settings.svg": {
+    "mtime": 1780304065.0675182,
+    "ast_hash": "53fe107c23b9d6c8eeebf11d7f7fba33",
+    "semantic_hash": "53fe107c23b9d6c8eeebf11d7f7fba33"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\tasks.svg": {
+    "mtime": 1780304065.0675182,
+    "ast_hash": "5bab19bb59da6aa6a8af82635387ce05",
+    "semantic_hash": "5bab19bb59da6aa6a8af82635387ce05"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\warning.svg": {
+    "mtime": 1780304065.0675182,
+    "ast_hash": "f1c0ab2bc23302102c1cf1aad6734397",
+    "semantic_hash": "f1c0ab2bc23302102c1cf1aad6734397"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\websites.svg": {
+    "mtime": 1780304065.0675182,
+    "ast_hash": "7339f9b641d235e05c1a6f4fcba54bbd",
+    "semantic_hash": "7339f9b641d235e05c1a6f4fcba54bbd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\icons\\x.svg": {
+    "mtime": 1780304065.0675182,
+    "ast_hash": "f8741ff35db5fb7ec94b961ee580afe7",
+    "semantic_hash": "f8741ff35db5fb7ec94b961ee580afe7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\logo-cloud-small.png": {
+    "mtime": 1780304065.0675182,
+    "ast_hash": "2fba685ddbbceec218d1977b4ecb95e9",
+    "semantic_hash": "2fba685ddbbceec218d1977b4ecb95e9"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\logo-cloud-trimmed.png": {
+    "mtime": 1780304065.0675182,
+    "ast_hash": "98499ecd203950d97be6b2391245b544",
+    "semantic_hash": "98499ecd203950d97be6b2391245b544"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\assets\\logo-cloud.png": {
+    "mtime": 1780304065.0675182,
+    "ast_hash": "50bfdc375a62173e62b332c7901f0192",
+    "semantic_hash": "50bfdc375a62173e62b332c7901f0192"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\logo.png": {
+    "mtime": 1780304065.0940542,
+    "ast_hash": "50bfdc375a62173e62b332c7901f0192",
+    "semantic_hash": "50bfdc375a62173e62b332c7901f0192"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\01-all-screens.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "6a5faa1db31ed0f6d9f41a3c18e4747e",
+    "semantic_hash": "6a5faa1db31ed0f6d9f41a3c18e4747e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\01-analytics-v2.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "6ef8c5d7402eacb88dc696b5b85255b4",
+    "semantic_hash": "6ef8c5d7402eacb88dc696b5b85255b4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\01-pipeline.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "bd48525054910d8a61d775f8e909b1ec",
+    "semantic_hash": "bd48525054910d8a61d775f8e909b1ec"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\01-test.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "1fd6f17e1fe14f9a782cd8742e53f086",
+    "semantic_hash": "1fd6f17e1fe14f9a782cd8742e53f086"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\01-v3-detail.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "93a3950010d58f84ec6326bfb028786e",
+    "semantic_hash": "93a3950010d58f84ec6326bfb028786e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\01-verify.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "1269e89ce0a73d60987cde258a54b499",
+    "semantic_hash": "1269e89ce0a73d60987cde258a54b499"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\02-all-screens.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "b5fe5829ad3861ee9230358b1c2ffca8",
+    "semantic_hash": "b5fe5829ad3861ee9230358b1c2ffca8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\02-analytics-v2.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "26bbe3ce88b9780b64672bc521a3f42a",
+    "semantic_hash": "26bbe3ce88b9780b64672bc521a3f42a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\02-test.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "1269e89ce0a73d60987cde258a54b499",
+    "semantic_hash": "1269e89ce0a73d60987cde258a54b499"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\02-v3-detail.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "541884c346fb63c87852e862a701e3c3",
+    "semantic_hash": "541884c346fb63c87852e862a701e3c3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\02-verify.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "5ea77d1e1034a45d365b9df9a40bf187",
+    "semantic_hash": "5ea77d1e1034a45d365b9df9a40bf187"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\03-all-screens.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "3f23c1f0c6294d3f195e3d22f1f5f9f0",
+    "semantic_hash": "3f23c1f0c6294d3f195e3d22f1f5f9f0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\03-analytics-v2.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "34f5a42e225bd876082f90fd6a0e9f9e",
+    "semantic_hash": "34f5a42e225bd876082f90fd6a0e9f9e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\03-v3-detail.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "541884c346fb63c87852e862a701e3c3",
+    "semantic_hash": "541884c346fb63c87852e862a701e3c3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\03-verify.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "7e806c767a86b16f93592621e11de567",
+    "semantic_hash": "7e806c767a86b16f93592621e11de567"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\04-all-screens.png": {
+    "mtime": 1780304065.1009636,
+    "ast_hash": "8a50bfa07be7915609d84631dd6afbca",
+    "semantic_hash": "8a50bfa07be7915609d84631dd6afbca"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\04-analytics-v2.png": {
+    "mtime": 1780304065.1110303,
+    "ast_hash": "7c0821b6266a454d155b4a9158f8ee3f",
+    "semantic_hash": "7c0821b6266a454d155b4a9158f8ee3f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\04-v3-detail.png": {
+    "mtime": 1780304065.1110303,
+    "ast_hash": "8e71b1f83cc51cabafe8ea5045fdd8cd",
+    "semantic_hash": "8e71b1f83cc51cabafe8ea5045fdd8cd"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\05-all-screens.png": {
+    "mtime": 1780304065.1110303,
+    "ast_hash": "9ed503e2ce165ef132d2dfee6e00cf55",
+    "semantic_hash": "9ed503e2ce165ef132d2dfee6e00cf55"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\05-analytics-v2.png": {
+    "mtime": 1780304065.1110303,
+    "ast_hash": "d010af1423d86c072422394ce1eb7872",
+    "semantic_hash": "d010af1423d86c072422394ce1eb7872"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\05-v3-detail.png": {
+    "mtime": 1780304065.1110303,
+    "ast_hash": "d2e3267c7d32c9335fa13040eb22ad25",
+    "semantic_hash": "d2e3267c7d32c9335fa13040eb22ad25"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\06-all-screens.png": {
+    "mtime": 1780304065.1110303,
+    "ast_hash": "63bfe6889a4d7b3ddc02a7e07abdc74b",
+    "semantic_hash": "63bfe6889a4d7b3ddc02a7e07abdc74b"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\06-analytics-v2.png": {
+    "mtime": 1780304065.1110303,
+    "ast_hash": "f3006677292c6d781ba2e913350173bc",
+    "semantic_hash": "f3006677292c6d781ba2e913350173bc"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\07-all-screens.png": {
+    "mtime": 1780304065.1110303,
+    "ast_hash": "3f83a3b6037ea52fe38eb052a87c1b35",
+    "semantic_hash": "3f83a3b6037ea52fe38eb052a87c1b35"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\08-all-screens.png": {
+    "mtime": 1780304065.1110303,
+    "ast_hash": "54bef47c35054434bf6f82bb3c0f11b7",
+    "semantic_hash": "54bef47c35054434bf6f82bb3c0f11b7"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\analytics-fixed.png": {
+    "mtime": 1780304065.11596,
+    "ast_hash": "25d74d3d85c0c0f971264c40cc3f526e",
+    "semantic_hash": "25d74d3d85c0c0f971264c40cc3f526e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots-kit\\pipeline-list.png": {
+    "mtime": 1780304065.116876,
+    "ast_hash": "d8191187885058301363965ac737a8b4",
+    "semantic_hash": "d8191187885058301363965ac737a8b4"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots\\activity.png": {
+    "mtime": 1780304065.1176274,
+    "ast_hash": "afabc7bd587a85489916b19bb4df71fc",
+    "semantic_hash": "afabc7bd587a85489916b19bb4df71fc"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots\\alerts.png": {
+    "mtime": 1780304065.1176274,
+    "ast_hash": "cc5e091d87a8b0392f113ec01db0e448",
+    "semantic_hash": "cc5e091d87a8b0392f113ec01db0e448"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots\\analytics.png": {
+    "mtime": 1780304065.1176274,
+    "ast_hash": "166fefd1e3e2c2e41415fcccaaae1488",
+    "semantic_hash": "166fefd1e3e2c2e41415fcccaaae1488"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots\\companies.png": {
+    "mtime": 1780304065.1176274,
+    "ast_hash": "d321b10f5ccf0f17d675348d037d184f",
+    "semantic_hash": "d321b10f5ccf0f17d675348d037d184f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots\\contacts.png": {
+    "mtime": 1780304065.1176274,
+    "ast_hash": "834c763bcdd3954ea1da355b2ab9f41a",
+    "semantic_hash": "834c763bcdd3954ea1da355b2ab9f41a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots\\databases.png": {
+    "mtime": 1780304065.1176274,
+    "ast_hash": "803c847016471f9383c1963eade1d18a",
+    "semantic_hash": "803c847016471f9383c1963eade1d18a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots\\pipeline.png": {
+    "mtime": 1780304065.1176274,
+    "ast_hash": "4b65f62b467e7893fc117802f5e6a8a8",
+    "semantic_hash": "4b65f62b467e7893fc117802f5e6a8a8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots\\servers.png": {
+    "mtime": 1780304065.1176274,
+    "ast_hash": "be3b390f0952e50e364cedd2d168d5da",
+    "semantic_hash": "be3b390f0952e50e364cedd2d168d5da"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots\\tasks.png": {
+    "mtime": 1780304065.1176274,
+    "ast_hash": "28d592da6c211cc4ffea52a3aa20b57e",
+    "semantic_hash": "28d592da6c211cc4ffea52a3aa20b57e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\_design\\vantage-design-system\\project\\screenshots\\websites.png": {
+    "mtime": 1780304065.1176274,
+    "ast_hash": "754e149a85e18d747cdc29834e64ae2c",
+    "semantic_hash": "754e149a85e18d747cdc29834e64ae2c"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\app\\icon.png": {
+    "mtime": 1778695191.6467612,
+    "ast_hash": "50bfdc375a62173e62b332c7901f0192",
+    "semantic_hash": "50bfdc375a62173e62b332c7901f0192"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\public\\file.svg": {
+    "mtime": 1778236370.8833356,
+    "ast_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71",
+    "semantic_hash": "d09f95206c3fa0bb9bd9fefabfd0ea71"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\public\\globe.svg": {
+    "mtime": 1778236371.0849247,
+    "ast_hash": "2aaafa6a49b6563925fe440891e32717",
+    "semantic_hash": "2aaafa6a49b6563925fe440891e32717"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\public\\logo.png": {
+    "mtime": 1780565028.4386177,
+    "ast_hash": "f7bd40a64c3d7e5be33e1f0da4cedde0",
+    "semantic_hash": "f7bd40a64c3d7e5be33e1f0da4cedde0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\public\\next.svg": {
+    "mtime": 1778236371.301672,
+    "ast_hash": "8e061864f388b47f33a1c3780831193e",
+    "semantic_hash": "8e061864f388b47f33a1c3780831193e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\public\\vencore-card.png": {
+    "mtime": 1780565028.443652,
+    "ast_hash": "81631a9e493221936c9adc7db61e6d4e",
+    "semantic_hash": "81631a9e493221936c9adc7db61e6d4e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\public\\vercel.svg": {
+    "mtime": 1778236371.480107,
+    "ast_hash": "c0af2f507b369b085b35ef4bbe3bcf1e",
+    "semantic_hash": "c0af2f507b369b085b35ef4bbe3bcf1e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\apps\\web\\public\\window.svg": {
+    "mtime": 1778236371.7111943,
+    "ast_hash": "a2760511c65806022ad20adf74370ff3",
+    "semantic_hash": "a2760511c65806022ad20adf74370ff3"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\logo.png": {
+    "mtime": 1780565028.4641538,
+    "ast_hash": "f7bd40a64c3d7e5be33e1f0da4cedde0",
+    "semantic_hash": "f7bd40a64c3d7e5be33e1f0da4cedde0"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\screenshots\\activity.png": {
+    "mtime": 1778696215.8678677,
+    "ast_hash": "afabc7bd587a85489916b19bb4df71fc",
+    "semantic_hash": "afabc7bd587a85489916b19bb4df71fc"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\screenshots\\alerts.png": {
+    "mtime": 1778696215.8698711,
+    "ast_hash": "cc5e091d87a8b0392f113ec01db0e448",
+    "semantic_hash": "cc5e091d87a8b0392f113ec01db0e448"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\screenshots\\analytics.png": {
+    "mtime": 1778696215.870871,
+    "ast_hash": "166fefd1e3e2c2e41415fcccaaae1488",
+    "semantic_hash": "166fefd1e3e2c2e41415fcccaaae1488"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\screenshots\\companies.png": {
+    "mtime": 1778696215.8718407,
+    "ast_hash": "d321b10f5ccf0f17d675348d037d184f",
+    "semantic_hash": "d321b10f5ccf0f17d675348d037d184f"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\screenshots\\contacts.png": {
+    "mtime": 1778696215.8738637,
+    "ast_hash": "834c763bcdd3954ea1da355b2ab9f41a",
+    "semantic_hash": "834c763bcdd3954ea1da355b2ab9f41a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\screenshots\\databases.png": {
+    "mtime": 1778696215.8748658,
+    "ast_hash": "803c847016471f9383c1963eade1d18a",
+    "semantic_hash": "803c847016471f9383c1963eade1d18a"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\screenshots\\pipeline.png": {
+    "mtime": 1778696215.8766792,
+    "ast_hash": "4b65f62b467e7893fc117802f5e6a8a8",
+    "semantic_hash": "4b65f62b467e7893fc117802f5e6a8a8"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\screenshots\\servers.png": {
+    "mtime": 1778696215.8776898,
+    "ast_hash": "be3b390f0952e50e364cedd2d168d5da",
+    "semantic_hash": "be3b390f0952e50e364cedd2d168d5da"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\screenshots\\tasks.png": {
+    "mtime": 1778696215.8786883,
+    "ast_hash": "28d592da6c211cc4ffea52a3aa20b57e",
+    "semantic_hash": "28d592da6c211cc4ffea52a3aa20b57e"
+  },
+  "D:\\Projects\\VencoreRepos\\Vencore\\screenshots\\websites.png": {
+    "mtime": 1778696215.8806899,
+    "ast_hash": "754e149a85e18d747cdc29834e64ae2c",
+    "semantic_hash": "754e149a85e18d747cdc29834e64ae2c"
+  }
+}
