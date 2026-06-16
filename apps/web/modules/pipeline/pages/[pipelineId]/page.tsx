@@ -42,7 +42,7 @@ export default function PipelineViewPage() {
     queryKey: ['pipeline', pipelineId],
     queryFn: async () => getPipeline(await getToken(), pipelineId),
   });
-  const pipeline = data?.data;
+  const pipeline = data;
 
   useEffect(() => {
     if (pipeline?.view && ['kanban', 'table', 'list'].includes(pipeline.view)) {
