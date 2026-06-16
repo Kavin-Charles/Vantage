@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listPipelines, createPipeline, deletePipeline, updatePipeline } from '@/modules/pipeline/lib/pipelines';
@@ -10,6 +11,7 @@ import {
 import Link from 'next/link';
 
 export default function PipelinesSettingsPage() {
+  const router = useRouter();
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [newName, setNewName] = useState('');
@@ -53,11 +55,11 @@ export default function PipelinesSettingsPage() {
 
   function openPipelineMenu(e: React.MouseEvent, p: (typeof pipelines)[0]) {
     const items = [
-      { label: 'Configure →', icon: 'settings', onClick: () => { window.location.href = `/settings/pipelines/${p.id}`; } },
+      { label: 'Configure →', icon: 'settings', onClick: () => router.push(`/settings/pipelines/${p.id}`) },
       canConfig && { label: 'Rename', icon: 'pencil', onClick: () => { setInlineRenameId(p.id); setInlineRenameVal(p.name); } },
       canConfig && { label: 'Set as Default', icon: 'star', disabled: p.is_default, onClick: () => updateMut.mutate({ id: p.id, body: { is_default: true } }) },
       canDelete && { type: 'separator' as const },
-      canDelete && { label: 'Delete', icon: 'trash-2', danger: true, onClick: () => { if (confirm(`Delete "${p.name}"?`)) deleteMut.mutate(p.id); } },
+      canDelete && { label: 'Delete', icon: 'trash-2', danger: true, onClick: () => { if (confirm(`Delete "${p.name}"? All items in this pipeline will be permanently deleted.`)) deleteMut.mutate(p.id); } },
     ].filter(Boolean) as ContextMenuItem[];
     openMenu(e, items);
   }
