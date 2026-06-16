@@ -26,6 +26,7 @@ export interface Pipeline {
   id: string;
   workspace_id: string;
   name: string;
+  description: string | null;
   is_default: boolean;
   position: number;
   stages: PipelineStage[];
@@ -53,6 +54,16 @@ export const createPipeline = (token: string, body: { name: string }) =>
 
 export const deletePipeline = (token: string, id: string) =>
   apiFetch<{ id: string }>(token, `/pipelines/${id}`, { method: 'DELETE' });
+
+export const updatePipeline = (
+  token: string,
+  id: string,
+  body: { name?: string; description?: string; is_default?: boolean },
+) =>
+  apiFetch<Pipeline>(token, `/pipelines/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
 
 export const createStage = (
   token: string,
