@@ -76,14 +76,24 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
   const workspace = await db
     .selectFrom('workspaces')
     .select(['id'])
-    .executeTakeFirstOrThrow();
+    .executeTakeFirst();
+
+  if (!workspace) {
+    logger.info('[Demo] No workspace found — skipping demo seed');
+    return;
+  }
   const wid = workspace.id;
 
   const admin = await db
     .selectFrom('users')
     .where('workspace_id', '=', wid)
     .select(['id'])
-    .executeTakeFirstOrThrow();
+    .executeTakeFirst();
+
+  if (!admin) {
+    logger.info('[Demo] No admin user found — skipping demo seed');
+    return;
+  }
   const adminId = admin.id;
 
   logger.info('[Demo] Seeding demo data…');

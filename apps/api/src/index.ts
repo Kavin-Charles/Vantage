@@ -59,7 +59,6 @@ import { startWebhookDelivery } from './workers/webhook-delivery';
 import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
 import { loadPluginBackend, getPluginRouter } from './lib/plugin-loader';
-import { seedOnFirstBoot } from './lib/seed';
 import { createAutomationRouter } from './routes/automation';
 import { initAutomationEngine } from './lib/automation-engine';
 import { createPmAnalyticsRouter } from './routes/pm-analytics';
@@ -74,7 +73,6 @@ import { registerTasksBridgeMethods } from './routes/tasks';
 import { registerActivityBridgeMethods } from './routes/activity';
 import { registerServersBridgeMethods } from './routes/servers';
 import { registerWebsitesBridgeMethods } from './routes/websites';
-import { seedDemo } from './lib/seed-demo';
 import { logger } from './lib/logger';
 
 const env = apiEnvSchema.parse(process.env);
@@ -314,17 +312,6 @@ app.use('/v1', createV1Router(db));
 
 app.use(errorHandler);
 
-// First-boot seeding (non-blocking — errors logged, don't crash)
-seedOnFirstBoot(db, config).catch((err: unknown) => {
-  logger.error({ err }, '[Vencore] First-boot seeding failed');
-});
-
-// Demo seed — only when DEMO_SEED=true
-if (process.env['DEMO_SEED'] === 'true') {
-  seedDemo(db).catch((err: unknown) => {
-    logger.error({ err }, '[Vencore] Demo seeding failed');
-  });
-}
 
 // Start website checker (polls every 60 s)
 startWebsiteChecker(db);

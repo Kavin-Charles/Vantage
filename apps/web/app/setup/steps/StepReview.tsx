@@ -33,13 +33,46 @@ export function StepReview({ state, dispatch }: Props) {
   const stepList = getStepList(state);
   const reviewSteps = stepList.filter(s => s !== 'review' && s !== 'complete');
 
+  const isOwnCreds = state.infra.mode === 'own-creds';
+  const apiBase = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
+
   const deploy = async () => {
     setDeployStatus('deploying');
     setLogLines([]);
     setDeployError('');
 
+    if (isOwnCreds) {
+      // own-creds: just create workspace + admin via the setup API
+      try {
+        const res = await fetch(`${apiBase}/api/setup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            branding: {
+              name: state.branding.name,
+              logoUrl: state.branding.logoUrl,
+              domain: state.domain.domain || undefined,
+            },
+            features: state.features,
+            smtp: state.smtp,
+            admin: state.admin,
+          }),
+        });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error.message ?? json.error.code ?? 'Setup failed');
+        // Activate session cookie then go to login
+        window.location.href = '/api/setup/activate?from=/login';
+      } catch (err) {
+        setDeployStatus('error');
+        setDeployError(err instanceof Error ? err.message : 'Unknown error');
+      }
+      return;
+    }
+
+    // docker-deploy: stream from installer
     try {
-      const res = await fetch('/api/installer/deploy', {
+      const res = await fetch(`${apiBase}/api/installer/deploy`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(state),
@@ -48,7 +81,7 @@ export function StepReview({ state, dispatch }: Props) {
       if (!json.data?.jobId) throw new Error(json.error?.message ?? 'Deploy failed to start');
 
       const { jobId } = json.data;
-      const es = new EventSource(`/api/installer/deploy/${jobId}/stream`);
+      const es = new EventSource(`${apiBase}/api/installer/deploy/${jobId}/stream`);
 
       es.onmessage = e => {
         const msg = JSON.parse(e.data) as { type: string; line?: string };
@@ -142,8 +175,8 @@ export function StepReview({ state, dispatch }: Props) {
             fontFamily: 'var(--font-display)',
           }}
         >
-          {deployStatus === 'idle' && '🚀 Deploy Vencore'}
-          {deployStatus === 'deploying' && '⟳ Deploying…'}
+          {deployStatus === 'idle' && (isOwnCreds ? 'Complete Setup →' : '🚀 Deploy Vencore')}
+          {deployStatus === 'deploying' && (isOwnCreds ? 'Creating workspace…' : '⟳ Deploying…')}
           {deployStatus === 'done' && '✓ Done'}
           {deployStatus === 'error' && '↺ Retry'}
         </button>

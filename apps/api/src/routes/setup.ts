@@ -75,13 +75,13 @@ export function createSetupRouter(db: Kysely<Database>): Router {
 
     try {
       await db.transaction().execute(async trx => {
-        // Row-level lock prevents concurrent setup
-        const row = await sql<{ value: { configured: boolean } }>`
-          SELECT value FROM system_settings WHERE key = 'setup' FOR UPDATE
-        `.execute(trx);
+        // Single-tenant guard: workspace existence = already configured
+        const existingWorkspace = await trx
+          .selectFrom('workspaces')
+          .select('id')
+          .executeTakeFirst();
 
-        const isAlreadyConfigured = (row.rows[0]?.value as { configured?: boolean })?.configured === true;
-        if (isAlreadyConfigured) {
+        if (existingWorkspace) {
           const err = new Error('ALREADY_CONFIGURED');
           (err as any).statusCode = 403;
           throw err;
