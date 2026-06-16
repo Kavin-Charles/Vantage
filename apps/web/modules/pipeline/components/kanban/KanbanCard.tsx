@@ -11,9 +11,10 @@ interface Props {
   onClick: () => void;
   onDragStart: () => void;
   onDragEnd: () => void;
+  onContextMenu?: (e: React.MouseEvent) => void;
 }
 
-export function KanbanCard({ item, fields, isDragging, onClick, onDragStart, onDragEnd }: Props) {
+export function KanbanCard({ item, fields, isDragging, onClick, onDragStart, onDragEnd, onContextMenu }: Props) {
   const [hovered, setHovered] = useState(false);
   const previewFields = fields.slice(0, 3);
 
@@ -23,6 +24,7 @@ export function KanbanCard({ item, fields, isDragging, onClick, onDragStart, onD
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onClick={onClick}
+      onContextMenu={onContextMenu}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{

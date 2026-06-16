@@ -2,11 +2,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { listItems, moveItem } from '@/modules/pipeline/lib/items';
+import { listItems, moveItem, deleteItem } from '@/modules/pipeline/lib/items';
 import { KanbanColumn } from './KanbanColumn';
 import { ItemDetail } from '@/modules/pipeline/components/detail/ItemDetail';
 import { ItemForm } from '@/modules/pipeline/components/shared/ItemForm';
 import type { Pipeline } from '@/modules/pipeline/lib/pipelines';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
+import {
+  useContextMenu, ContextMenu, type ContextMenuItem,
+} from '@/modules/shared/components/ui/ContextMenu';
 
 interface Props {
   pipeline: Pipeline;
@@ -17,14 +21,18 @@ interface Props {
 export function KanbanBoard({ pipeline, search, addTrigger }: Props) {
   const getToken = useApiToken();
   const qc = useQueryClient();
+  const { user, hasPermission } = useAuth();
+  const canEdit = hasPermission('pipelines:edit');
+  const canDelete = hasPermission('pipelines:delete');
+
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formStageId, setFormStageId] = useState<string | null>(null);
-
-  // addTrigger from parent opens the form for any stage
   const [lastTrigger, setLastTrigger] = useState(addTrigger);
-  // Moved to useEffect to avoid setState-during-render
+
   useEffect(() => {
     if (addTrigger !== lastTrigger) {
       setLastTrigger(addTrigger);
@@ -43,6 +51,11 @@ export function KanbanBoard({ pipeline, search, addTrigger }: Props) {
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['items', pipeline.id] }),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => deleteItem(await getToken(), id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['items', pipeline.id] }),
+  });
+
   const filteredItems = search
     ? items.filter(item =>
         Object.values(item.field_values).some(v =>
@@ -56,16 +69,69 @@ export function KanbanBoard({ pipeline, search, addTrigger }: Props) {
     [filteredItems]
   );
 
+  const wonStage  = pipeline.stages.find(s => s.is_won);
+  const lostStage = pipeline.stages.find(s => s.is_lost);
+  const activeStages = pipeline.stages.filter(s => !s.is_won && !s.is_lost);
+
+  function openCardContextMenu(itemId: string, e: React.MouseEvent) {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    const isOwner = user?.id === String(item.field_values['owner_id'] ?? '');
+    const inWon  = item.stage_id === wonStage?.id;
+    const inLost = item.stage_id === lostStage?.id;
+
+    const menuItems = [
+      { label: 'Open', icon: 'external-link', onClick: () => setSelectedId(itemId) },
+      canEdit && activeStages.length > 0 && {
+        type: 'submenu' as const,
+        label: 'Move to Stage',
+        icon: 'arrow-right',
+        items: activeStages
+          .filter(s => s.id !== item.stage_id)
+          .map(s => ({
+            label: s.name,
+            swatch: s.color ?? '#6366f1',
+            onClick: () => moveMut.mutate({ id: itemId, stage_id: s.id, position: itemsByStage(s.id).length }),
+          })),
+      },
+      canEdit && !isOwner && user && {
+        label: 'Assign to Me',
+        icon: 'user',
+        onClick: () => moveMut.mutate({ id: itemId, stage_id: item.stage_id, position: item.position }),
+      },
+      (canEdit || canDelete) && { type: 'separator' as const },
+      canEdit && wonStage && !inWon && {
+        label: 'Mark as Won',
+        icon: 'check-circle',
+        onClick: () => moveMut.mutate({ id: itemId, stage_id: wonStage.id, position: itemsByStage(wonStage.id).length }),
+      },
+      canEdit && lostStage && !inLost && {
+        label: 'Mark as Lost',
+        icon: 'x-circle',
+        onClick: () => moveMut.mutate({ id: itemId, stage_id: lostStage.id, position: itemsByStage(lostStage.id).length }),
+      },
+      canDelete && { type: 'separator' as const },
+      canDelete && {
+        label: 'Delete',
+        icon: 'trash-2',
+        danger: true,
+        onClick: () => {
+          if (confirm('Delete this item? This cannot be undone.'))
+            deleteMut.mutate(itemId);
+        },
+      },
+    ].filter(Boolean) as ContextMenuItem[];
+
+    openMenu(e, menuItems);
+  }
+
   return (
     <>
       <div style={{
-        display: 'flex',
-        gap: 20,
-        padding: '20px 24px',
-        overflowX: 'auto',
-        height: '100%',
-        alignItems: 'flex-start',
-        boxSizing: 'border-box',
+        display: 'flex', gap: 20, padding: '20px 24px',
+        overflowX: 'auto', height: '100%',
+        alignItems: 'flex-start', boxSizing: 'border-box',
       }}>
         {pipeline.stages.map(stage => (
           <KanbanColumn
@@ -89,6 +155,7 @@ export function KanbanBoard({ pipeline, search, addTrigger }: Props) {
             onCardDragStart={id => setDraggingId(id)}
             onCardDragEnd={() => setDraggingId(null)}
             onAddClick={() => setFormStageId(stage.id)}
+            onCardContextMenu={openCardContextMenu}
           />
         ))}
       </div>
@@ -106,6 +173,8 @@ export function KanbanBoard({ pipeline, search, addTrigger }: Props) {
           onClose={() => setFormStageId(null)}
         />
       )}
+
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </>
   );
 }

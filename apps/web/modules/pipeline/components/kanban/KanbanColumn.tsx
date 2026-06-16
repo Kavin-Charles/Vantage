@@ -17,6 +17,7 @@ interface Props {
   onCardDragStart: (itemId: string) => void;
   onCardDragEnd: () => void;
   onAddClick: () => void;
+  onCardContextMenu: (itemId: string, e: React.MouseEvent) => void;
 }
 
 function stageColor(stage: PipelineStage): string {
@@ -28,7 +29,7 @@ function stageColor(stage: PipelineStage): string {
 export function KanbanColumn({
   stage, items, fields, draggingId, isDragOver,
   onDragOver, onDragLeave, onDrop, onCardClick,
-  onCardDragStart, onCardDragEnd, onAddClick,
+  onCardDragStart, onCardDragEnd, onAddClick, onCardContextMenu,
 }: Props) {
   const [addHovered, setAddHovered] = useState(false);
   const color = stageColor(stage);
@@ -124,6 +125,7 @@ export function KanbanColumn({
             onClick={() => onCardClick(item.id)}
             onDragStart={() => onCardDragStart(item.id)}
             onDragEnd={onCardDragEnd}
+            onContextMenu={e => onCardContextMenu(item.id, e)}
           />
         ))}
         {items.length === 0 && (
