@@ -1,8 +1,8 @@
 'use client';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { listItems, moveItem, deleteItem } from '@/modules/pipeline/lib/items';
+import { listItems, moveItem, deleteItem, updateItem } from '@/modules/pipeline/lib/items';
 import { KanbanColumn } from './KanbanColumn';
 import { ItemDetail } from '@/modules/pipeline/components/detail/ItemDetail';
 import { ItemForm } from '@/modules/pipeline/components/shared/ItemForm';
@@ -38,7 +38,7 @@ export function KanbanBoard({ pipeline, search, addTrigger }: Props) {
       setLastTrigger(addTrigger);
       setFormStageId(pipeline.stages[0]?.id ?? null);
     }
-  }, [addTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [addTrigger, lastTrigger, pipeline.stages]);
 
   const { data: items = [] } = useQuery({
     queryKey: ['items', pipeline.id],
@@ -64,10 +64,7 @@ export function KanbanBoard({ pipeline, search, addTrigger }: Props) {
       )
     : items;
 
-  const itemsByStage = useCallback(
-    (stageId: string) => filteredItems.filter(i => i.stage_id === stageId),
-    [filteredItems]
-  );
+  const itemsByStage = (stageId: string) => filteredItems.filter(i => i.stage_id === stageId);
 
   const wonStage  = pipeline.stages.find(s => s.is_won);
   const lostStage = pipeline.stages.find(s => s.is_lost);
@@ -98,7 +95,11 @@ export function KanbanBoard({ pipeline, search, addTrigger }: Props) {
       canEdit && !isOwner && user && {
         label: 'Assign to Me',
         icon: 'user',
-        onClick: () => moveMut.mutate({ id: itemId, stage_id: item.stage_id, position: item.position }),
+        onClick: () => void (async () => {
+          const token = await getToken();
+          await updateItem(token, itemId, { field_values: { ...item.field_values, owner_id: user!.id } });
+          void qc.invalidateQueries({ queryKey: ['items', pipeline.id] });
+        })(),
       },
       (canEdit || canDelete) && { type: 'separator' as const },
       canEdit && wonStage && !inWon && {
