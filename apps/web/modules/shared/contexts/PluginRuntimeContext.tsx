@@ -12,10 +12,24 @@ if (typeof window !== 'undefined') {
 
 export type AnyComponent = React.ComponentType<any>;
 
+export interface WidgetDef {
+  id: string;
+  pluginId: string;
+  component: AnyComponent;
+}
+
+export interface PanelDef {
+  recordType: string;
+  id: string;
+  label: string;
+  pluginId: string;
+  component: AnyComponent;
+}
+
 export interface FrontendSurfaceRegistry {
   pages: Map<string, AnyComponent>;
-  widgets: Map<string, AnyComponent>;
-  panels: Map<string, { recordType: string; id: string; label: string; component: AnyComponent }>;
+  widgets: Map<string, WidgetDef>;
+  panels: Map<string, PanelDef>;
 }
 
 interface PluginRuntimeContextValue {
@@ -98,10 +112,10 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
                 registry.pages.set(path, component);
               },
               registerWidget: (id: string, component: AnyComponent) => {
-                registry.widgets.set(id, component);
+                registry.widgets.set(id, { id, pluginId: plugin.plugin_id, component });
               },
               registerPanel: (recordType: string, id: string, component: AnyComponent) => {
-                registry.panels.set(`${recordType}:${id}`, { recordType, id, label: id, component });
+                registry.panels.set(`${recordType}:${id}`, { recordType, id, label: id, pluginId: plugin.plugin_id, component });
               },
               toast: (message: string, type?: string) => {
                 window.dispatchEvent(new CustomEvent('vencore:toast', { detail: { message, type } }));
@@ -282,4 +296,35 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
       {children}
     </PluginRuntimeCtx.Provider>
   );
+}
+
+interface PluginIframeSlotProps {
+  pluginId: string;
+  surfaceType: 'page' | 'widget' | 'panel';
+  surfaceId: string;
+  style?: React.CSSProperties;
+}
+
+export function PluginIframeSlot({ pluginId, surfaceType, surfaceId, style }: PluginIframeSlotProps) {
+  const { registry } = usePluginRegistry();
+
+  let Component: AnyComponent | undefined;
+
+  if (surfaceType === 'page') {
+    Component = registry.pages.get(`${pluginId}:${surfaceId}`) ?? registry.pages.get(`${pluginId}:/`);
+  } else if (surfaceType === 'widget') {
+    Component = registry.widgets.get(surfaceId)?.component;
+  } else if (surfaceType === 'panel') {
+    Component = registry.panels.get(surfaceId)?.component;
+  }
+
+  if (!Component) {
+    return (
+      <div style={{ ...style, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: 'var(--text3)', fontSize: 12 }}>Not registered</span>
+      </div>
+    );
+  }
+
+  return <div style={style}><Component /></div>;
 }

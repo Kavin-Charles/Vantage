@@ -1,10 +1,15 @@
 'use client';
-import type { PipelineWithDetails } from '@vencore/types';
+import { KanbanBoard } from './kanban/KanbanBoard';
+import type { Pipeline } from '@/modules/pipeline/lib/pipelines';
 
-export function PipelineKanban(_props: {
-  pipeline: PipelineWithDetails;
+export function PipelineKanban({
+  pipeline,
+  search,
+  addTrigger,
+}: {
+  pipeline: Pipeline;
   search: string;
   addTrigger: number;
 }) {
-  return null;
+  return <KanbanBoard pipeline={pipeline} search={search} addTrigger={addTrigger} />;
 }
