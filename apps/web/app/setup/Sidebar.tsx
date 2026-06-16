@@ -5,14 +5,10 @@ import { getStepList, getStepStatus, OPTIONAL_STEPS } from './types';
 
 const STEP_LABELS: Record<StepId, string> = {
   branding: 'Branding',
-  infra: 'Infrastructure',
-  db: 'Database',
-  redis: 'Redis',
-  domain: 'Domain & SSL',
   smtp: 'SMTP',
   features: 'Features',
   admin: 'Admin Account',
-  review: 'Review & Deploy',
+  review: 'Review & Complete',
   complete: 'Complete',
 };
 

@@ -20,7 +20,10 @@ export async function seedOnFirstBoot(
   if (!workspace) {
     workspace = await db
       .insertInto('workspaces')
-      .values({ name: config.app.name, domain: config.app.domain ?? null })
+      .values({
+          name: config.app.name,
+          domain: config.app.domain ?? config.app.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+        })
       .returning(['id'])
       .executeTakeFirstOrThrow();
     logger.info({ workspaceId: workspace.id }, '[Vencore] Workspace seeded');

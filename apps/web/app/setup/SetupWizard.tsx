@@ -6,10 +6,6 @@ import { Sidebar } from './Sidebar';
 import { wizardReducer, INITIAL_STATE, getStepList, OPTIONAL_STEPS } from './types';
 import type { StepId } from './types';
 import { StepBranding } from './steps/StepBranding';
-import { StepInfrastructure } from './steps/StepInfrastructure';
-import { StepDatabase } from './steps/StepDatabase';
-import { StepRedis } from './steps/StepRedis';
-import { StepDomainSsl } from './steps/StepDomainSsl';
 import { StepSmtp } from './steps/StepSmtp';
 import { StepFeatures } from './steps/StepFeatures';
 import { StepAdminAccount } from './steps/StepAdminAccount';
@@ -31,10 +27,6 @@ export function SetupWizard() {
 
   const stepContent: Record<StepId, React.ReactNode> = {
     branding: <StepBranding state={state} dispatch={dispatch} validateRef={stepValidateRef} />,
-    infra:    <StepInfrastructure state={state} dispatch={dispatch} />,
-    db:       <StepDatabase state={state} dispatch={dispatch} />,
-    redis:    <StepRedis state={state} dispatch={dispatch} />,
-    domain:   <StepDomainSsl state={state} dispatch={dispatch} />,
     smtp:     <StepSmtp state={state} dispatch={dispatch} />,
     features: <StepFeatures state={state} dispatch={dispatch} />,
     admin:    <StepAdminAccount state={state} dispatch={dispatch} validateRef={stepValidateRef} />,

@@ -72,10 +72,14 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addPrimaryKeyConstraint('metrics_snapshots_pkey', ['id', 'recorded_at'])
     .execute();
 
-  // TimescaleDB hypertable
-  await sql`SELECT create_hypertable('metrics_snapshots', 'recorded_at')`.execute(db);
-  // Retention: drop chunks older than 30 days
-  await sql`SELECT add_retention_policy('metrics_snapshots', INTERVAL '30 days')`.execute(db);
+  // TimescaleDB hypertable — no-op on plain Postgres (savepoint so tx survives failure)
+  await sql`SAVEPOINT before_timescale`.execute(db);
+  try {
+    await sql`SELECT create_hypertable('metrics_snapshots', 'recorded_at')`.execute(db);
+    await sql`SELECT add_retention_policy('metrics_snapshots', INTERVAL '30 days')`.execute(db);
+  } catch {
+    await sql`ROLLBACK TO SAVEPOINT before_timescale`.execute(db);
+  }
 
   await db.schema
     .createTable('alert_thresholds')

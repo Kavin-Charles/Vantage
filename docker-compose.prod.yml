@@ -1,99 +1,69 @@
-version: '3.9'
-
+# docker-compose.prod.yml
+# Reference production compose file.
+# Usage: copy .env.example to .env, fill in secrets, then:
+#   docker compose -f docker-compose.prod.yml up -d
 services:
-  db:
-    image: timescale/timescaledb:latest-pg15
+  web:
+    image: ghcr.io/vencorehq/vencore-web:latest
+    ports:
+      - "80:3000"
+    env_file: .env
+    depends_on:
+      api:
+        condition: service_healthy
     restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${DB_USER:-vencore}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME:-vencore}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+
+  api:
+    image: ghcr.io/vencorehq/vencore-api:latest
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-vencore}']
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/setup/status || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  worker:
+    image: ghcr.io/vencorehq/vencore-worker:latest
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: vencore
+      POSTGRES_PASSWORD: vencore
+      POSTGRES_DB: vencore
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vencore"]
+      interval: 5s
+      timeout: 3s
       retries: 10
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    restart: unless-stopped
     volumes:
-      - redisdata:/data
+      - redis_data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
       timeout: 3s
-      retries: 5
-
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
+      retries: 10
     restart: unless-stopped
-    ports:
-      - '3001:3001'
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://${DB_USER:-vencore}:${DB_PASSWORD}@db:5432/${DB_NAME:-vencore}
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET}
-      SSH_ENCRYPTION_KEY: ${SSH_ENCRYPTION_KEY}
-      AGENT_SIGNING_SECRET: ${AGENT_SIGNING_SECRET}
-      CRON_SECRET: ${CRON_SECRET}
-      MAIL_ENCRYPTION_KEY: ${MAIL_ENCRYPTION_KEY}
-      APP_URL: http://${VM_IP:-localhost}:3000
-      PORT: 3001
-      COOKIE_SECURE: 'false'
-      CONFIG_PATH: /app/vencore.config.json
-    volumes:
-      - ./vencore.config.json:/app/vencore.config.json:ro
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  worker:
-    build:
-      context: .
-      dockerfile: Dockerfile.worker
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://${DB_USER:-vencore}:${DB_PASSWORD}@db:5432/${DB_NAME:-vencore}
-      REDIS_URL: redis://redis:6379
-      API_URL: http://api:3001
-      JWT_SECRET: ${JWT_SECRET}
-      CRON_SECRET: ${CRON_SECRET}
-      SSH_ENCRYPTION_KEY: ${SSH_ENCRYPTION_KEY}
-      CONFIG_PATH: /app/vencore.config.json
-    volumes:
-      - ./vencore.config.json:/app/vencore.config.json:ro
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      api:
-        condition: service_started
-
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile.web
-      args:
-        NEXT_PUBLIC_APP_URL: http://${VM_IP:-localhost}:3000
-        NEXT_PUBLIC_API_URL: http://api:3001
-    restart: unless-stopped
-    ports:
-      - '3000:3000'
-    environment:
-      NODE_ENV: production
-    depends_on:
-      - api
 
 volumes:
-  pgdata:
-  redisdata:
+  db_data:
+  redis_data:

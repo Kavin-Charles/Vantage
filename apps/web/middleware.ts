@@ -30,6 +30,9 @@ export default function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Root page is a server-side router — let it decide setup vs dashboard vs login
+  if (pathname === '/') return NextResponse.next();
+
   const isSetupPath = SETUP_PATHS.some(p => pathname.startsWith(p));
   const isPublicPath = PUBLIC_PATHS.some(p => pathname.startsWith(p));
   const setupDone = req.cookies.get('vencore_setup_done')?.value === '1';
@@ -44,12 +47,8 @@ export default function middleware(req: NextRequest) {
     return NextResponse.redirect(setupUrl);
   }
 
-  // Prevent revisiting /setup after completion
-  if (setupDone && pathname === '/setup') {
-    return NextResponse.redirect(new URL('/', req.url));
-  }
-
   // Allow setup and public paths through (no auth cookie required)
+  // setup/page.tsx handles the "already configured" redirect server-side
   if (isSetupPath || PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
     return NextResponse.next();
   }

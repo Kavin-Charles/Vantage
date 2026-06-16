@@ -3,14 +3,12 @@ import type { Database } from '@vencore/db';
 
 export async function isConfigured(db: Kysely<Database>): Promise<boolean> {
   try {
-    const row = await db
-      .selectFrom('system_settings')
-      .where('key', '=', 'setup')
-      .select('value')
+    const workspace = await db
+      .selectFrom('workspaces')
+      .select('id')
       .executeTakeFirst();
-    return (row?.value as { configured?: boolean })?.configured === true;
+    return workspace !== undefined;
   } catch {
-    // Table doesn't exist = pre-migration / local-dev with file config = treat as configured
-    return true;
+    return false;
   }
 }
