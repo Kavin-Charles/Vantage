@@ -12,6 +12,7 @@ const createPipelineSchema = z.object({
 
 const updatePipelineSchema = z.object({
   name: z.string().min(1).optional(),
+  description: z.string().optional(),
   is_default: z.boolean().optional(),
   position: z.number().int().optional(),
 });
@@ -37,10 +38,13 @@ export function createPipelinesRouter(
   requirePermission: (p: string) => RequestHandler,
 ): ExpressRouter {
   const router = Router();
-  const view   = requirePermission('pipelines:view');
-  const create = requirePermission('pipelines:create');
-  const edit   = requirePermission('pipelines:edit');
-  const del    = requirePermission('pipelines:delete');
+  const view      = requirePermission('pipelines:view');
+  const create    = requirePermission('pipelines:create');
+  const edit      = requirePermission('pipelines:edit');
+  const del       = requirePermission('pipelines:delete');
+  const config    = requirePermission('pipelines:config');
+  const stageEdit = requirePermission('pipelines:stage.edit');
+  const stageDel  = requirePermission('pipelines:stage.delete');
 
   // List pipelines — include stages and fields
   router.get('/', view, async (req, res, next) => {
@@ -91,7 +95,7 @@ export function createPipelinesRouter(
   });
 
   // Update pipeline
-  router.patch('/:id', edit, async (req, res, next) => {
+  router.patch('/:id', config, async (req, res, next) => {
     try {
       const body = updatePipelineSchema.parse(req.body);
       const p = await db.updateTable('pipelines').set({ ...body, updated_at: new Date() })
@@ -117,7 +121,7 @@ export function createPipelinesRouter(
 
   // --- Stages ---
 
-  router.post('/:id/stages', edit, async (req, res, next) => {
+  router.post('/:id/stages', stageEdit, async (req, res, next) => {
     try {
       const pipeline = await db.selectFrom('pipelines').select('id')
         .where('id', '=', req.params['id']!)
@@ -133,7 +137,7 @@ export function createPipelinesRouter(
     } catch (e) { next(e); }
   });
 
-  router.patch('/:id/stages/:stageId', edit, async (req, res, next) => {
+  router.patch('/:id/stages/:stageId', stageEdit, async (req, res, next) => {
     try {
       const pipeline = await db.selectFrom('pipelines').select('id')
         .where('id', '=', req.params['id']!)
@@ -151,7 +155,7 @@ export function createPipelinesRouter(
     } catch (e) { next(e); }
   });
 
-  router.delete('/:id/stages/:stageId', edit, async (req, res, next) => {
+  router.delete('/:id/stages/:stageId', stageDel, async (req, res, next) => {
     try {
       const pipeline = await db.selectFrom('pipelines').select('id')
         .where('id', '=', req.params['id']!)
@@ -168,7 +172,7 @@ export function createPipelinesRouter(
     } catch (e) { next(e); }
   });
 
-  router.post('/:id/stages/reorder', edit, async (req, res, next) => {
+  router.post('/:id/stages/reorder', stageEdit, async (req, res, next) => {
     try {
       const pipeline = await db.selectFrom('pipelines').select('id')
         .where('id', '=', req.params['id']!)
