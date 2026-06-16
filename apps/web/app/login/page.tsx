@@ -36,6 +36,7 @@ function LoginForm() {
           email: res.data.email,
           role: res.data.role,
           workspace_id: '',
+          permissions: [],
         },
       }));
       const raw = searchParams.get('from') ?? '';

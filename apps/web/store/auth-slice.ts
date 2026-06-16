@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   role: 'admin' | 'member';
   workspace_id: string;
+  permissions: string[];
 }
 
 interface AuthState {

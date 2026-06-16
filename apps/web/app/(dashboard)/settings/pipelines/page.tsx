@@ -1,11 +1,17 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { listPipelines, createPipeline, deletePipeline } from '@/modules/pipeline/lib/pipelines';
+import { listPipelines, createPipeline, deletePipeline, updatePipeline } from '@/modules/pipeline/lib/pipelines';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
+import {
+  useContextMenu, ContextMenu, type ContextMenuItem,
+} from '@/modules/shared/components/ui/ContextMenu';
 import Link from 'next/link';
 
 export default function PipelinesSettingsPage() {
+  const router = useRouter();
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [newName, setNewName] = useState('');
@@ -32,6 +38,31 @@ export default function PipelinesSettingsPage() {
     mutationFn: async (id: string) => deletePipeline(await getToken(), id),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['pipelines'] }),
   });
+
+  const { hasPermission } = useAuth();
+  const canConfig = hasPermission('pipelines:config');
+  const canDelete = hasPermission('pipelines:delete');
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+
+  const [inlineRenameId, setInlineRenameId] = useState<string | null>(null);
+  const [inlineRenameVal, setInlineRenameVal] = useState('');
+
+  const updateMut = useMutation({
+    mutationFn: async ({ id, body }: { id: string; body: { name?: string; is_default?: boolean } }) =>
+      updatePipeline(await getToken(), id, body),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['pipelines'] }),
+  });
+
+  function openPipelineMenu(e: React.MouseEvent, p: (typeof pipelines)[0]) {
+    const items = [
+      { label: 'Configure →', icon: 'settings', onClick: () => router.push(`/settings/pipelines/${p.id}`) },
+      canConfig && { label: 'Rename', icon: 'pencil', onClick: () => { setInlineRenameId(p.id); setInlineRenameVal(p.name); } },
+      canConfig && { label: 'Set as Default', icon: 'star', disabled: p.is_default, onClick: () => updateMut.mutate({ id: p.id, body: { is_default: true } }) },
+      canDelete && { type: 'separator' as const },
+      canDelete && { label: 'Delete', icon: 'trash-2', danger: true, onClick: () => { if (confirm(`Delete "${p.name}"? All items in this pipeline will be permanently deleted.`)) deleteMut.mutate(p.id); } },
+    ].filter(Boolean) as ContextMenuItem[];
+    openMenu(e, items);
+  }
 
   const eyebrow: React.CSSProperties = {
     fontSize: 11,
@@ -176,32 +207,42 @@ export default function PipelinesSettingsPage() {
           }}
           onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'; }}
           onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => { e.currentTarget.style.boxShadow = 'none'; }}
+          onContextMenu={e => openPipelineMenu(e, p)}
           >
             <div style={{ flex: 1 }}>
-              <div style={{
-                fontFamily: 'var(--font-sans)',
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--text)',
-                marginBottom: 3,
-              }}>
-                {p.name}
-                {p.is_default && (
-                  <span style={{
-                    marginLeft: 8,
-                    fontSize: 10,
-                    fontWeight: 600,
-                    color: 'var(--text3)',
-                    background: 'var(--surface2)',
-                    padding: '2px 7px',
-                    borderRadius: 999,
-                    verticalAlign: 'middle',
-                    fontFamily: 'var(--font-sans)',
-                  }}>
-                    DEFAULT
-                  </span>
-                )}
-              </div>
+              {inlineRenameId === p.id ? (
+                <input
+                  autoFocus
+                  value={inlineRenameVal}
+                  onChange={e => setInlineRenameVal(e.target.value)}
+                  onBlur={() => {
+                    const trimmed = inlineRenameVal.trim();
+                    if (trimmed && trimmed !== p.name)
+                      updateMut.mutate({ id: p.id, body: { name: trimmed } });
+                    setInlineRenameId(null);
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                    if (e.key === 'Escape') setInlineRenameId(null);
+                  }}
+                  style={{
+                    fontSize: 14, fontWeight: 600, fontFamily: 'var(--font-sans)',
+                    color: 'var(--text)', border: '1px solid var(--text2)',
+                    borderRadius: 8, padding: '3px 8px', outline: 'none',
+                    background: 'var(--surface)', boxSizing: 'border-box',
+                    width: '100%', transition: 'border-color .15s ease',
+                  }}
+                />
+              ) : (
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 3 }}>
+                  {p.name}
+                  {p.is_default && (
+                    <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 600, color: 'var(--text3)', background: 'var(--surface2)', padding: '2px 7px', borderRadius: 999, verticalAlign: 'middle', fontFamily: 'var(--font-sans)' }}>
+                      DEFAULT
+                    </span>
+                  )}
+                </div>
+              )}
               <div style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--font-sans)' }}>
                 {p.stages.length} stage{p.stages.length !== 1 ? 's' : ''}
                 {' · '}
@@ -269,6 +310,7 @@ export default function PipelinesSettingsPage() {
           </div>
         )}
       </div>
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }

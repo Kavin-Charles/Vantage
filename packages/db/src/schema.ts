@@ -220,6 +220,7 @@ export interface PipelineTable {
   id: Generated<string>;
   workspace_id: string;
   name: string;
+  description: string | null;
   is_default: Generated<boolean>;
   position: Generated<number>;
   view: Generated<string>;          // 'kanban' | 'table' | 'list'
