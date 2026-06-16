@@ -33,7 +33,28 @@ Delete `apps/web/app/(dashboard)/settings/pipelines/layout.tsx` entirely. The tw
 | `pipelines:field.delete` | Delete fields | admin |
 | `pipelines:config` | Change pipeline settings (name, description, default) | admin |
 
-Existing permissions (`pipelines:view/create/edit/delete`) remain unchanged.
+Existing permissions (`pipelines:view/create/edit/delete`) remain unchanged and continue to be used for deals/items routes.
+
+### Backend route permission mapping changes
+
+`apps/api/src/routes/pipelines.ts`:
+
+| Route | Old permission | New permission |
+|---|---|---|
+| `PATCH /pipelines/:id` (rename/description/default) | `edit` | `pipelines:config` |
+| `POST /pipelines/:id/stages` (create stage) | `edit` | `pipelines:create` |
+| `PATCH /pipelines/:id/stages/:stageId` | `edit` | `pipelines:stage.edit` |
+| `DELETE /pipelines/:id/stages/:stageId` | `delete` | `pipelines:stage.delete` |
+| `POST /pipelines/:id/stages/reorder` | `edit` | `pipelines:stage.edit` |
+
+`apps/api/src/routes/pipeline-fields.ts`:
+
+| Route | Old permission | New permission |
+|---|---|---|
+| `POST /fields` (create field) | `edit` | `pipelines:create` |
+| `PATCH /fields/:fieldId` | `edit` | `pipelines:field.edit` |
+| `DELETE /fields/:fieldId` | `edit` ← bug | `pipelines:field.delete` |
+| `POST /fields/reorder` | `edit` | `pipelines:field.edit` |
 
 ### Frontend: expose resolved permissions
 
@@ -209,6 +230,8 @@ Delete Deal                   [pipelines:delete]
 | `apps/web/src/components/ui/ContextMenu.tsx` | **Create** — shared context menu component |
 | `apps/api/src/routes/pipelines.ts` | **Edit** — add `description` to `updatePipelineSchema` |
 | `apps/api/src/routes/me.ts` | **Edit** — include resolved `permissions[]` in `/api/me` response |
+| `apps/api/src/routes/pipelines.ts` | **Edit** — swap stage/config route permissions to new keys |
+| `apps/api/src/routes/pipeline-fields.ts` | **Edit** — swap field route permissions to new keys (fix delete bug) |
 | `packages/modules/src/pipelines/index.ts` | **Edit** — add 5 new fine-grained permissions |
 | DB migration | **Create** — `ALTER TABLE pipelines ADD COLUMN description text` |
 
