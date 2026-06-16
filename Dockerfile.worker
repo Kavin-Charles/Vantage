@@ -10,9 +10,12 @@ COPY packages/config/package.json ./packages/config/package.json
 COPY packages/api-client/package.json ./packages/api-client/package.json
 COPY packages/plugin-types/package.json ./packages/plugin-types/package.json
 COPY packages/plugin-runtime/package.json ./packages/plugin-runtime/package.json
+COPY packages/modules/package.json ./packages/modules/package.json
 COPY apps/api/package.json ./apps/api/package.json
 COPY apps/web/package.json ./apps/web/package.json
 COPY apps/worker/package.json ./apps/worker/package.json
+COPY apps/agent/package.json ./apps/agent/package.json
+COPY apps/mobile/package.json ./apps/mobile/package.json
 RUN pnpm install --frozen-lockfile
 
 COPY packages/ ./packages/
