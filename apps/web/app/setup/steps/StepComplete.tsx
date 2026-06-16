@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { SetupState } from '../types';
 
 type Props = { state: SetupState };
@@ -13,39 +13,13 @@ type CheckItem = {
 };
 
 export function StepComplete({ state }: Props) {
-  const { domain, smtp, branding } = state;
-  const appUrl = domain.domain
-    ? `http${domain.sslEnabled ? 's' : ''}://${domain.domain}`
-    : `http://localhost:3000`;
+  const { smtp, branding } = state;
+  const appUrl = `http://localhost:3000`;
 
-  const [dnsOk, setDnsOk] = useState(false);
-  const [sslOk, setSslOk] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [removeCopied, setRemoveCopied] = useState(false);
 
-  useEffect(() => {
-    if (!domain.domain) return;
-    const poll = setInterval(async () => {
-      try {
-        const res = await fetch('/api/installer/check-domain', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ domain: domain.domain, ssl: domain.sslEnabled }),
-        });
-        const json = await res.json();
-        if (json.data?.dns) setDnsOk(true);
-        if (json.data?.ssl) setSslOk(true);
-        if (json.data?.dns && (!domain.sslEnabled || json.data?.ssl)) clearInterval(poll);
-      } catch { /* network not ready yet */ }
-    }, 5000);
-    return () => clearInterval(poll);
-  }, [domain.domain, domain.sslEnabled]);
-
   const checks: CheckItem[] = [
-    ...(domain.domain ? [
-      { id: 'dns', label: 'DNS A record set', status: dnsOk ? 'ok' as const : 'pending' as const },
-      ...(domain.sslEnabled ? [{ id: 'ssl', label: 'SSL certificate issued', status: sslOk ? 'ok' as const : 'pending' as const }] : []),
-    ] : []),
     ...(smtp ? [{
       id: 'smtp', label: 'Send a test email', status: 'pending' as const,
       action: { label: 'Send test →', onClick: () => {} },
@@ -72,9 +46,7 @@ export function StepComplete({ state }: Props) {
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--text)', margin: '0 0 8px' }}>
         {branding.name || 'Vencore'} is running
       </h1>
-      {domain.domain && (
-        <p style={{ fontSize: 15, color: 'var(--text2)', margin: '0 0 40px' }}>{appUrl}</p>
-      )}
+      <p style={{ fontSize: 15, color: 'var(--text2)', margin: '0 0 40px' }}>{appUrl}</p>
 
       <div style={{ textAlign: 'left', maxWidth: 440, margin: '0 auto 40px' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
