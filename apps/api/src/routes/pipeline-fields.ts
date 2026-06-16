@@ -40,8 +40,9 @@ export function createPipelineFieldsRouter(
   requirePermission: (p: string) => RequestHandler,
 ): ExpressRouter {
   const router = Router({ mergeParams: true });
-  const view = requirePermission('pipelines:view');
-  const edit = requirePermission('pipelines:edit');
+  const view      = requirePermission('pipelines:view');
+  const fieldEdit = requirePermission('pipelines:field.edit');
+  const fieldDel  = requirePermission('pipelines:field.delete');
 
   // List fields
   router.get('/', view, async (req, res, next) => {
@@ -56,7 +57,7 @@ export function createPipelineFieldsRouter(
   });
 
   // Create field
-  router.post('/', edit, async (req, res, next) => {
+  router.post('/', fieldEdit, async (req, res, next) => {
     try {
       const pipeline = await getPipeline(db, req.params['pipelineId']!, (req as AuthenticatedRequest).workspace.id);
       if (!pipeline) return fail(res, 404, 'NOT_FOUND', 'Pipeline not found');
@@ -70,7 +71,7 @@ export function createPipelineFieldsRouter(
   });
 
   // Update field
-  router.patch('/:fieldId', edit, async (req, res, next) => {
+  router.patch('/:fieldId', fieldEdit, async (req, res, next) => {
     try {
       const pipeline = await getPipeline(db, req.params['pipelineId']!, (req as AuthenticatedRequest).workspace.id);
       if (!pipeline) return fail(res, 404, 'NOT_FOUND', 'Pipeline not found');
@@ -91,7 +92,7 @@ export function createPipelineFieldsRouter(
   });
 
   // Delete field
-  router.delete('/:fieldId', edit, async (req, res, next) => {
+  router.delete('/:fieldId', fieldDel, async (req, res, next) => {
     try {
       const pipeline = await getPipeline(db, req.params['pipelineId']!, (req as AuthenticatedRequest).workspace.id);
       if (!pipeline) return fail(res, 404, 'NOT_FOUND', 'Pipeline not found');
@@ -106,7 +107,7 @@ export function createPipelineFieldsRouter(
   });
 
   // Reorder fields
-  router.post('/reorder', edit, async (req, res, next) => {
+  router.post('/reorder', fieldEdit, async (req, res, next) => {
     try {
       const pipeline = await getPipeline(db, req.params['pipelineId']!, (req as AuthenticatedRequest).workspace.id);
       if (!pipeline) return fail(res, 404, 'NOT_FOUND', 'Pipeline not found');
