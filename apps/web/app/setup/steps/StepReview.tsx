@@ -6,181 +6,109 @@ import { getStepList, OPTIONAL_STEPS } from '../types';
 
 type Props = { state: SetupState; dispatch: React.Dispatch<WizardAction> };
 
-export type DeployStatus = 'idle' | 'deploying' | 'done' | 'error';
+type Status = 'idle' | 'deploying' | 'error';
 
 const STEP_LABELS: Partial<Record<StepId, string>> = {
   branding: 'Branding',
-  infra: 'Infrastructure',
-  db: 'Database',
-  redis: 'Redis',
-  domain: 'Domain & SSL',
   smtp: 'SMTP',
   features: 'Features',
   admin: 'Admin Account',
 };
 
 const SKIP_WARNINGS: Partial<Record<StepId, string>> = {
-  redis: 'Sessions/queues may degrade without Redis.',
-  domain: 'App accessible via IP only, no SSL.',
   smtp: 'Email features (invites, alerts, password reset) will not work.',
 };
 
 export function StepReview({ state, dispatch }: Props) {
-  const [deployStatus, setDeployStatus] = useState<DeployStatus>('idle');
-  const [logLines, setLogLines] = useState<string[]>([]);
-  const [deployError, setDeployError] = useState('');
+  const [status, setStatus] = useState<Status>('idle');
+  const [error, setError] = useState('');
 
   const stepList = getStepList(state);
   const reviewSteps = stepList.filter(s => s !== 'review' && s !== 'complete');
 
-  const isOwnCreds = state.infra.mode === 'own-creds';
-  const apiBase = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
-
-  const deploy = async () => {
-    setDeployStatus('deploying');
-    setLogLines([]);
-    setDeployError('');
-
-    if (isOwnCreds) {
-      // own-creds: just create workspace + admin via the setup API
-      try {
-        const res = await fetch(`${apiBase}/api/setup`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            branding: {
-              name: state.branding.name,
-              logoUrl: state.branding.logoUrl,
-              domain: state.domain.domain || undefined,
-            },
-            features: state.features,
-            smtp: state.smtp,
-            admin: state.admin,
-          }),
-        });
-        const json = await res.json();
-        if (json.error) throw new Error(json.error.message ?? json.error.code ?? 'Setup failed');
-        // Activate session cookie then go to login
-        window.location.href = '/api/setup/activate?from=/login';
-      } catch (err) {
-        setDeployStatus('error');
-        setDeployError(err instanceof Error ? err.message : 'Unknown error');
-      }
-      return;
-    }
-
-    // docker-deploy: stream from installer
+  const complete = async () => {
+    setStatus('deploying');
+    setError('');
     try {
-      const res = await fetch(`${apiBase}/api/installer/deploy`, {
+      const res = await fetch('/api/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(state),
+        credentials: 'include',
+        body: JSON.stringify({
+          branding: { name: state.branding.name, logoUrl: state.branding.logoUrl },
+          features: state.features,
+          smtp: state.smtp,
+          admin: state.admin,
+        }),
       });
       const json = await res.json();
-      if (!json.data?.jobId) throw new Error(json.error?.message ?? 'Deploy failed to start');
-
-      const { jobId } = json.data;
-      const es = new EventSource(`${apiBase}/api/installer/deploy/${jobId}/stream`);
-
-      es.onmessage = e => {
-        const msg = JSON.parse(e.data) as { type: string; line?: string };
-        if (msg.type === 'log') setLogLines(prev => [...prev, msg.line ?? '']);
-        if (msg.type === 'done') {
-          es.close();
-          setDeployStatus('done');
-          dispatch({ type: 'NEXT' });
-        }
-        if (msg.type === 'error') {
-          es.close();
-          setDeployStatus('error');
-          setDeployError(msg.line ?? 'Deploy failed');
-        }
-      };
-
-      es.onerror = () => {
-        es.close();
-        setDeployStatus('error');
-        setDeployError('Lost connection to deploy stream. Check API logs.');
-      };
+      if (json.error) throw new Error(json.error.message ?? json.error.code ?? 'Setup failed');
+      window.location.href = '/api/setup/activate?from=/login';
     } catch (err) {
-      setDeployStatus('error');
-      setDeployError(err instanceof Error ? err.message : 'Unknown error');
+      setStatus('error');
+      setError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
   return (
-    <div style={{ display: 'flex', gap: 32, height: '100%' }}>
-      {/* Left: summary */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <h2 style={heading}>Review & Deploy</h2>
-        <p style={subtext}>Confirm your configuration before deploying.</p>
+    <div>
+      <h2 style={heading}>Review & Complete</h2>
+      <p style={subtext}>Confirm your configuration before completing setup.</p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {reviewSteps.map(stepId => {
-            const isSkipped = state.skipped.includes(stepId);
-            const warning = isSkipped ? SKIP_WARNINGS[stepId] : undefined;
-            return (
-              <div key={stepId} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 10,
-                padding: '10px 14px', borderRadius: 8,
-                background: isSkipped ? 'color-mix(in srgb, var(--text3) 10%, transparent)' : 'var(--surface2)',
-                border: `1px solid ${isSkipped ? 'var(--text3)' : 'var(--border)'}`,
-              }}>
-                <span style={{ fontSize: 13, color: isSkipped ? 'var(--text3)' : 'var(--green)', fontWeight: 700, marginTop: 1 }}>
-                  {isSkipped ? '⊘' : '✓'}
-                </span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
-                    {STEP_LABELS[stepId]}
-                    {isSkipped && <span style={{ color: 'var(--text3)', fontWeight: 400 }}> — skipped</span>}
-                  </div>
-                  {warning && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>⚠ {warning}</div>}
-                  {!isSkipped && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{summarize(state, stepId)}</div>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 32 }}>
+        {reviewSteps.map(stepId => {
+          const isSkipped = state.skipped.includes(stepId);
+          const warning = isSkipped ? SKIP_WARNINGS[stepId] : undefined;
+          return (
+            <div key={stepId} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              padding: '10px 14px', borderRadius: 8,
+              background: isSkipped ? 'color-mix(in srgb, var(--text3) 10%, transparent)' : 'var(--surface2)',
+              border: `1px solid ${isSkipped ? 'var(--text3)' : 'var(--border)'}`,
+            }}>
+              <span style={{ fontSize: 13, color: isSkipped ? 'var(--text3)' : 'var(--green)', fontWeight: 700, marginTop: 1 }}>
+                {isSkipped ? '⊘' : '✓'}
+              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
+                  {STEP_LABELS[stepId]}
+                  {isSkipped && <span style={{ color: 'var(--text3)', fontWeight: 400 }}> — skipped</span>}
                 </div>
-                <button onClick={() => dispatch({ type: 'GO_TO', step: stepId })} style={editBtn}>Edit</button>
+                {warning && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>⚠ {warning}</div>}
+                {!isSkipped && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{summarize(state, stepId)}</div>}
               </div>
-            );
-          })}
-        </div>
+              <button onClick={() => dispatch({ type: 'GO_TO', step: stepId })} style={editBtn}>Edit</button>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Right: deploy log */}
-      <div style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 10 }}>Deploy Log</div>
+      {status === 'error' && (
         <div style={{
-          flex: 1, minHeight: 200, maxHeight: 400,
-          background: '#0b1330', borderRadius: 8,
-          padding: '14px 16px', overflowY: 'auto',
-          fontFamily: 'IBM Plex Mono, monospace', fontSize: 12, color: '#a8b4cc',
-          lineHeight: 1.6,
+          padding: '10px 14px', borderRadius: 8, marginBottom: 16,
+          background: 'var(--red-bg)', border: '1px solid var(--red)',
+          color: 'var(--red)', fontSize: 13,
         }}>
-          {logLines.length === 0 && deployStatus === 'idle' && (
-            <span style={{ color: '#4a5677' }}>Ready to deploy…</span>
-          )}
-          {logLines.map((line, i) => <div key={i}>{line}</div>)}
-          {deployStatus === 'error' && (
-            <div style={{ color: '#f87171', marginTop: 8 }}>✗ {deployError}</div>
-          )}
+          {error}
         </div>
+      )}
 
-        <button
-          onClick={deployStatus === 'error' || deployStatus === 'idle' ? deploy : undefined}
-          disabled={deployStatus === 'deploying' || deployStatus === 'done'}
-          style={{
-            marginTop: 16, padding: '12px', width: '100%',
-            background: deployStatus === 'error' ? 'var(--red)' : 'var(--text)',
-            color: '#fff', border: 'none', borderRadius: 8,
-            fontSize: 15, fontWeight: 600, cursor: deployStatus === 'deploying' ? 'wait' : 'pointer',
-            fontFamily: 'var(--font-display)',
-          }}
-        >
-          {deployStatus === 'idle' && (isOwnCreds ? 'Complete Setup →' : '🚀 Deploy Vencore')}
-          {deployStatus === 'deploying' && (isOwnCreds ? 'Creating workspace…' : '⟳ Deploying…')}
-          {deployStatus === 'done' && '✓ Done'}
-          {deployStatus === 'error' && '↺ Retry'}
-        </button>
-      </div>
+      <button
+        onClick={status !== 'deploying' ? complete : undefined}
+        disabled={status === 'deploying'}
+        style={{
+          padding: '12px 24px',
+          background: status === 'error' ? 'var(--red)' : 'var(--text)',
+          color: '#fff', border: 'none', borderRadius: 8,
+          fontSize: 15, fontWeight: 600,
+          cursor: status === 'deploying' ? 'wait' : 'pointer',
+          fontFamily: 'var(--font-display)',
+        }}
+      >
+        {status === 'idle' && 'Complete Setup →'}
+        {status === 'deploying' && 'Creating workspace…'}
+        {status === 'error' && '↺ Retry'}
+      </button>
     </div>
   );
 }
@@ -188,10 +116,6 @@ export function StepReview({ state, dispatch }: Props) {
 function summarize(state: SetupState, stepId: StepId): string {
   switch (stepId) {
     case 'branding': return state.branding.name || '—';
-    case 'infra': return state.infra.mode === 'docker-deploy' ? 'Docker Deploy' : 'Own Credentials';
-    case 'db': return `${state.infra.db.host}:${state.infra.db.port}/${state.infra.db.name}`;
-    case 'redis': return `${state.infra.redis.host}:${state.infra.redis.port}`;
-    case 'domain': return state.domain.domain || 'No domain';
     case 'smtp': return state.smtp?.host ?? '—';
     case 'features': return Object.entries(state.features).filter(([, v]) => v).map(([k]) => k).join(', ');
     case 'admin': return state.admin.email || '—';
