@@ -229,7 +229,7 @@ if (process.env['INSTALLER_MODE'] === 'true') {
 }
 
 // Authenticated routes
-app.use('/api/me', requireAuth, createMeRouter());
+app.use('/api/me', requireAuth, createMeRouter(db));
 app.use('/api/me/push-token', requireAuth, createPushTokenRouter(db));
 app.use('/api/workspace/modules', requireAuth, createWorkspaceModulesRouter(db));
 app.use('/api/contacts', requireAuth, requireModule('contacts'), createContactsRouter(db, requirePermission));

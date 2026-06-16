@@ -14,7 +14,7 @@ const ADMIN_SENTINEL = new Proxy(new Set<string>(), {
 const permCache = new Map<string, { perms: Set<string>; expiresAt: number }>();
 const CACHE_TTL_MS = 60_000;
 
-async function getEnabledModuleIds(
+export async function getEnabledModuleIds(
   db: Kysely<Database>,
   workspaceId: string,
 ): Promise<string[]> {
