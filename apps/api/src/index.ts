@@ -19,7 +19,6 @@ import { createInvitesRouter } from './routes/invites';
 import { createUserPermissionsRouter } from './routes/user-permissions';
 import { createConfigRouter } from './routes/config';
 import { createSetupRouter } from './routes/setup';
-import { createInstallerRouter } from './routes/installer';
 import { createMeRouter } from './routes/me';
 import { createPushTokenRouter } from './routes/push-token';
 import { createContactsRouter } from './routes/contacts';
@@ -220,11 +219,6 @@ app.use('/api/config', createConfigRouter(config, db));
 app.use('/api/auth', createAuthRouter(db, env.JWT_SECRET, config.smtp));
 // Setup (public — must come before requireAuth routes)
 app.use('/api/setup', createSetupRouter(db));
-
-// Installer (only active when INSTALLER_MODE=true)
-if (process.env['INSTALLER_MODE'] === 'true') {
-  app.use('/api/installer', createInstallerRouter());
-}
 
 // Authenticated routes
 app.use('/api/me', requireAuth, createMeRouter(db));
