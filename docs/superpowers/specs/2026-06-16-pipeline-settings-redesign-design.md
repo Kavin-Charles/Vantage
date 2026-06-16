@@ -92,8 +92,10 @@ Single shared `<ContextMenu>` component in `src/components/ui/ContextMenu.tsx`.
 - Portalled to `document.body` via `createPortal`
 - Positioned at cursor coordinates, clamped to viewport
 - Closes on: click outside, Escape key, scroll
-- Items: `{ label, onClick, disabled?, danger?, divider? }`
+- Items: `{ label, onClick, disabled?, danger?, divider?, hidden? }`
+- `hidden: true` removes item from list entirely (used for permission gating — not just visually disabled)
 - Optional submenu (one level deep) for "Move to Stage →"
+- Consumer passes `role: 'admin' | 'member'` from `useAuth()` and builds items array with `hidden` derived from role
 
 Usage: wrap target element, pass `items` array, attach `onContextMenu` handler.
 
@@ -101,65 +103,68 @@ Usage: wrap target element, pass `items` array, attach `onContextMenu` handler.
 
 ## 6. Context Menu Placements
 
+Permission legend: **[A]** = admin only · **[M]** = any role · items marked [A] use `hidden: role !== 'admin'`
+
 ### Pipeline list — right-click pipeline card
 
 ```
-Configure →
-Rename
-Set as Default
+Configure →          [M]
+Rename               [A]
+Set as Default       [A]
 ─────────────
-Delete
+Delete               [A]
 ```
 
-- **Rename**: focuses the pipeline name in the card inline (or opens a quick inline input on the card)
+- **Configure →**: navigate to `/settings/pipelines/:id`
+- **Rename**: opens quick inline input on the card; saves `PATCH /pipelines/:id { name }`
 - **Set as Default**: `PATCH /pipelines/:id { is_default: true }`
-- **Delete**: same confirm + delete as existing button
+- **Delete**: confirm dialog, `DELETE /pipelines/:id`
 
 ### Config page — right-click stage row
 
 ```
-Rename Stage
-Change Color
-Move Up
-Move Down
+Rename Stage         [A]
+Change Color         [A]
+Move Up              [A]
+Move Down            [A]
 ─────────────
-Delete Stage
+Delete Stage         [A]  (hidden for won/lost stages)
 ```
 
-- Rename / Change Color: same as clicking inline controls
-- Move Up/Down: disabled at list bounds, disabled for won/lost (already at bottom)
-- Delete Stage: disabled for won/lost stages
+- Move Up/Down: `disabled` at list bounds; hidden entirely for won/lost rows (they don't reorder)
+- Delete Stage: hidden for won/lost stages; `disabled` not used — item simply absent
 
 ### Config page — right-click field row
 
 ```
-Rename Field
-Edit Options        (only for select / multiselect)
-Toggle Required
-Move Up
-Move Down
+Rename Field         [A]
+Edit Options         [A]  (hidden unless field type is select or multiselect)
+Toggle Required      [A]
+Move Up              [A]
+Move Down            [A]
 ─────────────
-Delete Field
+Delete Field         [A]
 ```
 
 ### Pipeline kanban page — right-click deal card
 
 ```
-Open Deal
-Move to Stage  ▶   [submenu: stage list]
-Assign to Me
+Open Deal            [M]
+Move to Stage  ▶     [M]   [submenu: stage list]
+Assign to Me         [M]
 ─────────────
-Mark as Won
-Mark as Lost
+Mark as Won          [M]
+Mark as Lost         [M]
 ─────────────
-Delete Deal
+Delete Deal          [A]
 ```
 
-- **Open Deal**: navigate to deal detail
-- **Move to Stage**: inline submenu listing all pipeline stages; selecting one PATCHes deal stage
-- **Assign to Me**: `PATCH /deals/:id { owner_id: currentUser.id }`
-- **Mark as Won / Mark as Lost**: `PATCH /deals/:id { stage_id: <won|lost stage id> }`
-- **Delete Deal**: confirm dialog, then `DELETE /deals/:id`
+- **Open Deal**: navigate to deal detail page
+- **Move to Stage**: inline submenu listing all active pipeline stages (won/lost excluded); selecting one `PATCH /deals/:id { stage_id }`
+- **Assign to Me**: `PATCH /deals/:id { owner_id: currentUser.id }`; hidden if current user is already owner
+- **Mark as Won**: `PATCH /deals/:id { stage_id: <won stage id> }`; hidden if deal already in won stage
+- **Mark as Lost**: `PATCH /deals/:id { stage_id: <lost stage id> }`; hidden if deal already in lost stage
+- **Delete Deal**: admin only; confirm dialog, then `DELETE /deals/:id`
 
 ---
 
