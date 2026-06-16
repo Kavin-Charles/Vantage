@@ -60,3 +60,11 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+      - name: Make package public
+        run: |
+          gh api --method PATCH \
+            /orgs/${{ env.ORG }}/packages/container/${{ matrix.image }} \
+            -f visibility=public
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
