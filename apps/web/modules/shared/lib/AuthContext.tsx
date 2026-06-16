@@ -12,6 +12,7 @@ interface AuthContextValue {
   isLoading: boolean;
   logout: () => Promise<void>;
   refetch: () => Promise<void>;
+  hasPermission: (key: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -50,8 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/login';
   };
 
+  const hasPermission = (key: string): boolean => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    return (user.permissions ?? []).includes(key);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, logout, refetch: fetchUser }}>
+    <AuthContext.Provider value={{ user, isLoading, logout, refetch: fetchUser, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );
