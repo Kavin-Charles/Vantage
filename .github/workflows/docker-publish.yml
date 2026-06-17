@@ -17,6 +17,7 @@ jobs:
       packages: write
 
     strategy:
+      fail-fast: false
       matrix:
         include:
           - image: vencore-web
@@ -62,6 +63,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 
       - name: Make package public
+        continue-on-error: true
         run: |
           gh api --method PATCH \
             /orgs/${{ env.ORG }}/packages/container/${{ matrix.image }} \
