@@ -80,7 +80,7 @@ export function createProjectTemplatesRouter(db: Kysely<Database>): Router {
           workspace_id: workspace.id,
           name: parsed.data.name,
           color: parsed.data.color ?? null,
-          owner_id: user.id,
+          created_by: user.id,
           status: 'ACTIVE',
         })
         .returningAll()
@@ -93,7 +93,7 @@ export function createProjectTemplatesRouter(db: Kysely<Database>): Router {
           .values({
             project_id: project.id,
             name: s.name,
-            color: s.color ?? null,
+            color: s.color ?? '#6b7280',
             position: s.position,
             is_done: s.is_done,
           })
@@ -114,7 +114,7 @@ export function createProjectTemplatesRouter(db: Kysely<Database>): Router {
           .values({
             project_id: project.id,
             title: t.title,
-            priority: t.priority ?? null,
+            ...(t.priority ? { priority: t.priority as 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE' } : {}),
             status_id: statusId,
             created_by: user.id,
           })

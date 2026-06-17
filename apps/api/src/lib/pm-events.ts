@@ -18,8 +18,8 @@ class PMEventEmitter extends EventEmitter {
   }
 
   on(event: 'pm', listener: (data: PMEvent) => void): this
-  on(event: string | symbol, listener: (...args: unknown[]) => void): this
-  on(event: string | symbol, listener: (...args: unknown[]) => void): this {
+  on(event: string | symbol, listener: (...args: any[]) => void): this
+  on(event: string | symbol, listener: (...args: any[]) => void): this {
     return super.on(event, listener)
   }
 }

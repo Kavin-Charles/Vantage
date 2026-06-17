@@ -8,7 +8,7 @@ import { handleSftpUpgrade } from './ws/sftp-session';
 import { apiEnvSchema, readConfig } from '@vencore/config';
 import { createDb } from '@vencore/db';
 import { errorHandler } from './middleware/errors';
-import { createRequireAuth, requireAdmin } from './middleware/auth';
+import { createRequireAuth, requireAdmin, type AuthenticatedRequest } from './middleware/auth';
 import { createRequireModule } from './middleware/module';
 import { createRequirePermission } from './middleware/permission';
 import { createWorkspaceModulesRouter } from './routes/workspace-modules';
@@ -272,7 +272,8 @@ app.use('/api/plugins', requireAuth, createPluginsRouter(db));
 // Dynamic plugin route dispatcher — forwards /api/plugins/route/:pluginId/* to loaded bundle
 app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
   const pluginId = req.params['pluginId']!;
-  const router = getPluginRouter(pluginId);
+  const { workspace } = req as unknown as AuthenticatedRequest;
+  const router = getPluginRouter(pluginId, workspace.id);
   if (!router) {
     return res.status(404).json({ data: null, error: { code: 'PLUGIN_NOT_MOUNTED', message: 'Plugin has no server bundle' } });
   }

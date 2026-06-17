@@ -64,7 +64,7 @@ export function createPipelineFieldsRouter(
 
       const body = createFieldSchema.parse(req.body);
       const field = await db.insertInto('pipeline_fields')
-        .values({ ...body, options: body.options != null ? JSON.stringify(body.options) : null, pipeline_id: pipeline.id })
+        .values({ ...body, options: body.options ?? null, pipeline_id: pipeline.id })
         .returningAll().executeTakeFirstOrThrow();
       res.status(201).json({ data: field, error: null });
     } catch (e) { next(e); }
@@ -79,7 +79,7 @@ export function createPipelineFieldsRouter(
       const body = updateFieldSchema.parse(req.body);
       const field = await db.updateTable('pipeline_fields').set({
         ...(body.label !== undefined && { label: body.label }),
-        ...(body.options !== undefined && { options: body.options != null ? JSON.stringify(body.options) : null }),
+        ...(body.options !== undefined && { options: body.options ?? null }),
         ...(body.position !== undefined && { position: body.position }),
         ...(body.required !== undefined && { required: body.required }),
       })
