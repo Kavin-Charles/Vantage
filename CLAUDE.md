@@ -9,6 +9,8 @@ A knowledge graph of this codebase lives at `graphify-out/graph.json`. **Always 
 - To rebuild after major changes: `/graphify . --update`
 - Graph outputs: `graphify-out/graph.html` (visual), `graphify-out/GRAPH_REPORT.md` (audit)
 
+**After every significant change** (new routes, new components, schema migrations, new packages, refactors): run `Update Graphify` before ending the session. A "significant change" is any PR or feature branch that adds/removes/renames files or introduces new cross-file relationships.
+
 ## What is Vencore?
 
 Vencore is a modular white-label company management platform. Companies deploy it under their own brand and configure only the modules their teams need — covering every department: sales (CRM), engineering (infra monitoring), HR, management, and more. The platform is fully brandable; end users see the customer's name and logo, not Vencore.
