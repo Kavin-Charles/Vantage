@@ -21,7 +21,7 @@ export function createPmAnalyticsRouter(db: Kysely<Database>): Router {
         .innerJoin('project_task_statuses as s', 's.id', 't.status_id')
         .where('t.project_id', '=', projectId)
         .select([
-          db.fn.count('t.id').as('total_tasks'),
+          db.fn.count(sql<string>`t.id`).as('total_tasks'),
           db.fn.count(sql<string>`CASE WHEN s.is_done THEN t.id END`).as('done_tasks'),
           db.fn.count(sql<string>`CASE WHEN t.due_date < NOW() AND NOT s.is_done THEN t.id END`).as('overdue_tasks'),
           db.fn.count(sql<string>`CASE WHEN NOT s.is_done THEN t.id END`).as('open_tasks'),
@@ -71,7 +71,7 @@ export function createPmAnalyticsRouter(db: Kysely<Database>): Router {
           's.id',
           's.name',
           's.color',
-          db.fn.count('t.id').as('count'),
+          db.fn.count(sql<string>`t.id`).as('count'),
         ])
         .orderBy('s.position', 'asc')
         .execute()
@@ -132,7 +132,7 @@ export function createPmAnalyticsRouter(db: Kysely<Database>): Router {
           .where(sql`t.updated_at`, '<=', sprint.end_date as unknown as string)
           .select([
             sql<string>`DATE(t.updated_at)`.as('date'),
-            db.fn.count('t.id').as('completed'),
+            db.fn.count(sql<string>`t.id`).as('completed'),
           ])
           .groupBy(sql`DATE(t.updated_at)`)
           .orderBy(sql`DATE(t.updated_at)`, 'asc')
@@ -149,7 +149,7 @@ export function createPmAnalyticsRouter(db: Kysely<Database>): Router {
         .where(sql`t.updated_at`, '>=', sql`NOW() - INTERVAL '30 days'`)
         .select([
           sql<string>`DATE(t.updated_at)`.as('date'),
-          db.fn.count('t.id').as('completed'),
+          db.fn.count(sql<string>`t.id`).as('completed'),
         ])
         .groupBy(sql`DATE(t.updated_at)`)
         .orderBy(sql`DATE(t.updated_at)`, 'asc')
@@ -181,7 +181,7 @@ export function createPmAnalyticsRouter(db: Kysely<Database>): Router {
           'a.user_id',
           'u.name',
           'u.email',
-          db.fn.count('t.id').as('total'),
+          db.fn.count(sql<string>`t.id`).as('total'),
           db.fn.count(sql<string>`CASE WHEN s.is_done THEN t.id END`).as('done'),
           db.fn.count(sql<string>`CASE WHEN t.due_date < NOW() AND NOT s.is_done THEN t.id END`).as('overdue'),
         ])
