@@ -2,9 +2,8 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import { logger } from './logger';
 
-type AlertSeverity = 'critical' | 'warning' | 'info';
-// DB schema only has these four; 'projects' is cast via `as any` at query time
-type AlertResourceType = 'server' | 'database' | 'website' | 'crm' | 'projects';
+export type AlertSeverity = 'critical' | 'warning' | 'info';
+export type AlertResourceType = 'server' | 'database' | 'website' | 'crm' | 'projects';
 
 interface CreateAlertParams {
   workspaceId: string;
