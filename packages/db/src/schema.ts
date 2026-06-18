@@ -129,6 +129,11 @@ export interface ServerTable {
   ssh_port: Generated<number>;
   status: Generated<ServerStatus>;
   last_ping_at: string | null;
+  hostname: string | null;
+  os: string | null;
+  arch: string | null;
+  kernel: string | null;
+  agent_version: string | null;
   created_at: Generated<string>;
   updated_at: Generated<string>;
 }
@@ -183,6 +188,24 @@ export interface MetricsSnapshotTable {
   net_in_bytes: number;
   net_out_bytes: number;
   recorded_at: Generated<string>;
+}
+
+export interface MetricsRollupTable {
+  id: Generated<string>;
+  server_id: string;
+  workspace_id: string;
+  granularity: 'hour' | 'day';
+  bucket: string;
+  cpu_avg: number;
+  cpu_max: number;
+  mem_avg: number;
+  mem_max: number;
+  disk_avg: number;
+  disk_max: number;
+  load_avg_1m_avg: number;
+  net_in_bytes_sum: number;
+  net_out_bytes_sum: number;
+  sample_count: number;
 }
 
 export interface AlertThresholdTable {
@@ -1044,6 +1067,7 @@ export interface Database {
   infra_databases: InfraDatabaseTable;
   websites: WebsiteTable;
   metrics_snapshots: MetricsSnapshotTable;
+  metrics_rollups: MetricsRollupTable;
   alert_thresholds: AlertThresholdTable;
   deployments: DeploymentTable;
   workspace_ssh_keypairs: WorkspaceSshKeypairTable;
@@ -1185,6 +1209,8 @@ export type NewWebsite = Insertable<WebsiteTable>;
 export type WebsiteUpdate = Updateable<WebsiteTable>;
 export type MetricsSnapshot = Selectable<MetricsSnapshotTable>;
 export type NewMetricsSnapshot = Insertable<MetricsSnapshotTable>;
+export type MetricsRollup = Selectable<MetricsRollupTable>;
+export type NewMetricsRollup = Insertable<MetricsRollupTable>;
 export type AlertThreshold = Selectable<AlertThresholdTable>;
 export type NewAlertThreshold = Insertable<AlertThresholdTable>;
 export type AlertThresholdUpdate = Updateable<AlertThresholdTable>;

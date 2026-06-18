@@ -1,7 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import { z } from 'zod';
 import { randomBytes, createHash } from 'crypto';
-import type { Kysely } from 'kysely';
+import { sql, type Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
@@ -45,7 +45,7 @@ export function createServersRouter(db: Kysely<Database>, requirePermission: (p:
       const servers = await db
         .selectFrom('servers')
         .where('workspace_id', '=', workspace.id)
-        .select(['id', 'workspace_id', 'name', 'region', 'ip_address', 'cpu_pct', 'mem_pct', 'disk_pct', 'uptime_seconds', 'load_avg_1m', 'net_in_bytes', 'net_out_bytes', 'ssh_port', 'status', 'last_ping_at', 'created_at', 'updated_at'])
+        .select(['id', 'workspace_id', 'name', 'region', 'ip_address', 'cpu_pct', 'mem_pct', 'disk_pct', 'uptime_seconds', 'load_avg_1m', 'net_in_bytes', 'net_out_bytes', 'ssh_port', 'status', 'last_ping_at', 'hostname', 'os', 'arch', 'kernel', 'agent_version', 'created_at', 'updated_at'])
         .orderBy('created_at', 'desc')
         .execute();
 
@@ -62,7 +62,7 @@ export function createServersRouter(db: Kysely<Database>, requirePermission: (p:
         .selectFrom('servers')
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
-        .select(['id', 'workspace_id', 'name', 'region', 'ip_address', 'cpu_pct', 'mem_pct', 'disk_pct', 'uptime_seconds', 'load_avg_1m', 'net_in_bytes', 'net_out_bytes', 'ssh_port', 'status', 'last_ping_at', 'created_at', 'updated_at'])
+        .select(['id', 'workspace_id', 'name', 'region', 'ip_address', 'cpu_pct', 'mem_pct', 'disk_pct', 'uptime_seconds', 'load_avg_1m', 'net_in_bytes', 'net_out_bytes', 'ssh_port', 'status', 'last_ping_at', 'hostname', 'os', 'arch', 'kernel', 'agent_version', 'created_at', 'updated_at'])
         .executeTakeFirst();
 
       if (!server) {
@@ -80,6 +80,63 @@ export function createServersRouter(db: Kysely<Database>, requirePermission: (p:
         .execute();
 
       res.json({ data: { ...server, status: deriveStatus(server.last_ping_at, server.status), snapshots }, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // Range-based metrics — raw snapshots for short ranges, rollups for long ones
+  router.get('/:id/metrics', requirePermission('servers:view'), async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const range = z.enum(['1h', '24h', '7d', '30d']).catch('24h').parse(req.query['range']);
+
+      const server = await db
+        .selectFrom('servers')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .select('id')
+        .executeTakeFirst();
+      if (!server) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Server not found' } });
+        return;
+      }
+
+      const cfg = {
+        '1h':  { interval: '1 hour',   resolution: 'raw'  as const },
+        '24h': { interval: '24 hours', resolution: 'raw'  as const },
+        '7d':  { interval: '7 days',   resolution: 'hour' as const },
+        '30d': { interval: '30 days',  resolution: 'day'  as const },
+      }[range];
+
+      let points;
+      if (cfg.resolution === 'raw') {
+        const rows = await db
+          .selectFrom('metrics_snapshots')
+          .where('server_id', '=', server.id)
+          .where('recorded_at', '>=', sql<string>`now() - interval '${sql.raw(cfg.interval)}'`)
+          .select(['recorded_at', 'cpu_pct', 'mem_pct', 'disk_pct', 'load_avg_1m', 'net_in_bytes', 'net_out_bytes'])
+          .orderBy('recorded_at', 'asc')
+          .execute();
+        points = rows.map(r => ({
+          t: r.recorded_at, cpu_pct: r.cpu_pct, mem_pct: r.mem_pct, disk_pct: r.disk_pct,
+          load_avg_1m: r.load_avg_1m, net_in_bytes: r.net_in_bytes, net_out_bytes: r.net_out_bytes,
+        }));
+      } else {
+        const rows = await db
+          .selectFrom('metrics_rollups')
+          .where('server_id', '=', server.id)
+          .where('granularity', '=', cfg.resolution)
+          .where('bucket', '>=', sql<string>`now() - interval '${sql.raw(cfg.interval)}'`)
+          .select(['bucket', 'cpu_avg', 'cpu_max', 'mem_avg', 'mem_max', 'disk_avg', 'disk_max', 'load_avg_1m_avg', 'net_in_bytes_sum', 'net_out_bytes_sum'])
+          .orderBy('bucket', 'asc')
+          .execute();
+        points = rows.map(r => ({
+          t: r.bucket, cpu_pct: r.cpu_avg, mem_pct: r.mem_avg, disk_pct: r.disk_avg,
+          load_avg_1m: r.load_avg_1m_avg, net_in_bytes: Number(r.net_in_bytes_sum), net_out_bytes: Number(r.net_out_bytes_sum),
+          cpu_max: r.cpu_max, mem_max: r.mem_max, disk_max: r.disk_max,
+        }));
+      }
+
+      res.json({ data: { range, resolution: cfg.resolution, points }, error: null });
     } catch (err) { next(err); }
   });
 

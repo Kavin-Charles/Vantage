@@ -48,6 +48,12 @@ const pingSchema = z.object({
   net_in_bytes: z.number().min(0),
   net_out_bytes: z.number().min(0),
   db_checks: z.array(dbCheckSchema).default([]),
+  // Host metadata — optional so older agents keep working.
+  hostname: z.string().max(255).optional(),
+  os: z.string().max(120).optional(),
+  arch: z.string().max(40).optional(),
+  kernel: z.string().max(120).optional(),
+  agent_version: z.string().max(40).optional(),
 });
 
 export function createAgentDeploymentHandler(db: Kysely<Database>) {
@@ -120,6 +126,12 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
           last_ping_at: now,
           status: 'online',
           updated_at: now,
+          // Only overwrite metadata when the agent actually reports it.
+          ...(payload.hostname !== undefined ? { hostname: payload.hostname } : {}),
+          ...(payload.os !== undefined ? { os: payload.os } : {}),
+          ...(payload.arch !== undefined ? { arch: payload.arch } : {}),
+          ...(payload.kernel !== undefined ? { kernel: payload.kernel } : {}),
+          ...(payload.agent_version !== undefined ? { agent_version: payload.agent_version } : {}),
         })
         .where('id', '=', server.id)
         .execute();

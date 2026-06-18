@@ -57,6 +57,7 @@ import { createPortalRouter, createPortalInternalRouter } from './routes/portal'
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
+import { startMetricsRollup } from './workers/metrics-rollup';
 import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
 import { loadPluginBackend, getPluginRouter } from './lib/plugin-loader';
@@ -336,6 +337,9 @@ startTaskDueNotifier(db);
 
 // Start webhook delivery worker (polls every 10 s)
 startWebhookDelivery(db);
+
+// Start metrics rollup + retention worker (15-min cycle)
+startMetricsRollup(db);
 
 // ── HTTP + WebSocket server ────────────────────────────────────────────────
 const httpServer = createServer(app);

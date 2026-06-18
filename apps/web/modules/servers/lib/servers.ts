@@ -1,5 +1,9 @@
 import { apiFetch } from '@/modules/shared/lib/api';
-import type { Server, MetricsSnapshot } from '@vencore/types';
+import type { Server, MetricsSnapshot, MetricsSeries, MetricsRange } from '@vencore/types';
+
+export async function getServerMetrics(token: string, id: string, range: MetricsRange) {
+  return apiFetch<{ data: MetricsSeries; error: null }>(`/api/servers/${id}/metrics?range=${range}`, { token });
+}
 
 export async function listServers(token: string) {
   return apiFetch<{ data: Server[]; total: number; error: null }>('/api/servers', { token });
