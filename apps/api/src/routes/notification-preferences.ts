@@ -68,23 +68,25 @@ export function createNotificationPreferencesRouter(db: Kysely<Database>): Expre
         return;
       }
 
-      for (const item of parsed.data) {
-        await db
-          .insertInto('notification_preferences')
-          .values({
-            workspace_id: workspace.id,
-            channel: item.channel,
-            severity: item.severity,
-            enabled: item.enabled,
-          })
-          .onConflict(oc =>
-            oc.columns(['workspace_id', 'channel', 'severity']).doUpdateSet({
+      await db.transaction().execute(async trx => {
+        for (const item of parsed.data) {
+          await trx
+            .insertInto('notification_preferences')
+            .values({
+              workspace_id: workspace.id,
+              channel: item.channel,
+              severity: item.severity,
               enabled: item.enabled,
-              updated_at: new Date(),
-            }),
-          )
-          .execute();
-      }
+            })
+            .onConflict(oc =>
+              oc.columns(['workspace_id', 'channel', 'severity']).doUpdateSet({
+                enabled: item.enabled,
+                updated_at: new Date(),
+              }),
+            )
+            .execute();
+        }
+      });
 
       res.json({ data: parsed.data, error: null });
     } catch (err) {
