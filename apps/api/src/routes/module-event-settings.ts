@@ -8,6 +8,8 @@ import { MODULE_REGISTRY } from '@vencore/modules';
 const patchSchema = z.object({
   activity_on: z.boolean().optional(),
   alerts_on: z.boolean().optional(),
+}).refine(d => d.activity_on !== undefined || d.alerts_on !== undefined, {
+  message: 'At least one of activity_on or alerts_on is required',
 });
 
 export function createModuleEventSettingsRouter(db: Kysely<Database>): ExpressRouter {
@@ -52,6 +54,13 @@ export function createModuleEventSettingsRouter(db: Kysely<Database>): ExpressRo
       }
 
       const { moduleId } = req.params;
+
+      const knownModule = MODULE_REGISTRY.find(m => m.id === moduleId);
+      if (!knownModule) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Module not found' } });
+        return;
+      }
+
       const parsed = patchSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({ data: null, error: { code: 'INVALID_BODY', message: parsed.error.message } });
