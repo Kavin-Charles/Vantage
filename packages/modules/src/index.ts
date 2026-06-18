@@ -10,6 +10,7 @@ export * from './analytics';
 export * from './activity';
 export * from './dashboard';
 export * from './projects';
+export * from './alerts';
 
 import { CONTACTS_MODULE } from './contacts';
 import { COMPANIES_MODULE } from './companies';
@@ -22,6 +23,7 @@ import { ANALYTICS_MODULE } from './analytics';
 import { ACTIVITY_MODULE } from './activity';
 import { DASHBOARD_MODULE } from './dashboard';
 import { PROJECTS_MODULE } from './projects';
+import { ALERTS_MODULE } from './alerts';
 import type { ModuleDefinition, PermissionDef, UserRole } from './types';
 
 export const MODULE_REGISTRY: ModuleDefinition[] = [
@@ -36,6 +38,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
   ANALYTICS_MODULE,
   ACTIVITY_MODULE,
   PROJECTS_MODULE,
+  ALERTS_MODULE,
 ];
 
 export const MODULE_IDS: string[] = MODULE_REGISTRY.map(m => m.id);

@@ -15,4 +15,6 @@ export const SERVERS_MODULE: ModuleDefinition = {
   nav: [{ label: 'Servers', path: '/servers', icon: 'Server' }],
   apiPrefixes: ['/servers', '/deployments', '/agent', '/ssh'],
   workers: [],
+  emitsActivity: true,
+  emitsAlerts: true,
 };

@@ -14,4 +14,5 @@ export const PROJECTS_MODULE: ModuleDefinition = {
   nav: [{ label: 'Projects', path: '/projects', icon: 'FolderKanban' }],
   apiPrefixes: ['/projects', '/pm'],
   workers: ['due-date-alerts', 'overdue-scan', 'health-recalc', 'sprint-rollover'],
+  emitsActivity: true,
 };
