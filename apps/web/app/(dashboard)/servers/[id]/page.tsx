@@ -16,10 +16,12 @@ import { TerminalTab } from '@/modules/servers/components/detail/TerminalTab';
 import { ServicesTab } from '@/modules/servers/components/detail/ServicesTab';
 import { LogsTab } from '@/modules/servers/components/detail/LogsTab';
 import { FilesTab } from '@/modules/servers/components/detail/FilesTab';
+import { DeploymentsTab } from '@/modules/servers/components/detail/DeploymentsTab';
+import { AlertsTab } from '@/modules/servers/components/detail/AlertsTab';
 import { EditServerModal } from '@/modules/servers/components/detail/EditServerModal';
 import type { Server } from '@vencore/types';
 
-type Tab = 'overview' | 'console' | 'terminal' | 'services' | 'logs' | 'files';
+type Tab = 'overview' | 'deployments' | 'alerts' | 'console' | 'terminal' | 'services' | 'logs' | 'files';
 const SSH_TABS: Tab[] = ['console', 'terminal', 'services', 'logs', 'files'];
 
 export default function ServerDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -53,7 +55,8 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
   if (!server) return <><Topbar /><div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Server not found.</div></>;
 
   const liveStatus = live?.status ?? server.status;
-  const tabs: Tab[] = canSsh ? ['overview', ...SSH_TABS] : ['overview'];
+  const baseTabs: Tab[] = ['overview', 'deployments', 'alerts'];
+  const tabs: Tab[] = canSsh ? [...baseTabs, ...SSH_TABS] : baseTabs;
 
   // Live-merged server for the overview header/details.
   const mergedServer: Server = {
@@ -104,6 +107,8 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
         </div>
 
         {tab === 'overview' && <OverviewTab server={mergedServer} />}
+        {tab === 'deployments' && <DeploymentsTab serverId={id} />}
+        {tab === 'alerts' && <AlertsTab serverId={id} />}
         {canSsh && tab === 'terminal' && <TerminalTab serverId={id} />}
         {canSsh && tab === 'services' && <ServicesTab serverId={id} />}
         {canSsh && tab === 'logs' && <LogsTab serverId={id} />}

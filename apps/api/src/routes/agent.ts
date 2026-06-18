@@ -167,12 +167,17 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
           .execute();
       }
 
-      // Threshold alert evaluation
-      const thresholds = await db
+      // Threshold alert evaluation — server-specific override wins over the
+      // workspace default (server_id IS NULL), which wins over hardcoded.
+      const thresholdRows = await db
         .selectFrom('alert_thresholds')
-        .select(['cpu_pct', 'mem_pct', 'disk_pct'])
+        .select(['server_id', 'cpu_pct', 'mem_pct', 'disk_pct'])
         .where('workspace_id', '=', server.workspace_id)
-        .executeTakeFirst()
+        .where(eb => eb.or([eb('server_id', '=', server.id), eb('server_id', 'is', null)]))
+        .execute();
+      const thresholds =
+        thresholdRows.find(t => t.server_id === server.id)
+        ?? thresholdRows.find(t => t.server_id === null)
         ?? { cpu_pct: 85, mem_pct: 90, disk_pct: 80 };
 
       const metricsToCheck = [

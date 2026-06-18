@@ -36,7 +36,14 @@ export function OverviewTab({ server }: { server: Server }) {
     },
   });
 
+  const pingAgeMs = server.last_ping_at ? Date.now() - new Date(server.last_ping_at).getTime() : null;
+  const agentHealth = pingAgeMs == null ? 'Never connected'
+    : pingAgeMs < 90_000 ? 'Healthy'
+    : pingAgeMs < 300_000 ? `Lagging (${Math.round(pingAgeMs / 1000)}s)`
+    : `Stale (${Math.round(pingAgeMs / 60_000)}m)`;
+
   const details: [string, string][] = [
+    ['Agent', `${agentHealth}${server.agent_version ? ` · v${server.agent_version}` : ''}`],
     ['Uptime', fmtUptime(server.uptime_seconds)],
     ['IP address', server.ip_address ?? '—'],
     ['SSH port', String(server.ssh_port ?? 22)],

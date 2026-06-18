@@ -211,6 +211,7 @@ export interface MetricsRollupTable {
 export interface AlertThresholdTable {
   id: Generated<string>;
   workspace_id: string;
+  server_id: string | null;
   cpu_pct: Generated<number>;
   mem_pct: Generated<number>;
   disk_pct: Generated<number>;

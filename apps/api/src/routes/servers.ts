@@ -140,6 +140,73 @@ export function createServersRouter(db: Kysely<Database>, requirePermission: (p:
     } catch (err) { next(err); }
   });
 
+  // Effective + override thresholds for a server
+  router.get('/:id/thresholds', requirePermission('servers:view'), async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const rows = await db
+        .selectFrom('alert_thresholds')
+        .select(['server_id', 'cpu_pct', 'mem_pct', 'disk_pct'])
+        .where('workspace_id', '=', workspace.id)
+        .where(eb => eb.or([eb('server_id', '=', req.params['id']!), eb('server_id', 'is', null)]))
+        .execute();
+      const override = rows.find(r => r.server_id === req.params['id']) ?? null;
+      const fallback = rows.find(r => r.server_id === null) ?? { cpu_pct: 85, mem_pct: 90, disk_pct: 80 };
+      const effective = override ?? fallback;
+      res.json({ data: { override, default: fallback, effective }, error: null });
+    } catch (err) { next(err); }
+  });
+
+  const thresholdSchema = z.object({
+    cpu_pct: z.number().min(0).max(100),
+    mem_pct: z.number().min(0).max(100),
+    disk_pct: z.number().min(0).max(100),
+  });
+
+  // Upsert a per-server threshold override
+  router.put('/:id/thresholds', requirePermission('servers:edit'), async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const body = thresholdSchema.parse(req.body);
+
+      const server = await db.selectFrom('servers')
+        .where('id', '=', req.params['id']!).where('workspace_id', '=', workspace.id)
+        .select('id').executeTakeFirst();
+      if (!server) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Server not found' } });
+        return;
+      }
+
+      const updated = await db
+        .updateTable('alert_thresholds')
+        .set({ ...body, updated_at: new Date().toISOString() })
+        .where('workspace_id', '=', workspace.id)
+        .where('server_id', '=', server.id)
+        .returning(['server_id', 'cpu_pct', 'mem_pct', 'disk_pct'])
+        .executeTakeFirst();
+
+      const row = updated ?? await db
+        .insertInto('alert_thresholds')
+        .values({ workspace_id: workspace.id, server_id: server.id, ...body })
+        .returning(['server_id', 'cpu_pct', 'mem_pct', 'disk_pct'])
+        .executeTakeFirstOrThrow();
+
+      res.json({ data: row, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // Remove a per-server override (revert to workspace default)
+  router.delete('/:id/thresholds', requirePermission('servers:edit'), async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      await db.deleteFrom('alert_thresholds')
+        .where('workspace_id', '=', workspace.id)
+        .where('server_id', '=', req.params['id']!)
+        .execute();
+      res.json({ data: { ok: true }, error: null });
+    } catch (err) { next(err); }
+  });
+
   // Register server — generate token, return raw once
   router.post('/', requirePermission('servers:create'), async (req, res, next) => {
     try {
