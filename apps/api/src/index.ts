@@ -52,6 +52,7 @@ import { createMilestonesRouter } from './routes/milestones';
 import { createSprintsRouter } from './routes/sprints';
 import { createProjectMembersRouter } from './routes/project-members';
 import { createPortalRouter, createPortalInternalRouter } from './routes/portal';
+import { createModuleEventSettingsRouter } from './routes/module-event-settings';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
@@ -291,6 +292,7 @@ app.use('/api/sse', requireAuth, createSseRouter(db));
 app.use('/api/databases', requireAuth, requireModule('databases'), createInfraDatabasesRouter(db));
 app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesRouter(db, env.CRON_SECRET, requirePermission));
 app.use('/api/alert-thresholds', requireAuth, createAlertThresholdsRouter(db));
+app.use('/api/settings/module-events', requireAuth, createModuleEventSettingsRouter(db));
 
 // SSH management
 app.use('/api/ssh', requireAuth, createSshKeypairRouter(db));
