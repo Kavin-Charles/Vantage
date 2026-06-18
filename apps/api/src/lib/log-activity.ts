@@ -2,25 +2,51 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import { logger } from './logger';
 
+export type ActivityType =
+  | 'email'
+  | 'call'
+  | 'note'
+  | 'meeting'
+  | 'deal_change'
+  | 'infra_alert'
+  | 'contact_created'
+  | 'task_done';
+
 interface ActivityPayload {
   workspace_id: string;
-  user_id: string;
-  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert';
+  user_id: string | null;
+  type: ActivityType;
+  source_module_id?: string;
   body?: string;
   contact_id?: string;
   record_id?: string;
   meta?: Record<string, unknown>;
 }
 
-/**
- * Fire-and-forget activity logger.
- * Swallows errors so activity logging never crashes the parent request.
- */
+async function isActivityEnabled(
+  db: Kysely<Database>,
+  workspaceId: string,
+  moduleId: string,
+): Promise<boolean> {
+  const row = await db
+    .selectFrom('module_event_settings')
+    .select('activity_on')
+    .where('workspace_id', '=', workspaceId)
+    .where('module_id', '=', moduleId)
+    .executeTakeFirst();
+  return row?.activity_on ?? true;
+}
+
 export async function logActivity(
   db: Kysely<Database>,
   payload: ActivityPayload,
 ): Promise<void> {
   try {
+    if (payload.source_module_id) {
+      const enabled = await isActivityEnabled(db, payload.workspace_id, payload.source_module_id);
+      if (!enabled) return;
+    }
+
     await db
       .insertInto('activities')
       .values({
@@ -32,8 +58,7 @@ export async function logActivity(
         record_id: payload.record_id ?? null,
         meta: payload.meta ?? null,
       })
-      .returningAll()
-      .executeTakeFirstOrThrow();
+      .execute();
   } catch (err) {
     logger.error({ err }, 'logActivity: failed to insert activity');
   }
