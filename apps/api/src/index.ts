@@ -205,7 +205,7 @@ bridgeRegistry
       .executeTakeFirst();
     return row?.granted ?? false;
   })
-  .register('alert.create', null, async (ctx, p, db) => {
+  .register('alert.create', 'alerts:view', async (ctx, p, db) => {
     await createAlert(db as Kysely<Database>, {
       workspaceId: ctx.workspaceId,
       severity: (p.severity as 'critical' | 'warning' | 'info') ?? 'info',
@@ -213,7 +213,7 @@ bridgeRegistry
       resourceId: p.resource_id as string | undefined,
       message: p.message as string,
       messagePrefix: p.message_prefix as string | undefined,
-      sourceModuleId: ctx.pluginSlug ?? ctx.workspaceId,
+      sourceModuleId: ctx.pluginSlug ?? 'system',
     });
     return { ok: true };
   });
