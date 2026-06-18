@@ -205,7 +205,7 @@ bridgeRegistry
       .executeTakeFirst();
     return row?.granted ?? false;
   })
-  .register('alert.create', 'alerts:view', async (ctx, p, db) => {
+  .register('alert.create', null, async (ctx, p, db) => {
     await createAlert(db as Kysely<Database>, {
       workspaceId: ctx.workspaceId,
       severity: (p.severity as 'critical' | 'warning' | 'info') ?? 'info',
@@ -289,7 +289,8 @@ app.use('/api/plugins', requireAuth, createPluginsRouter(db));
 // Dynamic plugin route dispatcher — forwards /api/plugins/route/:pluginId/* to loaded bundle
 app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
   const pluginId = req.params['pluginId']!;
-  const router = getPluginRouter(pluginId);
+  const { workspace } = req as import('./middleware/auth').AuthenticatedRequest;
+  const router = getPluginRouter(pluginId, workspace.id);
   if (!router) {
     return res.status(404).json({ data: null, error: { code: 'PLUGIN_NOT_MOUNTED', message: 'Plugin has no server bundle' } });
   }
