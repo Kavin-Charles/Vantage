@@ -37,8 +37,8 @@ export function createActivityRouter(db: Kysely<Database>, requirePermission: (p
         countQuery = countQuery.where('contact_id', '=', contact_id);
       }
       if (deal_id) {
-        query = query.where('deal_id', '=', deal_id);
-        countQuery = countQuery.where('deal_id', '=', deal_id);
+        query = query.where('record_id', '=', deal_id);
+        countQuery = countQuery.where('record_id', '=', deal_id);
       }
 
       const activities = await query
