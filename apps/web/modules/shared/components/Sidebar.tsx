@@ -47,7 +47,7 @@ const NAV_GROUPS = [
     items: [
       { href: '/dashboard', label: 'Dashboard', icon: 'dashboard', moduleId: 'dashboard' },
       { href: '/analytics', label: 'Analytics', icon: 'analytics', moduleId: 'analytics', featureKey: 'analytics' as const },
-      { href: '/alerts',    label: 'Alerts',    icon: 'alerts',    featureKey: 'alerts' as const, dot: true },
+      { href: '/alerts',    label: 'Alerts',    icon: 'alerts',    moduleId: 'alerts', dot: true },
       { href: '/settings',  label: 'Settings',  icon: 'settings'  },
     ],
   },

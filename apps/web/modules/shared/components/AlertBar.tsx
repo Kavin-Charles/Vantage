@@ -7,14 +7,18 @@ import { Icon } from '@/modules/shared/components/ui/Icon';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { useLastAlert } from '@/modules/shared/contexts/ServerMetricsContext';
+import { useModules } from '@/modules/shared/contexts/modules';
 import type { Alert } from '@vencore/types';
 
 export function AlertBar() {
+  const { isEnabled } = useModules();
   const getToken = useApiToken();
   const router = useRouter();
   const qc = useQueryClient();
   const lastAlert = useLastAlert();
   const [dismissed, setDismissed] = useState(false);
+
+  if (!isEnabled('alerts')) return null;
 
   const { data } = useQuery({
     queryKey: ['alerts', 'bar'],
