@@ -17,8 +17,7 @@ export function AlertBar() {
   const qc = useQueryClient();
   const lastAlert = useLastAlert();
   const [dismissed, setDismissed] = useState(false);
-
-  if (!isEnabled('alerts')) return null;
+  const alertsEnabled = isEnabled('alerts');
 
   const { data } = useQuery({
     queryKey: ['alerts', 'bar'],
@@ -28,13 +27,16 @@ export function AlertBar() {
         { token: await getToken() },
       ),
     refetchInterval: 120_000,
+    enabled: alertsEnabled,
   });
 
   // On new alert SSE event, immediately refetch the alerts bar
   useEffect(() => {
-    if (!lastAlert) return;
+    if (!lastAlert || !alertsEnabled) return;
     void qc.invalidateQueries({ queryKey: ['alerts', 'bar'] });
-  }, [lastAlert, qc]);
+  }, [lastAlert, qc, alertsEnabled]);
+
+  if (!alertsEnabled) return null;
 
   const alerts: Alert[] = data?.data ?? [];
   const active = alerts.filter(a => !a.resolved);

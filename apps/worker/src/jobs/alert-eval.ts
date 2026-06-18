@@ -1,5 +1,6 @@
 import { db } from '../lib/db';
-import { logger } from '../lib/logger';
+import { createAlert } from '../lib/alert-service';
+import { logActivity } from '../lib/log-activity';
 
 // Track consecutive high readings per resource (2-ping rule)
 // Stores { count, lastRecordedAt } to require distinct snapshots
@@ -20,49 +21,6 @@ function shouldFire(key: string, recordedAt: string, required: number): boolean 
 
 function resetCount(key: string): void {
   consecutiveCounts.delete(key);
-}
-
-async function hasOpenAlert(
-  workspaceId: string,
-  resourceType: string,
-  resourceId: string,
-  messagePrefix: string,
-): Promise<boolean> {
-  const existing = await db
-    .selectFrom('alerts')
-    .where('workspace_id', '=', workspaceId)
-    .where('resource_type', '=', resourceType as 'server' | 'database' | 'website' | 'crm')
-    .where('resource_id', '=', resourceId)
-    .where('message', 'like', `${messagePrefix}%`)
-    .where('resolved', '=', false)
-    .select('id')
-    .executeTakeFirst();
-  return existing !== undefined;
-}
-
-async function insertAlert(
-  workspaceId: string,
-  severity: 'critical' | 'warning' | 'info',
-  resourceType: 'server' | 'database' | 'website' | 'crm',
-  resourceId: string,
-  messagePrefix: string,
-  message: string,
-): Promise<void> {
-  const already = await hasOpenAlert(workspaceId, resourceType, resourceId, messagePrefix);
-  if (already) return;
-  await db
-    .insertInto('alerts')
-    .values({
-      workspace_id: workspaceId,
-      resource_type: resourceType,
-      resource_id: resourceId,
-      severity,
-      message,
-      acknowledged: false,
-      resolved: false,
-    })
-    .execute();
-  logger.info({ workspaceId, resourceType, resourceId, message }, 'alert created');
 }
 
 export async function runAlertEval(): Promise<void> {
@@ -118,14 +76,24 @@ export async function runAlertEval(): Promise<void> {
             severity === 'critical'
               ? 'CPU usage exceeds critical'
               : 'CPU usage exceeds warning';
-          await insertAlert(
+          const message = `${prefix} threshold (${snapshot.cpu_pct.toFixed(1)}%)`;
+          await createAlert(db, {
             workspaceId,
             severity,
-            'server',
-            snapshot.server_id,
-            prefix,
-            `${prefix} threshold (${snapshot.cpu_pct.toFixed(1)}%)`,
-          );
+            resourceType: 'server',
+            resourceId: snapshot.server_id,
+            message,
+            messagePrefix: prefix,
+            sourceModuleId: 'servers',
+          });
+          void logActivity(db, {
+            workspace_id: workspaceId,
+            user_id: null,
+            type: 'infra_alert',
+            source_module_id: 'servers',
+            body: message,
+            meta: { resourceType: 'server', resourceId: snapshot.server_id, severity },
+          });
         }
       } else {
         resetCount(`${key}_cpu`);
@@ -134,14 +102,24 @@ export async function runAlertEval(): Promise<void> {
       if (snapshot.mem_pct !== null && snapshot.mem_pct > memThresh) {
         const memKey = `${key}_mem`;
         if (shouldFire(memKey, recordedAt, 2)) {
-          await insertAlert(
+          const message = `Memory usage exceeds warning threshold (${snapshot.mem_pct.toFixed(1)}%)`;
+          await createAlert(db, {
             workspaceId,
-            'warning',
-            'server',
-            snapshot.server_id,
-            'Memory usage exceeds warning',
-            `Memory usage exceeds warning threshold (${snapshot.mem_pct.toFixed(1)}%)`,
-          );
+            severity: 'warning',
+            resourceType: 'server',
+            resourceId: snapshot.server_id,
+            message,
+            messagePrefix: 'Memory usage exceeds warning',
+            sourceModuleId: 'servers',
+          });
+          void logActivity(db, {
+            workspace_id: workspaceId,
+            user_id: null,
+            type: 'infra_alert',
+            source_module_id: 'servers',
+            body: message,
+            meta: { resourceType: 'server', resourceId: snapshot.server_id, severity: 'warning' },
+          });
         }
       } else {
         resetCount(`${key}_mem`);
@@ -155,14 +133,24 @@ export async function runAlertEval(): Promise<void> {
             severity === 'critical'
               ? 'Disk usage exceeds critical'
               : 'Disk usage exceeds warning';
-          await insertAlert(
+          const message = `${prefix} threshold (${snapshot.disk_pct.toFixed(1)}%)`;
+          await createAlert(db, {
             workspaceId,
             severity,
-            'server',
-            snapshot.server_id,
-            prefix,
-            `${prefix} threshold (${snapshot.disk_pct.toFixed(1)}%)`,
-          );
+            resourceType: 'server',
+            resourceId: snapshot.server_id,
+            message,
+            messagePrefix: prefix,
+            sourceModuleId: 'servers',
+          });
+          void logActivity(db, {
+            workspace_id: workspaceId,
+            user_id: null,
+            type: 'infra_alert',
+            source_module_id: 'servers',
+            body: message,
+            meta: { resourceType: 'server', resourceId: snapshot.server_id, severity },
+          });
         }
       } else {
         resetCount(`${key}_disk`);
@@ -178,23 +166,43 @@ export async function runAlertEval(): Promise<void> {
 
     for (const site of websites) {
       if (site.status === 'offline') {
-        await insertAlert(
+        const message = `Website is down (HTTP ${site.status})`;
+        await createAlert(db, {
           workspaceId,
-          'critical',
-          'website',
-          site.id,
-          'Website is down',
-          `Website is down (HTTP ${site.status})`,
-        );
+          severity: 'critical',
+          resourceType: 'website',
+          resourceId: site.id,
+          message,
+          messagePrefix: 'Website is down',
+          sourceModuleId: 'servers',
+        });
+        void logActivity(db, {
+          workspace_id: workspaceId,
+          user_id: null,
+          type: 'infra_alert',
+          source_module_id: 'servers',
+          body: message,
+          meta: { resourceType: 'website', resourceId: site.id, severity: 'critical' },
+        });
       } else if (site.response_ms !== null && site.response_ms > responseThresh) {
-        await insertAlert(
+        const message = `Website is slow (${site.response_ms}ms)`;
+        await createAlert(db, {
           workspaceId,
-          'warning',
-          'website',
-          site.id,
-          'Website is slow',
-          `Website is slow (${site.response_ms}ms)`,
-        );
+          severity: 'warning',
+          resourceType: 'website',
+          resourceId: site.id,
+          message,
+          messagePrefix: 'Website is slow',
+          sourceModuleId: 'servers',
+        });
+        void logActivity(db, {
+          workspace_id: workspaceId,
+          user_id: null,
+          type: 'infra_alert',
+          source_module_id: 'servers',
+          body: message,
+          meta: { resourceType: 'website', resourceId: site.id, severity: 'warning' },
+        });
       }
     }
 
@@ -207,14 +215,24 @@ export async function runAlertEval(): Promise<void> {
       .execute();
 
     for (const db_row of offlineDbs) {
-      await insertAlert(
+      const message = `Database "${db_row.name}" (${db_row.engine}) is unreachable`;
+      await createAlert(db, {
         workspaceId,
-        'warning',
-        'database',
-        db_row.id,
-        'Database',
-        `Database "${db_row.name}" (${db_row.engine}) is unreachable`,
-      );
+        severity: 'warning',
+        resourceType: 'database',
+        resourceId: db_row.id,
+        message,
+        messagePrefix: 'Database',
+        sourceModuleId: 'servers',
+      });
+      void logActivity(db, {
+        workspace_id: workspaceId,
+        user_id: null,
+        type: 'infra_alert',
+        source_module_id: 'servers',
+        body: message,
+        meta: { resourceType: 'database', resourceId: db_row.id, severity: 'warning' },
+      });
     }
   }
 }
