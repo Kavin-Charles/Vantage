@@ -295,8 +295,9 @@ export function createContactsRouter(
       void logActivity(db, {
         workspace_id: workspace.id,
         user_id: user.id,
-        type: 'note',
-        body: `Created contact ${contact.name}`,
+        type: 'contact_created',
+        source_module_id: 'contacts',
+        body: `Contact ${contact.name} created`,
         contact_id: contact.id,
       });
 
