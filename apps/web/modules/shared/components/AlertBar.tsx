@@ -26,7 +26,7 @@ export function AlertBar() {
         '/api/alerts?resolved=false&limit=20',
         { token: await getToken() },
       ),
-    refetchInterval: 120_000,
+    refetchInterval: 60_000,
     enabled: alertsEnabled,
   });
 
