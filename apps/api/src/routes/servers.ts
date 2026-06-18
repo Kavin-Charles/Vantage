@@ -5,10 +5,21 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
+// Accept IPv4, IPv6, or a DNS hostname — agent/SSH connect by any of these.
+const HOSTNAME_RE = /^(?=.{1,253}$)([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
+const hostField = z
+  .string()
+  .trim()
+  .max(253)
+  .refine(
+    (v) => z.string().ip().safeParse(v).success || HOSTNAME_RE.test(v),
+    { message: 'Must be a valid IPv4/IPv6 address or hostname' },
+  );
+
 const createServerSchema = z.object({
-  name: z.string().min(1),
-  region: z.string().optional(),
-  ip_address: z.string().optional(),
+  name: z.string().trim().min(1).max(120),
+  region: z.string().trim().max(120).optional(),
+  ip_address: hostField.optional(),
 });
 
 const updateServerSchema = createServerSchema.partial().extend({

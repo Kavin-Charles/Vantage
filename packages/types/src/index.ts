@@ -37,6 +37,12 @@ export interface User {
   created_at: Date;
 }
 
+export interface ContactTag {
+  id: UUID;
+  name: string;
+  color: string;
+}
+
 export interface Contact {
   id: UUID;
   workspace_id: UUID;
@@ -50,6 +56,8 @@ export interface Contact {
   deleted_at: Date | null;
   created_at: Date;
   updated_at: Date;
+  /** Present on contacts list/get responses; absent on raw DB rows from other endpoints. */
+  tags?: ContactTag[];
 }
 
 export interface Company {
@@ -180,6 +188,7 @@ export interface Alert {
   resource_id: UUID | null;
   severity: AlertSeverity;
   message: string;
+  metric_type: string | null;
   acknowledged: boolean;
   acknowledged_by: UUID | null;
   resolved: boolean;

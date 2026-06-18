@@ -23,6 +23,7 @@ import { createInstallerRouter } from './routes/installer';
 import { createMeRouter } from './routes/me';
 import { createPushTokenRouter } from './routes/push-token';
 import { createContactsRouter } from './routes/contacts';
+import { createContactTagsRouter } from './routes/contact-tags';
 import { createCompaniesRouter } from './routes/companies';
 import { createPipelinesRouter } from './routes/pipelines';
 import { createPipelineFieldsRouter } from './routes/pipeline-fields';
@@ -233,6 +234,7 @@ app.use('/api/me', requireAuth, createMeRouter(db));
 app.use('/api/me/push-token', requireAuth, createPushTokenRouter(db));
 app.use('/api/workspace/modules', requireAuth, createWorkspaceModulesRouter(db));
 app.use('/api/contacts', requireAuth, requireModule('contacts'), createContactsRouter(db, requirePermission));
+app.use('/api/contact-tags', requireAuth, requireModule('contacts'), createContactTagsRouter(db, requirePermission));
 app.use('/api/companies', requireAuth, requireModule('companies'), createCompaniesRouter(db, requirePermission));
 // Agent — must come before the broad /api catch below
 app.use('/api/agent', createAgentRouter(db, config.smtp));
@@ -302,7 +304,7 @@ app.use('/api/alert-thresholds', requireAuth, createAlertThresholdsRouter(db));
 
 // SSH management
 app.use('/api/ssh', requireAuth, createSshKeypairRouter(db));
-app.use('/api/servers/:id/ssh', requireAuth, createSshActionsRouter(db));
+app.use('/api/servers/:id/ssh', requireAuth, requireModule('servers'), requirePermission('servers:ssh'), createSshActionsRouter(db));
 
 // Internal (cron) — protected by CRON_SECRET, no auth cookie
 app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));

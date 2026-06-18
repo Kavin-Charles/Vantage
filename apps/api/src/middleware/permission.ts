@@ -115,6 +115,26 @@ export async function invalidateGroupMemberCaches(
   }
 }
 
+/**
+ * Programmatic permission check — for contexts without Express middleware
+ * (e.g. WebSocket upgrade handlers). Mirrors requirePermission semantics:
+ * admins always pass; members are checked against resolved permissions, and
+ * the owning module must be enabled for the workspace.
+ */
+export async function userHasPermission(
+  db: Kysely<Database>,
+  user: { id: string; role: 'admin' | 'member' },
+  workspaceId: string,
+  permission: string,
+): Promise<boolean> {
+  if (user.role === 'admin') return true;
+  const enabledModuleIds = await getEnabledModuleIds(db, workspaceId);
+  const modId = getModuleForPermission(permission);
+  if (modId !== null && !enabledModuleIds.includes(modId)) return false;
+  const perms = await resolvePermissions(db, user.id, workspaceId, user.role, enabledModuleIds);
+  return perms.has(permission);
+}
+
 export function createRequirePermission(db: Kysely<Database>) {
   return function requirePermission(permission: string) {
     return async (req: Request, res: Response, next: NextFunction): Promise<void> => {

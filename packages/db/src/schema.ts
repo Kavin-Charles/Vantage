@@ -104,6 +104,7 @@ export interface AlertTable {
   resource_id: string | null;
   severity: 'critical' | 'warning' | 'info';
   message: string;
+  metric_type: string | null;
   acknowledged: Generated<boolean>;
   acknowledged_by: string | null;
   resolved: Generated<boolean>;
@@ -1014,11 +1015,27 @@ export interface ProjectTemplateTable {
   created_at: Generated<Date>
 }
 
+export interface ContactTagTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  color: Generated<string>;
+  created_at: Generated<Date>;
+}
+
+export interface ContactTagLinkTable {
+  contact_id: string;
+  tag_id: string;
+  created_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
   companies: CompanyTable;
   contacts: ContactTable;
+  contact_tags: ContactTagTable;
+  contact_tag_links: ContactTagLinkTable;
   deals: DealTable;
   tasks: TaskTable;
   activities: ActivityTable;
@@ -1121,6 +1138,12 @@ export type CompanyUpdate = Updateable<CompanyTable>;
 export type Contact = Selectable<ContactTable>;
 export type NewContact = Insertable<ContactTable>;
 export type ContactUpdate = Updateable<ContactTable>;
+
+export type ContactTag = Selectable<ContactTagTable>;
+export type NewContactTag = Insertable<ContactTagTable>;
+
+export type ContactTagLink = Selectable<ContactTagLinkTable>;
+export type NewContactTagLink = Insertable<ContactTagLinkTable>;
 
 export type Deal = Selectable<DealTable>;
 export type NewDeal = Insertable<DealTable>;
