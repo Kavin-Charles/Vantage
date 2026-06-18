@@ -64,7 +64,13 @@ export function ServerMetricsProvider({ children }: { children: ReactNode }) {
         signal: controller.signal,
       });
 
-      if (!res.ok || !res.body) return;
+      if (!res.ok || !res.body) {
+        // Transient failure (e.g. 401 during token refresh) — retry with backoff
+        // instead of silently giving up on live metrics for the session.
+        const next = Math.min(retryDelay * 2, 30_000);
+        setTimeout(() => void connect(next), retryDelay);
+        return;
+      }
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
