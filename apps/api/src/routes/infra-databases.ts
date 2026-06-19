@@ -4,6 +4,7 @@ import type { Kysely } from 'kysely';
 import type { Database, InfraDatabase, InfraDatabaseUpdate } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
+import { logActivity } from '../lib/log-activity';
 import {
   classifySqlStatement,
   listMongoRows,
@@ -46,6 +47,12 @@ const sqlSchema = z.object({
   confirmed: z.boolean().optional(),
 });
 
+const dbThresholdSchema = z.object({
+  connection_count_max: z.number().int().positive().optional(),
+  replication_lag_s_max: z.number().positive().optional(),
+  storage_gb_max: z.number().positive().optional(),
+});
+
 function isAdmin(req: AuthenticatedRequest): boolean {
   return req.user.role === 'admin';
 }
@@ -67,6 +74,101 @@ async function getWorkspaceDatabase(
     .executeTakeFirst();
 }
 
+function buildConnectionString(infraDb: {
+  engine: string;
+  host: string | null;
+  port: number | null;
+  db_user: string | null;
+  db_password: string | null;
+  database_name: string | null;
+  use_ssl: boolean;
+}, reveal: boolean): string {
+  const password = reveal ? (infraDb.db_password ?? '') : '****';
+  const host = infraDb.host ?? 'localhost';
+  const port = infraDb.port;
+  switch (infraDb.engine) {
+    case 'postgres': {
+      const portPart = port ? `:${port}` : ':5432';
+      const user = infraDb.db_user ? `${infraDb.db_user}:${password}@` : '';
+      const dbName = infraDb.database_name ?? '';
+      const ssl = infraDb.use_ssl ? '?sslmode=require' : '';
+      return `postgresql://${user}${host}${portPart}/${dbName}${ssl}`;
+    }
+    case 'mysql': {
+      const portPart = port ? `:${port}` : ':3306';
+      const user = infraDb.db_user ? `${infraDb.db_user}:${password}@` : '';
+      const dbName = infraDb.database_name ?? '';
+      return `mysql://${user}${host}${portPart}/${dbName}`;
+    }
+    case 'redis': {
+      const portPart = port ? `:${port}` : ':6379';
+      const auth = password ? `:${password}@` : '';
+      return `redis://${auth}${host}${portPart}`;
+    }
+    case 'mongo': {
+      const portPart = port ? `:${port}` : ':27017';
+      const user = infraDb.db_user ? `${infraDb.db_user}:${password}@` : '';
+      const dbName = infraDb.database_name ?? '';
+      return `mongodb://${user}${host}${portPart}/${dbName}`;
+    }
+    case 'clickhouse': {
+      const portPart = port ? `:${port}` : ':8123';
+      const user = infraDb.db_user ? `${infraDb.db_user}:${password}@` : '';
+      const dbName = infraDb.database_name ?? 'default';
+      return `clickhouse://${user}${host}${portPart}/${dbName}`;
+    }
+    default: {
+      const portPart = port ? `:${port}` : '';
+      const user = infraDb.db_user ? `${infraDb.db_user}:${password}@` : '';
+      return `${infraDb.engine}://${user}${host}${portPart}`;
+    }
+  }
+}
+
+async function insertQueryHistory(
+  db: Kysely<Database>,
+  params: {
+    workspaceId: string;
+    databaseId: string;
+    userId: string;
+    engine: string;
+    queryText: string;
+    queryType: 'sql' | 'mongo';
+    rowCount: number | null;
+    durationMs: number | null;
+  },
+): Promise<void> {
+  await db
+    .insertInto('infra_db_query_history')
+    .values({
+      workspace_id: params.workspaceId,
+      database_id: params.databaseId,
+      user_id: params.userId,
+      engine: params.engine,
+      query_text: params.queryText,
+      query_type: params.queryType,
+      row_count: params.rowCount,
+      duration_ms: params.durationMs,
+    })
+    .execute();
+
+  const oldest = await db
+    .selectFrom('infra_db_query_history')
+    .where('database_id', '=', params.databaseId)
+    .where('user_id', '=', params.userId)
+    .select('id')
+    .orderBy('executed_at', 'desc')
+    .offset(100)
+    .execute();
+
+  if (oldest.length > 0) {
+    await db
+      .deleteFrom('infra_db_query_history')
+      .where('id', 'in', oldest.map(r => r.id))
+      .execute();
+  }
+}
+
 function sendInfraError(res: Response, err: unknown): boolean {
   const message = err instanceof Error ? err.message : 'Database operation failed';
   if (message === 'CONFLICT') {
@@ -86,6 +188,71 @@ function sendInfraError(res: Response, err: unknown): boolean {
 
 export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter {
   const router = Router();
+
+  // Static routes MUST come before /:id to avoid param capture
+
+  // POST /test-connection — stateless, no DB record required
+  router.post('/test-connection', async (req, res, next) => {
+    try {
+      const body = createSchema.parse(req.body);
+      const tempDb = {
+        engine: body.engine,
+        host: body.host ?? null,
+        port: body.port ?? null,
+        db_user: body.db_user ?? null,
+        db_password: body.db_password ?? null,
+        database_name: body.database_name ?? null,
+        use_ssl: body.use_ssl ?? false,
+      };
+      const result = await testTargetDatabaseConnection(tempDb as Parameters<typeof testTargetDatabaseConnection>[0], undefined);
+      res.json({ data: result, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // GET /thresholds/defaults
+  router.get('/thresholds/defaults', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const row = await db
+        .selectFrom('infra_db_thresholds')
+        .where('workspace_id', '=', workspace.id)
+        .where('database_id', 'is', null)
+        .selectAll()
+        .executeTakeFirst();
+      res.json({ data: row ?? { connection_count_max: 100, replication_lag_s_max: 30, storage_gb_max: 500 }, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // PUT /thresholds/defaults
+  router.put('/thresholds/defaults', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin(req as unknown as AuthenticatedRequest)) { forbidden(res); return; }
+      const body = dbThresholdSchema.parse(req.body);
+      const existing = await db
+        .selectFrom('infra_db_thresholds')
+        .where('workspace_id', '=', workspace.id)
+        .where('database_id', 'is', null)
+        .select('id')
+        .executeTakeFirst();
+      let result;
+      if (existing) {
+        result = await db
+          .updateTable('infra_db_thresholds')
+          .set({ ...body, updated_at: new Date().toISOString() })
+          .where('id', '=', existing.id)
+          .returningAll()
+          .executeTakeFirstOrThrow();
+      } else {
+        result = await db
+          .insertInto('infra_db_thresholds')
+          .values({ workspace_id: workspace.id, database_id: null, ...body })
+          .returningAll()
+          .executeTakeFirstOrThrow();
+      }
+      res.json({ data: result, error: null });
+    } catch (err) { next(err); }
+  });
 
   router.get('/', async (req, res, next) => {
     try {
@@ -120,6 +287,15 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
         })
         .returningAll()
         .executeTakeFirstOrThrow();
+      void logActivity(db, {
+        workspace_id: workspace.id,
+        user_id: (req as unknown as AuthenticatedRequest).user.id,
+        type: 'database_added',
+        source_module_id: 'databases',
+        record_id: result.id,
+        body: `Added database "${result.name}"`,
+        meta: { engine: result.engine, host: result.host },
+      });
       res.status(201).json({ data: redactInfraDatabase(result), error: null });
     } catch (err) { next(err); }
   });
@@ -155,6 +331,14 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
         .returningAll()
         .executeTakeFirst();
       if (!result) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      void logActivity(db, {
+        workspace_id: workspace.id,
+        user_id: (req as unknown as AuthenticatedRequest).user.id,
+        type: 'database_settings_changed',
+        source_module_id: 'databases',
+        record_id: result.id,
+        body: `Updated settings for "${result.name}"`,
+      });
       res.json({ data: redactInfraDatabase(result), error: null });
     } catch (err) { next(err); }
   });
@@ -186,6 +370,15 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
         .where('workspace_id', '=', workspace.id)
         .execute();
       logger.info({ newStatus }, 'db status updated');
+      void logActivity(db, {
+        workspace_id: workspace.id,
+        user_id: (req as unknown as AuthenticatedRequest).user.id,
+        type: 'database_connection_tested',
+        source_module_id: 'databases',
+        record_id: infraDb.id,
+        body: `Connection test ${result.ok ? 'succeeded' : 'failed'} in ${result.latency_ms}ms: ${result.message}`,
+        meta: { ok: result.ok, latency_ms: result.latency_ms },
+      });
       res.json({ data: result, error: null });
     } catch (err) { next(err); }
   });
@@ -247,6 +440,16 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
         return;
       }
       const result = await runMongoQuery(infraDb, body.collection, body.query);
+      void insertQueryHistory(db, {
+        workspaceId: workspace.id,
+        databaseId: infraDb.id,
+        userId: (req as unknown as AuthenticatedRequest).user.id,
+        engine: 'mongo',
+        queryText: body.query,
+        queryType: 'mongo',
+        rowCount: result.kind === 'select' ? result.rows.length : null,
+        durationMs: null,
+      });
       res.json({ data: result, error: null });
     } catch (err) {
       if (!sendInfraError(res, err)) next(err);
@@ -278,6 +481,17 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
         }
       }
       const result = await runTargetDatabaseSql(infraDb, body.sql);
+      const sqlRowCount = result.kind === 'dml' ? result.row_count : result.rows.length;
+      void insertQueryHistory(db, {
+        workspaceId: workspace.id,
+        databaseId: infraDb.id,
+        userId: user.id,
+        engine: infraDb.engine,
+        queryText: body.sql,
+        queryType: 'sql',
+        rowCount: sqlRowCount,
+        durationMs: null,
+      });
       res.json({ data: result, error: null });
     } catch (err) {
       if (!sendInfraError(res, err)) next(err);
@@ -294,7 +508,163 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
         .returningAll()
         .executeTakeFirst();
       if (!deleted) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      void logActivity(db, {
+        workspace_id: workspace.id,
+        user_id: (req as unknown as AuthenticatedRequest).user.id,
+        type: 'database_removed',
+        source_module_id: 'databases',
+        record_id: req.params['id'] as string,
+        body: `Removed database "${deleted.name}"`,
+      });
       res.json({ data: { ok: true }, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // GET /:id/thresholds
+  router.get('/:id/thresholds', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
+      if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      const override = await db
+        .selectFrom('infra_db_thresholds')
+        .where('workspace_id', '=', workspace.id)
+        .where('database_id', '=', infraDb.id)
+        .selectAll()
+        .executeTakeFirst();
+      const workspaceDefault = await db
+        .selectFrom('infra_db_thresholds')
+        .where('workspace_id', '=', workspace.id)
+        .where('database_id', 'is', null)
+        .selectAll()
+        .executeTakeFirst();
+      const effective = {
+        connection_count_max: override?.connection_count_max ?? workspaceDefault?.connection_count_max ?? 100,
+        replication_lag_s_max: override?.replication_lag_s_max ?? workspaceDefault?.replication_lag_s_max ?? 30,
+        storage_gb_max: override?.storage_gb_max ?? workspaceDefault?.storage_gb_max ?? 500,
+      };
+      res.json({ data: { effective, override: override ?? null, workspace_default: workspaceDefault ?? null }, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // PUT /:id/thresholds
+  router.put('/:id/thresholds', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin(req as unknown as AuthenticatedRequest)) { forbidden(res); return; }
+      const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
+      if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      const body = dbThresholdSchema.parse(req.body);
+      const existing = await db
+        .selectFrom('infra_db_thresholds')
+        .where('workspace_id', '=', workspace.id)
+        .where('database_id', '=', infraDb.id)
+        .select('id')
+        .executeTakeFirst();
+      let result;
+      if (existing) {
+        result = await db
+          .updateTable('infra_db_thresholds')
+          .set({ ...body, updated_at: new Date().toISOString() })
+          .where('id', '=', existing.id)
+          .returningAll()
+          .executeTakeFirstOrThrow();
+      } else {
+        result = await db
+          .insertInto('infra_db_thresholds')
+          .values({ workspace_id: workspace.id, database_id: infraDb.id, ...body })
+          .returningAll()
+          .executeTakeFirstOrThrow();
+      }
+      res.json({ data: result, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // DELETE /:id/thresholds
+  router.delete('/:id/thresholds', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin(req as unknown as AuthenticatedRequest)) { forbidden(res); return; }
+      const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
+      if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      await db
+        .deleteFrom('infra_db_thresholds')
+        .where('workspace_id', '=', workspace.id)
+        .where('database_id', '=', infraDb.id)
+        .execute();
+      res.json({ data: { ok: true }, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // GET /:id/query-history
+  router.get('/:id/query-history', async (req, res, next) => {
+    try {
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
+      if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      const rows = await db
+        .selectFrom('infra_db_query_history')
+        .where('workspace_id', '=', workspace.id)
+        .where('database_id', '=', infraDb.id)
+        .where('user_id', '=', user.id)
+        .select(['id', 'query_text', 'query_type', 'executed_at', 'row_count', 'duration_ms'])
+        .orderBy('executed_at', 'desc')
+        .limit(100)
+        .execute();
+      res.json({ data: rows, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // DELETE /:id/query-history
+  router.delete('/:id/query-history', async (req, res, next) => {
+    try {
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
+      if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      await db
+        .deleteFrom('infra_db_query_history')
+        .where('workspace_id', '=', workspace.id)
+        .where('database_id', '=', infraDb.id)
+        .where('user_id', '=', user.id)
+        .execute();
+      res.json({ data: { ok: true }, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // GET /:id/connection-string
+  router.get('/:id/connection-string', async (req, res, next) => {
+    try {
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
+      if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      const reveal = req.query['reveal'] === 'true';
+      if (reveal && user.role !== 'admin') {
+        res.status(403).json({ data: null, error: { code: 'FORBIDDEN', message: 'Admin role required to reveal credentials' } });
+        return;
+      }
+      const connectionString = buildConnectionString(infraDb, reveal);
+      res.json({ data: { connection_string: connectionString, revealed: reveal }, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // GET /:id/alerts
+  router.get('/:id/alerts', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
+      if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      const resolved = req.query['resolved'];
+      const alerts = await db
+        .selectFrom('alerts')
+        .where('workspace_id', '=', workspace.id)
+        .where('resource_type', '=', 'database')
+        .where('resource_id', '=', infraDb.id)
+        .$if(resolved === 'true', qb => qb.where('resolved', '=', true))
+        .$if(resolved === 'false', qb => qb.where('resolved', '=', false))
+        .selectAll()
+        .orderBy('created_at', 'desc')
+        .execute();
+      res.json({ data: alerts, error: null });
     } catch (err) { next(err); }
   });
 
