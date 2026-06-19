@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useMemo, useState } from 'react';
+import React, { use, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { DatabaseHeader } from '@/modules/databases/components/detail/DatabaseHeader';
@@ -15,6 +15,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import {
   clearInfraDatabaseQueryHistory,
   getInfraDatabase,
+  getInfraDatabaseConnectionString,
   listInfraDatabaseQueryHistory,
   listInfraDatabaseRows,
   listInfraDatabaseSchema,
@@ -86,7 +87,36 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function OverviewTab({ database }: { database: InfraDatabase }) {
+function OverviewTab({ database, isAdmin }: { database: InfraDatabase; isAdmin: boolean }) {
+  const getToken = useApiToken();
+  const [connStr, setConnStr] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  async function fetchConnStr(reveal: boolean) {
+    const token = await getToken();
+    const res = await getInfraDatabaseConnectionString(token, database.id, reveal);
+    setConnStr(res.data.connection_string);
+  }
+
+  async function handleReveal() {
+    await fetchConnStr(true);
+    setRevealed(true);
+    if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+    revealTimerRef.current = setTimeout(() => {
+      setRevealed(false);
+      void fetchConnStr(false);
+    }, 10_000);
+  }
+
+  useEffect(() => {
+    void fetchConnStr(false);
+    return () => {
+      if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [database.id]);
+
   return (
     <>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
@@ -113,6 +143,38 @@ function OverviewTab({ database }: { database: InfraDatabase }) {
             <span style={{ fontSize: 13, color: 'var(--text)' }}>{value}</span>
           </div>
         ))}
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid var(--border)', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500, flexShrink: 0 }}>Connection string</span>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', minWidth: 0 }}>
+            <code style={{
+              fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text2)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              maxWidth: 320,
+            }}>
+              {connStr ?? '…'}
+            </code>
+            <button
+              title="Copy to clipboard"
+              onClick={() => connStr && void navigator.clipboard.writeText(connStr)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 14, padding: '2px 4px', flexShrink: 0 }}
+            >
+              ⎘
+            </button>
+            {isAdmin && (
+              <button
+                title={revealed ? 'Re-masks in 10s' : 'Reveal password'}
+                onClick={() => void handleReveal()}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: revealed ? 'var(--amber)' : 'var(--text3)',
+                  fontSize: 14, padding: '2px 4px', flexShrink: 0,
+                }}
+              >
+                {revealed ? '🔓' : '🔒'}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </>
   );
@@ -719,7 +781,7 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
         </div>
 
         <div key={tab} style={{ animation: 'db-tab-in 150ms ease-out both' }}>
-          {tab === 'overview' && <OverviewTab database={database} />}
+          {tab === 'overview' && <OverviewTab database={database} isAdmin={isAdmin} />}
           {tab === 'tables' && <TablesTab databaseId={id} engine={database.engine} isAdmin={isAdmin} />}
           {tab === 'sql' && !isMongo && <SqlTab databaseId={id} isAdmin={isAdmin} />}
           {tab === 'mongo-query' && isMongo && <MongoQueryTab databaseId={id} />}
