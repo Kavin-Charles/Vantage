@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use, useEffect, useMemo, useRef, useState } from 'react';
+import React, { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { DatabaseHeader } from '@/modules/databases/components/detail/DatabaseHeader';
@@ -93,11 +93,15 @@ function OverviewTab({ database, isAdmin }: { database: InfraDatabase; isAdmin: 
   const [revealed, setRevealed] = useState(false);
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function fetchConnStr(reveal: boolean) {
-    const token = await getToken();
-    const res = await getInfraDatabaseConnectionString(token, database.id, reveal);
-    setConnStr(res.data.connection_string);
-  }
+  const fetchConnStr = useCallback(async (reveal: boolean) => {
+    try {
+      const token = await getToken();
+      const res = await getInfraDatabaseConnectionString(token, database.id, reveal);
+      setConnStr(res.data.connection_string);
+    } catch {
+      setConnStr(null);
+    }
+  }, [database.id, getToken]);
 
   async function handleReveal() {
     await fetchConnStr(true);
@@ -110,12 +114,14 @@ function OverviewTab({ database, isAdmin }: { database: InfraDatabase; isAdmin: 
   }
 
   useEffect(() => {
+    setConnStr(null);
+    setRevealed(false);
+    if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
     void fetchConnStr(false);
     return () => {
       if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [database.id]);
+  }, [database.id, fetchConnStr]);
 
   return (
     <>
