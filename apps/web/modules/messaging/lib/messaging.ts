@@ -38,7 +38,7 @@ export async function getMessages(token: string, channelId: string, beforeId?: s
 export async function sendMessage(
   token: string,
   channelId: string,
-  body: { body: string; mention_user_ids?: string[]; parent_message_id?: string },
+  body: { body: string; mention_user_ids?: string[]; parent_message_id?: string; attachments?: PendingAttachment[] },
 ) {
   return apiFetch<{ data: Message; error: null }>(
     `/api/messaging/channels/${channelId}/messages`,
@@ -100,6 +100,39 @@ export async function getThread(token: string, messageId: string) {
     `/api/messaging/messages/${messageId}/thread`,
     { token },
   );
+}
+
+export interface PendingAttachment {
+  r2_key: string;
+  filename: string;
+  size_bytes: number;
+  mime_type: string;
+  previewUrl?: string;
+}
+
+export interface WorkspaceMember {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
+export async function listWorkspaceMembers(token: string) {
+  return apiFetch<{ data: WorkspaceMember[]; error: null }>('/api/users', { token });
+}
+
+export async function presignUpload(
+  token: string,
+  file: { filename: string; mime_type: string; size_bytes: number },
+) {
+  return apiFetch<{
+    data: { upload_url: string; r2_key: string; filename: string; mime_type: string; size_bytes: number };
+    error: null;
+  }>('/api/messaging/upload/presign', {
+    method: 'POST',
+    body: JSON.stringify(file),
+    token,
+  });
 }
 
 export async function addChannelMember(token: string, channelId: string, userId: string) {

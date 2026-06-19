@@ -102,6 +102,15 @@ export function MessageBubble({
           </p>
         )}
 
+        {/* Attachments */}
+        {(message.attachments?.length ?? 0) > 0 && !isDeleted && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+            {message.attachments!.map(att => (
+              <AttachmentPreview key={att.id} att={att} />
+            ))}
+          </div>
+        )}
+
         {/* Reactions */}
         {grouped.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
@@ -197,6 +206,45 @@ export function MessageBubble({
         </div>
       )}
     </div>
+  );
+}
+
+function AttachmentPreview({ att }: { att: { id: string; filename: string; mime_type: string; size_bytes: number; url?: string } }) {
+  const isImage = att.mime_type.startsWith('image/');
+  const sizeKB = Math.round(att.size_bytes / 1024);
+
+  if (isImage && att.url) {
+    return (
+      <a href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+        <img
+          src={att.url}
+          alt={att.filename}
+          style={{ maxWidth: 300, maxHeight: 200, borderRadius: 8, border: '1px solid var(--border)', objectFit: 'cover', display: 'block' }}
+        />
+      </a>
+    );
+  }
+
+  return (
+    <a
+      href={att.url ?? '#'}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px',
+        background: 'var(--bg)', textDecoration: 'none', color: 'var(--text)',
+        maxWidth: 260,
+      }}
+    >
+      <Icon name="file" size={16} />
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {att.filename}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{sizeKB} KB</div>
+      </div>
+    </a>
   );
 }
 

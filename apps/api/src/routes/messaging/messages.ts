@@ -5,11 +5,22 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../../middleware/auth';
 import { publishMessageEvent } from '../../lib/messaging-pubsub';
+import { messagingSendRateLimit } from '../../middleware/messaging-rate-limit';
+
+const attachmentInputSchema = z.object({
+  r2_key: z.string().min(1).max(500),
+  filename: z.string().min(1).max(255),
+  size_bytes: z.number().int().min(1).max(10 * 1024 * 1024),
+  mime_type: z.string().min(1).max(120),
+});
 
 const sendMessageSchema = z.object({
-  body: z.string().trim().min(1).max(4000),
+  body: z.string().trim().min(0).max(4000).default(''),
   mention_user_ids: z.array(z.string().uuid()).optional(),
   parent_message_id: z.string().uuid().optional(),
+  attachments: z.array(attachmentInputSchema).max(10).optional(),
+}).refine(d => d.body.trim().length > 0 || (d.attachments?.length ?? 0) > 0, {
+  message: 'Message must have body text or at least one attachment',
 });
 
 const editMessageSchema = z.object({
@@ -139,7 +150,7 @@ export function createMessagesRouter(
   });
 
   // POST /channels/:channelId/messages — send message
-  router.post('/', requirePermission('messaging:send'), async (req, res, next) => {
+  router.post('/', requirePermission('messaging:send'), messagingSendRateLimit, async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
       const channelId = req.params['channelId']!;
@@ -149,6 +160,17 @@ export function createMessagesRouter(
       if (!canAccess) {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Channel not found' } });
         return;
+      }
+
+      // Validate r2_key ownership — must be under this workspace's prefix
+      if (body.attachments?.length) {
+        const prefix = `messaging/${workspace.id}/`;
+        for (const att of body.attachments) {
+          if (!att.r2_key.startsWith(prefix)) {
+            res.status(400).json({ data: null, error: { code: 'INVALID_ATTACHMENT', message: 'Invalid attachment key' } });
+            return;
+          }
+        }
       }
 
       const message = await db
@@ -163,6 +185,21 @@ export function createMessagesRouter(
         })
         .returningAll()
         .executeTakeFirstOrThrow();
+
+      // Persist attachment records
+      if (body.attachments?.length) {
+        await db
+          .insertInto('message_attachments')
+          .values(body.attachments.map(a => ({
+            message_id: message.id,
+            workspace_id: workspace.id,
+            r2_key: a.r2_key,
+            filename: a.filename,
+            size_bytes: a.size_bytes,
+            mime_type: a.mime_type,
+          })))
+          .execute();
+      }
 
       // Increment parent thread_count
       if (body.parent_message_id) {

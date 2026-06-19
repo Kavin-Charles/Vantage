@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { TypingIndicator } from './TypingIndicator';
 import { ThreadPanel } from './ThreadPanel';
+import { SearchPanel } from './SearchPanel';
 import { useChat } from '../hooks/useChat';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { getChannel } from '../lib/messaging';
+import { getChannel, type PendingAttachment } from '../lib/messaging';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
 import type { Message } from '@vencore/types';
 
@@ -21,6 +23,8 @@ export function ChannelView({ channelId }: Props) {
   const getToken = useApiToken();
   const { user } = useAuth();
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
+  const router = useRouter();
 
   const { messages, hasMore, loadingHistory, typing, wsReady, loadMore, send, sendTyping, markRead } =
     useChat(channelId);
@@ -36,12 +40,12 @@ export function ChannelView({ channelId }: Props) {
     staleTime: 60_000,
   });
 
-  const handleSend = useCallback(async (body: string) => {
-    await send(body);
+  const handleSend = useCallback(async (body: string, attachments?: PendingAttachment[]) => {
+    await send(body, attachments);
   }, [send]);
 
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', position: 'relative' }}>
       {/* Main channel area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Channel header */}
@@ -74,6 +78,17 @@ export function ChannelView({ channelId }: Props) {
             <span style={{ fontSize: 12, color: 'var(--text3)' }}>
               {channelData?.members?.length ?? 0} members
             </span>
+            <button
+              onClick={() => setShowSearch(v => !v)}
+              title="Search messages"
+              style={{
+                width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)',
+                background: showSearch ? 'var(--surface2)' : 'none', cursor: 'pointer',
+                color: 'var(--text2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <Icon name="search" size={14} />
+            </button>
           </div>
         </div>
 
@@ -104,6 +119,17 @@ export function ChannelView({ channelId }: Props) {
           parentMessage={threadMessage}
           currentUserId={user?.id ?? ''}
           onClose={() => setThreadMessage(null)}
+        />
+      )}
+
+      {/* Search panel — overlays on the right */}
+      {showSearch && (
+        <SearchPanel
+          onClose={() => setShowSearch(false)}
+          onJump={(chId) => {
+            setShowSearch(false);
+            if (chId !== channelId) router.push(`/messaging/${chId}`);
+          }}
         />
       )}
     </div>

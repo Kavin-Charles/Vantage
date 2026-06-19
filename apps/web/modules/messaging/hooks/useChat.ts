@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Message, MessagesPage, WsServerEvent } from '@vencore/types';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { getMessages, sendMessage } from '../lib/messaging';
+import { getMessages, sendMessage, type PendingAttachment } from '../lib/messaging';
 
 const WS_RECONNECT_DELAY = 3000;
 
@@ -189,12 +189,11 @@ export function useChat(channelId: string | null) {
     setLoadingHistory(false);
   }, [channelId, hasMore, loadingHistory, oldestId, getToken]);
 
-  const send = useCallback(async (body: string, parentMessageId?: string) => {
+  const send = useCallback(async (body: string, attachments?: PendingAttachment[], parentMessageId?: string) => {
     if (!channelId) return;
     const token = await getToken();
     if (!token) return;
-    await sendMessage(token, channelId, { body, parent_message_id: parentMessageId });
-    // Optimistic update is handled by WS message.new event
+    await sendMessage(token, channelId, { body, parent_message_id: parentMessageId, attachments });
     void qc.invalidateQueries({ queryKey: ['channels'] });
   }, [channelId, getToken, qc]);
 
