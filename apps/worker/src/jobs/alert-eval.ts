@@ -206,6 +206,104 @@ export async function runAlertEval(): Promise<void> {
       }
     }
 
+    // Database metric threshold alerts (replication lag, connections, storage)
+    const databases = await db
+      .selectFrom('infra_databases')
+      .where('workspace_id', '=', workspaceId)
+      .where('status', '!=', 'offline')
+      .selectAll()
+      .execute();
+
+    for (const database of databases) {
+      const dbThresholdOverride = await db
+        .selectFrom('infra_db_thresholds')
+        .where('workspace_id', '=', workspaceId)
+        .where('database_id', '=', database.id)
+        .selectAll()
+        .executeTakeFirst();
+
+      const dbThresholdDefault = await db
+        .selectFrom('infra_db_thresholds')
+        .where('workspace_id', '=', workspaceId)
+        .where('database_id', 'is', null)
+        .selectAll()
+        .executeTakeFirst();
+
+      const connMax = dbThresholdOverride?.connection_count_max ?? dbThresholdDefault?.connection_count_max ?? 100;
+      const lagMax = dbThresholdOverride?.replication_lag_s_max ?? dbThresholdDefault?.replication_lag_s_max ?? 30;
+      const storageMax = dbThresholdOverride?.storage_gb_max ?? dbThresholdDefault?.storage_gb_max ?? 500;
+
+      if (database.replication_lag_s !== null && database.replication_lag_s >= lagMax) {
+        const message = `Replication lag critical (${database.replication_lag_s.toFixed(1)}s, threshold ${lagMax}s)`;
+        await createAlert(db, {
+          workspaceId,
+          severity: 'critical',
+          resourceType: 'database',
+          resourceId: database.id,
+          message,
+          messagePrefix: 'Replication lag critical',
+          sourceModuleId: 'databases',
+        });
+        void logActivity(db, {
+          workspace_id: workspaceId,
+          user_id: null,
+          type: 'infra_alert',
+          source_module_id: 'databases',
+          body: message,
+          record_id: database.id,
+          meta: { resourceType: 'database', resourceId: database.id, severity: 'critical' },
+        });
+      }
+
+      if (database.connection_count !== null && database.connection_count >= connMax) {
+        const severity = database.connection_count >= connMax * 1.2 ? 'critical' : 'warning';
+        const prefix = `Connection count exceeds ${severity}`;
+        const message = `${prefix} threshold (${database.connection_count}, max ${connMax})`;
+        await createAlert(db, {
+          workspaceId,
+          severity,
+          resourceType: 'database',
+          resourceId: database.id,
+          message,
+          messagePrefix: prefix,
+          sourceModuleId: 'databases',
+        });
+        void logActivity(db, {
+          workspace_id: workspaceId,
+          user_id: null,
+          type: 'infra_alert',
+          source_module_id: 'databases',
+          body: message,
+          record_id: database.id,
+          meta: { resourceType: 'database', resourceId: database.id, severity },
+        });
+      }
+
+      if (database.storage_gb !== null && database.storage_gb >= storageMax * 0.9) {
+        const severity = database.storage_gb >= storageMax ? 'critical' : 'warning';
+        const prefix = severity === 'critical' ? 'Storage full critical' : 'Storage usage warning';
+        const message = `${prefix} (${database.storage_gb.toFixed(1)} GB, max ${storageMax} GB)`;
+        await createAlert(db, {
+          workspaceId,
+          severity,
+          resourceType: 'database',
+          resourceId: database.id,
+          message,
+          messagePrefix: prefix,
+          sourceModuleId: 'databases',
+        });
+        void logActivity(db, {
+          workspace_id: workspaceId,
+          user_id: null,
+          type: 'infra_alert',
+          source_module_id: 'databases',
+          body: message,
+          record_id: database.id,
+          meta: { resourceType: 'database', resourceId: database.id, severity },
+        });
+      }
+    }
+
     // DB unreachable alerts
     const offlineDbs = await db
       .selectFrom('infra_databases')
