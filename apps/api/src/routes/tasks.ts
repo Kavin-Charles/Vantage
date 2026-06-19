@@ -5,6 +5,7 @@ import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
 import { queueWebhook } from '../lib/queue-webhook';
+import { logActivity } from '../lib/log-activity';
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -165,6 +166,16 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
           workspace_id: workspace.id,
           timestamp: new Date().toISOString(),
         }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+
+        void logActivity(db, {
+          workspace_id: workspace.id,
+          user_id: task.assignee_id ?? null,
+          type: 'task_done',
+          source_module_id: 'tasks',
+          body: `Task completed: "${task.title}"`,
+          contact_id: task.contact_id ?? undefined,
+          record_id: task.id,
+        }).catch((err: unknown) => logger.error({ err }, 'logActivity failed'));
       }
 
       res.json({ data: task, error: null });
