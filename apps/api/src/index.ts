@@ -30,6 +30,7 @@ import { createPipelineFieldsRouter } from './routes/pipeline-fields';
 import { createPipelineItemsRouter, createItemRouter } from './routes/pipeline-items';
 import { createPipelineAutomationsRouter } from './routes/pipeline-automations';
 import { createTasksRouter } from './routes/tasks';
+import { createUnifiedTasksRouter } from './routes/tasks-unified';
 import { createActivityRouter } from './routes/activity';
 import { createAlertsRouter } from './routes/alerts';
 import { createInternalRouter } from './routes/internal';
@@ -256,6 +257,7 @@ app.use(
   requireModule('pipelines'),
   createPipelineAutomationsRouter(db, requirePermission),
 );
+app.use('/api/tasks/unified', requireAuth, requireModule('tasks'), createUnifiedTasksRouter(db, requirePermission));
 app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db, requirePermission));
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
 app.use('/api/alerts', requireAuth, requireModule('alerts'), createAlertsRouter(db));
