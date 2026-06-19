@@ -300,15 +300,15 @@ function SqlTab({ databaseId, isAdmin }: { databaseId: string; isAdmin: boolean 
   const [historyOpen, setHistoryOpen] = useState(false);
 
   const historyQ = useQuery({
-    queryKey: ['db-query-history', databaseId],
-    queryFn: async () => listInfraDatabaseQueryHistory(await getToken(), databaseId),
+    queryKey: ['db-query-history', databaseId, 'sql'],
+    queryFn: async () => listInfraDatabaseQueryHistory(await getToken(), databaseId, 'sql'),
     enabled: historyOpen,
   });
   const history = historyQ.data?.data ?? [];
 
   const clearHistoryMut = useMutation({
     mutationFn: async () => clearInfraDatabaseQueryHistory(await getToken(), databaseId),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId] }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId, 'sql'] }),
   });
 
   const runMut = useMutation({
@@ -317,7 +317,7 @@ function SqlTab({ databaseId, isAdmin }: { databaseId: string; isAdmin: boolean 
       setResult(res.data);
       setError(null);
       setConfirming(false);
-      void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId] });
+      void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId, 'sql'] });
     },
     onError: err => { setError(err instanceof Error ? err.message : 'SQL failed'); setConfirming(false); },
   });
@@ -334,7 +334,7 @@ function SqlTab({ databaseId, isAdmin }: { databaseId: string; isAdmin: boolean 
           onClick={() => setHistoryOpen(o => !o)}
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 12, color: 'var(--text3)' }}
         >
-          {historyOpen ? '▾' : '▸'} History {history.length > 0 ? `(${history.length})` : ''}
+          {historyOpen ? '▾' : '▸'} History
         </button>
         {historyOpen && history.length > 0 && (
           <button
@@ -440,15 +440,15 @@ function MongoQueryTab({ databaseId }: { databaseId: string }) {
   }, [collection, collections]);
 
   const historyQ = useQuery({
-    queryKey: ['db-query-history', databaseId],
-    queryFn: async () => listInfraDatabaseQueryHistory(await getToken(), databaseId),
+    queryKey: ['db-query-history', databaseId, 'mongo'],
+    queryFn: async () => listInfraDatabaseQueryHistory(await getToken(), databaseId, 'mongo'),
     enabled: historyOpen,
   });
   const history = historyQ.data?.data ?? [];
 
   const clearHistoryMut = useMutation({
     mutationFn: async () => clearInfraDatabaseQueryHistory(await getToken(), databaseId),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId] }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId, 'mongo'] }),
   });
 
   const runMut = useMutation({
@@ -456,7 +456,7 @@ function MongoQueryTab({ databaseId }: { databaseId: string }) {
     onSuccess: res => {
       setResult(res.data);
       setError(null);
-      void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId] });
+      void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId, 'mongo'] });
     },
     onError: err => { setError(err instanceof Error ? err.message : 'Query failed'); },
   });
@@ -478,7 +478,7 @@ function MongoQueryTab({ databaseId }: { databaseId: string }) {
           onClick={() => setHistoryOpen(o => !o)}
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 12, color: 'var(--text3)' }}
         >
-          {historyOpen ? '▾' : '▸'} History {history.length > 0 ? `(${history.length})` : ''}
+          {historyOpen ? '▾' : '▸'} History
         </button>
         {historyOpen && history.length > 0 && (
           <button

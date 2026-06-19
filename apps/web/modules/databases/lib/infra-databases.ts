@@ -96,8 +96,9 @@ export async function listInfraDatabaseAlerts(token: string, id: string, resolve
   return apiFetch<{ data: Alert[]; error: null }>(`/api/databases/${id}/alerts${qs}`, { token });
 }
 
-export async function listInfraDatabaseQueryHistory(token: string, id: string) {
-  return apiFetch<{ data: QueryHistoryEntry[]; error: null }>(`/api/databases/${id}/query-history`, { token });
+export async function listInfraDatabaseQueryHistory(token: string, id: string, type?: 'sql' | 'mongo') {
+  const qs = type ? `?type=${type}` : '';
+  return apiFetch<{ data: QueryHistoryEntry[]; error: null }>(`/api/databases/${id}/query-history${qs}`, { token });
 }
 
 export async function clearInfraDatabaseQueryHistory(token: string, id: string) {

@@ -602,11 +602,13 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
       const { workspace, user } = req as unknown as AuthenticatedRequest;
       const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
       if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
+      const queryType = req.query['type'] as 'sql' | 'mongo' | undefined;
       const rows = await db
         .selectFrom('infra_db_query_history')
         .where('workspace_id', '=', workspace.id)
         .where('database_id', '=', infraDb.id)
         .where('user_id', '=', user.id)
+        .$if(queryType === 'sql' || queryType === 'mongo', qb => qb.where('query_type', '=', queryType!))
         .select(['id', 'query_text', 'query_type', 'executed_at', 'row_count', 'duration_ms'])
         .orderBy('executed_at', 'desc')
         .limit(100)
