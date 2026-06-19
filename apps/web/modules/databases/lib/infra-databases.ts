@@ -83,3 +83,83 @@ export async function runMongoDbQuery(token: string, id: string, collection: str
     token,
   });
 }
+
+export async function getInfraDatabaseConnectionString(token: string, id: string, reveal: boolean) {
+  return apiFetch<{ data: { connection_string: string; revealed: boolean }; error: null }>(
+    `/api/databases/${id}/connection-string${reveal ? '?reveal=true' : ''}`,
+    { token },
+  );
+}
+
+export async function listInfraDatabaseAlerts(token: string, id: string, resolved?: boolean) {
+  const qs = resolved !== undefined ? `?resolved=${resolved}` : '';
+  return apiFetch<{ data: Alert[]; error: null }>(`/api/databases/${id}/alerts${qs}`, { token });
+}
+
+export async function listInfraDatabaseQueryHistory(token: string, id: string) {
+  return apiFetch<{ data: QueryHistoryEntry[]; error: null }>(`/api/databases/${id}/query-history`, { token });
+}
+
+export async function clearInfraDatabaseQueryHistory(token: string, id: string) {
+  return apiFetch<{ data: { ok: boolean }; error: null }>(`/api/databases/${id}/query-history`, { method: 'DELETE', token });
+}
+
+export async function getInfraDatabaseThresholds(token: string, id: string) {
+  return apiFetch<{ data: DbThresholdsResponse; error: null }>(`/api/databases/${id}/thresholds`, { token });
+}
+
+export async function setInfraDatabaseThresholds(token: string, id: string, body: DbThresholdInput) {
+  return apiFetch<{ data: unknown; error: null }>(`/api/databases/${id}/thresholds`, { method: 'PUT', body: JSON.stringify(body), token });
+}
+
+export async function clearInfraDatabaseThresholds(token: string, id: string) {
+  return apiFetch<{ data: { ok: boolean }; error: null }>(`/api/databases/${id}/thresholds`, { method: 'DELETE', token });
+}
+
+export async function getWorkspaceDbThresholdDefaults(token: string) {
+  return apiFetch<{ data: DbThresholdValues; error: null }>('/api/databases/thresholds/defaults', { token });
+}
+
+export async function setWorkspaceDbThresholdDefaults(token: string, body: DbThresholdInput) {
+  return apiFetch<{ data: unknown; error: null }>('/api/databases/thresholds/defaults', { method: 'PUT', body: JSON.stringify(body), token });
+}
+
+export interface DbThresholdValues {
+  connection_count_max: number;
+  replication_lag_s_max: number;
+  storage_gb_max: number;
+}
+
+export interface DbThresholdInput {
+  connection_count_max?: number;
+  replication_lag_s_max?: number;
+  storage_gb_max?: number;
+}
+
+export interface DbThresholdsResponse {
+  effective: DbThresholdValues;
+  override: (DbThresholdValues & { id: string }) | null;
+  workspace_default: (DbThresholdValues & { id: string }) | null;
+}
+
+export interface QueryHistoryEntry {
+  id: string;
+  query_text: string;
+  query_type: 'sql' | 'mongo';
+  executed_at: string;
+  row_count: number | null;
+  duration_ms: number | null;
+}
+
+export interface Alert {
+  id: string;
+  workspace_id: string;
+  resource_type: string;
+  resource_id: string | null;
+  severity: 'critical' | 'warning' | 'info';
+  message: string;
+  acknowledged: boolean;
+  resolved: boolean;
+  resolved_at: string | null;
+  created_at: string;
+}
