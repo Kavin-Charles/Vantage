@@ -13,6 +13,8 @@ export function createAlertsRouter(db: Kysely<Database>): ExpressRouter {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const resolvedParam = req.query['resolved'];
       const severity = req.query['severity'] as string | undefined;
+      const resourceType = req.query['resource_type'] as string | undefined;
+      const resourceId = req.query['resource_id'] as string | undefined;
       const limit = Math.min(Number(req.query['limit'] ?? 25), 100);
 
       let query = db
@@ -24,6 +26,13 @@ export function createAlertsRouter(db: Kysely<Database>): ExpressRouter {
 
       if (resolvedParam !== undefined) {
         query = query.where('resolved', '=', resolvedParam === 'true');
+      }
+
+      if (resourceType) {
+        query = query.where('resource_type', '=', resourceType as 'server' | 'database' | 'website' | 'crm');
+      }
+      if (resourceId) {
+        query = query.where('resource_id', '=', resourceId);
       }
 
       if (severity) {

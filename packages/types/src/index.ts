@@ -37,6 +37,12 @@ export interface User {
   created_at: Date;
 }
 
+export interface ContactTag {
+  id: UUID;
+  name: string;
+  color: string;
+}
+
 export interface Contact {
   id: UUID;
   workspace_id: UUID;
@@ -50,6 +56,8 @@ export interface Contact {
   deleted_at: Date | null;
   created_at: Date;
   updated_at: Date;
+  /** Present on contacts list/get responses; absent on raw DB rows from other endpoints. */
+  tags?: ContactTag[];
 }
 
 export interface Company {
@@ -180,6 +188,7 @@ export interface Alert {
   resource_id: UUID | null;
   severity: AlertSeverity;
   message: string;
+  metric_type: string | null;
   acknowledged: boolean;
   acknowledged_by: UUID | null;
   resolved: boolean;
@@ -226,6 +235,11 @@ export interface Server {
   ssh_port: number;
   status: ServerStatus;
   last_ping_at: string | null;
+  hostname: string | null;
+  os: string | null;
+  arch: string | null;
+  kernel: string | null;
+  agent_version: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -315,6 +329,31 @@ export interface MetricsSnapshot {
   net_in_bytes: number;
   net_out_bytes: number;
   recorded_at: string;
+}
+
+export type MetricsRange = '1h' | '24h' | '7d' | '30d';
+
+/**
+ * Unified metrics point returned by GET /servers/:id/metrics. Short ranges come
+ * from raw snapshots; long ranges from rollups (avg/max already aggregated).
+ */
+export interface MetricsPoint {
+  t: string;          // ISO timestamp (snapshot recorded_at or rollup bucket)
+  cpu_pct: number;    // avg
+  mem_pct: number;    // avg
+  disk_pct: number;   // avg
+  load_avg_1m: number;
+  net_in_bytes: number;
+  net_out_bytes: number;
+  cpu_max?: number;
+  mem_max?: number;
+  disk_max?: number;
+}
+
+export interface MetricsSeries {
+  range: MetricsRange;
+  resolution: 'raw' | 'hour' | 'day';
+  points: MetricsPoint[];
 }
 
 export interface AlertThreshold {

@@ -11,6 +11,26 @@ export interface Metrics {
   net_out_bytes: number;
 }
 
+export interface HostMeta {
+  hostname: string;
+  os: string;
+  arch: string;
+  kernel: string;
+  agent_version: string;
+}
+
+// Static host metadata — collected once, sent with each ping so the dashboard
+// can show what the box actually is.
+export function collectMeta(agentVersion: string): HostMeta {
+  return {
+    hostname: os.hostname(),
+    os: `${os.type()} ${os.platform()}`,
+    arch: os.arch(),
+    kernel: os.release(),
+    agent_version: agentVersion,
+  };
+}
+
 function getCpuSample() {
   const cpus = os.cpus();
   let user = 0, nice = 0, sys = 0, idle = 0, irq = 0;

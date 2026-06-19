@@ -56,8 +56,29 @@ async function resolvePrivateKey(
   return { privateKey: decryptedKey, sshUser: keypair.ssh_user };
 }
 
+// Sliding-window rate limit for SSH actions, keyed by user+server. SSH exec is
+// powerful; cap how fast a single user can fire commands at one box.
+const SSH_RATE_LIMIT = 30;        // actions
+const SSH_RATE_WINDOW_MS = 60_000; // per minute
+const sshHits = new Map<string, number[]>();
+
+function sshRateLimit(req: Request, res: Response, next: (e?: unknown) => void): void {
+  const { user } = req as unknown as AuthenticatedRequest;
+  const key = `${user.id}:${req.params['id'] ?? ''}`;
+  const now = Date.now();
+  const recent = (sshHits.get(key) ?? []).filter(t => now - t < SSH_RATE_WINDOW_MS);
+  if (recent.length >= SSH_RATE_LIMIT) {
+    res.status(429).json({ data: null, error: { code: 'RATE_LIMITED', message: 'Too many SSH actions. Slow down.' } });
+    return;
+  }
+  recent.push(now);
+  sshHits.set(key, recent);
+  next();
+}
+
 export function createSshActionsRouter(db: Kysely<Database>): ExpressRouter {
   const router = Router({ mergeParams: true });
+  router.use(sshRateLimit);
 
   // POST /api/servers/:id/ssh/exec
   router.post('/exec', async (req, res, next) => {

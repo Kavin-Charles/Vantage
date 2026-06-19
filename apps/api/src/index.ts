@@ -55,6 +55,7 @@ import { createPortalRouter, createPortalInternalRouter } from './routes/portal'
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
+import { startMetricsRollup } from './workers/metrics-rollup';
 import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
 import { loadPluginBackend, getPluginRouter } from './lib/plugin-loader';
@@ -295,7 +296,7 @@ app.use('/api/alert-thresholds', requireAuth, createAlertThresholdsRouter(db));
 
 // SSH management
 app.use('/api/ssh', requireAuth, createSshKeypairRouter(db));
-app.use('/api/servers/:id/ssh', requireAuth, createSshActionsRouter(db));
+app.use('/api/servers/:id/ssh', requireAuth, requireModule('servers'), requirePermission('servers:ssh'), createSshActionsRouter(db));
 
 // Internal (cron) — protected by CRON_SECRET, no auth cookie
 app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));
@@ -316,6 +317,9 @@ startTaskDueNotifier(db);
 
 // Start webhook delivery worker (polls every 10 s)
 startWebhookDelivery(db);
+
+// Start metrics rollup + retention worker (15-min cycle)
+startMetricsRollup(db);
 
 // ── HTTP + WebSocket server ────────────────────────────────────────────────
 const httpServer = createServer(app);
