@@ -2,9 +2,9 @@
 
 import { use, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { DatabaseHeader } from '@/modules/databases/components/detail/DatabaseHeader';
 import { Topbar } from '@/modules/shared/components/Topbar';
-import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { FormField, Input, Select, Textarea } from '@/modules/shared/components/ui/FormField';
 import { Modal } from '@/modules/shared/components/ui/Modal';
@@ -23,14 +23,6 @@ import {
 import type { InfraDatabase, InfraDatabaseRows, InfraDatabaseSqlResult, InfraDatabaseTable } from '@vencore/types';
 
 const ENGINES = ['postgres', 'mysql', 'redis', 'clickhouse', 'mongo', 'other'] as const;
-const ENGINE_COLOR: Record<string, 'blue' | 'green' | 'red' | 'amber' | 'purple' | 'gray'> = {
-  postgres: 'blue',
-  mysql: 'amber',
-  redis: 'red',
-  clickhouse: 'purple',
-  mongo: 'green',
-  other: 'gray',
-};
 const th: React.CSSProperties = { padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4, borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap' };
 const td: React.CSSProperties = { padding: '10px 12px', fontSize: 13, color: 'var(--text)', borderBottom: '1px solid var(--border)', verticalAlign: 'top' };
 
@@ -55,11 +47,37 @@ function isDml(sql: string): boolean {
   return /^(insert|update|delete)\b/i.test(sql.trim()) || (/^with\b/i.test(sql.trim()) && /\b(insert|update|delete)\b/i.test(sql));
 }
 
+function useCountUp(target: number, duration = 600): number {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (target === 0) { setCount(0); return; }
+    let start: number | null = null;
+    const step = (ts: number) => {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / duration, 1);
+      setCount(Math.round(progress * target));
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    const id = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(id);
+  }, [target, duration]);
+  return count;
+}
+
 function Metric({ label, value }: { label: string; value: string }) {
+  const numMatch = value.match(/^([\d.]+)(.*)/);
+  const numericPart = numMatch ? parseFloat(numMatch[1]!) : null;
+  const suffix = numMatch ? numMatch[2] : '';
+  const animated = useCountUp(numericPart ?? 0);
+
+  const display = numericPart !== null
+    ? `${Number.isInteger(numericPart) ? animated : animated.toFixed(numericPart < 10 ? 2 : 1)}${suffix}`
+    : value;
+
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '16px 18px' }}>
       <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.4, marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>{value}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', fontFamily: "'IBM Plex Mono', monospace" }}>{display}</div>
     </div>
   );
 }
@@ -170,66 +188,99 @@ function TablesTab({ databaseId, engine, isAdmin }: { databaseId: string; engine
   const rows = rowsQuery.data?.data;
 
   return (
-    <div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
-        <Select value={selectedKey} onChange={e => { setSelectedKey(e.target.value); setPage(1); setEditing(false); setEdits({}); }} style={{ width: 280 }}>
-          {tables.map(table => (
-            <option key={`${table.schema}.${table.name}`} value={`${table.schema}.${table.name}`}>
-              {isMongo ? table.name : `${table.schema}.${table.name}`}
-            </option>
-          ))}
-        </Select>
-        {isAdmin && supportsEdit && rows && (
-          editing ? (
-            <>
-              <Button variant="primary" onClick={() => void save(rows)} disabled={updateMut.isPending || Object.keys(edits).length === 0}>{updateMut.isPending ? 'Saving...' : 'Save changes'}</Button>
-              <Button onClick={() => { setEditing(false); setEdits({}); setError(null); }}>Discard</Button>
-            </>
-          ) : <Button onClick={() => setEditing(true)}>Edit</Button>
-        )}
-        {!isAdmin && <span style={{ fontSize: 12, color: 'var(--text3)' }}>Read-only</span>}
-      </div>
-      {selected && selected.primary_key.length === 0 && (
-        <div style={{ marginBottom: 12, color: 'var(--amber)', background: 'var(--amber-bg)', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
-          No primary key found. Edits use original-row matching and may conflict if duplicate rows exist.
+    <div style={{ display: 'flex', gap: 0, height: '100%', minHeight: 400 }}>
+      {/* sidebar */}
+      <div style={{
+        width: 220, flexShrink: 0, borderRight: '1px solid var(--border)',
+        overflowY: 'auto', paddingRight: 0,
+      }}>
+        <div style={{ padding: '10px 14px 6px', fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4 }}>
+          {isMongo ? 'Collections' : 'Tables'}
         </div>
-      )}
-      {error && <div style={{ marginBottom: 12, color: 'var(--red)', fontSize: 13 }}>{error}</div>}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>{(rows?.columns ?? []).map(column => <th key={column.name} style={th}>{column.name}{column.primary_key ? ' *' : ''}</th>)}</tr>
-          </thead>
-          <tbody>
-            {rowsQuery.isLoading ? (
-              <tr><td style={{ ...td, textAlign: 'center', padding: 32 }} colSpan={selected?.columns.length ?? 1}>Loading...</td></tr>
-            ) : !rows || rows.rows.length === 0 ? (
-              <tr><td style={{ ...td, textAlign: 'center', padding: 32 }} colSpan={selected?.columns.length ?? 1}>No rows.</td></tr>
-            ) : rows.rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {rows.columns.map(column => {
-                  const editKey = `${rowIndex}:${column.name}`;
-                  const text = edits[editKey] ?? valueText(row[column.name]);
-                  return (
-                    <td key={column.name} style={td}>
-                      {editing ? (
-                        <Input value={text} onChange={e => setEdits(prev => ({ ...prev, [editKey]: e.target.value }))} style={{ minWidth: 140, fontFamily: 'monospace' }} />
-                      ) : (
-                        <span style={{ fontFamily: 'monospace', color: row[column.name] === null ? 'var(--text3)' : 'var(--text)' }}>
-                          {row[column.name] === null ? 'NULL' : valueText(row[column.name])}
-                        </span>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {schemaQuery.isLoading ? (
+          <div style={{ padding: '8px 14px', fontSize: 12, color: 'var(--text3)' }}>Loading…</div>
+        ) : tables.map(table => {
+          const key = `${table.schema}.${table.name}`;
+          const isSelected = selectedKey === key;
+          return (
+            <button
+              key={key}
+              onClick={() => { setSelectedKey(key); setPage(1); setEditing(false); setEdits({}); }}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                padding: '7px 14px', fontSize: 12.5,
+                background: isSelected ? 'var(--surface2)' : 'none',
+                border: 'none', borderLeft: isSelected ? '2px solid var(--text)' : '2px solid transparent',
+                color: isSelected ? 'var(--text)' : 'var(--text2)',
+                cursor: 'pointer', fontFamily: 'var(--font-mono)',
+              }}
+            >
+              {isMongo ? table.name : table.name}
+            </button>
+          );
+        })}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
-        <Button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Previous</Button>
-        <Button disabled={!rows || rows.rows.length < 50} onClick={() => setPage(p => p + 1)}>Next</Button>
+
+      {/* main */}
+      <div style={{ flex: 1, overflow: 'auto', paddingLeft: 20 }}>
+        {selected && (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>
+              {isMongo ? selected.name : `${selected.schema}.${selected.name}`}
+            </span>
+            {isAdmin && supportsEdit && rows && (
+              editing ? (
+                <>
+                  <Button variant="primary" onClick={() => void save(rows)} disabled={updateMut.isPending || Object.keys(edits).length === 0}>{updateMut.isPending ? 'Saving…' : 'Save changes'}</Button>
+                  <Button onClick={() => { setEditing(false); setEdits({}); setError(null); }}>Discard</Button>
+                </>
+              ) : <Button onClick={() => setEditing(true)}>Edit</Button>
+            )}
+            {!isAdmin && <span style={{ fontSize: 12, color: 'var(--text3)' }}>Read-only</span>}
+          </div>
+        )}
+        {selected && selected.primary_key.length === 0 && (
+          <div style={{ marginBottom: 12, color: 'var(--amber)', background: 'var(--amber-bg)', borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
+            No primary key found. Edits use original-row matching and may conflict if duplicate rows exist.
+          </div>
+        )}
+        {error && <div style={{ marginBottom: 12, color: 'var(--red)', fontSize: 13 }}>{error}</div>}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>{(rows?.columns ?? []).map(column => <th key={column.name} style={th}>{column.name}{column.primary_key ? ' *' : ''}</th>)}</tr>
+            </thead>
+            <tbody>
+              {rowsQuery.isLoading ? (
+                <tr><td style={{ ...td, textAlign: 'center', padding: 32 }} colSpan={selected?.columns.length ?? 1}>Loading…</td></tr>
+              ) : !rows || rows.rows.length === 0 ? (
+                <tr><td style={{ ...td, textAlign: 'center', padding: 32 }} colSpan={selected?.columns.length ?? 1}>No rows.</td></tr>
+              ) : rows.rows.map((row, rowIndex) => (
+                <tr key={rowIndex}>
+                  {rows.columns.map(column => {
+                    const editKey = `${rowIndex}:${column.name}`;
+                    const text = edits[editKey] ?? valueText(row[column.name]);
+                    return (
+                      <td key={column.name} style={td}>
+                        {editing ? (
+                          <Input value={text} onChange={e => setEdits(prev => ({ ...prev, [editKey]: e.target.value }))} style={{ minWidth: 140, fontFamily: 'monospace' }} />
+                        ) : (
+                          <span style={{ fontFamily: 'monospace', color: row[column.name] === null ? 'var(--text3)' : 'var(--text)' }}>
+                            {row[column.name] === null ? 'NULL' : valueText(row[column.name])}
+                          </span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+          <Button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Previous</Button>
+          <Button disabled={!rows || rows.rows.length < 50} onClick={() => setPage(p => p + 1)}>Next</Button>
+        </div>
       </div>
     </div>
   );
@@ -447,12 +498,14 @@ function SettingsTab({ database }: { database: InfraDatabase }) {
   );
 }
 
+type Tab = 'overview' | 'tables' | 'sql' | 'mongo-query' | 'alerts' | 'activities' | 'settings';
+
 export default function DatabaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const getToken = useApiToken();
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
-  const [tab, setTab] = useState<'overview' | 'tables' | 'sql' | 'mongo-query' | 'settings'>('overview');
+  const [tab, setTab] = useState<Tab>((searchParams.get('tab') as Tab) ?? 'overview');
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['infra-database', id],
@@ -469,48 +522,67 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
 
   const isMongo = database.engine === 'mongo';
 
+  const tabList: { key: Tab; label: string }[] = [
+    { key: 'overview', label: 'Overview' },
+    { key: 'tables', label: isMongo ? 'Collections' : 'Tables' },
+    ...(isMongo ? [{ key: 'mongo-query' as Tab, label: 'Query' }] : [{ key: 'sql' as Tab, label: 'SQL' }]),
+    { key: 'alerts', label: 'Alerts' },
+    { key: 'activities', label: 'Activities' },
+    { key: 'settings', label: 'Settings' },
+  ];
+
   return (
     <>
-      <Topbar action={<Button onClick={() => router.push('/databases')}>Back to databases</Button>} />
+      <style>{`
+        @keyframes db-tab-in {
+          from { opacity: 0; transform: translateY(4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      <Topbar />
       <div style={{ padding: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>{database.name}</h2>
-          <Badge label={database.status} color={statusColor[database.status] ?? 'gray'} />
-          <Badge label={database.engine} color={ENGINE_COLOR[database.engine] ?? 'gray'} />
-          <span style={{ fontSize: 13, color: 'var(--text3)' }}>{database.host ?? 'no host'}{database.port ? `:${database.port}` : ''}</span>
-        </div>
+        <DatabaseHeader database={database} />
 
         <div style={{ display: 'flex', gap: 2, marginBottom: 24, borderBottom: '1px solid var(--border)' }}>
-          {(isMongo
-            ? ['overview', 'tables', 'mongo-query', 'settings'] as const
-            : ['overview', 'tables', 'sql', 'settings'] as const
-          ).map(nextTab => (
+          {tabList.map(({ key: t, label }) => (
             <button
-              key={nextTab}
-              onClick={() => setTab(nextTab as typeof tab)}
+              key={t}
+              onClick={() => setTab(t)}
               style={{
                 background: 'none',
                 border: 'none',
-                borderBottom: tab === nextTab ? '2px solid var(--text)' : '2px solid transparent',
+                borderBottom: tab === t ? '2px solid var(--text)' : '2px solid transparent',
                 padding: '8px 16px',
                 fontSize: 13,
-                fontWeight: tab === nextTab ? 600 : 400,
-                color: tab === nextTab ? 'var(--text)' : 'var(--text3)',
+                fontWeight: tab === t ? 600 : 400,
+                color: tab === t ? 'var(--text)' : 'var(--text3)',
                 cursor: 'pointer',
-                textTransform: 'capitalize',
                 marginBottom: -1,
+                transition: 'color .15s, border-bottom-color .15s',
               }}
             >
-              {nextTab === 'mongo-query' ? 'Query' : nextTab === 'tables' && isMongo ? 'Collections' : nextTab}
+              {label}
             </button>
           ))}
         </div>
 
-        {tab === 'overview' && <OverviewTab database={database} />}
-        {tab === 'tables' && <TablesTab databaseId={id} engine={database.engine} isAdmin={isAdmin} />}
-        {tab === 'sql' && !isMongo && <SqlTab databaseId={id} isAdmin={isAdmin} />}
-        {tab === 'mongo-query' && isMongo && <MongoQueryTab databaseId={id} />}
-        {tab === 'settings' && <SettingsTab database={database} />}
+        <div key={tab} style={{ animation: 'db-tab-in 150ms ease-out both' }}>
+          {tab === 'overview' && <OverviewTab database={database} />}
+          {tab === 'tables' && <TablesTab databaseId={id} engine={database.engine} isAdmin={isAdmin} />}
+          {tab === 'sql' && !isMongo && <SqlTab databaseId={id} isAdmin={isAdmin} />}
+          {tab === 'mongo-query' && isMongo && <MongoQueryTab databaseId={id} />}
+          {tab === 'alerts' && (
+            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '24px 0' }}>
+              Alerts tab — coming soon.
+            </div>
+          )}
+          {tab === 'activities' && (
+            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '24px 0' }}>
+              Activities tab — coming soon.
+            </div>
+          )}
+          {tab === 'settings' && <SettingsTab database={database} />}
+        </div>
       </div>
     </>
   );
