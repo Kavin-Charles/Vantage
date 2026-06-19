@@ -48,14 +48,14 @@ function isDml(sql: string): boolean {
 }
 
 function useCountUp(target: number, duration = 600): number {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState<number>(0);
   useEffect(() => {
     if (target === 0) { setCount(0); return; }
     let start: number | null = null;
     const step = (ts: number) => {
       if (!start) start = ts;
       const progress = Math.min((ts - start) / duration, 1);
-      setCount(Math.round(progress * target));
+      setCount(progress < 1 ? Math.round(progress * target) : target);
       if (progress < 1) requestAnimationFrame(step);
     };
     const id = requestAnimationFrame(step);
@@ -215,7 +215,7 @@ function TablesTab({ databaseId, engine, isAdmin }: { databaseId: string; engine
                 cursor: 'pointer', fontFamily: 'var(--font-mono)',
               }}
             >
-              {isMongo ? table.name : table.name}
+              {table.name}
             </button>
           );
         })}
