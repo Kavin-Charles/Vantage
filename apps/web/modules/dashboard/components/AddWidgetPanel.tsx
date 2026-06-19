@@ -1,6 +1,7 @@
 'use client';
 
 import { getDashboardWidgets, type DashboardWidgetDef } from '@/modules/shared/lib/dashboard-registry';
+import '@/modules/tasks/components/TasksWidget';
 
 interface Props {
   open: boolean;
