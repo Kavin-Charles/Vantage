@@ -91,7 +91,7 @@ export interface ActivityTable {
   user_id: string | null;
   contact_id: string | null;
   record_id: string | null;
-  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert' | 'contact_created' | 'task_done';
+  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert' | 'contact_created' | 'task_done' | 'database_added' | 'database_removed' | 'database_settings_changed' | 'database_connection_tested';
   body: string | null;
   meta: Record<string, unknown> | null;
   created_at: Generated<Date>;
@@ -1053,6 +1053,46 @@ export interface ContactTagLinkTable {
   created_at: Generated<Date>;
 }
 
+export interface ModuleEventSettingsTable {
+  workspace_id: string;
+  module_id: string;
+  activity_on: Generated<boolean>;
+  alerts_on: Generated<boolean>;
+  updated_at: Generated<Date>;
+}
+
+export interface NotificationPreferencesTable {
+  workspace_id: string;
+  channel: string;
+  severity: string;
+  enabled: Generated<boolean>;
+  updated_at: Generated<Date>;
+}
+
+export interface InfraDbThresholdTable {
+  id: Generated<string>;
+  workspace_id: string;
+  database_id: string | null;
+  connection_count_max: number | null;
+  replication_lag_s_max: number | null;
+  storage_gb_max: number | null;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
+export interface InfraDbQueryHistoryTable {
+  id: Generated<string>;
+  workspace_id: string;
+  database_id: string;
+  user_id: string;
+  engine: string;
+  query_text: string;
+  query_type: 'sql' | 'mongo';
+  executed_at: Generated<string>;
+  row_count: number | null;
+  duration_ms: number | null;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -1147,6 +1187,8 @@ export interface Database {
   project_templates: ProjectTemplateTable
   module_event_settings: ModuleEventSettingsTable;
   notification_preferences: NotificationPreferencesTable;
+  infra_db_thresholds: InfraDbThresholdTable;
+  infra_db_query_history: InfraDbQueryHistoryTable;
 }
 
 // Convenience types
@@ -1356,3 +1398,10 @@ export type ApprovalRequest = Selectable<ApprovalRequestTable>
 export type AutomationRule = Selectable<AutomationRuleTable>
 export type ProjectDoc = Selectable<ProjectDocTable>
 export type ProjectTemplate = Selectable<ProjectTemplateTable>
+
+export type InfraDbThreshold = Selectable<InfraDbThresholdTable>;
+export type NewInfraDbThreshold = Insertable<InfraDbThresholdTable>;
+export type InfraDbThresholdUpdate = Updateable<InfraDbThresholdTable>;
+
+export type InfraDbQueryHistory = Selectable<InfraDbQueryHistoryTable>;
+export type NewInfraDbQueryHistory = Insertable<InfraDbQueryHistoryTable>;
