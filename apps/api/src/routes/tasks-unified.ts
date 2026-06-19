@@ -72,10 +72,10 @@ function sortByPriority(tasks: UnifiedTask[]): UnifiedTask[] {
   })
 }
 
-export function createUnifiedTasksRouter(db: Kysely<Database>): Router {
+export function createUnifiedTasksRouter(db: Kysely<Database>, requirePermission: (p: string) => import('express').RequestHandler): Router {
   const router = Router()
 
-  router.get('/', async (req, res, next) => {
+  router.get('/', requirePermission('tasks:view'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest
       const parsed = querySchema.safeParse(req.query)
@@ -125,7 +125,14 @@ export function createUnifiedTasksRouter(db: Kysely<Database>): Router {
       if (status === 'done') ptQ = ptQ.where('s.is_done', '=', true)
       if (status === 'todo') ptQ = ptQ.where('s.is_done', '=', false)
 
-      const ptRows = await ptQ.execute()
+      const ptRowsRaw = await ptQ.execute()
+      // Deduplicate by task ID (safety guard against multiple assignee rows)
+      const seenPtIds = new Set<string>()
+      const ptRows = ptRowsRaw.filter(r => {
+        if (seenPtIds.has(r.id)) return false
+        seenPtIds.add(r.id)
+        return true
+      })
 
       // ── 3. Resolve done/todo status IDs per project ─────────────────────────
       const projectIds = [...new Set(ptRows.map(r => r.project_id))]
