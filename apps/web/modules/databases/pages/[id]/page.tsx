@@ -13,7 +13,9 @@ import { Modal } from '@/modules/shared/components/ui/Modal';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import {
+  clearInfraDatabaseQueryHistory,
   getInfraDatabase,
+  listInfraDatabaseQueryHistory,
   listInfraDatabaseRows,
   listInfraDatabaseSchema,
   runInfraDatabaseSql,
@@ -290,27 +292,100 @@ function TablesTab({ databaseId, engine, isAdmin }: { databaseId: string; engine
 
 function SqlTab({ databaseId, isAdmin }: { databaseId: string; isAdmin: boolean }) {
   const getToken = useApiToken();
+  const qc = useQueryClient();
   const [sql, setSql] = useState('select 1');
   const [confirming, setConfirming] = useState(false);
   const [result, setResult] = useState<InfraDatabaseSqlResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+
+  const historyQ = useQuery({
+    queryKey: ['db-query-history', databaseId],
+    queryFn: async () => listInfraDatabaseQueryHistory(await getToken(), databaseId),
+    enabled: historyOpen,
+  });
+  const history = historyQ.data?.data ?? [];
+
+  const clearHistoryMut = useMutation({
+    mutationFn: async () => clearInfraDatabaseQueryHistory(await getToken(), databaseId),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId] }),
+  });
 
   const runMut = useMutation({
     mutationFn: async (confirmed: boolean) => runInfraDatabaseSql(await getToken(), databaseId, sql, confirmed),
-    onSuccess: res => { setResult(res.data); setError(null); setConfirming(false); },
+    onSuccess: res => {
+      setResult(res.data);
+      setError(null);
+      setConfirming(false);
+      void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId] });
+    },
     onError: err => { setError(err instanceof Error ? err.message : 'SQL failed'); setConfirming(false); },
   });
 
   function run() {
-    if (isDml(sql) && isAdmin) {
-      setConfirming(true);
-      return;
-    }
+    if (isDml(sql) && isAdmin) { setConfirming(true); return; }
     runMut.mutate(false);
   }
 
   return (
     <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <button
+          onClick={() => setHistoryOpen(o => !o)}
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 12, color: 'var(--text3)' }}
+        >
+          {historyOpen ? '▾' : '▸'} History {history.length > 0 ? `(${history.length})` : ''}
+        </button>
+        {historyOpen && history.length > 0 && (
+          <button
+            onClick={() => clearHistoryMut.mutate()}
+            disabled={clearHistoryMut.isPending}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--red)' }}
+          >
+            Clear history
+          </button>
+        )}
+      </div>
+
+      {historyOpen && (
+        <div style={{
+          maxHeight: 220, overflowY: 'auto', background: 'var(--surface)',
+          border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)',
+          marginBottom: 12,
+        }}>
+          {historyQ.isLoading ? (
+            <div style={{ padding: 16, fontSize: 12, color: 'var(--text3)' }}>Loading…</div>
+          ) : history.length === 0 ? (
+            <div style={{ padding: 16, fontSize: 12, color: 'var(--text3)' }}>No queries run yet.</div>
+          ) : history.map((entry, i) => (
+            <div
+              key={entry.id}
+              onClick={() => setSql(entry.query_text)}
+              style={{
+                padding: '8px 12px',
+                borderBottom: i < history.length - 1 ? '1px solid var(--border)' : 'none',
+                cursor: 'pointer', display: 'flex', gap: 12, alignItems: 'flex-start',
+                transition: 'background .1s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <code style={{ flex: 1, fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {entry.query_text.slice(0, 80)}{entry.query_text.length > 80 ? '…' : ''}
+              </code>
+              <span style={{ fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap' }}>
+                {new Date(entry.executed_at).toLocaleTimeString()}
+              </span>
+              {entry.row_count !== null && (
+                <span style={{ fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap' }}>
+                  {entry.row_count} rows
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       <Textarea value={sql} onChange={e => setSql(e.target.value)} style={{ minHeight: 140, fontFamily: 'monospace', marginBottom: 12 }} />
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 16 }}>
         <Button variant="primary" onClick={run} disabled={runMut.isPending}>{runMut.isPending ? 'Running...' : 'Run'}</Button>
@@ -346,6 +421,7 @@ function SqlTab({ databaseId, isAdmin }: { databaseId: string; isAdmin: boolean 
 
 function MongoQueryTab({ databaseId }: { databaseId: string }) {
   const getToken = useApiToken();
+  const qc = useQueryClient();
   const schemaQuery = useQuery({
     queryKey: ['infra-db-schema', databaseId],
     queryFn: async () => listInfraDatabaseSchema(await getToken(), databaseId),
@@ -356,15 +432,32 @@ function MongoQueryTab({ databaseId }: { databaseId: string }) {
   const [query, setQuery] = useState('{}');
   const [result, setResult] = useState<InfraDatabaseSqlResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Auto-select first collection
   useEffect(() => {
     if (!collection && collections.length > 0) setCollection(collections[0]!);
   }, [collection, collections]);
 
+  const historyQ = useQuery({
+    queryKey: ['db-query-history', databaseId],
+    queryFn: async () => listInfraDatabaseQueryHistory(await getToken(), databaseId),
+    enabled: historyOpen,
+  });
+  const history = historyQ.data?.data ?? [];
+
+  const clearHistoryMut = useMutation({
+    mutationFn: async () => clearInfraDatabaseQueryHistory(await getToken(), databaseId),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId] }),
+  });
+
   const runMut = useMutation({
     mutationFn: async () => runMongoDbQuery(await getToken(), databaseId, collection, query),
-    onSuccess: res => { setResult(res.data); setError(null); },
+    onSuccess: res => {
+      setResult(res.data);
+      setError(null);
+      void qc.invalidateQueries({ queryKey: ['db-query-history', databaseId] });
+    },
     onError: err => { setError(err instanceof Error ? err.message : 'Query failed'); },
   });
 
@@ -380,6 +473,63 @@ function MongoQueryTab({ databaseId }: { databaseId: string }) {
         </Select>
         <span style={{ fontSize: 12, color: 'var(--text3)' }}>collection</span>
       </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <button
+          onClick={() => setHistoryOpen(o => !o)}
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 12, color: 'var(--text3)' }}
+        >
+          {historyOpen ? '▾' : '▸'} History {history.length > 0 ? `(${history.length})` : ''}
+        </button>
+        {historyOpen && history.length > 0 && (
+          <button
+            onClick={() => clearHistoryMut.mutate()}
+            disabled={clearHistoryMut.isPending}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 11, color: 'var(--red)' }}
+          >
+            Clear history
+          </button>
+        )}
+      </div>
+
+      {historyOpen && (
+        <div style={{
+          maxHeight: 220, overflowY: 'auto', background: 'var(--surface)',
+          border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)',
+          marginBottom: 12,
+        }}>
+          {historyQ.isLoading ? (
+            <div style={{ padding: 16, fontSize: 12, color: 'var(--text3)' }}>Loading…</div>
+          ) : history.length === 0 ? (
+            <div style={{ padding: 16, fontSize: 12, color: 'var(--text3)' }}>No queries run yet.</div>
+          ) : history.map((entry, i) => (
+            <div
+              key={entry.id}
+              onClick={() => setQuery(entry.query_text)}
+              style={{
+                padding: '8px 12px',
+                borderBottom: i < history.length - 1 ? '1px solid var(--border)' : 'none',
+                cursor: 'pointer', display: 'flex', gap: 12, alignItems: 'flex-start',
+                transition: 'background .1s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <code style={{ flex: 1, fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {entry.query_text.slice(0, 80)}{entry.query_text.length > 80 ? '…' : ''}
+              </code>
+              <span style={{ fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap' }}>
+                {new Date(entry.executed_at).toLocaleTimeString()}
+              </span>
+              {entry.row_count !== null && (
+                <span style={{ fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap' }}>
+                  {entry.row_count} rows
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>
         Query — JSON filter <code>{'{}'}</code> or aggregate pipeline <code>{'[{"$match": {...}}]'}</code>
       </div>
