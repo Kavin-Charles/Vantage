@@ -101,6 +101,7 @@ export function useBulkToggleTasks() {
       }))
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks-unified'] }),
+    onError: (err) => console.error('[tasks] bulk toggle failed', err),
   })
 }
 
@@ -122,5 +123,6 @@ export function useBulkDeleteTasks() {
       }))
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks-unified'] }),
+    onError: (err) => console.error('[tasks] bulk delete failed', err),
   })
 }
