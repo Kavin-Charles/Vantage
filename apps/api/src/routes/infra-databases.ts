@@ -270,6 +270,7 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
   router.post('/', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin(req as unknown as AuthenticatedRequest)) { forbidden(res); return; }
       const body = createSchema.parse(req.body);
       const result = await db
         .insertInto('infra_databases')
@@ -312,6 +313,7 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
   router.patch('/:id', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin(req as unknown as AuthenticatedRequest)) { forbidden(res); return; }
       const body = updateSchema.parse(req.body);
       const { db_password: dbPassword, ...rest } = body;
       const updateValues: InfraDatabaseUpdate = {
@@ -501,6 +503,7 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
   router.delete('/:id', async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin(req as unknown as AuthenticatedRequest)) { forbidden(res); return; }
       const deleted = await db
         .deleteFrom('infra_databases')
         .where('id', '=', req.params['id'] as string)
