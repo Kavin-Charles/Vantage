@@ -3,6 +3,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import { sendPush } from '../lib/push-notify';
 import { logger } from '../lib/logger';
+import { createAlert } from '../lib/alert-service';
 
 async function runDueTaskNotifications(db: Kysely<Database>): Promise<void> {
   const now = new Date();
@@ -50,6 +51,36 @@ async function runDueTaskNotifications(db: Kysely<Database>): Promise<void> {
   logger.info({ count: dueTasks.length }, '[task-due-notifier] sent push for due tasks');
 }
 
+async function createOverdueAlerts(db: Kysely<Database>): Promise<void> {
+  const now = new Date()
+  const startOfTodayUtc = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  )
+
+  const overdueTasks = await db
+    .selectFrom('tasks')
+    .where('due_date', '<', startOfTodayUtc)
+    .where('status', '=', 'todo')
+    .select(['id', 'title', 'workspace_id'])
+    .execute()
+
+  for (const task of overdueTasks) {
+    await createAlert(db, {
+      workspaceId: task.workspace_id,
+      severity: 'warning',
+      resourceType: 'crm',
+      resourceId: task.id,
+      message: `Task overdue: "${task.title}"`,
+      messagePrefix: 'Task overdue:',
+      sourceModuleId: 'tasks',
+    }).catch((err: unknown) => logger.error({ err }, '[task-due-notifier] createAlert failed'))
+  }
+
+  if (overdueTasks.length > 0) {
+    logger.info({ count: overdueTasks.length }, '[task-due-notifier] created overdue alerts')
+  }
+}
+
 function msUntilNextMidnightUtc(): number {
   const now = new Date();
   const nextMidnight = new Date(
@@ -65,10 +96,15 @@ export function startTaskDueNotifier(db: Kysely<Database>): void {
       void runDueTaskNotifications(db).catch(err =>
         logger.error({ err }, '[task-due-notifier] run failed'),
       );
-      // Schedule next day
+      void createOverdueAlerts(db).catch(err =>
+        logger.error({ err }, '[task-due-notifier] overdue alerts failed'),
+      );
       setInterval(() => {
         void runDueTaskNotifications(db).catch(err =>
           logger.error({ err }, '[task-due-notifier] run failed'),
+        );
+        void createOverdueAlerts(db).catch(err =>
+          logger.error({ err }, '[task-due-notifier] overdue alerts failed'),
         );
       }, 24 * 60 * 60 * 1000);
     }, delay);
