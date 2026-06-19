@@ -46,6 +46,7 @@ import { createSshActionsRouter } from './routes/ssh-actions';
 import { createWebhooksRouter } from './routes/webhooks';
 import { createApiKeysRouter } from './routes/api-keys';
 import { createNotificationsRouter } from './routes/notifications';
+import { createMessagingRouter } from './routes/messaging';
 import { createDashboardsRouter } from './routes/dashboards'
 import { createProjectsRouter, createProjectStatusesRouter, createProjectLabelsRouter } from './routes/projects';
 import { createProjectTasksRouter, createMyTasksRouter } from './routes/project-tasks';
@@ -305,6 +306,9 @@ app.use('/api/groups', requireAuth, requireAdmin, createGroupsRouter(db));
 app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requireAdmin));
 app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
+
+// Messaging
+app.use('/api/messaging', requireAuth, requireModule('messaging'), createMessagingRouter(db, requirePermission));
 
 // Infra routes
 app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db, requirePermission));
