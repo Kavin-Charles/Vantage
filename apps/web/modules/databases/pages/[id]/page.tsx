@@ -262,7 +262,7 @@ function TablesTab({ databaseId, engine, isAdmin }: { databaseId: string; engine
   return (
     <div style={{ display: 'flex', gap: 0, height: '100%', minHeight: 400 }}>
       {/* sidebar */}
-      <div style={{
+      <div className="db-sidebar-scroll" style={{
         width: 220, flexShrink: 0, borderRight: '1px solid var(--border)',
         overflowY: 'auto', paddingRight: 0,
       }}>

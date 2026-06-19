@@ -253,8 +253,8 @@ export default function DatabasesPage() {
         </div>
 
         {viewMode === 'table' ? (
-          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: DB_TABLE_COLS, padding: '11px 18px', borderBottom: '1px solid var(--border)', gap: 14, alignItems: 'center' }}>
+          <div className="db-table-scroll" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: DB_TABLE_COLS, padding: '11px 18px', borderBottom: '1px solid var(--border)', gap: 14, alignItems: 'center', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
               {['Name', 'Engine', 'Host', 'Port', 'Status', 'Last checked', ''].map(h => (
                 <span key={h} style={eyebrow}>{h}</span>
               ))}

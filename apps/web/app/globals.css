@@ -72,3 +72,31 @@ body {
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
 }
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text3);
+}
+
+.db-table-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(100vh - var(--header-h) - 130px);
+}
+
+.db-sidebar-scroll {
+  max-height: calc(100vh - var(--header-h) - 160px);
+}
