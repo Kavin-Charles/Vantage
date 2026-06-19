@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../../middleware/auth';
+import { publishMessageEvent } from '../../lib/messaging-pubsub';
 
 const reactionSchema = z.object({ emoji: z.string().trim().min(1).max(64) });
 
@@ -38,6 +39,13 @@ export function createReactionsRouter(
         .onConflict(oc => oc.columns(['message_id', 'user_id', 'emoji']).doNothing())
         .execute();
 
+      const msg = await db.selectFrom('messages').where('id', '=', messageId).select(['channel_id', 'workspace_id']).executeTakeFirst();
+      if (msg) {
+        void publishMessageEvent(msg.workspace_id, msg.channel_id, {
+          type: 'reaction.added', message_id: messageId, user_id: user.id, emoji: body.emoji,
+        });
+      }
+
       res.status(201).json({ data: { message_id: messageId, user_id: user.id, emoji: body.emoji }, error: null });
     } catch (err) { next(err); }
   });
@@ -67,6 +75,13 @@ export function createReactionsRouter(
         .where('user_id', '=', user.id)
         .where('emoji', '=', emoji)
         .execute();
+
+      const msg2 = await db.selectFrom('messages').where('id', '=', messageId).select(['channel_id', 'workspace_id']).executeTakeFirst();
+      if (msg2) {
+        void publishMessageEvent(msg2.workspace_id, msg2.channel_id, {
+          type: 'reaction.removed', message_id: messageId, user_id: user.id, emoji,
+        });
+      }
 
       res.json({ data: { message_id: messageId, user_id: user.id, emoji }, error: null });
     } catch (err) { next(err); }

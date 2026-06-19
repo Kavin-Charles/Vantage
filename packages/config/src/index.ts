@@ -27,6 +27,8 @@ export const apiEnvSchema = z.object({
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET_NAME: z.string().optional(),
+  // Redis — optional; messaging real-time requires it
+  REDIS_URL: z.string().optional(),
 });
 
 // Web env

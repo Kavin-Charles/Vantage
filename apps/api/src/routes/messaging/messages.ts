@@ -4,6 +4,7 @@ import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../../middleware/auth';
+import { publishMessageEvent } from '../../lib/messaging-pubsub';
 
 const sendMessageSchema = z.object({
   body: z.string().trim().min(1).max(4000),
@@ -173,6 +174,10 @@ export function createMessagesRouter(
       }
 
       const [hydrated] = await hydrateMessages(db, [message]);
+
+      // Broadcast to WS clients (fire-and-forget)
+      void publishMessageEvent(workspace.id, channelId, { type: 'message.new', message: hydrated as any });
+
       res.status(201).json({ data: hydrated, error: null });
     } catch (err) { next(err); }
   });
@@ -242,6 +247,13 @@ export function createMessagesRouter(
         .returningAll()
         .executeTakeFirstOrThrow();
 
+      void publishMessageEvent(workspace.id, updated.channel_id, {
+        type: 'message.edited',
+        message_id: updated.id,
+        body: updated.body,
+        edited_at: updated.edited_at!,
+      });
+
       res.json({ data: updated, error: null });
     } catch (err) { next(err); }
   });
@@ -278,13 +290,21 @@ export function createMessagesRouter(
         .execute();
 
       // Decrement parent thread_count if reply
-      const full = await db.selectFrom('messages').where('id', '=', existing.id).select('parent_message_id').executeTakeFirst();
+      const full = await db.selectFrom('messages').where('id', '=', existing.id).select(['parent_message_id', 'channel_id']).executeTakeFirst();
       if (full?.parent_message_id) {
         await db
           .updateTable('messages')
           .where('id', '=', full.parent_message_id)
           .set({ thread_count: sql`GREATEST(thread_count - 1, 0)` })
           .execute();
+      }
+
+      if (full) {
+        void publishMessageEvent(workspace.id, full.channel_id, {
+          type: 'message.deleted',
+          message_id: existing.id,
+          channel_id: full.channel_id,
+        });
       }
 
       res.json({ data: { id: existing.id }, error: null });
