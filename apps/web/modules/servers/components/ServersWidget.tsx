@@ -7,7 +7,45 @@ import { useModules } from '@/modules/shared/contexts/modules';
 import { listServers } from '@/modules/servers/lib/servers';
 import { Badge } from '@/modules/shared/components/ui/Badge';
 import { WidgetSkeleton, WidgetError, Stat, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
+import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
 import type { Server } from '@vencore/types';
+
+function WidgetRow({ server: s, last, onOpen }: { server: Server; last: boolean; onOpen: () => void }) {
+  const live = useServerMetrics(s.id);
+  const cpu = live?.cpu_pct ?? s.cpu_pct;
+  const mem = live?.mem_pct ?? s.mem_pct;
+  const status = live?.status ?? s.status;
+  return (
+    <button
+      onClick={onOpen}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8, padding: '7px 4px',
+        border: 'none', borderBottom: last ? 'none' : '1px solid var(--border)',
+        cursor: 'pointer', borderRadius: 4, background: 'transparent', width: '100%', textAlign: 'left',
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface2)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+    >
+      <span style={{
+        width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+        background: status === 'online' ? 'var(--green)' : status === 'degraded' ? 'var(--amber)' : 'var(--red)',
+      }} />
+      <span style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {s.name}
+      </span>
+      <span style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+        {cpu != null ? `CPU ${Math.round(cpu)}%` : '—'}
+      </span>
+      <span style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+        {mem != null ? `MEM ${Math.round(mem)}%` : '—'}
+      </span>
+      <Badge
+        label={status}
+        color={status === 'online' ? 'green' : status === 'degraded' ? 'amber' : status === 'stopped' ? 'gray' : 'red'}
+      />
+    </button>
+  );
+}
 
 export function ServersWidget() {
   const { isEnabled } = useModules();
@@ -47,43 +85,7 @@ export function ServersWidget() {
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {top5.map((s: Server, i: number) => (
-          <button
-            key={s.id}
-            onClick={() => router.push(`/servers/${s.id}`)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '7px 4px',
-              border: 'none',
-              borderBottom: i < top5.length - 1 ? '1px solid var(--border)' : 'none',
-              cursor: 'pointer',
-              borderRadius: 4,
-              background: 'transparent',
-              width: '100%',
-              textAlign: 'left',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface2)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
-          >
-            <span style={{
-              width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-              background: s.status === 'online' ? 'var(--green)' : s.status === 'degraded' ? 'var(--amber)' : 'var(--red)',
-            }} />
-            <span style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {s.name}
-            </span>
-            <span style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }}>
-              {s.cpu_pct != null ? `CPU ${Math.round(s.cpu_pct)}%` : '—'}
-            </span>
-            <span style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }}>
-              {s.mem_pct != null ? `MEM ${Math.round(s.mem_pct)}%` : '—'}
-            </span>
-            <Badge
-              label={s.status}
-              color={s.status === 'online' ? 'green' : s.status === 'degraded' ? 'amber' : s.status === 'stopped' ? 'gray' : 'red'}
-            />
-          </button>
+          <WidgetRow key={s.id} server={s} last={i === top5.length - 1} onOpen={() => router.push(`/servers/${s.id}`)} />
         ))}
       </div>
     </div>

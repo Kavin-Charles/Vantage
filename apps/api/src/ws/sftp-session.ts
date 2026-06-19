@@ -9,6 +9,7 @@ import type { WebSocket } from 'ws';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import { decryptPrivateKey } from '../lib/ssh-crypto';
+import { userHasPermission } from '../middleware/permission';
 import { logger } from '../lib/logger';
 
 interface JwtPayload {
@@ -182,12 +183,18 @@ export async function handleSftpUpgrade(
   }
 
   const user = await db.selectFrom('users').where('id', '=', payload.sub)
-    .select(['id', 'workspace_id']).executeTakeFirst();
+    .select(['id', 'workspace_id', 'role']).executeTakeFirst();
   if (!user) { ws.close(4001, 'Unauthorized'); return; }
 
   const workspace = await db.selectFrom('workspaces').where('id', '=', user.workspace_id)
     .select(['id']).executeTakeFirst();
   if (!workspace) { ws.close(4001, 'Unauthorized'); return; }
+
+  // ── Authorize: SFTP access is gated behind servers:ssh ────────────────────
+  if (!(await userHasPermission(db, user, workspace.id, 'servers:ssh'))) {
+    ws.close(4003, 'Forbidden');
+    return;
+  }
 
   // ── Resolve server ──────────────────────────────────────────────────────────
   const server = await db.selectFrom('servers')

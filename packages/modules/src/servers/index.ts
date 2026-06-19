@@ -11,6 +11,7 @@ export const SERVERS_MODULE: ModuleDefinition = {
     { key: 'servers:create', label: 'Add servers',    defaultRoles: ['admin', 'member'] },
     { key: 'servers:edit',   label: 'Edit servers',   defaultRoles: ['admin', 'member'] },
     { key: 'servers:delete', label: 'Delete servers', defaultRoles: ['admin'] },
+    { key: 'servers:ssh',    label: 'SSH access (terminal, files, services)', defaultRoles: ['admin'] },
   ],
   nav: [{ label: 'Servers', path: '/servers', icon: 'Server' }],
   apiPrefixes: ['/servers', '/deployments', '/agent', '/ssh'],

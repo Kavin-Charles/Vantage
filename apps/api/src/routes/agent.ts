@@ -48,6 +48,12 @@ const pingSchema = z.object({
   net_in_bytes: z.number().min(0),
   net_out_bytes: z.number().min(0),
   db_checks: z.array(dbCheckSchema).default([]),
+  // Host metadata — optional so older agents keep working.
+  hostname: z.string().max(255).optional(),
+  os: z.string().max(120).optional(),
+  arch: z.string().max(40).optional(),
+  kernel: z.string().max(120).optional(),
+  agent_version: z.string().max(40).optional(),
 });
 
 export function createAgentDeploymentHandler(db: Kysely<Database>) {
@@ -120,6 +126,12 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
           last_ping_at: now,
           status: 'online',
           updated_at: now,
+          // Only overwrite metadata when the agent actually reports it.
+          ...(payload.hostname !== undefined ? { hostname: payload.hostname } : {}),
+          ...(payload.os !== undefined ? { os: payload.os } : {}),
+          ...(payload.arch !== undefined ? { arch: payload.arch } : {}),
+          ...(payload.kernel !== undefined ? { kernel: payload.kernel } : {}),
+          ...(payload.agent_version !== undefined ? { agent_version: payload.agent_version } : {}),
         })
         .where('id', '=', server.id)
         .execute();
@@ -155,30 +167,40 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
           .execute();
       }
 
-      // Threshold alert evaluation
-      const thresholds = await db
+      // Threshold alert evaluation — server-specific override wins over the
+      // workspace default (server_id IS NULL), which wins over hardcoded.
+      const thresholdRows = await db
         .selectFrom('alert_thresholds')
-        .select(['cpu_pct', 'mem_pct', 'disk_pct'])
+        .select(['server_id', 'cpu_pct', 'mem_pct', 'disk_pct'])
         .where('workspace_id', '=', server.workspace_id)
-        .executeTakeFirst()
+        .where(eb => eb.or([eb('server_id', '=', server.id), eb('server_id', 'is', null)]))
+        .execute();
+      const thresholds =
+        thresholdRows.find(t => t.server_id === server.id)
+        ?? thresholdRows.find(t => t.server_id === null)
         ?? { cpu_pct: 85, mem_pct: 90, disk_pct: 80 };
 
       const metricsToCheck = [
-        { prefix: 'CPU usage', value: payload.cpu_pct, threshold: thresholds.cpu_pct },
-        { prefix: 'Memory usage', value: payload.mem_pct, threshold: thresholds.mem_pct },
-        { prefix: 'Disk usage', value: payload.disk_pct, threshold: thresholds.disk_pct },
+        { type: 'cpu',  prefix: 'CPU usage',    value: payload.cpu_pct,  threshold: thresholds.cpu_pct },
+        { type: 'mem',  prefix: 'Memory usage', value: payload.mem_pct,  threshold: thresholds.mem_pct },
+        { type: 'disk', prefix: 'Disk usage',   value: payload.disk_pct, threshold: thresholds.disk_pct },
       ];
 
+      // Single batched lookup of all open threshold alerts for this server,
+      // keyed by metric_type — avoids 3 SELECTs per ping and the fragile LIKE match.
+      const openAlerts = await db
+        .selectFrom('alerts')
+        .select(['id', 'severity', 'message', 'resource_type', 'resource_id', 'metric_type'])
+        .where('workspace_id', '=', server.workspace_id)
+        .where('resource_type', '=', 'server')
+        .where('resource_id', '=', server.id)
+        .where('resolved', '=', false)
+        .where('metric_type', 'in', ['cpu', 'mem', 'disk'])
+        .execute();
+      const openByType = new Map(openAlerts.map(a => [a.metric_type, a]));
+
       for (const metric of metricsToCheck) {
-        const existingAlert = await db
-          .selectFrom('alerts')
-          .select(['id', 'severity', 'message', 'resource_type', 'resource_id'])
-          .where('workspace_id', '=', server.workspace_id)
-          .where('resource_type', '=', 'server')
-          .where('resource_id', '=', server.id)
-          .where('resolved', '=', false)
-          .where('message', 'like', `${metric.prefix}%`)
-          .executeTakeFirst();
+        const existingAlert = openByType.get(metric.type);
 
         if (metric.value > metric.threshold) {
           if (!existingAlert) {
@@ -188,6 +210,7 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
               resource_type: 'server',
               resource_id: server.id,
               severity,
+              metric_type: metric.type,
               message: `${metric.prefix} at ${Math.round(metric.value)}% on "${server.name}" (threshold: ${metric.threshold}%)`,
             }).returning(['id', 'severity', 'message', 'resource_type', 'resource_id']).executeTakeFirstOrThrow();
 

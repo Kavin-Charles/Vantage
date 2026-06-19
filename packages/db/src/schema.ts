@@ -104,6 +104,7 @@ export interface AlertTable {
   resource_id: string | null;
   severity: 'critical' | 'warning' | 'info';
   message: string;
+  metric_type: string | null;
   acknowledged: Generated<boolean>;
   acknowledged_by: string | null;
   resolved: Generated<boolean>;
@@ -128,6 +129,11 @@ export interface ServerTable {
   ssh_port: Generated<number>;
   status: Generated<ServerStatus>;
   last_ping_at: string | null;
+  hostname: string | null;
+  os: string | null;
+  arch: string | null;
+  kernel: string | null;
+  agent_version: string | null;
   created_at: Generated<string>;
   updated_at: Generated<string>;
 }
@@ -184,9 +190,28 @@ export interface MetricsSnapshotTable {
   recorded_at: Generated<string>;
 }
 
+export interface MetricsRollupTable {
+  id: Generated<string>;
+  server_id: string;
+  workspace_id: string;
+  granularity: 'hour' | 'day';
+  bucket: string;
+  cpu_avg: number;
+  cpu_max: number;
+  mem_avg: number;
+  mem_max: number;
+  disk_avg: number;
+  disk_max: number;
+  load_avg_1m_avg: number;
+  net_in_bytes_sum: number;
+  net_out_bytes_sum: number;
+  sample_count: number;
+}
+
 export interface AlertThresholdTable {
   id: Generated<string>;
   workspace_id: string;
+  server_id: string | null;
   cpu_pct: Generated<number>;
   mem_pct: Generated<number>;
   disk_pct: Generated<number>;
@@ -1014,20 +1039,18 @@ export interface ProjectTemplateTable {
   created_at: Generated<Date>
 }
 
-export interface ModuleEventSettingsTable {
+export interface ContactTagTable {
+  id: Generated<string>;
   workspace_id: string;
-  module_id: string;
-  activity_on: Generated<boolean>;
-  alerts_on: Generated<boolean>;
-  updated_at: Generated<Date>;
+  name: string;
+  color: Generated<string>;
+  created_at: Generated<Date>;
 }
 
-export interface NotificationPreferencesTable {
-  workspace_id: string;
-  channel: 'email' | 'push';
-  severity: 'critical' | 'warning' | 'info';
-  enabled: Generated<boolean>;
-  updated_at: Generated<Date>;
+export interface ContactTagLinkTable {
+  contact_id: string;
+  tag_id: string;
+  created_at: Generated<Date>;
 }
 
 export interface Database {
@@ -1035,6 +1058,8 @@ export interface Database {
   users: UserTable;
   companies: CompanyTable;
   contacts: ContactTable;
+  contact_tags: ContactTagTable;
+  contact_tag_links: ContactTagLinkTable;
   deals: DealTable;
   tasks: TaskTable;
   activities: ActivityTable;
@@ -1043,6 +1068,7 @@ export interface Database {
   infra_databases: InfraDatabaseTable;
   websites: WebsiteTable;
   metrics_snapshots: MetricsSnapshotTable;
+  metrics_rollups: MetricsRollupTable;
   alert_thresholds: AlertThresholdTable;
   deployments: DeploymentTable;
   workspace_ssh_keypairs: WorkspaceSshKeypairTable;
@@ -1140,6 +1166,12 @@ export type Contact = Selectable<ContactTable>;
 export type NewContact = Insertable<ContactTable>;
 export type ContactUpdate = Updateable<ContactTable>;
 
+export type ContactTag = Selectable<ContactTagTable>;
+export type NewContactTag = Insertable<ContactTagTable>;
+
+export type ContactTagLink = Selectable<ContactTagLinkTable>;
+export type NewContactTagLink = Insertable<ContactTagLinkTable>;
+
 export type Deal = Selectable<DealTable>;
 export type NewDeal = Insertable<DealTable>;
 export type DealUpdate = Updateable<DealTable>;
@@ -1180,6 +1212,8 @@ export type NewWebsite = Insertable<WebsiteTable>;
 export type WebsiteUpdate = Updateable<WebsiteTable>;
 export type MetricsSnapshot = Selectable<MetricsSnapshotTable>;
 export type NewMetricsSnapshot = Insertable<MetricsSnapshotTable>;
+export type MetricsRollup = Selectable<MetricsRollupTable>;
+export type NewMetricsRollup = Insertable<MetricsRollupTable>;
 export type AlertThreshold = Selectable<AlertThresholdTable>;
 export type NewAlertThreshold = Insertable<AlertThresholdTable>;
 export type AlertThresholdUpdate = Updateable<AlertThresholdTable>;

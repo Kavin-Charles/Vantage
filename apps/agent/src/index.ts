@@ -1,11 +1,16 @@
 #!/usr/bin/env node
-import { collectMetrics } from './collect';
+import { collectMetrics, collectMeta } from './collect';
 import { checkDatabases } from './db-checks';
 import { report } from './reporter';
+
+const AGENT_VERSION = '1.0.0';
 
 const token = process.env['VENCORE_TOKEN'];
 const apiUrl = process.env['VENCORE_API_URL'] ?? 'https://api.vencore.app';
 const intervalMs = parseInt(process.env['VENCORE_INTERVAL_MS'] ?? '30000', 10);
+
+// Host metadata is static for the process lifetime — collect once.
+const meta = collectMeta(AGENT_VERSION);
 
 if (!token) {
   console.error('[vencore-agent] VENCORE_TOKEN is required');
@@ -19,7 +24,7 @@ console.log(`[vencore-agent] starting — reporting to ${apiUrl} every ${interva
 async function tick(): Promise<void> {
   const metrics = collectMetrics();
   const dbChecks = await checkDatabases();
-  await report(config, metrics, dbChecks);
+  await report(config, metrics, dbChecks, meta);
 }
 
 // Run immediately, then on interval
