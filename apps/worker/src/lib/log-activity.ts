@@ -10,7 +10,11 @@ export type ActivityType =
   | 'deal_change'
   | 'infra_alert'
   | 'contact_created'
-  | 'task_done';
+  | 'task_done'
+  | 'database_added'
+  | 'database_removed'
+  | 'database_settings_changed'
+  | 'database_connection_tested';
 
 interface ActivityPayload {
   workspace_id: string;
