@@ -6,6 +6,8 @@ export const DATABASES_MODULE: ModuleDefinition = {
   description: 'Database health monitoring and connection management.',
   icon: 'Database',
   defaultEnabled: true,
+  emitsActivity: true,
+  emitsAlerts: true,
   permissions: [
     { key: 'databases:view',   label: 'View databases',   defaultRoles: ['admin', 'member'] },
     { key: 'databases:create', label: 'Add databases',    defaultRoles: ['admin', 'member'] },
