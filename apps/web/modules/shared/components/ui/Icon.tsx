@@ -92,6 +92,11 @@ const ICONS: Record<string, React.ReactNode> = {
   user:         <><circle cx="12" cy="8" r="3.5"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></>,
   'user-check': <><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="3.5"/><path d="m17 11 2 2 4-4"/></>,
   snooze:       <><path d="M12 3a9 9 0 1 0 0 18A9 9 0 0 0 12 3z"/><path d="M9 9h6l-6 6h6"/></>,
+
+  // Messaging icons
+  'message-square': <><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></>,
+  smile:            <><circle cx="12" cy="12" r="9"/><path d="M8.5 14s1.5 2 3.5 2 3.5-2 3.5-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></>,
+  lock:             <><rect x="5" y="11" width="14" height="11" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></>,
 };
 
 export function Icon({

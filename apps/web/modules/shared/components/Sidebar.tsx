@@ -35,9 +35,10 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: 'Work',
+    label: 'Collaboration',
     feature: null,
     items: [
+      { href: '/messaging', label: 'Messaging', icon: 'message-square' as const, moduleId: 'messaging' },
       { href: '/projects', label: 'Projects', icon: 'tasks' as const, moduleId: 'projects' },
     ],
   },

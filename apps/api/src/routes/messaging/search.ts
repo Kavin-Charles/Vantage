@@ -55,7 +55,7 @@ export function createSearchRouter(
         .where('messages.workspace_id', '=', workspace.id)
         .where('messages.deleted_at', 'is', null)
         .where('messages.channel_id', 'in', channelIds)
-        .where(sql`to_tsvector('english', messages.body) @@ to_tsquery('english', ${tsQuery})`)
+        .where(sql<boolean>`to_tsvector('english', messages.body) @@ to_tsquery('english', ${tsQuery})`)
         .select([
           'messages.id', 'messages.channel_id', 'messages.user_id', 'messages.body',
           'messages.created_at', 'messages.edited_at',
