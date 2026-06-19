@@ -7,6 +7,7 @@ import { Icon } from '@/modules/shared/components/ui/Icon';
 import { Modal } from '@/modules/shared/components/ui/Modal';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listChannels, createChannel } from '../lib/messaging';
+import { NewDMModal } from './NewDMModal';
 import type { Channel, Message } from '@vencore/types';
 
 type ChannelWithMeta = Channel & { unread_count: number; last_message: Message | null };
@@ -18,6 +19,7 @@ export function ChannelSidebar() {
   const activeId = params?.['channelId'] as string | undefined;
   const qc = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+  const [showNewDM, setShowNewDM] = useState(false);
   const [newName, setNewName] = useState('');
   const [newTopic, setNewTopic] = useState('');
   const [newPrivate, setNewPrivate] = useState(false);
@@ -94,19 +96,33 @@ export function ChannelSidebar() {
         )}
 
         {/* DMs */}
-        {dms.length > 0 && (
-          <>
-            <SectionLabel label="Direct Messages" />
-            {dms.map(ch => (
-              <ChannelRow
-                key={ch.id}
-                channel={ch}
-                active={activeId === ch.id}
-                onClick={() => router.push(`/messaging/${ch.id}`)}
-                isDm
-              />
-            ))}
-          </>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 10px 4px' }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.2 }}>
+            Direct Messages
+          </span>
+          <button
+            onClick={() => setShowNewDM(true)}
+            title="New DM"
+            style={{
+              width: 18, height: 18, borderRadius: 5, background: 'none',
+              border: 'none', cursor: 'pointer', color: 'var(--text3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+            }}
+          >
+            <Icon name="plus" size={13} />
+          </button>
+        </div>
+        {dms.map(ch => (
+          <ChannelRow
+            key={ch.id}
+            channel={ch}
+            active={activeId === ch.id}
+            onClick={() => router.push(`/messaging/${ch.id}`)}
+            isDm
+          />
+        ))}
+        {dms.length === 0 && (
+          <div style={{ fontSize: 12, color: 'var(--text3)', padding: '4px 10px' }}>No DMs yet</div>
         )}
       </div>
 
@@ -151,6 +167,8 @@ export function ChannelSidebar() {
           </div>
         </Modal>
       )}
+
+      {showNewDM && <NewDMModal onClose={() => setShowNewDM(false)} />}
     </div>
   );
 }

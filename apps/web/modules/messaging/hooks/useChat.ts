@@ -23,6 +23,7 @@ export function useChat(channelId: string | null) {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [typing, setTyping] = useState<TypingUser[]>([]);
   const [wsReady, setWsReady] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
 
   // Prune typing indicators every second
   useEffect(() => {
@@ -84,6 +85,15 @@ export function useChat(channelId: string | null) {
         setTyping(prev => {
           const filtered = prev.filter(u => u.user_id !== event.user_id);
           return [...filtered, { user_id: event.user_id, name: event.name, until: Date.now() + 3500 }];
+        });
+        break;
+
+      case 'user.presence':
+        setOnlineUsers(prev => {
+          const next = new Set(prev);
+          if (event.status === 'online') next.add(event.user_id);
+          else next.delete(event.user_id);
+          return next;
         });
         break;
 
@@ -207,5 +217,5 @@ export function useChat(channelId: string | null) {
     wsRef.current.send(JSON.stringify({ type: 'mark_read', channel_id: channelId, message_id: messageId }));
   }, [channelId]);
 
-  return { messages, hasMore, loadingHistory, typing, wsReady, loadMore, send, sendTyping, markRead };
+  return { messages, hasMore, loadingHistory, typing, wsReady, onlineUsers, loadMore, send, sendTyping, markRead };
 }

@@ -15,6 +15,7 @@ interface Props {
   onLoadMore: () => void;
   onMarkRead: (messageId: string) => void;
   onThreadOpen?: (message: Message) => void;
+  onlineUsers?: Set<string>;
 }
 
 function isSameAuthorAndMinute(a: Message, b: Message) {
@@ -45,7 +46,7 @@ function isDifferentDay(a: Message, b: Message) {
 }
 
 export function MessageList({
-  messages, currentUserId, hasMore, loadingHistory, onLoadMore, onMarkRead, onThreadOpen,
+  messages, currentUserId, hasMore, loadingHistory, onLoadMore, onMarkRead, onThreadOpen, onlineUsers,
 }: Props) {
   const getToken = useApiToken();
   const qc = useQueryClient();
@@ -199,6 +200,7 @@ export function MessageList({
                 message={msg}
                 currentUserId={currentUserId}
                 showAvatar={showAvatar}
+                isAuthorOnline={!!msg.user_id && (onlineUsers?.has(msg.user_id) ?? false)}
                 onReact={(id, emoji) => react.mutate({ messageId: id, emoji })}
                 onUnreact={(id, emoji) => unreact.mutate({ messageId: id, emoji })}
                 onEdit={m => { setEditingId(m.id); setEditBody(m.body); }}

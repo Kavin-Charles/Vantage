@@ -135,9 +135,34 @@ export async function presignUpload(
   });
 }
 
+export async function updateChannel(
+  token: string,
+  channelId: string,
+  body: { name?: string; topic?: string | null; is_private?: boolean },
+) {
+  return apiFetch<{ data: Channel; error: null }>(
+    `/api/messaging/channels/${channelId}`,
+    { method: 'PATCH', body: JSON.stringify(body), token },
+  );
+}
+
+export async function archiveChannel(token: string, channelId: string) {
+  return apiFetch<{ data: { id: string }; error: null }>(
+    `/api/messaging/channels/${channelId}`,
+    { method: 'DELETE', token },
+  );
+}
+
 export async function addChannelMember(token: string, channelId: string, userId: string) {
   return apiFetch<{ data: unknown; error: null }>(
     `/api/messaging/channels/${channelId}/members`,
     { method: 'POST', body: JSON.stringify({ user_id: userId }), token },
+  );
+}
+
+export async function removeChannelMember(token: string, channelId: string, userId: string) {
+  return apiFetch<{ data: unknown; error: null }>(
+    `/api/messaging/channels/${channelId}/members/${userId}`,
+    { method: 'DELETE', token },
   );
 }

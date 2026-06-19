@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { Icon } from '@/modules/shared/components/ui/Icon';
+import { EmojiPicker } from './EmojiPicker';
 import type { Message } from '@vencore/types';
-
-const QUICK_EMOJIS = ['👍', '❤️', '😂', '🎉', '🔥', '👀'];
 
 interface Props {
   message: Message;
@@ -15,6 +14,7 @@ interface Props {
   onDelete?: (messageId: string) => void;
   onThreadOpen?: (message: Message) => void;
   showAvatar?: boolean;
+  isAuthorOnline?: boolean;
 }
 
 function formatTime(iso: string) {
@@ -42,6 +42,7 @@ export function MessageBubble({
   onDelete,
   onThreadOpen,
   showAvatar = true,
+  isAuthorOnline = false,
 }: Props) {
   const [hover, setHover] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -62,15 +63,24 @@ export function MessageBubble({
         transition: 'background .1s',
       }}
     >
-      {/* Avatar */}
-      <div style={{
-        width: 32, height: 32, borderRadius: '50%',
-        background: 'var(--surface2)', border: '1px solid var(--border)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 12, fontWeight: 600, color: 'var(--text2)', flexShrink: 0,
-        marginTop: 2, opacity: showAvatar ? 1 : 0,
-      }}>
-        {message.author ? (message.author.name[0] ?? '?').toUpperCase() : '?'}
+      {/* Avatar with presence dot */}
+      <div style={{ position: 'relative', flexShrink: 0, marginTop: 2, opacity: showAvatar ? 1 : 0 }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: '50%',
+          background: 'var(--surface2)', border: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 12, fontWeight: 600, color: 'var(--text2)',
+        }}>
+          {message.author ? (message.author.name[0] ?? '?').toUpperCase() : '?'}
+        </div>
+        {isAuthorOnline && showAvatar && (
+          <span style={{
+            position: 'absolute', bottom: 0, right: 0,
+            width: 9, height: 9, borderRadius: '50%',
+            background: '#22c55e', border: '2px solid var(--surface)',
+            display: 'block',
+          }} />
+        )}
       </div>
 
       {/* Content */}
@@ -161,7 +171,7 @@ export function MessageBubble({
           background: 'var(--surface)', border: '1px solid var(--border)',
           borderRadius: 8, padding: '2px 4px', boxShadow: '0 2px 6px rgba(0,0,0,.06)',
         }}>
-          {/* Quick emojis */}
+          {/* Emoji picker */}
           <div style={{ position: 'relative', display: 'inline-flex' }}>
             <ActionBtn
               icon="smile"
@@ -170,24 +180,12 @@ export function MessageBubble({
             />
             {showEmojiPicker && (
               <div style={{
-                position: 'absolute', right: 0, bottom: '110%',
-                background: 'var(--surface)', border: '1px solid var(--border)',
-                borderRadius: 10, padding: '6px 8px',
-                display: 'flex', gap: 4,
-                boxShadow: '0 4px 12px rgba(0,0,0,.1)', zIndex: 50,
+                position: 'absolute', right: 0, bottom: '110%', zIndex: 50,
               }}>
-                {QUICK_EMOJIS.map(e => (
-                  <button
-                    key={e}
-                    onClick={() => { onReact(message.id, e); setShowEmojiPicker(false); }}
-                    style={{
-                      fontSize: 18, background: 'none', border: 'none',
-                      cursor: 'pointer', padding: '2px 3px', borderRadius: 6,
-                    }}
-                  >
-                    {e}
-                  </button>
-                ))}
+                <EmojiPicker
+                  onSelect={(emoji) => onReact(message.id, emoji)}
+                  onClose={() => setShowEmojiPicker(false)}
+                />
               </div>
             )}
           </div>
