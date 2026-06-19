@@ -4,6 +4,8 @@ import { use, useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { DatabaseHeader } from '@/modules/databases/components/detail/DatabaseHeader';
+import { DatabaseAlertsTab } from '@/modules/databases/components/detail/AlertsTab';
+import { DatabaseActivitiesTab } from '@/modules/databases/components/detail/ActivitiesTab';
 import { Topbar } from '@/modules/shared/components/Topbar';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { FormField, Input, Select, Textarea } from '@/modules/shared/components/ui/FormField';
@@ -571,16 +573,8 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
           {tab === 'tables' && <TablesTab databaseId={id} engine={database.engine} isAdmin={isAdmin} />}
           {tab === 'sql' && !isMongo && <SqlTab databaseId={id} isAdmin={isAdmin} />}
           {tab === 'mongo-query' && isMongo && <MongoQueryTab databaseId={id} />}
-          {tab === 'alerts' && (
-            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '24px 0' }}>
-              Alerts tab — coming soon.
-            </div>
-          )}
-          {tab === 'activities' && (
-            <div style={{ color: 'var(--text3)', fontSize: 13, padding: '24px 0' }}>
-              Activities tab — coming soon.
-            </div>
-          )}
+          {tab === 'alerts' && <DatabaseAlertsTab databaseId={id} />}
+          {tab === 'activities' && <DatabaseActivitiesTab databaseId={id} />}
           {tab === 'settings' && <SettingsTab database={database} />}
         </div>
       </div>
