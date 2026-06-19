@@ -1,300 +1,229 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Topbar } from '@/modules/shared/components/Topbar';
-import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
-import { Button } from '@/modules/shared/components/ui/Button';
-import { Modal } from '@/modules/shared/components/ui/Modal';
-import { FormField, Input } from '@/modules/shared/components/ui/FormField';
-import { Icon } from '@/modules/shared/components/ui/Icon';
-import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
-import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
-import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { apiFetch } from '@/modules/shared/lib/api';
-import { useAuth } from '@/modules/shared/lib/AuthContext';
-import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
-import type { Task } from '@vencore/types';
-
-interface WorkspaceUser { id: string; name: string; email: string; role: string; }
-
-function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
-  return (
-    <button
-      onClick={onChange}
-      style={{
-        width: 18, height: 18, borderRadius: 6,
-        border: '1.5px solid ' + (checked ? 'var(--text)' : 'var(--border2, #d4cfc5)'),
-        background: checked ? 'var(--text)' : 'transparent',
-        cursor: 'pointer', flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'all .12s', padding: 0,
-      }}
-    >
-      {checked && <Icon name="check" size={12} color="#fff" strokeWidth={2.5} />}
-    </button>
-  );
-}
+import { useState, useCallback } from 'react'
+import { Topbar } from '@/modules/shared/components/Topbar'
+import { Button } from '@/modules/shared/components/ui/Button'
+import { ContextMenu, useContextMenu } from '@/modules/shared/components/ui/ContextMenu'
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog'
+import { ModuleGuard } from '@/modules/shared/components/ModuleGuard'
+import { useAuth } from '@/modules/shared/lib/AuthContext'
+import { useUnifiedTasks } from '@/modules/tasks/lib/useUnifiedTasks'
+import { useToggleTask, useEditTaskTitle, useDeleteTask, useBulkToggleTasks, useBulkDeleteTasks } from '@/modules/tasks/lib/taskMutations'
+import { TaskGroup } from '@/modules/tasks/components/TaskGroup'
+import { TaskFilterBar } from '@/modules/tasks/components/TaskFilterBar'
+import { BulkActionBar } from '@/modules/tasks/components/BulkActionBar'
+import { TaskDetailPanel } from '@/modules/tasks/components/TaskDetailPanel'
+import { AddTaskModal } from '@/modules/tasks/components/AddTaskModal'
+import type { UnifiedTask, UnifiedTasksFilters, DueBucket } from '@/modules/tasks/lib/types'
+import { BUCKET_LABELS, BUCKET_ORDER } from '@/modules/tasks/lib/types'
+import type { ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu'
 
 export default function TasksPage() {
-  const getToken = useApiToken();
-  const qc = useQueryClient();
-  const { user: authUser } = useAuth();
-  const isAdmin = authUser?.role === 'admin';
-  const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({ title: '', due_date: '', assignee_id: '' });
-  const [filter, setFilter] = useState<'all' | 'todo' | 'done'>('todo');
-  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
-  const { ask: askConfirm, el: confirmEl } = useConfirm();
+  const { user: authUser } = useAuth()
+  const isAdmin = authUser?.role === 'admin'
 
-  const { data: usersData } = useQuery({
-    queryKey: ['workspace-users'],
-    queryFn: async () => apiFetch<{ data: WorkspaceUser[] }>('/api/users', { token: await getToken() }),
-    enabled: isAdmin,
-  });
-  const workspaceUsers = usersData?.data ?? [];
+  const [filters, setFilters] = useState<UnifiedTasksFilters>({ status: 'todo' })
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [detailTask, setDetailTask] = useState<UnifiedTask | null>(null)
+  const [addModal, setAddModal] = useState(false)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['tasks'],
-    queryFn: async () => {
-      const qs = isAdmin ? '?show_all=true&per_page=100' : '?per_page=100';
-      return apiFetch<{ data: Task[]; error: null }>(`/api/tasks${qs}`, { token: await getToken() });
-    },
-  });
+  const { data, isLoading } = useUnifiedTasks(filters)
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu()
+  const { ask: askConfirm, el: confirmEl } = useConfirm()
 
-  const toggleMut = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: 'todo' | 'done' }) =>
-      apiFetch(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify({ status }), token: await getToken() }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
-  });
+  const toggleMut = useToggleTask()
+  const editTitleMut = useEditTaskTitle()
+  const deleteMut = useDeleteTask()
+  const bulkToggleMut = useBulkToggleTasks()
+  const bulkDeleteMut = useBulkDeleteTasks()
 
-  const createMut = useMutation({
-    mutationFn: async (body: Record<string, string>) =>
-      apiFetch('/api/tasks', { method: 'POST', body: JSON.stringify(body), token: await getToken() }),
-  });
+  const buckets = data?.data
+  const total = data?.total ?? 0
 
-  const deleteMut = useMutation({
-    mutationFn: async (id: string) =>
-      apiFetch(`/api/tasks/${id}`, { method: 'DELETE', token: await getToken() }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
-  });
+  const allTasks = buckets
+    ? [
+        ...(buckets.overdue ?? []),
+        ...(buckets.today ?? []),
+        ...(buckets.this_week ?? []),
+        ...(buckets.later ?? []),
+        ...(buckets.no_due_date ?? []),
+      ]
+    : []
 
-  async function submitTask(e: React.FormEvent) {
-    e.preventDefault();
-    if (createMut.isPending) return;
-    const body: Record<string, string> = { title: form.title };
-    if (form.due_date) body['due_date'] = form.due_date;
-    if (form.assignee_id) body['assignee_id'] = form.assignee_id;
-    try {
-      await createMut.mutateAsync(body);
-    } catch {
-      return;
-    }
-    setModal(false);
-    setForm({ title: '', due_date: '', assignee_id: '' });
-    void qc.invalidateQueries({ queryKey: ['tasks'] });
-  }
+  const selectedTasks = allTasks.filter(t => selectedIds.has(t.id))
 
-  function deleteTask(task: Task) {
+  const handleSelect = useCallback((task: UnifiedTask) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(task.id)) next.delete(task.id)
+      else next.add(task.id)
+      return next
+    })
+  }, [])
+
+  function handleDelete(task: UnifiedTask) {
     askConfirm({
       title: 'Delete task',
       message: `Delete "${task.title}"? This cannot be undone.`,
       confirmLabel: 'Delete',
       variant: 'danger',
-      onConfirm: () => deleteMut.mutate(task.id),
-    });
+      onConfirm: () => deleteMut.mutate(task),
+    })
   }
 
-  const allTasks = data?.data ?? [];
-  const tasks = filter === 'all' ? allTasks : allTasks.filter(t => t.status === filter);
-  const overdue = allTasks.filter(t => t.status === 'todo' && t.due_date && new Date(t.due_date) < new Date());
-  const userMap = Object.fromEntries(workspaceUsers.map(u => [u.id, u.name]));
+  function handleBulkDelete() {
+    askConfirm({
+      title: `Delete ${selectedTasks.length} tasks`,
+      message: 'Delete selected tasks? This cannot be undone.',
+      confirmLabel: 'Delete all',
+      variant: 'danger',
+      onConfirm: () => {
+        bulkDeleteMut.mutate(selectedTasks)
+        setSelectedIds(new Set())
+      },
+    })
+  }
 
-  const FILTERS: ('all' | 'todo' | 'done')[] = ['all', 'todo', 'done'];
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent, items: ContextMenuItem[]) => {
+      openMenu(e, items)
+    },
+    [openMenu],
+  )
 
   return (
     <ModuleGuard moduleId="tasks">
-      <Topbar action={isAdmin ? <Button variant="primary" onClick={() => setModal(true)}>+ Add Task</Button> : undefined} />
-      <div style={{ padding: 24 }}>
-        {overdue.length > 0 && (
-          <div style={{
-            background: 'var(--red-bg)', border: '1px solid #fee2e2',
-            borderRadius: 'var(--radius-md)', padding: '10px 16px', marginBottom: 14,
-            fontSize: 13, color: 'var(--red)', display: 'flex', alignItems: 'center', gap: 8,
-          }}>
-            <Icon name="warning" size={14} />
-            {overdue.length} overdue task{overdue.length > 1 ? 's' : ''}
-          </div>
+      <Topbar
+        action={
+          <Button variant="primary" onClick={() => setAddModal(true)}>
+            + Add Task
+          </Button>
+        }
+      />
+
+      <div style={{ padding: '16px 24px', maxWidth: 860, margin: '0 auto' }}>
+        {/* Stats bar */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 20,
+            marginBottom: 16,
+            padding: '12px 16px',
+            background: 'var(--surface)',
+            borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          <Stat label="Total" value={total} />
+          <Stat label="Overdue" value={buckets?.overdue?.length ?? 0} color="var(--red)" />
+          <Stat label="Due Today" value={buckets?.today?.length ?? 0} color="var(--amber)" />
+        </div>
+
+        <TaskFilterBar filters={filters} isAdmin={isAdmin} onFiltersChange={setFilters} />
+
+        {isLoading ? (
+          <SkeletonLoader />
+        ) : !buckets || total === 0 ? (
+          <EmptyState hasFilters={Object.keys(filters).some(k => k !== 'status')} />
+        ) : (
+          BUCKET_ORDER.map((bucket: DueBucket) => (
+            <TaskGroup
+              key={bucket}
+              label={BUCKET_LABELS[bucket]}
+              tasks={buckets[bucket] ?? []}
+              isOverdue={bucket === 'overdue'}
+              isAdmin={isAdmin}
+              selectedIds={selectedIds}
+              onToggle={task => toggleMut.mutate(task)}
+              onDelete={handleDelete}
+              onEditTitle={(task, title) => editTitleMut.mutate({ task, title })}
+              onSelect={handleSelect}
+              onOpenDetail={setDetailTask}
+              onContextMenu={handleContextMenu}
+            />
+          ))
         )}
-
-        <div style={{
-          display: 'inline-flex', gap: 0,
-          background: 'var(--bg)', border: '1px solid var(--border)',
-          borderRadius: 10, padding: 3, marginBottom: 16,
-        }}>
-          {FILTERS.map(f => {
-            const on = filter === f;
-            return (
-              <button key={f} onClick={() => setFilter(f)}
-                style={{
-                  padding: '5px 14px', borderRadius: 8, border: 'none',
-                  background: on ? 'var(--text)' : 'transparent',
-                  color: on ? '#fff' : 'var(--text2)',
-                  fontFamily: 'inherit', fontSize: 13, fontWeight: 500,
-                  cursor: 'pointer', transition: 'all .15s',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                }}>
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-                <span style={{ fontSize: 11, opacity: on ? 0.7 : 0.6, fontWeight: 600 }}>
-                  {f === 'all' ? allTasks.length : allTasks.filter(t => t.status === f).length}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden' }}>
-          {isLoading ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading…</div>
-          ) : tasks.length === 0 ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>No tasks.</div>
-          ) : tasks.map((task, i) => {
-            const done = task.status === 'done';
-            const isOverdue = !done && task.due_date && new Date(task.due_date) < new Date();
-            return (
-              <TaskRow
-                key={task.id}
-                task={task}
-                last={i === tasks.length - 1}
-                isOverdue={!!isOverdue}
-                isAdmin={isAdmin}
-                onToggle={() => toggleMut.mutate({ id: task.id, status: done ? 'todo' : 'done' })}
-                onDelete={() => deleteTask(task)}
-                assigneeName={task.assignee_id ? userMap[task.assignee_id] : undefined}
-                onContextMenu={(e) => {
-                  const items: ContextMenuItem[] = [
-                    done
-                      ? { icon: 'refresh', label: 'Mark todo',  onClick: () => toggleMut.mutate({ id: task.id, status: 'todo' }) }
-                      : { icon: 'check',   label: 'Mark done', shortcut: '⌘↵', onClick: () => toggleMut.mutate({ id: task.id, status: 'done' }) },
-                    { type: 'separator' },
-                    { icon: 'copy', label: 'Copy title', onClick: () => navigator.clipboard.writeText(task.title) },
-                    ...(isAdmin ? [{ type: 'separator' as const }, { icon: 'trash', label: 'Delete task', onClick: () => deleteTask(task) }] : []),
-                  ];
-                  openMenu(e, items);
-                }}
-              />
-            );
-          })}
-        </div>
       </div>
+
+      <BulkActionBar
+        count={selectedIds.size}
+        onMarkDone={() => {
+          bulkToggleMut.mutate({ tasks: selectedTasks, newStatus: 'done' })
+          setSelectedIds(new Set())
+        }}
+        onMarkTodo={() => {
+          bulkToggleMut.mutate({ tasks: selectedTasks, newStatus: 'todo' })
+          setSelectedIds(new Set())
+        }}
+        onDelete={handleBulkDelete}
+        onClear={() => setSelectedIds(new Set())}
+      />
+
+      <TaskDetailPanel
+        task={detailTask}
+        isAdmin={isAdmin}
+        onClose={() => setDetailTask(null)}
+        onToggle={task => toggleMut.mutate(task)}
+        onDelete={task => {
+          handleDelete(task)
+          setDetailTask(null)
+        }}
+      />
+
+      {addModal && <AddTaskModal onClose={() => setAddModal(false)} />}
 
       {confirmEl}
       <ContextMenu menu={menu} onClose={closeMenu} />
-
-      {modal && isAdmin && (
-        <Modal title="Add task" onClose={() => setModal(false)}>
-          <form onSubmit={submitTask}>
-            <FormField label="Task *">
-              <Input required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Follow up with Acme Corp" />
-            </FormField>
-            <FormField label="Assign to">
-              <select
-                value={form.assignee_id}
-                onChange={e => setForm(f => ({ ...f, assignee_id: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 10, fontSize: 13, background: 'var(--bg)', color: 'var(--text)', fontFamily: 'inherit', outline: 'none' }}
-              >
-                <option value="">— Me —</option>
-                {workspaceUsers.map(u => (
-                  <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
-                ))}
-              </select>
-            </FormField>
-            <FormField label="Due date">
-              <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
-            </FormField>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
-              <Button type="button" onClick={() => setModal(false)}>Cancel</Button>
-              <Button type="submit" variant="primary" disabled={createMut.isPending}>
-                {createMut.isPending ? 'Saving…' : 'Add task'}
-              </Button>
-            </div>
-          </form>
-        </Modal>
-      )}
     </ModuleGuard>
-  );
+  )
 }
 
-function Avatar({ name, size = 24 }: { name: string; size?: number }) {
+function Stat({ label, value, color }: { label: string; value: number; color?: string }) {
   return (
-    <span style={{
-      width: size, height: size, borderRadius: '50%',
-      background: 'var(--surface2)', border: '1px solid var(--border)',
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.42, fontWeight: 600, color: 'var(--text2)',
-      flexShrink: 0, userSelect: 'none',
-    }}>
-      {name[0].toUpperCase()}
-    </span>
-  );
-}
-
-const TASK_STATUS_COLOR: Record<string, 'green' | 'amber'> = { done: 'green', todo: 'amber' };
-
-function TaskRow({ task, last, isOverdue, isAdmin, onToggle, onDelete, assigneeName, onContextMenu }: { task: Task; last: boolean; isOverdue: boolean; isAdmin: boolean; onToggle: () => void; onDelete: () => void; assigneeName?: string; onContextMenu: (e: React.MouseEvent) => void }) {
-  const [hover, setHover] = useState(false);
-  const done = task.status === 'done';
-  return (
-    <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onContextMenu={onContextMenu}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 14,
-        padding: '13px 18px',
-        borderBottom: last ? 'none' : '1px solid var(--border)',
-        background: hover ? 'var(--surface2)' : 'transparent',
-        transition: 'background .12s', fontSize: 13,
-      }}
-    >
-      <Checkbox checked={done} onChange={onToggle} />
-      <span style={{ flex: 1, color: done ? 'var(--text3)' : 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>
-        {task.title}
-      </span>
-      {task.due_date && (
-        <span style={{
-          fontSize: 12,
-          color: isOverdue ? 'var(--red)' : 'var(--text3)',
-          background: isOverdue ? 'var(--red-bg)' : 'transparent',
-          padding: isOverdue ? '2px 8px' : undefined,
-          borderRadius: isOverdue ? 999 : undefined,
-          fontWeight: isOverdue ? 600 : 400,
-        }}>
-          {new Date(task.due_date).toLocaleDateString()}
-        </span>
-      )}
-      {assigneeName && (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text2)' }}>
-          <Avatar name={assigneeName} size={22} />
-          <span style={{ fontSize: 12 }}>{assigneeName.split(' ')[0]}</span>
-        </span>
-      )}
-      <Badge label={task.status} color={TASK_STATUS_COLOR[task.status] ?? 'gray'} />
-      {isAdmin && hover && (
-        <button
-          onClick={e => { e.stopPropagation(); onDelete(); }}
-          title="Delete task"
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
-            color: 'var(--text3)', borderRadius: 4, display: 'flex', alignItems: 'center',
-            transition: 'color .12s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--red)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text3)')}
-        >
-          <Icon name="trash" size={14} />
-        </button>
-      )}
+    <div>
+      <div
+        style={{
+          fontSize: 20,
+          fontWeight: 700,
+          color: color ?? 'var(--text)',
+          fontFamily: 'Instrument Serif, serif',
+        }}
+      >
+        {value}
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 500 }}>{label}</div>
     </div>
-  );
+  )
+}
+
+function SkeletonLoader() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            height: 44,
+            borderRadius: 8,
+            background: 'var(--surface2)',
+            animation: 'pulse 1.5s ease-in-out infinite',
+            animationDelay: `${i * 100}ms`,
+          }}
+        >
+          <style>{`@keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }`}</style>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function EmptyState({ hasFilters }: { hasFilters: boolean }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text3)' }}>
+      <div style={{ fontSize: 32, marginBottom: 8 }}>✓</div>
+      <div style={{ fontSize: 14, fontWeight: 500 }}>
+        {hasFilters ? 'No tasks match the current filters' : "No tasks — you're all caught up"}
+      </div>
+    </div>
+  )
 }
