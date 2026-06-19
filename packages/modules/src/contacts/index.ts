@@ -15,4 +15,5 @@ export const CONTACTS_MODULE: ModuleDefinition = {
   nav: [{ label: 'Contacts', path: '/contacts', icon: 'Users' }],
   apiPrefixes: ['/contacts'],
   workers: [],
+  emitsActivity: true,
 };

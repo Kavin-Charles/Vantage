@@ -4,6 +4,7 @@ import type { Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
 import type { AuthenticatedRequest } from '../middleware/auth'
 import { pmEvents } from '../lib/pm-events'
+import { logActivity } from '../lib/log-activity'
 
 const createTaskSchema = z.object({
   title: z.string().min(1).max(500),
@@ -197,13 +198,20 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
 
   // Update task
   router.patch('/:taskId', async (req, res) => {
-    const { workspace } = req as unknown as AuthenticatedRequest
+    const { user, workspace } = req as unknown as AuthenticatedRequest
     const { projectId, taskId } = req.params as { projectId: string; taskId: string }
     const project = await verifyProjectAccess(db, projectId, workspace.id)
     if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
     const parsed = updateTaskSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
+
+    const existingTask = await db.selectFrom('project_tasks')
+      .select(['id', 'title', 'status_id'])
+      .where('id', '=', taskId)
+      .where('project_id', '=', projectId)
+      .executeTakeFirst()
+    if (!existingTask) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Task not found' } })
 
     const updates: Record<string, unknown> = { updated_at: new Date() }
     if (parsed.data.title !== undefined) updates['title'] = parsed.data.title
@@ -240,6 +248,25 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
           taskId: task.id,
           to_status_id: parsed.data.status_id,
         })
+
+        if (parsed.data.status_id !== existingTask.status_id) {
+          const newStatus = await db
+            .selectFrom('project_task_statuses')
+            .select('is_done')
+            .where('id', '=', parsed.data.status_id)
+            .executeTakeFirst()
+
+          if (newStatus?.is_done) {
+            void logActivity(db, {
+              workspace_id: workspace.id,
+              user_id: user.id,
+              type: 'task_done',
+              source_module_id: 'projects',
+              record_id: taskId,
+              body: `Task "${task.title}" marked as done`,
+            })
+          }
+        }
       }
 
       return res.json({ data: task, error: null })

@@ -23,4 +23,5 @@ export const PIPELINES_MODULE: ModuleDefinition = {
   ],
   apiPrefixes: ['/deals', '/pipelines', '/stages', '/items', '/item-groups', '/conversions', '/record-types', '/records'],
   workers: [],
+  emitsActivity: true,
 };

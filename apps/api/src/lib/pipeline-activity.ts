@@ -1,5 +1,6 @@
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
+import { logActivity } from './log-activity';
 
 interface LogStageChangedParams {
   db: Kysely<Database>;
@@ -20,6 +21,15 @@ export async function logStageChanged(p: LogStageChangedParams) {
     event_type: 'stage_changed',
     payload: { from_stage_id: p.fromStageId, to_stage_id: p.toStageId } as any,
   }).execute();
+
+  void logActivity(p.db, {
+    workspace_id: p.workspaceId,
+    user_id: p.userId ?? null,
+    type: 'deal_change',
+    source_module_id: 'pipelines',
+    record_id: p.itemId,
+    meta: { from_stage_id: p.fromStageId, to_stage_id: p.toStageId },
+  });
 }
 
 interface LogFieldChangedParams {

@@ -22,4 +22,6 @@ export interface ModuleDefinition {
   nav: NavItem[];
   apiPrefixes: string[];
   workers: string[];
+  emitsActivity?: boolean;
+  emitsAlerts?: boolean;
 }

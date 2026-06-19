@@ -8,6 +8,7 @@ import { Button } from '@/modules/shared/components/ui/Button';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
+import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
 import type { Alert } from '@vencore/types';
 
 type FilterTab = 'all' | 'unresolved' | 'critical' | 'warning' | 'info';
@@ -69,7 +70,7 @@ export default function AlertsPage() {
   const TABS: FilterTab[] = ['all', 'unresolved', 'critical', 'warning', 'info'];
 
   return (
-    <>
+    <ModuleGuard moduleId="alerts">
       <Topbar />
       <div style={{ padding: 24 }}>
         <div style={{
@@ -145,7 +146,7 @@ export default function AlertsPage() {
         </div>
       </div>
       <ContextMenu menu={menu} onClose={closeMenu} />
-    </>
+    </ModuleGuard>
   );
 }
 

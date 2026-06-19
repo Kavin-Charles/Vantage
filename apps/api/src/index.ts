@@ -7,6 +7,8 @@ import { handleTerminalUpgrade } from './ws/ssh-terminal';
 import { handleSftpUpgrade } from './ws/sftp-session';
 import { apiEnvSchema, readConfig } from '@vencore/config';
 import { createDb } from '@vencore/db';
+import type { Kysely } from 'kysely';
+import type { Database } from '@vencore/db';
 import { errorHandler } from './middleware/errors';
 import { createRequireAuth, requireAdmin, type AuthenticatedRequest } from './middleware/auth';
 import { createRequireModule } from './middleware/module';
@@ -52,6 +54,7 @@ import { createMilestonesRouter } from './routes/milestones';
 import { createSprintsRouter } from './routes/sprints';
 import { createProjectMembersRouter } from './routes/project-members';
 import { createPortalRouter, createPortalInternalRouter } from './routes/portal';
+import { createModuleEventSettingsRouter } from './routes/module-event-settings';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
@@ -73,6 +76,8 @@ import { registerTasksBridgeMethods } from './routes/tasks';
 import { registerActivityBridgeMethods } from './routes/activity';
 import { registerServersBridgeMethods } from './routes/servers';
 import { registerWebsitesBridgeMethods } from './routes/websites';
+import { createAlert } from './lib/alert-service';
+import { createNotificationPreferencesRouter } from './routes/notification-preferences';
 import { logger } from './lib/logger';
 
 const env = apiEnvSchema.parse(process.env);
@@ -200,6 +205,18 @@ bridgeRegistry
       .where('permission', '=', fullKey)
       .executeTakeFirst();
     return row?.granted ?? false;
+  })
+  .register('alert.create', 'alerts:view', async (ctx, p, db) => {
+    await createAlert(db as Kysely<Database>, {
+      workspaceId: ctx.workspaceId,
+      severity: (p.severity as 'critical' | 'warning' | 'info') ?? 'info',
+      resourceType: (p.resource_type as any) ?? 'crm',
+      resourceId: p.resource_id as string | undefined,
+      message: p.message as string,
+      messagePrefix: p.message_prefix as string | undefined,
+      sourceModuleId: ctx.pluginSlug ?? 'system',
+    });
+    return { ok: true };
   });
 
 const requireAuth = createRequireAuth(db, env.JWT_SECRET);
@@ -241,7 +258,7 @@ app.use(
 );
 app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db, requirePermission));
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
-app.use('/api/alerts', requireAuth, createAlertsRouter(db));
+app.use('/api/alerts', requireAuth, requireModule('alerts'), createAlertsRouter(db));
 app.use('/api/dashboards', requireAuth, createDashboardsRouter(db))
 app.use('/api/projects', requireAuth, createProjectsRouter(db))
 app.use('/api/projects/:projectId/tasks/statuses', requireAuth, createProjectStatusesRouter(db));
@@ -292,7 +309,9 @@ app.use('/api/servers', requireAuth, requireModule('servers'), createServersRout
 app.use('/api/sse', requireAuth, createSseRouter(db));
 app.use('/api/databases', requireAuth, requireModule('databases'), createInfraDatabasesRouter(db));
 app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesRouter(db, env.CRON_SECRET, requirePermission));
-app.use('/api/alert-thresholds', requireAuth, createAlertThresholdsRouter(db));
+app.use('/api/alert-thresholds', requireAuth, requireModule('alerts'), createAlertThresholdsRouter(db));
+app.use('/api/settings/module-events', requireAuth, createModuleEventSettingsRouter(db));
+app.use('/api/settings/notifications', requireAuth, createNotificationPreferencesRouter(db));
 
 // SSH management
 app.use('/api/ssh', requireAuth, createSshKeypairRouter(db));

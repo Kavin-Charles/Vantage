@@ -88,10 +88,10 @@ export interface TaskTable {
 export interface ActivityTable {
   id: Generated<string>;
   workspace_id: string;
-  user_id: string;
+  user_id: string | null;
   contact_id: string | null;
   record_id: string | null;
-  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert';
+  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert' | 'contact_created' | 'task_done';
   body: string | null;
   meta: Record<string, unknown> | null;
   created_at: Generated<Date>;
@@ -1145,6 +1145,8 @@ export interface Database {
   automation_logs: AutomationLogTable
   project_docs: ProjectDocTable
   project_templates: ProjectTemplateTable
+  module_event_settings: ModuleEventSettingsTable;
+  notification_preferences: NotificationPreferencesTable;
 }
 
 // Convenience types
