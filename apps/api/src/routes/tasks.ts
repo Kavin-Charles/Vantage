@@ -102,7 +102,7 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
       queueWebhook(db, workspace.id, 'task.created', {
         task_id: task.id,
         title: task.title,
-        due_date: task.due_date ? (task.due_date as Date).toISOString() : null,
+        due_date: task.due_date ? new Date(task.due_date).toISOString() : null,
         assignee_id: task.assignee_id,
         workspace_id: workspace.id,
         timestamp: new Date().toISOString(),
@@ -174,7 +174,7 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
           source_module_id: 'tasks',
           body: `Task completed: "${task.title}"`,
           contact_id: task.contact_id ?? undefined,
-          record_id: task.id,
+          record_id: task.record_id ?? undefined,
         }).catch((err: unknown) => logger.error({ err }, 'logActivity failed'));
       }
 

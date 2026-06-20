@@ -129,7 +129,7 @@ export function createV1TasksRouter(db: Kysely<Database>): ExpressRouter {
       queueWebhook(db, workspace.id, 'task.created', {
         task_id: task.id,
         title: task.title,
-        due_date: task.due_date ? (task.due_date as Date).toISOString() : null,
+        due_date: task.due_date ? new Date(task.due_date).toISOString() : null,
         assignee_id: task.assignee_id,
         workspace_id: workspace.id,
         timestamp: new Date().toISOString(),

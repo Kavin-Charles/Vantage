@@ -104,12 +104,12 @@ export function createUnifiedTasksRouter(db: Kysely<Database>, requirePermission
 
       const crmRows = await crmQ.execute()
 
-      // ── 2. Project tasks (assigned to user) ─────────────────────────────────
+      // ── 2. Project tasks (assigned to user, or all if showAll) ──────────────
       let ptQ = db
-        .selectFrom('project_task_assignees as a')
-        .innerJoin('project_tasks as t', 't.id', 'a.task_id')
+        .selectFrom('project_tasks as t')
         .innerJoin('projects as p', 'p.id', 't.project_id')
         .innerJoin('project_task_statuses as s', 's.id', 't.status_id')
+        .leftJoin('project_task_assignees as a', 'a.task_id', 't.id')
         .leftJoin('users as u', 'u.id', 'a.user_id')
         .select([
           't.id', 't.title', 't.project_id', 't.due_date', 't.priority',
@@ -121,7 +121,12 @@ export function createUnifiedTasksRouter(db: Kysely<Database>, requirePermission
         .where('p.workspace_id', '=', workspace.id)
         .where('p.status', '!=', 'DELETED' as never)
 
-      if (!showAll) ptQ = ptQ.where('a.user_id', '=', user.id)
+      if (!showAll) {
+        ptQ = ptQ.where('t.id', 'in', db
+          .selectFrom('project_task_assignees')
+          .select('task_id')
+          .where('user_id', '=', user.id))
+      }
       if (status === 'done') ptQ = ptQ.where('s.is_done', '=', true)
       if (status === 'todo') ptQ = ptQ.where('s.is_done', '=', false)
 
@@ -162,7 +167,7 @@ export function createUnifiedTasksRouter(db: Kysely<Database>, requirePermission
           title: t.title,
           status: t.status as 'todo' | 'done',
           priority: 'NONE',
-          due_date: t.due_date ? (t.due_date as Date).toISOString() : null,
+          due_date: t.due_date ? new Date(t.due_date).toISOString() : null,
           assignee_id: t.assignee_id ?? null,
           assignee_name: (t as Record<string, unknown>)['assignee_name'] as string | null ?? null,
           contact_id: t.contact_id ?? null,
@@ -187,7 +192,7 @@ export function createUnifiedTasksRouter(db: Kysely<Database>, requirePermission
           title: t.title,
           status: t.is_done ? 'done' : 'todo',
           priority: (t.priority as UnifiedTask['priority']) ?? 'NONE',
-          due_date: t.due_date ? (t.due_date as Date).toISOString() : null,
+          due_date: t.due_date ? new Date(t.due_date).toISOString() : null,
           assignee_id: t.assignee_id ?? null,
           assignee_name: r['assignee_name'] as string | null ?? null,
           contact_id: null,
