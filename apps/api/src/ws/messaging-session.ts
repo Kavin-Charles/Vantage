@@ -24,6 +24,11 @@ export async function handleMessagingUpgrade(
   db: Kysely<Database>,
   jwtSecret: string,
 ): Promise<void> {
+  // Buffer messages that arrive before async setup completes
+  const earlyMessages: Buffer[] = [];
+  const earlyHandler = (raw: Buffer) => earlyMessages.push(raw);
+  ws.on('message', earlyHandler);
+
   // ── Auth ──────────────────────────────────────────────────────────────────
   const cookieHeader = request.headers.cookie ?? '';
   const cookies = Object.fromEntries(
@@ -103,7 +108,9 @@ export async function handleMessagingUpgrade(
   });
 
   // ── Handle client → server events ─────────────────────────────────────────
-  ws.on('message', (raw) => {
+  ws.off('message', earlyHandler);
+
+  function handleEvent(raw: Buffer) {
     let event: WsClientEvent;
     try {
       event = JSON.parse(raw.toString()) as WsClientEvent;
@@ -150,7 +157,12 @@ export async function handleMessagingUpgrade(
       default:
         break;
     }
-  });
+  }
+
+  ws.on('message', handleEvent);
+
+  // Drain early-buffered messages
+  for (const raw of earlyMessages) handleEvent(raw);
 
   ws.on('error', (err) => {
     logger.error({ err, userId: user.id }, '[messaging-ws] socket error');

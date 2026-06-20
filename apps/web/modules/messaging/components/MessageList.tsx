@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Message } from '@vencore/types';
+import { Icon } from '@/modules/shared/components/ui/Icon';
 import { MessageBubble } from './MessageBubble';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { addReaction, removeReaction, deleteMessage, editMessage } from '../lib/messaging';
@@ -134,7 +135,7 @@ export function MessageList({
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: 8,
       }}>
-        <div style={{ fontSize: 32 }}>💬</div>
+        <Icon name="message-square" size={36} style={{ color: 'var(--border)' }} />
         <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>No messages yet</div>
         <div style={{ fontSize: 13, color: 'var(--text3)' }}>Be the first to say something!</div>
       </div>
