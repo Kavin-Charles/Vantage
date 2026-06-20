@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { Topbar } from '@/modules/shared/components/Topbar'
 import { Button } from '@/modules/shared/components/ui/Button'
+import { Icon } from '@/modules/shared/components/ui/Icon'
 import { ContextMenu, useContextMenu } from '@/modules/shared/components/ui/ContextMenu'
 import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog'
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard'
@@ -101,22 +102,44 @@ export default function TasksPage() {
         }
       />
 
-      <div style={{ padding: '16px 24px', maxWidth: 860, margin: '0 auto' }}>
-        {/* Stats bar */}
+      <div style={{ padding: 24 }}>
+        {/* Stats */}
         <div
           style={{
-            display: 'flex',
-            gap: 20,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 12,
             marginBottom: 16,
-            padding: '12px 16px',
-            background: 'var(--surface)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border)',
           }}
         >
-          <Stat label="Total" value={total} />
-          <Stat label="Overdue" value={buckets?.overdue?.length ?? 0} color="var(--red)" />
-          <Stat label="Due Today" value={buckets?.today?.length ?? 0} color="var(--amber)" />
+          <StatCard
+            icon="tasks"
+            label="Total"
+            value={total}
+            color="var(--text)"
+            bg="var(--surface2)"
+          />
+          <StatCard
+            icon="warning"
+            label="Overdue"
+            value={buckets?.overdue?.length ?? 0}
+            color="var(--red)"
+            bg="var(--red-bg)"
+          />
+          <StatCard
+            icon="clock"
+            label="Due Today"
+            value={buckets?.today?.length ?? 0}
+            color="var(--amber)"
+            bg="var(--amber-bg)"
+          />
+          <StatCard
+            icon="calendar"
+            label="This Week"
+            value={buckets?.this_week?.length ?? 0}
+            color="var(--blue)"
+            bg="var(--blue-bg)"
+          />
         </div>
 
         <TaskFilterBar filters={filters} isAdmin={isAdmin} onFiltersChange={setFilters} />
@@ -178,20 +201,61 @@ export default function TasksPage() {
   )
 }
 
-function Stat({ label, value, color }: { label: string; value: number; color?: string }) {
+function StatCard({
+  icon,
+  label,
+  value,
+  color,
+  bg,
+}: {
+  icon: string
+  label: string
+  value: number
+  color: string
+  bg: string
+}) {
   return (
-    <div>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        padding: '14px 16px',
+        background: 'var(--surface)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)',
+      }}
+    >
       <div
         style={{
-          fontSize: 20,
-          fontWeight: 700,
-          color: color ?? 'var(--text)',
-          fontFamily: 'Instrument Serif, serif',
+          width: 38,
+          height: 38,
+          borderRadius: 10,
+          background: bg,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
         }}
       >
-        {value}
+        <Icon name={icon} size={18} color={color} />
       </div>
-      <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 500 }}>{label}</div>
+      <div>
+        <div
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            color,
+            fontFamily: 'var(--font-display)',
+            lineHeight: 1.1,
+          }}
+        >
+          {value}
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          {label}
+        </div>
+      </div>
     </div>
   )
 }
