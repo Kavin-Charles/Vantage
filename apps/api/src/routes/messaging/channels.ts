@@ -24,10 +24,41 @@ export function createChannelsRouter(
 ) {
   const router = Router();
 
-  // List channels the user belongs to, with unread counts
+  // List channels the user belongs to, with unread counts.
+  // Admins may pass ?scope=all to get every workspace channel with member_count (no unread tracking).
   router.get('/', requirePermission('messaging:view'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
+
+      if (req.query['scope'] === 'all' && user.role === 'admin') {
+        const allChannels = await db
+          .selectFrom('channels')
+          .where('channels.workspace_id', '=', workspace.id)
+          .select([
+            'channels.id', 'channels.workspace_id', 'channels.name', 'channels.type',
+            'channels.is_private', 'channels.topic', 'channels.created_by',
+            'channels.archived_at', 'channels.created_at', 'channels.updated_at',
+          ])
+          .orderBy('channels.name', 'asc')
+          .execute();
+
+        const channelIds = allChannels.map(c => c.id);
+        const memberCounts = channelIds.length
+          ? await db
+              .selectFrom('channel_members')
+              .where('channel_id', 'in', channelIds)
+              .select(['channel_id', db.fn.countAll().as('count')])
+              .groupBy('channel_id')
+              .execute()
+          : [];
+        const countMap = new Map(memberCounts.map(r => [r.channel_id, Number(r.count)]));
+
+        res.json({
+          data: allChannels.map(c => ({ ...c, member_count: countMap.get(c.id) ?? 0 })),
+          error: null,
+        });
+        return;
+      }
 
       const rows = await db
         .selectFrom('channels')

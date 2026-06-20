@@ -45,7 +45,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       pathname.startsWith('/settings/modules') ||
       pathname.startsWith('/settings/plugins') ||
       pathname.startsWith('/settings/activity') ||
-      pathname.startsWith('/settings/notifications')
+      pathname.startsWith('/settings/notifications') ||
+      pathname.startsWith('/settings/messaging')
     )) {
       router.push('/settings/profile');
     }
