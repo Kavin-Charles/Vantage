@@ -6,18 +6,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { Modal } from '@/modules/shared/components/ui/Modal';
+import { Icon } from '@/modules/shared/components/ui/Icon';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { ContactForm } from './ContactForm';
 import { ContactDrawer } from './ContactDrawer';
+import { TagManagerPopover } from './TagManagerPopover';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { listContacts, deleteContact } from '@/modules/contacts/lib/contacts';
+import {
+  listContacts, deleteContact,
+  listContactTags, attachContactTag, detachContactTag,
+} from '@/modules/contacts/lib/contacts';
 import { PluginPanelSlot } from '@/modules/shared/components/PluginPanelSlot';
-import type { Contact } from '@vencore/types';
+import type { Contact, ContactTag } from '@vencore/types';
 
 type SortField = 'name' | 'created_at' | 'last_contacted_at';
 type SortOrder = 'asc' | 'desc';
 type StatusFilter = 'prospect' | 'customer' | 'cold' | 'churned' | '';
+/** Combined filter value: '' (all), 'status:<value>', or 'tag:<id>' */
+type CombinedFilter = string;
 
 const COLS = '1.6fr 1.6fr 1.1fr .9fr 1fr auto';
 const PAGE_SIZE = 25;
@@ -74,11 +81,40 @@ export function ContactsTable() {
   // Filter / sort / pagination state
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
+  const [combinedFilter, setCombinedFilter] = useState<CombinedFilter>('');
+  const [tagManagerOpen, setTagManagerOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<SortField>('created_at');
   const [order, setOrder] = useState<SortOrder>('desc');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const statusFilter: StatusFilter = combinedFilter.startsWith('status:')
+    ? (combinedFilter.slice(7) as StatusFilter)
+    : '';
+  const tagFilter = combinedFilter.startsWith('tag:') ? combinedFilter.slice(4) : '';
+
+  const tagsQuery = useQuery({
+    queryKey: ['contact-tags'],
+    queryFn: async () => listContactTags(await getToken()),
+    staleTime: 30_000,
+  });
+  const allTags: ContactTag[] = tagsQuery.data?.data ?? [];
+
+  const invalidateContacts = useCallback(() => {
+    void qc.invalidateQueries({ queryKey: ['contacts'] });
+  }, [qc]);
+
+  const attachTagMut = useMutation({
+    mutationFn: async ({ contactId, tagId }: { contactId: string; tagId: string }) =>
+      attachContactTag(await getToken(), contactId, tagId),
+    onSuccess: invalidateContacts,
+  });
+
+  const detachTagMut = useMutation({
+    mutationFn: async ({ contactId, tagId }: { contactId: string; tagId: string }) =>
+      detachContactTag(await getToken(), contactId, tagId),
+    onSuccess: invalidateContacts,
+  });
 
   const handleSearch = useCallback((v: string) => {
     setSearch(v);
@@ -105,6 +141,7 @@ export function ContactsTable() {
   };
   if (debouncedSearch) queryParams['q'] = debouncedSearch;
   if (statusFilter) queryParams['status'] = statusFilter;
+  if (tagFilter) queryParams['tag_id'] = tagFilter;
 
   const queryKey = ['contacts', queryParams];
 
@@ -159,20 +196,59 @@ export function ContactsTable() {
           />
         </div>
 
-        {/* Status filter */}
+        {/* Status + tag filter */}
         <select
-          value={statusFilter}
-          onChange={e => { setStatusFilter(e.target.value as StatusFilter); setPage(1); }}
+          value={combinedFilter}
+          onChange={e => { setCombinedFilter(e.target.value); setPage(1); }}
+          aria-label="Filter contacts"
           style={{
             padding: '7px 10px', fontSize: 13, borderRadius: 10,
             border: '1px solid var(--border)', background: 'var(--surface)',
-            color: statusFilter ? 'var(--text)' : 'var(--text3)', outline: 'none', cursor: 'pointer',
+            color: combinedFilter ? 'var(--text)' : 'var(--text3)', outline: 'none', cursor: 'pointer',
           }}
         >
-          {STATUS_OPTIONS.map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
+          <option value="">All statuses</option>
+          <optgroup label="Status">
+            {STATUS_OPTIONS.filter(o => o.value).map(o => (
+              <option key={o.value} value={`status:${o.value}`}>{o.label}</option>
+            ))}
+          </optgroup>
+          {allTags.length > 0 && (
+            <optgroup label="Tags">
+              {allTags.map(t => (
+                <option key={t.id} value={`tag:${t.id}`}>{t.name}</option>
+              ))}
+            </optgroup>
+          )}
         </select>
+
+        {/* Manage tags */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setTagManagerOpen(o => !o)}
+            aria-label="Manage tags"
+            title="Manage tags"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 34, height: 34, borderRadius: 10, cursor: 'pointer',
+              border: '1px solid var(--border)',
+              background: tagManagerOpen ? 'var(--surface2)' : 'var(--surface)',
+              color: 'var(--text2)',
+            }}
+          >
+            <Icon name="plugin" size={15} />
+          </button>
+          {tagManagerOpen && (
+            <TagManagerPopover
+              tags={allTags}
+              onClose={() => setTagManagerOpen(false)}
+              onChanged={() => {
+                void qc.invalidateQueries({ queryKey: ['contact-tags'] });
+                invalidateContacts();
+              }}
+            />
+          )}
+        </div>
 
         <span style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
           {isLoading ? '…' : `${total} contacts`}
@@ -209,7 +285,7 @@ export function ContactsTable() {
 
         {!isLoading && !isError && contacts.length === 0 && (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
-            {debouncedSearch || statusFilter ? 'No contacts match your filters.' : 'No contacts yet. Add your first one.'}
+            {debouncedSearch || combinedFilter ? 'No contacts match your filters.' : 'No contacts yet. Add your first one.'}
           </div>
         )}
 
@@ -231,12 +307,27 @@ export function ContactsTable() {
               })
             }
             onContextMenu={e => {
+              const assignedIds = new Set((c.tags ?? []).map(t => t.id));
               const items: ContextMenuItem[] = [
                 { icon: 'open', label: 'Edit contact', onClick: () => setModal(c) },
                 { type: 'separator' },
                 { icon: 'phone', label: 'Copy phone', disabled: !c.phone, onClick: () => navigator.clipboard.writeText(c.phone ?? '') },
                 { icon: 'mail', label: 'Copy email', onClick: () => navigator.clipboard.writeText(c.email) },
                 { icon: 'link', label: 'Copy link', onClick: () => navigator.clipboard.writeText(`${window.location.origin}/contacts/${c.id}`) },
+                { type: 'separator' },
+                ...(allTags.length > 0 ? [{
+                  type: 'submenu' as const,
+                  label: 'Tags',
+                  icon: 'plugin',
+                  items: allTags.map(t => ({
+                    label: assignedIds.has(t.id) ? `✓ ${t.name}` : t.name,
+                    swatch: t.color,
+                    onClick: () => {
+                      if (assignedIds.has(t.id)) detachTagMut.mutate({ contactId: c.id, tagId: t.id });
+                      else attachTagMut.mutate({ contactId: c.id, tagId: t.id });
+                    },
+                  })),
+                }] : []),
                 { type: 'separator' },
                 { icon: 'trash', label: 'Delete', danger: true, onClick: () => askConfirm({ title: 'Delete contact', message: `Delete ${c.name}? This cannot be undone.`, confirmLabel: 'Delete', variant: 'danger', onConfirm: () => deleteMut.mutate(c.id) }) },
               ];
@@ -352,7 +443,23 @@ function ContactRow({ c, last, fading, onRowClick, onEdit, onDelete, onContextMe
       </span>
       <span style={{ color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</span>
       <span style={{ color: c.phone ? 'var(--text)' : 'var(--text3)' }}>{c.phone ?? '—'}</span>
-      <span><Badge label={c.status} color={statusColor[c.status] ?? 'gray'} /></span>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+        <Badge label={c.status} color={statusColor[c.status] ?? 'gray'} />
+        {(c.tags ?? []).map(t => (
+          <span
+            key={t.id}
+            title={t.name}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 10,
+              border: `1px solid ${t.color}`, color: t.color, whiteSpace: 'nowrap',
+            }}
+          >
+            <span style={{ width: 5, height: 5, borderRadius: '50%', background: t.color, flexShrink: 0 }} />
+            {t.name}
+          </span>
+        ))}
+      </span>
       <span style={{ color: 'var(--text2)', fontSize: 12 }}>
         {c.last_contacted_at ? new Date(c.last_contacted_at).toLocaleDateString() : '—'}
       </span>

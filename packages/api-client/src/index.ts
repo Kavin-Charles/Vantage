@@ -1,5 +1,6 @@
 export { configure, apiFetch } from './core';
 export * from './contacts';
+export * from './contact-tags';
 export * from './deals';
 export * from './tasks';
 export * from './activity';

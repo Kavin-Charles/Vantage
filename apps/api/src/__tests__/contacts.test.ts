@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 function makeChain(leafValues: Record<string, unknown> = {}): Record<string, unknown> {
   const chain: Record<string, unknown> = {};
   const FLUENT = ['selectFrom','insertInto','updateTable','deleteFrom','where','selectAll','select',
-                  'orderBy','limit','offset','values','set','returningAll','fn','countAll','as'];
+                  'orderBy','limit','offset','values','set','returningAll','fn','countAll','as','innerJoin'];
   for (const m of FLUENT) chain[m] = vi.fn().mockReturnValue(chain);
   chain['execute'] = vi.fn().mockResolvedValue(leafValues['execute'] ?? []);
   chain['executeTakeFirst'] = vi.fn().mockResolvedValue(leafValues['executeTakeFirst'] ?? undefined);
@@ -115,7 +115,7 @@ describe('GET /api/contacts', () => {
     const res = buildRes();
     await handler(buildReq({ query: {} }), res, vi.fn());
     expect(res['json']).toHaveBeenCalledWith(expect.objectContaining({
-      data: fakeContacts, page: 1, per_page: 25, error: null,
+      data: fakeContacts.map(c => ({ ...c, tags: [] })), page: 1, per_page: 25, error: null,
     }));
   });
 
@@ -167,7 +167,7 @@ describe('GET /api/contacts/:id', () => {
 
     const res = buildRes();
     await handler(buildReq({ params: { id: 'c1' } }), res, vi.fn());
-    expect(res['json']).toHaveBeenCalledWith(expect.objectContaining({ data: fakeContact, error: null }));
+    expect(res['json']).toHaveBeenCalledWith(expect.objectContaining({ data: { ...fakeContact, tags: [] }, error: null }));
   });
 });
 

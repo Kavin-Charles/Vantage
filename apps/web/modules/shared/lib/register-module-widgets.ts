@@ -6,11 +6,11 @@ import { ServersWidget } from '@/modules/servers/components/ServersWidget';
 registerDashboardWidget({
   id: 'core:contacts',
   label: 'Contacts',
-  description: 'Recent contacts and status overview',
+  description: 'Recent contacts, status filters, and quick actions',
   defaultW: 4,
-  defaultH: 3,
+  defaultH: 4,
   minW: 3,
-  minH: 2,
+  minH: 3,
   component: ContactsWidget,
 });
 

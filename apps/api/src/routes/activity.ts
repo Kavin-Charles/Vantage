@@ -21,7 +21,8 @@ export function createActivityRouter(db: Kysely<Database>, requirePermission: (p
       const page = Number(req.query['page'] ?? 1);
       const per_page = Math.min(Number(req.query['per_page'] ?? 25), 100);
       const contact_id = req.query['contact_id'] as string | undefined;
-      const deal_id = req.query['deal_id'] as string | undefined;
+      // record_id is the generic linkage column (deals/pipeline records); accept deal_id as an alias.
+      const record_id = (req.query['record_id'] ?? req.query['deal_id']) as string | undefined;
       const limit = req.query['limit'] ? Math.min(Number(req.query['limit']), 100) : per_page;
 
       let query = db
@@ -36,9 +37,9 @@ export function createActivityRouter(db: Kysely<Database>, requirePermission: (p
         query = query.where('contact_id', '=', contact_id);
         countQuery = countQuery.where('contact_id', '=', contact_id);
       }
-      if (deal_id) {
-        query = query.where('record_id', '=', deal_id);
-        countQuery = countQuery.where('record_id', '=', deal_id);
+      if (record_id) {
+        query = query.where('record_id', '=', record_id);
+        countQuery = countQuery.where('record_id', '=', record_id);
       }
 
       const activities = await query
