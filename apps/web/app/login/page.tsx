@@ -37,6 +37,7 @@ function LoginForm() {
           role: res.data.role,
           workspace_id: '',
           permissions: [],
+          theme: 'light',
         },
       }));
       const raw = searchParams.get('from') ?? '';
