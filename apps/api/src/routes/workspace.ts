@@ -17,8 +17,12 @@ export function createWorkspaceRouter(db: Kysely<Database>): ExpressRouter {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parsed = patchWorkspaceSchema.safeParse(req.body);
-      if (!parsed.success || Object.keys(parsed.data).length === 0) {
-        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT' } });
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: 'Invalid name or domain.' } });
+        return;
+      }
+      if (Object.keys(parsed.data).length === 0) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: 'No fields to update.' } });
         return;
       }
 

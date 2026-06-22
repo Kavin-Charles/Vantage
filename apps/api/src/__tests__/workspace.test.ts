@@ -37,6 +37,7 @@ describe('PATCH /api/workspace', () => {
     const res = await request(buildApp(db)).patch('/api/workspace').send({});
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('INVALID_INPUT');
+    expect(res.body.error.message).toBe('No fields to update.');
   });
 
   it('rejects a blank name', async () => {
@@ -44,5 +45,6 @@ describe('PATCH /api/workspace', () => {
     const res = await request(buildApp(db)).patch('/api/workspace').send({ name: '' });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('INVALID_INPUT');
+    expect(res.body.error.message).toBe('Invalid name or domain.');
   });
 });
