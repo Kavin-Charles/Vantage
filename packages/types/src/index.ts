@@ -594,3 +594,99 @@ export interface ConversionFieldMapping {
 export interface ConversionTemplateWithMappings extends ConversionTemplate {
   field_mappings: ConversionFieldMapping[];
 }
+
+export type ChannelType = 'channel' | 'dm' | 'group_dm';
+export type ChannelMemberRole = 'owner' | 'member';
+
+export interface Channel {
+  id: UUID;
+  workspace_id: UUID;
+  name: string;
+  type: ChannelType;
+  is_private: boolean;
+  topic: string | null;
+  created_by: UUID | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+  /** Populated on list responses — count of messages the user hasn't read yet */
+  unread_count?: number;
+  /** Populated on list responses — latest message preview */
+  last_message?: Pick<Message, 'id' | 'body' | 'user_id' | 'created_at'> | null;
+}
+
+export interface ChannelMember {
+  channel_id: UUID;
+  user_id: UUID;
+  role: ChannelMemberRole;
+  joined_at: string;
+  /** Populated on member list responses */
+  user?: Pick<User, 'id' | 'name' | 'email'>;
+}
+
+export interface Message {
+  id: UUID;
+  channel_id: UUID;
+  workspace_id: UUID;
+  user_id: UUID | null;
+  body: string;
+  parent_message_id: UUID | null;
+  thread_count: number;
+  mention_user_ids: UUID[] | null;
+  edited_at: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  /** Populated on responses */
+  reactions?: MessageReaction[];
+  attachments?: MessageAttachment[];
+  author?: Pick<User, 'id' | 'name' | 'email'> | null;
+}
+
+export interface MessageReaction {
+  message_id: UUID;
+  user_id: UUID;
+  emoji: string;
+  created_at: string;
+}
+
+export interface MessageAttachment {
+  id: UUID;
+  message_id: UUID;
+  workspace_id: UUID;
+  r2_key: string;
+  filename: string;
+  size_bytes: number;
+  mime_type: string;
+  created_at: string;
+  /** Presigned download URL — short-lived, generated on read */
+  url?: string;
+}
+
+export interface ChannelReadState {
+  channel_id: UUID;
+  user_id: UUID;
+  last_read_message_id: UUID | null;
+}
+
+export interface MessagesPage {
+  messages: Message[];
+  has_more: boolean;
+  oldest_id: string | null;
+}
+
+export type WsClientEvent =
+  | { type: 'subscribe'; channel_ids: string[] }
+  | { type: 'typing.start'; channel_id: string }
+  | { type: 'typing.stop'; channel_id: string }
+  | { type: 'mark_read'; channel_id: string; message_id: string };
+
+export type WsServerEvent =
+  | { type: 'message.new'; message: Message }
+  | { type: 'message.edited'; message_id: string; body: string; edited_at: string }
+  | { type: 'message.deleted'; message_id: string; channel_id: string }
+  | { type: 'reaction.added'; message_id: string; user_id: string; emoji: string }
+  | { type: 'reaction.removed'; message_id: string; user_id: string; emoji: string }
+  | { type: 'channel.member_joined'; channel_id: string; user: Pick<User, 'id' | 'name' | 'email'> }
+  | { type: 'channel.member_left'; channel_id: string; user_id: string }
+  | { type: 'user.presence'; user_id: string; status: 'online' | 'away' | 'offline' }
+  | { type: 'user.typing'; channel_id: string; user_id: string; name: string };

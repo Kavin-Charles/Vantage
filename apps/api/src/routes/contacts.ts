@@ -26,10 +26,38 @@ const listQuerySchema = z.object({
   per_page: z.coerce.number().int().min(1).max(100).default(25),
   status: contactStatusEnum.optional(),
   owner_id: z.string().uuid().optional(),
+  tag_id: z.string().uuid().optional(),
   q: z.string().max(200).optional(),
   sort: z.enum(['name', 'created_at', 'last_contacted_at']).default('created_at'),
   order: z.enum(['asc', 'desc']).default('desc'),
 });
+
+const attachTagSchema = z.object({ tag_id: z.string().uuid() });
+
+/** Fetch tags for a set of contact ids in one query and group them by contact_id. */
+async function tagsByContactId(
+  db: Kysely<Database>,
+  workspaceId: string,
+  contactIds: string[],
+): Promise<Map<string, { id: string; name: string; color: string }[]>> {
+  const map = new Map<string, { id: string; name: string; color: string }[]>();
+  if (contactIds.length === 0) return map;
+
+  const rows = await db
+    .selectFrom('contact_tag_links')
+    .innerJoin('contact_tags', 'contact_tags.id', 'contact_tag_links.tag_id')
+    .where('contact_tags.workspace_id', '=', workspaceId)
+    .where('contact_tag_links.contact_id', 'in', contactIds)
+    .select(['contact_tag_links.contact_id', 'contact_tags.id', 'contact_tags.name', 'contact_tags.color'])
+    .execute();
+
+  for (const row of rows) {
+    const list = map.get(row.contact_id) ?? [];
+    list.push({ id: row.id, name: row.name, color: row.color });
+    map.set(row.contact_id, list);
+  }
+  return map;
+}
 
 const CONTACT_HEADERS = ['name', 'email', 'phone', 'status'];
 const IMPORT_MAX_ROWS = 1000;
@@ -180,7 +208,7 @@ export function createContactsRouter(
           .json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
         return;
       }
-      const { page, per_page, status, owner_id, q, sort, order } = parsed.data;
+      const { page, per_page, status, owner_id, tag_id, q, sort, order } = parsed.data;
 
       const base = db
         .selectFrom('contacts')
@@ -191,6 +219,11 @@ export function createContactsRouter(
         let q2 = qb;
         if (status) q2 = q2.where('status', '=', status) as T;
         if (owner_id) q2 = q2.where('owner_id', '=', owner_id) as T;
+        if (tag_id) {
+          q2 = q2.where('id', 'in',
+            db.selectFrom('contact_tag_links').select('contact_id').where('tag_id', '=', tag_id),
+          ) as T;
+        }
         if (q) {
           const pattern = `%${q}%`;
           q2 = q2.where(eb =>
@@ -210,7 +243,10 @@ export function createContactsRouter(
         base.select(db.fn.countAll<number>().as('count')),
       ).executeTakeFirstOrThrow();
 
-      res.json({ data: contacts, total: Number(count), page, per_page, error: null });
+      const tagMap = await tagsByContactId(db, workspace.id, contacts.map(c => c.id));
+      const withTags = contacts.map(c => ({ ...c, tags: tagMap.get(c.id) ?? [] }));
+
+      res.json({ data: withTags, total: Number(count), page, per_page, error: null });
     } catch (err) {
       next(err);
     }
@@ -232,10 +268,73 @@ export function createContactsRouter(
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Contact not found' } });
         return;
       }
-      res.json({ data: contact, error: null });
+      const tagMap = await tagsByContactId(db, workspace.id, [contact.id]);
+      res.json({ data: { ...contact, tags: tagMap.get(contact.id) ?? [] }, error: null });
     } catch (err) {
       next(err);
     }
+  });
+
+  // POST /:id/tags — attach a tag to a contact
+  router.post('/:id/tags', requirePermission('contacts:edit'), async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const parsed = attachTagSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
+        return;
+      }
+      const contactId = req.params['id']!;
+
+      const [contact, tag] = await Promise.all([
+        db.selectFrom('contacts').select('id').where('id', '=', contactId).where('workspace_id', '=', workspace.id).where('deleted_at', 'is', null).executeTakeFirst(),
+        db.selectFrom('contact_tags').select('id').where('id', '=', parsed.data.tag_id).where('workspace_id', '=', workspace.id).executeTakeFirst(),
+      ]);
+      if (!contact) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Contact not found' } });
+        return;
+      }
+      if (!tag) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Tag not found' } });
+        return;
+      }
+
+      await db
+        .insertInto('contact_tag_links')
+        .values({ contact_id: contactId, tag_id: parsed.data.tag_id })
+        .onConflict(oc => oc.columns(['contact_id', 'tag_id']).doNothing())
+        .execute();
+
+      res.status(201).json({ data: { id: contactId }, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // DELETE /:id/tags/:tagId — detach a tag from a contact
+  router.delete('/:id/tags/:tagId', requirePermission('contacts:edit'), async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const contactId = req.params['id']!;
+      const tagId = req.params['tagId']!;
+
+      const contact = await db
+        .selectFrom('contacts')
+        .select('id')
+        .where('id', '=', contactId)
+        .where('workspace_id', '=', workspace.id)
+        .executeTakeFirst();
+      if (!contact) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Contact not found' } });
+        return;
+      }
+
+      await db
+        .deleteFrom('contact_tag_links')
+        .where('contact_id', '=', contactId)
+        .where('tag_id', '=', tagId)
+        .execute();
+
+      res.json({ data: { id: contactId }, error: null });
+    } catch (err) { next(err); }
   });
 
   // POST / — create contact

@@ -168,3 +168,7 @@ graphify-out/
 # Local seed / test data scripts
 scripts/test-contacts.csv
 scripts/list-workspaces.ts
+
+# Generated planning docs (local only)
+docs/gen-messaging-plan.js
+docs/messaging-plan.docx

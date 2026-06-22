@@ -35,9 +35,10 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: 'Work',
+    label: 'Collaboration',
     feature: null,
     items: [
+      { href: '/messaging', label: 'Messaging', icon: 'message-square' as const, moduleId: 'messaging' },
       { href: '/projects', label: 'Projects', icon: 'tasks' as const, moduleId: 'projects' },
     ],
   },
@@ -71,7 +72,7 @@ function PulseDot() {
   );
 }
 
-function NavLink({ href, label, icon, dot }: { href: string; label: string; icon: string; dot?: boolean }) {
+function NavLink({ href, label, icon, dot, badge }: { href: string; label: string; icon: string; dot?: boolean; badge?: number }) {
   const pathname = usePathname();
   const [hover, setHover] = useState(false);
   const active = pathname === href || (href !== '/' && pathname.startsWith(href));
@@ -98,6 +99,15 @@ function NavLink({ href, label, icon, dot }: { href: string; label: string; icon
       </span>
       {label}
       {dot && <PulseDot />}
+      {!dot && badge != null && badge > 0 && !active && (
+        <span style={{
+          marginLeft: 'auto', background: 'var(--text)', color: '#fff',
+          borderRadius: 10, fontSize: 10, fontWeight: 700,
+          padding: '1px 6px', flexShrink: 0,
+        }}>
+          {badge > 99 ? '99+' : badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -157,6 +167,18 @@ export function Sidebar() {
   });
   const hasCritical = (alertData?.total ?? 0) > 0;
 
+  const { data: messagingUnread = 0 } = useQuery({
+    queryKey: ['messaging-unread-badge'],
+    queryFn: async () => {
+      const token = await getToken();
+      if (!isEnabled('messaging')) return 0;
+      const res = await apiFetch<{ data: { unread_count: number }[]; error: null }>('/api/messaging/channels', { token });
+      return (res.data ?? []).reduce((sum, ch) => sum + (ch.unread_count ?? 0), 0);
+    },
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+
   return (
     <div style={{
       width: 'var(--sidebar-w)',
@@ -207,6 +229,7 @@ export function Sidebar() {
                 label={item.label}
                 icon={item.icon}
                 dot={'dot' in item && item.dot && hasCritical ? true : undefined}
+                badge={item.href === '/messaging' ? messagingUnread : undefined}
               />
             );
           });

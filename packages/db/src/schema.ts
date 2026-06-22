@@ -1080,6 +1080,22 @@ export interface InfraDbThresholdTable {
   updated_at: Generated<string>;
 }
 
+export type ChannelType = 'channel' | 'dm' | 'group_dm';
+export type ChannelMemberRole = 'owner' | 'member';
+
+export interface ChannelTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  type: Generated<ChannelType>;
+  is_private: Generated<boolean>;
+  topic: string | null;
+  created_by: string | null;
+  archived_at: string | null;
+  created_at: Generated<string>;
+  updated_at: Generated<string>;
+}
+
 export interface InfraDbQueryHistoryTable {
   id: Generated<string>;
   workspace_id: string;
@@ -1091,6 +1107,51 @@ export interface InfraDbQueryHistoryTable {
   executed_at: Generated<string>;
   row_count: number | null;
   duration_ms: number | null;
+}
+
+export interface ChannelMemberTable {
+  channel_id: string;
+  user_id: string;
+  role: Generated<ChannelMemberRole>;
+  joined_at: Generated<string>;
+}
+
+export interface MessageTable {
+  id: Generated<string>;
+  channel_id: string;
+  workspace_id: string;
+  user_id: string | null;
+  body: string;
+  parent_message_id: string | null;
+  thread_count: Generated<number>;
+  mention_user_ids: string[] | null;
+  edited_at: string | null;
+  deleted_at: string | null;
+  created_at: Generated<string>;
+}
+
+export interface MessageReactionTable {
+  message_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: Generated<string>;
+}
+
+export interface MessageAttachmentTable {
+  id: Generated<string>;
+  message_id: string;
+  workspace_id: string;
+  r2_key: string;
+  filename: string;
+  size_bytes: number;
+  mime_type: string;
+  created_at: Generated<string>;
+}
+
+export interface ChannelReadStateTable {
+  channel_id: string;
+  user_id: string;
+  last_read_message_id: string | null;
 }
 
 export interface Database {
@@ -1189,6 +1250,12 @@ export interface Database {
   notification_preferences: NotificationPreferencesTable;
   infra_db_thresholds: InfraDbThresholdTable;
   infra_db_query_history: InfraDbQueryHistoryTable;
+  channels: ChannelTable
+  channel_members: ChannelMemberTable
+  messages: MessageTable
+  message_reactions: MessageReactionTable
+  message_attachments: MessageAttachmentTable
+  channel_read_state: ChannelReadStateTable
 }
 
 // Convenience types
@@ -1405,3 +1472,23 @@ export type InfraDbThresholdUpdate = Updateable<InfraDbThresholdTable>;
 
 export type InfraDbQueryHistory = Selectable<InfraDbQueryHistoryTable>;
 export type NewInfraDbQueryHistory = Insertable<InfraDbQueryHistoryTable>;
+
+export type Channel = Selectable<ChannelTable>;
+export type NewChannel = Insertable<ChannelTable>;
+export type ChannelUpdate = Updateable<ChannelTable>;
+
+export type ChannelMember = Selectable<ChannelMemberTable>;
+export type NewChannelMember = Insertable<ChannelMemberTable>;
+
+export type Message = Selectable<MessageTable>;
+export type NewMessage = Insertable<MessageTable>;
+export type MessageUpdate = Updateable<MessageTable>;
+
+export type MessageReaction = Selectable<MessageReactionTable>;
+export type NewMessageReaction = Insertable<MessageReactionTable>;
+
+export type MessageAttachment = Selectable<MessageAttachmentTable>;
+export type NewMessageAttachment = Insertable<MessageAttachmentTable>;
+
+export type ChannelReadState = Selectable<ChannelReadStateTable>;
+export type NewChannelReadState = Insertable<ChannelReadStateTable>;

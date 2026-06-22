@@ -5,6 +5,8 @@ import cookieParser from 'cookie-parser';
 import { WebSocketServer } from 'ws';
 import { handleTerminalUpgrade } from './ws/ssh-terminal';
 import { handleSftpUpgrade } from './ws/sftp-session';
+import { handleMessagingUpgrade } from './ws/messaging-session';
+import { initRedisMessaging } from './lib/messaging-pubsub';
 import { apiEnvSchema, readConfig } from '@vencore/config';
 import { createDb } from '@vencore/db';
 import type { Kysely } from 'kysely';
@@ -46,6 +48,7 @@ import { createSshActionsRouter } from './routes/ssh-actions';
 import { createWebhooksRouter } from './routes/webhooks';
 import { createApiKeysRouter } from './routes/api-keys';
 import { createNotificationsRouter } from './routes/notifications';
+import { createMessagingRouter } from './routes/messaging';
 import { createDashboardsRouter } from './routes/dashboards'
 import { createProjectsRouter, createProjectStatusesRouter, createProjectLabelsRouter } from './routes/projects';
 import { createProjectTasksRouter, createMyTasksRouter } from './routes/project-tasks';
@@ -306,6 +309,9 @@ app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requir
 app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 
+// Messaging
+app.use('/api/messaging', requireAuth, requireModule('messaging'), createMessagingRouter(db, requirePermission));
+
 // Infra routes
 app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db, requirePermission));
 app.use('/api/sse', requireAuth, createSseRouter(db));
@@ -342,6 +348,11 @@ startWebhookDelivery(db);
 // Start metrics rollup + retention worker (15-min cycle)
 startMetricsRollup(db);
 
+// Init messaging Redis pub/sub (optional — falls back to local broadcast without it)
+if (env.REDIS_URL) {
+  initRedisMessaging(env.REDIS_URL);
+}
+
 // ── HTTP + WebSocket server ────────────────────────────────────────────────
 const httpServer = createServer(app);
 
@@ -358,6 +369,10 @@ httpServer.on('upgrade', (request, socket, head) => {
   } else if (/^\/api\/servers\/[^/]+\/ssh\/sftp/.test(url)) {
     wss.handleUpgrade(request, socket as import('net').Socket, head, (ws) => {
       void handleSftpUpgrade(ws, request, db, env.JWT_SECRET);
+    });
+  } else if (url.startsWith('/api/messaging/ws')) {
+    wss.handleUpgrade(request, socket as import('net').Socket, head, (ws) => {
+      void handleMessagingUpgrade(ws, request, db, env.JWT_SECRET);
     });
   } else {
     socket.destroy();
