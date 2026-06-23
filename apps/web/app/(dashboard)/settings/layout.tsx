@@ -17,6 +17,14 @@ interface SettingsGroup {
   links: SettingsLink[];
 }
 
+const ADMIN_ONLY_DEEP_LINKS = [
+  '/settings/pipelines',
+  '/settings/tasks',
+  '/settings/activity',
+  '/settings/messaging',
+  '/settings/dashboards',
+];
+
 const GROUPS: SettingsGroup[] = [
   {
     label: 'Personal',
@@ -68,7 +76,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   const adminOnlyHrefs = GROUPS.filter(g => g.adminOnly).flatMap(g => g.links.map(l => l.href));
 
   useEffect(() => {
-    if (!isLoading && !isAdmin && adminOnlyHrefs.some(href => isActive(pathname, href))) {
+    const allAdminOnlyLinks = [...adminOnlyHrefs, ...ADMIN_ONLY_DEEP_LINKS];
+    if (!isLoading && !isAdmin && allAdminOnlyLinks.some(href => isActive(pathname, href))) {
       router.push('/settings/profile');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
