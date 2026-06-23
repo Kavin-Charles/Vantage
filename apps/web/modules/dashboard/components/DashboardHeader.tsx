@@ -9,6 +9,7 @@ interface Props {
   onCancel: () => void;
   onOpenGroupAssign: () => void;
   onAddWidget: () => void;
+  onCreateNew: () => void;
   isSaving: boolean;
 }
 
@@ -21,6 +22,7 @@ export function DashboardHeader({
   onCancel,
   onOpenGroupAssign,
   onAddWidget,
+  onCreateNew,
   isSaving,
 }: Props) {
   return (
@@ -111,21 +113,37 @@ export function DashboardHeader({
           </>
         )}
         {isAdmin && !isEditMode && (
-          <button
-            onClick={onToggleEdit}
-            style={{
-              padding: '7px 14px',
-              borderRadius: 8,
-              border: '1px solid var(--border)',
-              background: 'none',
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--text)',
-            }}
-          >
-            Edit Layout
-          </button>
+          <>
+            <button
+              onClick={onCreateNew}
+              style={{
+                padding: '7px 14px',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                background: 'none',
+                cursor: 'pointer',
+                fontSize: 13,
+                color: 'var(--text2)',
+              }}
+            >
+              + New Dashboard
+            </button>
+            <button
+              onClick={onToggleEdit}
+              style={{
+                padding: '7px 14px',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                background: 'none',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--text)',
+              }}
+            >
+              Edit Layout
+            </button>
+          </>
         )}
       </div>
     </div>

@@ -6,12 +6,10 @@ import type { DashboardSummary } from '../lib/dashboard-api';
 interface Props {
   dashboards: DashboardSummary[];
   currentId: string;
-  onCreateNew?: () => void;
-  isAdmin: boolean;
 }
 
-export function DashboardTabs({ dashboards, currentId, onCreateNew, isAdmin }: Props) {
-  if (dashboards.length <= 1 && !isAdmin) return null;
+export function DashboardTabs({ dashboards, currentId }: Props) {
+  if (dashboards.length <= 1) return null;
 
   return (
     <div
@@ -45,24 +43,6 @@ export function DashboardTabs({ dashboards, currentId, onCreateNew, isAdmin }: P
           </Link>
         );
       })}
-      {isAdmin && onCreateNew && (
-        <button
-          onClick={onCreateNew}
-          style={{
-            padding: '10px 12px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--text3)',
-            fontSize: 18,
-            lineHeight: 1,
-            flexShrink: 0,
-          }}
-          aria-label="New dashboard"
-        >
-          +
-        </button>
-      )}
     </div>
   );
 }

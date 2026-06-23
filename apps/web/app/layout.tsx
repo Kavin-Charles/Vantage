@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
 import { AuthProvider } from '@/modules/shared/lib/AuthContext';
+import { ThemeProvider } from '@/modules/shared/contexts/ThemeContext';
 import { Providers } from '@/modules/shared/components/Providers';
 import './globals.css';
 
@@ -31,7 +32,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning>
         <div id="app-root">
           <Providers>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              <ThemeProvider>{children}</ThemeProvider>
+            </AuthProvider>
           </Providers>
         </div>
       </body>
