@@ -38,6 +38,7 @@ export function WidgetCard({ widgetId, label, isEditMode, onRemove, children }: 
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
   return (
     <div
+      className="widget-card-enter"
       onContextMenu={(e) => {
         const items = [
           { type: 'header' as const, label },
