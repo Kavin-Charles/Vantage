@@ -135,14 +135,13 @@ export function DashboardPage({ dashboardId }: Props) {
         onCancel={handleCancel}
         onOpenGroupAssign={() => setShowGroupAssign(true)}
         onAddWidget={() => setShowAddWidget(true)}
+        onCreateNew={() => setShowCreate(true)}
         isSaving={isSaving}
       />
 
       <DashboardTabs
         dashboards={allDashboards}
         currentId={dashboardId}
-        isAdmin={isAdmin ?? false}
-        onCreateNew={isAdmin ? () => setShowCreate(true) : undefined}
       />
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 24px' }}>
