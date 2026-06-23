@@ -76,7 +76,7 @@ function NavLink({ href, label, icon, dot }: { href: string; label: string; icon
   const [hover, setHover] = useState(false);
   const active = pathname === href || (href !== '/' && pathname.startsWith(href));
   const bg = active ? 'var(--text)' : hover ? 'var(--surface2)' : 'transparent';
-  const fg = active ? '#fff' : hover ? 'var(--text)' : 'var(--text2)';
+  const fg = active ? 'var(--bg)' : hover ? 'var(--text)' : 'var(--text2)';
 
   return (
     <Link
