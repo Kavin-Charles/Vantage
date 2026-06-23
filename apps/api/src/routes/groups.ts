@@ -101,15 +101,15 @@ export function createGroupsRouter(db: Kysely<Database>): Router {
         .execute();
       const grantMap = new Map(groupPermRows.map((r) => [r.permission, r.granted]));
 
-      const modulePermissions = MODULE_REGISTRY.flatMap((mod) =>
-        mod.permissions.map((p) => ({
+      const modulePermissions = MODULE_REGISTRY.map((mod) => ({
+        id: mod.id,
+        name: mod.name,
+        permissions: mod.permissions.map((p) => ({
           key: p.key,
           label: p.label,
-          moduleId: mod.id,
-          moduleName: mod.name,
           granted: grantMap.get(p.key) ?? false,
         })),
-      );
+      }));
 
       const installedPlugins = await db
         .selectFrom('workspace_plugins')

@@ -51,29 +51,23 @@ export function createUserPermissionsRouter(db: Kysely<Database>): Router {
 
       const roleDefaults = new Set(getDefaultPermissionsForRole(targetUser.role));
 
-      const modules = MODULE_REGISTRY.flatMap(mod =>
-        mod.permissions.map(p => {
-          const moduleEnabled = enabledModuleIds.has(mod.id);
+      const modules = MODULE_REGISTRY.map(mod => ({
+        id: mod.id,
+        name: mod.name,
+        moduleEnabled: enabledModuleIds.has(mod.id),
+        permissions: mod.permissions.map(p => {
           const roleDefault = roleDefaults.has(p.key);
           const override = overrideMap.get(p.key);
-          const effectivelyGranted =
+          const granted =
             targetUser.role === 'admin'
               ? true
               : override !== undefined
               ? override
               : roleDefault;
 
-          return {
-            key: p.key,
-            label: p.label,
-            moduleId: mod.id,
-            moduleName: mod.name,
-            effectivelyGranted,
-            isOverride: override !== undefined,
-            moduleEnabled,
-          };
+          return { key: p.key, label: p.label, granted };
         }),
-      );
+      }));
 
       const installedPlugins = await db
         .selectFrom('workspace_plugins')
