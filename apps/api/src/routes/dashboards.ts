@@ -123,6 +123,30 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
     } catch (err) { next(err); }
   });
 
+  // GET /api/dashboards/group-assignments — groups with their assigned dashboard, plus all dashboards [admin]
+  router.get('/group-assignments', requireAdmin, async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+
+      const groups = await db
+        .selectFrom('groups as g')
+        .leftJoin('dashboard_group_assignments as dga', 'dga.group_id', 'g.id')
+        .where('g.workspace_id', '=', workspace.id)
+        .select(['g.id', 'g.name', 'g.color', 'dga.dashboard_id'])
+        .orderBy('g.name', 'asc')
+        .execute();
+
+      const dashboards = await db
+        .selectFrom('dashboards')
+        .where('workspace_id', '=', workspace.id)
+        .select(['id', 'name'])
+        .orderBy('name', 'asc')
+        .execute();
+
+      res.json({ data: { groups, dashboards }, error: null });
+    } catch (err) { next(err); }
+  });
+
   // GET /api/dashboards/:id — get dashboard + layout + groups (permission-filtered)
   router.get('/:id', async (req, res, next) => {
     try {
