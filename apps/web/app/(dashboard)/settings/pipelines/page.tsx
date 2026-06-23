@@ -100,8 +100,8 @@ export default function PipelinesSettingsPage() {
           onMouseLeave={() => setAddHovered(false)}
           style={{
             padding: '9px 18px',
-            background: addHovered ? '#1a2244' : 'var(--text)',
-            color: '#fff',
+            background: addHovered ? 'var(--text2)' : 'var(--text)',
+            color: 'var(--bg)',
             border: 'none',
             borderRadius: 12,
             cursor: 'pointer',
@@ -160,8 +160,8 @@ export default function PipelinesSettingsPage() {
             onMouseLeave={() => setCreateHovered(false)}
             style={{
               padding: '8px 18px',
-              background: !newName.trim() ? 'var(--text3)' : createHovered ? '#1a2244' : 'var(--text)',
-              color: '#fff',
+              background: !newName.trim() ? 'var(--text3)' : createHovered ? 'var(--text2)' : 'var(--text)',
+              color: 'var(--bg)',
               border: 'none',
               borderRadius: 10,
               cursor: newName.trim() ? 'pointer' : 'not-allowed',

@@ -219,7 +219,7 @@ export default function PluginSettingsPage() {
                 disabled={saving}
                 style={{
                   marginTop: 20, padding: '8px 16px', fontSize: 13, fontWeight: 500,
-                  background: 'var(--text)', color: '#fff', border: 'none', borderRadius: 8,
+                  background: 'var(--text)', color: 'var(--bg)', border: 'none', borderRadius: 8,
                   cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1,
                 }}
               >

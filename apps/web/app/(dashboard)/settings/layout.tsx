@@ -17,6 +17,14 @@ interface SettingsGroup {
   links: SettingsLink[];
 }
 
+const ADMIN_ONLY_DEEP_LINKS = [
+  '/settings/pipelines',
+  '/settings/tasks',
+  '/settings/activity',
+  '/settings/messaging',
+  '/settings/dashboards',
+];
+
 const GROUPS: SettingsGroup[] = [
   {
     label: 'Personal',
@@ -50,15 +58,6 @@ const GROUPS: SettingsGroup[] = [
     label: null,
     links: [{ href: '/settings/about', label: 'About' }],
   },
-];
-
-// Admin-only pages reached by deep link only (e.g. from the Modules page),
-// not surfaced as a top-level nav entry — still must be gated here.
-const ADMIN_ONLY_DEEP_LINKS = [
-  '/settings/pipelines',
-  '/settings/tasks',
-  '/settings/activity',
-  '/settings/messaging',
 ];
 
 function isActive(pathname: string, href: string): boolean {

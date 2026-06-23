@@ -76,7 +76,7 @@ export default function GroupsPage() {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--text)', color: '#fff', fontSize: 13, cursor: 'pointer' }}
+          style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--text)', color: 'var(--bg)', fontSize: 13, cursor: 'pointer' }}
         >
           + Create Group
         </button>
@@ -102,7 +102,7 @@ export default function GroupsPage() {
               <button
                 onClick={() => createGroup.mutate()}
                 disabled={!newName || createGroup.isPending}
-                style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: 'var(--text)', color: '#fff', fontSize: 13, cursor: 'pointer' }}
+                style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: 'var(--text)', color: 'var(--bg)', fontSize: 13, cursor: 'pointer' }}
               >
                 Create
               </button>

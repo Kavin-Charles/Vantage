@@ -24,6 +24,10 @@ const setPermissionSchema = z.object({
   granted: z.boolean(),
 });
 
+const setGroupDashboardSchema = z.object({
+  dashboard_id: z.string().uuid().nullable(),
+});
+
 export function createGroupsRouter(db: Kysely<Database>): Router {
   const router = Router();
 
@@ -171,6 +175,57 @@ export function createGroupsRouter(db: Kysely<Database>): Router {
         return;
       }
       res.json({ data: null, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // PUT /api/groups/:id/dashboard — set (or clear) this group's single assigned dashboard
+  router.put('/:id/dashboard', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const parsed = setGroupDashboardSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT' } });
+        return;
+      }
+
+      const group = await db
+        .selectFrom('groups')
+        .where('id', '=', req.params['id']!)
+        .where('workspace_id', '=', workspace.id)
+        .select('id')
+        .executeTakeFirst();
+      if (!group) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND' } });
+        return;
+      }
+
+      if (parsed.data.dashboard_id) {
+        const dashboard = await db
+          .selectFrom('dashboards')
+          .where('id', '=', parsed.data.dashboard_id)
+          .where('workspace_id', '=', workspace.id)
+          .select('id')
+          .executeTakeFirst();
+        if (!dashboard) {
+          res.status(404).json({ data: null, error: { code: 'DASHBOARD_NOT_FOUND' } });
+          return;
+        }
+      }
+
+      await db.transaction().execute(async trx => {
+        await trx
+          .deleteFrom('dashboard_group_assignments')
+          .where('group_id', '=', group.id)
+          .execute();
+        if (parsed.data.dashboard_id) {
+          await trx
+            .insertInto('dashboard_group_assignments')
+            .values({ dashboard_id: parsed.data.dashboard_id, group_id: group.id })
+            .execute();
+        }
+      });
+
+      res.json({ data: { group_id: group.id, dashboard_id: parsed.data.dashboard_id }, error: null });
     } catch (err) { next(err); }
   });
 

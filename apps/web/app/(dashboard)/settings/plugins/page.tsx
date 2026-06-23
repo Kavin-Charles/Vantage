@@ -104,7 +104,7 @@ function LicenseModal({ plugin, onClose, onActivate }: {
             </button>
             <button type="submit" disabled={loading || !key.trim()} style={{
               padding: '7px 14px', fontSize: 13, fontWeight: 500, borderRadius: 8,
-              background: 'var(--text)', color: '#fff', border: 'none',
+              background: 'var(--text)', color: 'var(--bg)', border: 'none',
               cursor: loading || !key.trim() ? 'default' : 'pointer',
               opacity: loading || !key.trim() ? 0.6 : 1,
             }}>
@@ -304,7 +304,7 @@ export default function PluginsSettingsPage() {
           onClick={() => fileInputRef.current?.click()}
           style={{
             padding: '7px 14px', fontSize: 13, fontWeight: 500, borderRadius: 8,
-            background: 'var(--text)', color: '#fff', border: 'none',
+            background: 'var(--text)', color: 'var(--bg)', border: 'none',
             cursor: uploading ? 'default' : 'pointer', opacity: uploading ? 0.6 : 1,
             flexShrink: 0,
           }}
@@ -448,7 +448,7 @@ export default function PluginsSettingsPage() {
                       onClick={() => void installFromMarketplace(mp)}
                       style={{
                         padding: '6px 14px', fontSize: 12, fontWeight: 500, borderRadius: 8,
-                        background: 'var(--text)', color: '#fff', border: 'none',
+                        background: 'var(--text)', color: 'var(--bg)', border: 'none',
                         cursor: installing === mp.id ? 'default' : 'pointer',
                         opacity: installing === mp.id ? 0.6 : 1, flexShrink: 0,
                       }}
