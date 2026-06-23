@@ -61,7 +61,7 @@ export function DashboardIndexPage() {
             borderRadius: 8,
             border: 'none',
             background: 'var(--text)',
-            color: '#fff',
+            color: 'var(--bg)',
             cursor: 'pointer',
             fontSize: 14,
             fontWeight: 600,

@@ -101,7 +101,7 @@ export function DashboardHeader({
                 borderRadius: 8,
                 border: 'none',
                 background: 'var(--text)',
-                color: '#fff',
+                color: 'var(--bg)',
                 cursor: isSaving ? 'not-allowed' : 'pointer',
                 fontSize: 13,
                 fontWeight: 600,
