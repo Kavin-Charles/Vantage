@@ -107,7 +107,7 @@ export default function GroupDetailPage() {
           <button
             onClick={() => addUserId && addMember.mutate(addUserId)}
             disabled={!addUserId || addMember.isPending}
-            style={{ padding: '7px 14px', borderRadius: 7, border: 'none', background: 'var(--text)', color: '#fff', fontSize: 13, cursor: 'pointer' }}
+            style={{ padding: '7px 14px', borderRadius: 7, border: 'none', background: 'var(--text)', color: 'var(--bg)', fontSize: 13, cursor: 'pointer' }}
           >
             Add
           </button>

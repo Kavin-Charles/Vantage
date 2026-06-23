@@ -23,6 +23,7 @@ export interface UserTable {
   password_reset_token: string | null;
   password_reset_expires_at: Date | null;
   is_active: Generated<boolean>;
+  theme: Generated<'light' | 'dark'>;
   last_login_at: Date | null;
   created_at: Generated<Date>;
 }

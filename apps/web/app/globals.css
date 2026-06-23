@@ -59,6 +59,93 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+[data-theme="dark"] {
+  --bg:        #0f1117;
+  --surface:   #171a23;
+  --surface2:  #1f232e;
+  --border:    #2a2f3b;
+  --border2:   #383f4e;
+
+  --text:      #e8eaf0;
+  --text2:     #aab0c0;
+  --text3:     #6b7280;
+
+  --green:        #4ade80;
+  --green-bg:     #163a2c;
+  --amber:        #fbbf24;
+  --amber-bg:     #3a2a0f;
+  --red:          #f87171;
+  --red-bg:       #3a1717;
+  --blue:         #60a5fa;
+  --blue-bg:      #16233a;
+  --purple:       #c4b5fd;
+  --purple-bg:    #2a1f3a;
+
+  --shadow-hover: 0 2px 8px rgba(0,0,0,0.4);
+  --shadow-modal: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 37%, var(--surface2) 63%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: var(--radius);
+}
+
+.fade-in {
+  animation: slideDown var(--motion-fast) var(--motion-ease) both;
+}
+
+@keyframes widgetIn {
+  from { opacity: 0; transform: scale(.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.widget-card-enter {
+  animation: widgetIn .2s ease both;
+}
+
+.settings-shell {
+  display: flex;
+  gap: 32px;
+}
+
+.settings-subnav {
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.settings-subnav-group {
+  margin-bottom: 20px;
+}
+
+.settings-content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .settings-shell {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .settings-subnav {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 4px;
+  }
+  .settings-subnav-group {
+    display: contents;
+  }
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -99,4 +186,14 @@ body {
 
 .db-sidebar-scroll {
   max-height: calc(100vh - var(--header-h) - 160px);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
 }

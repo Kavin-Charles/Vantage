@@ -7,6 +7,7 @@ import 'react-grid-layout/css/styles.css';
 import { WidgetCard } from './WidgetCard';
 import { getDashboardWidgetById, type DashboardWidgetDef } from '@/modules/shared/lib/dashboard-registry';
 import type { LayoutWidget } from '../lib/dashboard-api';
+import { Icon } from '@/modules/shared/components/ui/Icon';
 
 interface Props {
   layoutRows: LayoutWidget[];
@@ -76,7 +77,8 @@ export function DashboardGrid({ layoutRows, isEditMode, pluginWidgets, onLayoutC
 
   if (layoutRows.length === 0 && !isEditMode) {
     return (
-      <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text3)', fontSize: 14 }}>
+      <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '80px 0', color: 'var(--text3)', fontSize: 14 }}>
+        <Icon name="dashboard" size={28} color="var(--text3)" />
         No widgets on this dashboard.
       </div>
     );

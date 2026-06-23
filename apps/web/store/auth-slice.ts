@@ -7,6 +7,7 @@ export interface AuthUser {
   role: 'admin' | 'member';
   workspace_id: string;
   permissions: string[];
+  theme: 'light' | 'dark';
 }
 
 interface AuthState {

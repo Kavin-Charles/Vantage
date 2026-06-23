@@ -6,81 +6,141 @@ import Link from 'next/link';
 import { Topbar } from '@/modules/shared/components/Topbar';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
 
-interface Tab {
+interface SettingsLink {
   href: string;
   label: string;
-  adminOnly?: boolean;
 }
 
-const ALL_TABS: Tab[] = [
-  { href: '/settings/profile', label: 'Profile' },
-  { href: '/settings/users', label: 'Users & Groups', adminOnly: true },
-  { href: '/settings/ssh', label: 'SSH Keys', adminOnly: true },
-  { href: '/settings/api-keys', label: 'API Keys', adminOnly: true },
-  { href: '/settings/modules', label: 'Modules', adminOnly: true },
-  { href: '/settings/plugins', label: 'Plugins', adminOnly: true },
-  { href: '/settings/activity', label: 'Activity', adminOnly: true },
-  { href: '/settings/notifications', label: 'Notifications', adminOnly: true },
+interface SettingsGroup {
+  label: string | null;
+  adminOnly?: boolean;
+  links: SettingsLink[];
+}
+
+const ADMIN_ONLY_DEEP_LINKS = [
+  '/settings/pipelines',
+  '/settings/tasks',
+  '/settings/activity',
+  '/settings/messaging',
+  '/settings/dashboards',
 ];
+
+const GROUPS: SettingsGroup[] = [
+  {
+    label: 'Personal',
+    links: [
+      { href: '/settings/profile', label: 'Profile' },
+      { href: '/settings/appearance', label: 'Appearance' },
+      { href: '/settings/preferences', label: 'Preferences' },
+    ],
+  },
+  {
+    label: 'Account',
+    links: [
+      { href: '/settings/account', label: 'Account' },
+      { href: '/settings/security', label: 'Security' },
+    ],
+  },
+  {
+    label: 'Workspace',
+    adminOnly: true,
+    links: [
+      { href: '/settings/workspace', label: 'Workspace' },
+      { href: '/settings/users', label: 'Users & Groups' },
+      { href: '/settings/notifications', label: 'Notifications' },
+      { href: '/settings/modules', label: 'Modules' },
+      { href: '/settings/plugins', label: 'Plugins' },
+      { href: '/settings/api-keys', label: 'API Keys' },
+      { href: '/settings/ssh', label: 'SSH Keys' },
+    ],
+  },
+  {
+    label: null,
+    links: [{ href: '/settings/about', label: 'About' }],
+  },
+];
+
+function isActive(pathname: string, href: string): boolean {
+  if (pathname.startsWith(href)) return true;
+  if (href === '/settings/users' && pathname.startsWith('/settings/groups')) return true;
+  return false;
+}
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoading } = useAuth();
-
   const isAdmin = user?.role === 'admin';
 
-  // Filter tabs based on admin status
-  const TABS = ALL_TABS.filter(t => !t.adminOnly || isAdmin);
+  const visibleGroups = GROUPS.filter(g => !g.adminOnly || isAdmin);
+  const adminOnlyHrefs = [
+    ...GROUPS.filter(g => g.adminOnly).flatMap(g => g.links.map(l => l.href)),
+    ...ADMIN_ONLY_DEEP_LINKS,
+  ];
 
-  // Redirect non-admins away from admin-only settings pages
   useEffect(() => {
-    if (!isLoading && !isAdmin && (
-      pathname.startsWith('/settings/users') ||
-      pathname.startsWith('/settings/groups') ||
-      pathname.startsWith('/settings/pipelines') ||
-      pathname.startsWith('/settings/tasks') ||
-      pathname.startsWith('/settings/ssh') ||
-      pathname.startsWith('/settings/api-keys') ||
-      pathname.startsWith('/settings/modules') ||
-      pathname.startsWith('/settings/plugins') ||
-      pathname.startsWith('/settings/activity') ||
-      pathname.startsWith('/settings/notifications') ||
-      pathname.startsWith('/settings/messaging')
-    )) {
+    if (
+      !isLoading &&
+      !isAdmin &&
+      (adminOnlyHrefs.some(href => isActive(pathname, href)) || pathname.startsWith('/settings/groups'))
+    ) {
       router.push('/settings/profile');
     }
-  }, [isAdmin, isLoading, pathname, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, isLoading, pathname]);
 
   return (
     <div className="settings-layout">
       <Topbar />
       <div style={{ padding: 24 }}>
-        {/* Tab nav */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 24 }}>
-          {TABS.map(tab => {
-            const active = pathname.startsWith(tab.href) || (tab.href === '/settings/users' && pathname.startsWith('/settings/groups'));
-            return (
-              <Link
-                key={tab.href}
-                href={tab.href}
-                style={{
-                  padding: '8px 18px',
-                  fontSize: 13,
-                  fontWeight: 500,
-                  color: active ? 'var(--text)' : 'var(--text3)',
-                  textDecoration: 'none',
-                  borderBottom: active ? '2px solid var(--text)' : '2px solid transparent',
-                  marginBottom: -1,
-                  transition: 'all .15s',
-                }}
-              >
-                {tab.label}
-              </Link>
-            );
-          })}
+        <div className="settings-shell">
+          <nav className="settings-subnav">
+            {visibleGroups.map(group => (
+              <div key={group.label ?? '_top'} className="settings-subnav-group">
+                {group.label && (
+                  <div
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: 'var(--text3)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '.04em',
+                      padding: '0 10px 6px',
+                    }}
+                  >
+                    {group.label}
+                  </div>
+                )}
+                {group.links.map(link => {
+                  const active = isActive(pathname, link.href);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      style={{
+                        display: 'block',
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: active ? 600 : 400,
+                        color: active ? 'var(--text)' : 'var(--text2)',
+                        background: active ? 'var(--surface2)' : 'transparent',
+                        textDecoration: 'none',
+                        whiteSpace: 'nowrap',
+                        transition: 'all .15s',
+                      }}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
+          </nav>
+          <div key={pathname} className="settings-content fade-in">
+            {children}
+          </div>
         </div>
-        {children}
       </div>
     </div>
   );

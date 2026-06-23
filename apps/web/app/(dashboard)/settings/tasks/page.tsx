@@ -104,7 +104,7 @@ export default function SettingsTasksPage() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              style={{ padding: '5px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', background: filter === f ? 'var(--text)' : 'transparent', color: filter === f ? '#fff' : 'var(--text2)', transition: 'all .15s' }}
+              style={{ padding: '5px 14px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', background: filter === f ? 'var(--text)' : 'transparent', color: filter === f ? 'var(--bg)' : 'var(--text2)', transition: 'all .15s' }}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>

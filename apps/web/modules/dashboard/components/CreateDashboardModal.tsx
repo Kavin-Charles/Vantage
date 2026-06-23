@@ -87,7 +87,7 @@ export function CreateDashboardModal({ open, onClose, onCreate }: Props) {
                 borderRadius: 8,
                 border: 'none',
                 background: name.trim() ? 'var(--text)' : 'var(--border)',
-                color: name.trim() ? '#fff' : 'var(--text3)',
+                color: name.trim() ? 'var(--bg)' : 'var(--text3)',
                 cursor: name.trim() ? 'pointer' : 'not-allowed',
                 fontSize: 14,
                 fontWeight: 600,

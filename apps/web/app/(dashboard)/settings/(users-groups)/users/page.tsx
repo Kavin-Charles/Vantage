@@ -73,7 +73,7 @@ export default function UsersPage() {
         </div>
         <button
           onClick={() => setShowInvite(true)}
-          style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--text)', color: '#fff', fontSize: 13, cursor: 'pointer' }}
+          style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--text)', color: 'var(--bg)', fontSize: 13, cursor: 'pointer' }}
         >
           {hasSMTP ? '+ Invite User' : '+ Add User'}
         </button>

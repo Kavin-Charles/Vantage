@@ -97,7 +97,7 @@ export function InviteUserModal({ hasSMTP, onClose }: Props) {
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || !email || (!hasSMTP && (!name || !password))}
-            style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--text)', color: '#fff', fontSize: 13, cursor: 'pointer', opacity: mutation.isPending ? 0.6 : 1 }}
+            style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--text)', color: 'var(--bg)', fontSize: 13, cursor: 'pointer', opacity: mutation.isPending ? 0.6 : 1 }}
           >
             {mutation.isPending ? (hasSMTP ? 'Sending…' : 'Adding…') : (hasSMTP ? 'Send Invite' : 'Add User')}
           </button>

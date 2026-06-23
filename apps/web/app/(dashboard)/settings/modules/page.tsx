@@ -6,6 +6,7 @@ import { useModules } from '@/modules/shared/contexts/modules';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 
 const MODULE_META = [
+  { id: 'dashboard', name: 'Dashboard', description: 'Custom dashboards and widget layouts.', settingsHref: '/settings/dashboards' },
   { id: 'contacts',  name: 'Contacts',  description: 'Contact management, profiles, and history.',        settingsHref: null },
   { id: 'companies', name: 'Companies', description: 'Company records and relationships.',                  settingsHref: null },
   { id: 'pipelines', name: 'Pipelines', description: 'Deals pipeline, items, and conversions.',             settingsHref: '/settings/pipelines' },

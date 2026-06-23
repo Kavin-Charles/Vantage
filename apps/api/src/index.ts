@@ -16,6 +16,7 @@ import { createRequireAuth, requireAdmin, type AuthenticatedRequest } from './mi
 import { createRequireModule } from './middleware/module';
 import { createRequirePermission } from './middleware/permission';
 import { createWorkspaceModulesRouter } from './routes/workspace-modules';
+import { createWorkspaceRouter } from './routes/workspace';
 import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
 import { createGroupsRouter } from './routes/groups';
@@ -304,6 +305,7 @@ app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
 });
 
 // Admin only — requireAuth + requireAdmin both applied
+app.use('/api/workspace', requireAuth, requireAdmin, createWorkspaceRouter(db));
 app.use('/api/groups', requireAuth, requireAdmin, createGroupsRouter(db));
 app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requireAdmin));
 app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
