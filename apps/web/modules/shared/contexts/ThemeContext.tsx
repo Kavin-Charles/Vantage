@@ -24,7 +24,17 @@ function readStoredTheme(): Theme {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const getToken = useApiToken();
-  const [theme, setThemeState] = useState<Theme>(readStoredTheme);
+  // Always start at the SSR-safe default so server and client markup match on
+  // first paint; reconcile with the real stored value in an effect below
+  // (a post-hydration state update, which React patches normally — reading
+  // localStorage directly in the lazy initializer caused a hydration
+  // mismatch, since the server has no localStorage and always sees 'light').
+  const [theme, setThemeState] = useState<Theme>('light');
+
+  useEffect(() => {
+    const stored = readStoredTheme();
+    if (stored !== 'light') setThemeState(stored);
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset['theme'] = theme;
