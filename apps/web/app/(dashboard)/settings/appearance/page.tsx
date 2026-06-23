@@ -43,7 +43,7 @@ export default function AppearancePage() {
                   borderRadius: 8,
                   border: theme === option ? '1px solid var(--text)' : '1px solid var(--border)',
                   background: theme === option ? 'var(--text)' : 'var(--surface)',
-                  color: theme === option ? '#fff' : 'var(--text)',
+                  color: theme === option ? 'var(--bg)' : 'var(--text)',
                   cursor: isSaving ? 'not-allowed' : 'pointer',
                   fontSize: 13,
                   fontWeight: 500,
