@@ -22,6 +22,7 @@ import { GroupAssignModal } from '../../components/GroupAssignModal';
 import { DashboardTabs } from '../../components/DashboardTabs';
 import { CreateDashboardModal } from '../../components/CreateDashboardModal';
 import type { DashboardWidgetDef } from '@/modules/shared/lib/dashboard-registry';
+import { Icon } from '@/modules/shared/components/ui/Icon';
 
 interface Props {
   dashboardId: string;
@@ -118,8 +119,15 @@ export function DashboardPage({ dashboardId }: Props) {
 
   if (isLoading || !dashboard) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text3)' }}>
-        Loading…
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '20px 28px 16px' }}>
+          <div className="skeleton" style={{ width: 180, height: 26 }} />
+        </div>
+        <div style={{ flex: 1, padding: '8px 20px 24px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {[0, 1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="skeleton" style={{ height: 160 }} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -147,10 +155,13 @@ export function DashboardPage({ dashboardId }: Props) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 24px' }}>
         {isEditMode && currentLayout.length === 0 && (
           <div
+            className="fade-in"
             style={{
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
+              gap: 10,
               height: 200,
               border: '2px dashed var(--border)',
               borderRadius: 12,
@@ -158,6 +169,7 @@ export function DashboardPage({ dashboardId }: Props) {
               fontSize: 14,
             }}
           >
+            <Icon name="dashboard" size={28} color="var(--text3)" />
             Click &ldquo;+ Add Widget&rdquo; to add your first widget.
           </div>
         )}
