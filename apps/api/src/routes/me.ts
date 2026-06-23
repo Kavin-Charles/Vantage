@@ -41,8 +41,12 @@ export function createMeRouter(db: Kysely<Database>): ExpressRouter {
     try {
       const { user } = req as unknown as AuthenticatedRequest;
       const parsed = patchMeSchema.safeParse(req.body);
-      if (!parsed.success || Object.keys(parsed.data).length === 0) {
-        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT' } });
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: 'Invalid name or theme.' } });
+        return;
+      }
+      if (Object.keys(parsed.data).length === 0) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: 'No fields to update.' } });
         return;
       }
 
@@ -65,13 +69,13 @@ export function createMeRouter(db: Kysely<Database>): ExpressRouter {
       const { user } = req as unknown as AuthenticatedRequest;
       const parsed = patchPasswordSchema.safeParse(req.body);
       if (!parsed.success) {
-        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT' } });
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: 'Current password and a new password (min 8 characters) are required.' } });
         return;
       }
 
       const valid = await bcrypt.compare(parsed.data.currentPassword, user.password_hash);
       if (!valid) {
-        res.status(401).json({ data: null, error: { code: 'INVALID_CREDENTIALS' } });
+        res.status(401).json({ data: null, error: { code: 'INVALID_CREDENTIALS', message: 'Current password is incorrect.' } });
         return;
       }
 
