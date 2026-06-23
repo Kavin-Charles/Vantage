@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 
@@ -32,6 +32,7 @@ function dedupeGroups(rows: GroupRow[]): GroupRow[] {
 
 export default function DashboardSettingsPage() {
   const getToken = useApiToken();
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-group-assignments'],
     queryFn: async () => {
@@ -70,6 +71,7 @@ export default function DashboardSettingsPage() {
         body: JSON.stringify({ dashboard_id: value || null }),
         token,
       });
+      await queryClient.invalidateQueries({ queryKey: ['dashboard-group-assignments'] });
       setFeedback(prev => ({ ...prev, [groupId]: 'saved' }));
     } catch {
       setFeedback(prev => ({ ...prev, [groupId]: 'error' }));
