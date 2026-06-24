@@ -1,6 +1,11 @@
+'use client';
+
 import webPackageJson from '../../../../package.json';
+import { ContextMenu, useContextMenu } from '@/modules/shared/components/ui/ContextMenu';
+import { settingRowMenu } from '@/modules/shared/lib/settingsMenu';
 
 export default function AboutPage() {
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
   const card: React.CSSProperties = {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
@@ -19,12 +24,19 @@ export default function AboutPage() {
       <p style={{ margin: '0 0 24px', fontSize: 13, color: 'var(--text2)' }}>Version and resources.</p>
 
       <div style={card}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+        <div
+          onContextMenu={e => openMenu(e, settingRowMenu({ label: 'Version', value: webPackageJson.version }))}
+          style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}
+        >
           <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500 }}>Version</span>
           <span style={{ fontSize: 13, color: 'var(--text)' }}>{webPackageJson.version}</span>
         </div>
         {links.map(link => (
-          <div key={link.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+          <div
+            key={link.label}
+            onContextMenu={e => openMenu(e, settingRowMenu({ label: link.label, value: link.href, href: link.href }))}
+            style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}
+          >
             <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500 }}>{link.label}</span>
             <a href={link.href} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: 'var(--text)', textDecoration: 'underline' }}>
               {link.href.replace('https://', '')}
@@ -35,6 +47,7 @@ export default function AboutPage() {
           Vencore — One Platform to Run Your Entire Business.
         </p>
       </div>
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }

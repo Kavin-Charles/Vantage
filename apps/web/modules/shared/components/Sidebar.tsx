@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
@@ -12,6 +12,7 @@ import { useConfig } from '@/modules/shared/lib/useConfig';
 import { useModules } from '@/modules/shared/contexts/modules';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { useInstalledPlugins } from '@/modules/shared/hooks/useInstalledPlugins';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 
 const NAV_GROUPS = [
   {
@@ -74,16 +75,31 @@ function PulseDot() {
 
 function NavLink({ href, label, icon, dot, badge }: { href: string; label: string; icon: string; dot?: boolean; badge?: number }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [hover, setHover] = useState(false);
   const active = pathname === href || (href !== '/' && pathname.startsWith(href));
   const bg = active ? 'var(--text)' : hover ? 'var(--surface2)' : 'transparent';
   const fg = active ? 'var(--bg)' : hover ? 'var(--text)' : 'var(--text2)';
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   return (
+    <>
     <Link
       href={href}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onContextMenu={e => {
+        const url = `${window.location.origin}${href}`;
+        const items: ContextMenuItem[] = [
+          { icon: 'open', label: 'Open', onClick: () => router.push(href) },
+          { icon: 'open', label: 'Open in new tab', onClick: () => window.open(href, '_blank') },
+          { icon: 'link', label: 'Copy URL', onClick: () => navigator.clipboard.writeText(url) },
+          { type: 'separator' },
+          { icon: 'refresh', label: 'Refresh', onClick: () => router.refresh() },
+          { label: 'Pin to top (coming soon)', disabled: true, onClick: () => {} },
+        ];
+        openMenu(e, items);
+      }}
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '8px 10px', borderRadius: 12, cursor: 'pointer',
@@ -109,6 +125,8 @@ function NavLink({ href, label, icon, dot, badge }: { href: string; label: strin
         </span>
       )}
     </Link>
+    <ContextMenu menu={menu} onClose={closeMenu} />
+    </>
   );
 }
 

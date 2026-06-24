@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listApiKeys, deleteApiKey } from '@/modules/shared/lib/api-keys';
 import { Button } from '@/modules/shared/components/ui/Button';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import type { ApiKey } from '@vencore/types';
 
 function formatDate(iso: string) {
@@ -28,6 +29,7 @@ export function ApiKeyTable({ onCreateClick }: Props) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['api-keys'] }),
   });
 
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
   const keys: ApiKey[] = data?.data ?? [];
 
   return (
@@ -60,7 +62,20 @@ export function ApiKeyTable({ onCreateClick }: Props) {
             </thead>
             <tbody>
               {keys.map((k, i) => (
-                <tr key={k.id} style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}>
+                <tr
+                  key={k.id}
+                  onContextMenu={e => {
+                    const items: ContextMenuItem[] = [
+                      { icon: 'copy', label: 'Copy name', onClick: () => navigator.clipboard.writeText(k.name) },
+                      { icon: 'copy', label: 'Copy prefix', onClick: () => navigator.clipboard.writeText(k.prefix) },
+                      { icon: 'copy', label: 'Copy ID', onClick: () => navigator.clipboard.writeText(k.id) },
+                      { type: 'separator' },
+                      { icon: 'trash', label: 'Revoke', danger: true, disabled: revokeMut.isPending, onClick: () => revokeMut.mutate(k.id) },
+                    ];
+                    openMenu(e, items);
+                  }}
+                  style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
+                >
                   <td style={{ padding: '12px 14px', fontWeight: 500 }}>{k.name}</td>
                   <td style={{ padding: '12px 14px', fontFamily: 'monospace', fontSize: 12, color: 'var(--text2)' }}>{k.prefix}…</td>
                   <td style={{ padding: '12px 14px' }}>
@@ -95,6 +110,7 @@ export function ApiKeyTable({ onCreateClick }: Props) {
           </table>
         </div>
       )}
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }

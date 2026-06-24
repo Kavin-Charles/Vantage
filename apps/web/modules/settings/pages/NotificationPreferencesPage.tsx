@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
 import { apiFetch } from '@/modules/shared/lib/api';
+import { ContextMenu, useContextMenu } from '@/modules/shared/components/ui/ContextMenu';
 
 const CHANNELS = ['email', 'push'] as const;
 const SEVERITIES = ['critical', 'warning', 'info'] as const;
@@ -73,6 +74,7 @@ export default function NotificationPreferencesPage() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data, isLoading } = useQuery({
     queryKey: ['notification-preferences'],
@@ -177,6 +179,17 @@ export default function NotificationPreferencesPage() {
           {SEVERITIES.map((sev, i) => (
             <div
               key={sev}
+              onContextMenu={e => {
+                if (!isAdmin) return;
+                openMenu(e, [
+                  { icon: 'copy', label: 'Copy setting name', onClick: () => navigator.clipboard.writeText(`${sev} notifications`) },
+                  { type: 'separator' },
+                  { icon: 'refresh', label: 'Reset to default (all on)', onClick: () => {
+                    const updated: PrefItem[] = CHANNELS.flatMap(ch => SEVERITIES.map(s => ({ channel: ch, severity: s, enabled: s === sev ? true : isEnabled(ch, s) })));
+                    saveMut.mutate(updated);
+                  } },
+                ]);
+              }}
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 80px 80px',
@@ -208,6 +221,7 @@ export default function NotificationPreferencesPage() {
           ))}
         </div>
       )}
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }

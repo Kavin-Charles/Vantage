@@ -1,4 +1,5 @@
 'use client';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import type { ProjectWithProgress } from '@/modules/projects/lib/api';
 
 const HEALTH = {
@@ -17,16 +18,38 @@ function formatDate(d: string | null) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export function ProjectCard({ project, onClick }: { project: ProjectWithProgress; onClick: () => void }) {
+export function ProjectCard({
+  project, onClick, onToggleArchive, onDelete,
+}: {
+  project: ProjectWithProgress;
+  onClick: () => void;
+  onToggleArchive?: () => void;
+  onDelete?: () => void;
+}) {
   const health = HEALTH[project.health as keyof typeof HEALTH] ?? HEALTH.ON_TRACK;
   const accent = project.color ?? '#6b665c';
   const rgb = accent.startsWith('#') && accent.length === 7 ? hex2rgb(accent) : null;
   const end = formatDate(project.end_date);
   const isOverdue = project.end_date && new Date(project.end_date) < new Date() && project.status !== 'archived';
+  const isArchived = project.status === 'archived';
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   return (
     <div
       onClick={onClick}
+      onContextMenu={e => {
+        const url = `${window.location.origin}/projects/${project.id}/tasks`;
+        const items: ContextMenuItem[] = [
+          { icon: 'open', label: 'Open', onClick },
+          { icon: 'open', label: 'Open in new tab', onClick: () => window.open(`/projects/${project.id}/tasks`, '_blank') },
+          { icon: 'link', label: 'Copy link', onClick: () => navigator.clipboard.writeText(url) },
+          { type: 'separator' },
+          { icon: 'duplicate', label: 'Duplicate (coming soon)', disabled: true, onClick: () => {} },
+          ...(onToggleArchive ? [{ icon: 'folder', label: isArchived ? 'Unarchive' : 'Archive', onClick: onToggleArchive }] : []),
+          ...(onDelete ? [{ type: 'separator' as const }, { icon: 'trash', label: 'Delete', danger: true, onClick: onDelete }] : []),
+        ];
+        openMenu(e, items);
+      }}
       style={{
         background: 'var(--surface)',
         border: `1.5px solid ${rgb ? `rgba(${rgb}, 0.18)` : 'var(--border)'}`,
@@ -108,6 +131,7 @@ export function ProjectCard({ project, onClick }: { project: ProjectWithProgress
           </div>
         </div>
       </div>
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }
