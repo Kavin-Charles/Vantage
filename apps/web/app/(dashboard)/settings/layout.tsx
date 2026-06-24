@@ -23,6 +23,7 @@ const ADMIN_ONLY_DEEP_LINKS = [
   '/settings/activity',
   '/settings/messaging',
   '/settings/dashboards',
+  '/settings/project-management',
 ];
 
 const GROUPS: SettingsGroup[] = [

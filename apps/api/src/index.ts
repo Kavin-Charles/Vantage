@@ -60,6 +60,7 @@ import { createSprintsRouter } from './routes/sprints';
 import { createProjectMembersRouter } from './routes/project-members';
 import { createPortalRouter, createPortalInternalRouter } from './routes/portal';
 import { createModuleEventSettingsRouter } from './routes/module-event-settings';
+import { createHooksRouter } from './routes/hooks';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
@@ -322,6 +323,7 @@ app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesR
 app.use('/api/alert-thresholds', requireAuth, requireModule('alerts'), createAlertThresholdsRouter(db));
 app.use('/api/settings/module-events', requireAuth, createModuleEventSettingsRouter(db));
 app.use('/api/settings/notifications', requireAuth, createNotificationPreferencesRouter(db));
+app.use('/api/settings', requireAuth, createHooksRouter(db));
 
 // SSH management
 app.use('/api/ssh', requireAuth, createSshKeypairRouter(db));
