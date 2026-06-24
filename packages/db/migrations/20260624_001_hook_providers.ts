@@ -1,3 +1,4 @@
+import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 
 export async function up(db: Kysely<unknown>): Promise<void> {
@@ -7,7 +8,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn('workspace_id', 'uuid', col => col.notNull().references('workspaces.id').onDelete('cascade'))
     .addColumn('provider_id', 'varchar(120)', col => col.notNull())
     .addColumn('name', 'varchar(255)', col => col.notNull())
-    .addColumn('source', 'varchar(20)', col => col.notNull().check(db.raw("source IN ('builtin', 'plugin')")))
+    .addColumn('source', 'varchar(20)', col => col.notNull().check(sql`source IN ('builtin', 'plugin')`))
     .addColumn('enabled', 'boolean', col => col.notNull().defaultTo(true))
     .addColumn('meta', 'jsonb')
     .addColumn('created_at', 'timestamptz', col => col.notNull().defaultTo(db.fn('now', [])))
