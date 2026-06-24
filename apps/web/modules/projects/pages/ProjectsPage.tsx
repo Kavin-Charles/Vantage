@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { Topbar } from '@/modules/shared/components/Topbar';
 import { Icon } from '@/modules/shared/components/ui/Icon';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { pmApi, type ProjectWithProgress } from '@/modules/projects/lib/api';
 import { ProjectCard } from '@/modules/projects/components/ProjectCard';
 
@@ -28,7 +29,9 @@ function StatCard({ label, value, sub }: { label: string; value: number | string
 export default function ProjectsPage() {
   const router = useRouter();
   const getToken = useApiToken();
+  const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>('all');
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
 
   const { data: projects = [], isLoading } = useQuery<ProjectWithProgress[]>({
     queryKey: ['projects'],
@@ -36,6 +39,17 @@ export default function ProjectsPage() {
       const res = await pmApi.listProjects(await getToken());
       return res.data ?? [];
     },
+  });
+
+  const toggleArchiveMut = useMutation({
+    mutationFn: async (p: ProjectWithProgress) =>
+      pmApi.updateProject(await getToken(), p.id, { status: p.status === 'archived' ? 'active' : 'archived' }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['projects'] }),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => pmApi.deleteProject(await getToken(), id),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['projects'] }),
   });
 
   const active = projects.filter(p => p.status !== 'archived');
@@ -119,13 +133,26 @@ export default function ProjectsPage() {
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
                 {filtered.map(p => (
-                  <ProjectCard key={p.id} project={p} onClick={() => router.push(`/projects/${p.id}/tasks`)} />
+                  <ProjectCard
+                    key={p.id}
+                    project={p}
+                    onClick={() => router.push(`/projects/${p.id}/tasks`)}
+                    onToggleArchive={() => toggleArchiveMut.mutate(p)}
+                    onDelete={() => askConfirm({
+                      title: 'Delete project',
+                      message: `Delete "${p.name}"? This cannot be undone.`,
+                      confirmLabel: 'Delete',
+                      variant: 'danger',
+                      onConfirm: () => deleteMut.mutate(p.id),
+                    })}
+                  />
                 ))}
               </div>
             )}
           </>
         )}
       </div>
+      {confirmEl}
     </>
   );
 }

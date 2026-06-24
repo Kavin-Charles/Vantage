@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useModules } from '@/modules/shared/contexts/modules';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 
 const MODULE_META = [
   { id: 'dashboard', name: 'Dashboard', description: 'Custom dashboards and widget layouts.', settingsHref: '/settings/dashboards' },
@@ -23,7 +25,9 @@ const MODULE_META = [
 export default function ModulesSettingsPage() {
   const { isEnabled, setEnabled } = useModules();
   const getToken = useApiToken();
+  const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   async function toggle(moduleId: string) {
     const next = !isEnabled(moduleId);
@@ -58,6 +62,15 @@ export default function ModulesSettingsPage() {
         {MODULE_META.map(mod => (
           <div
             key={mod.id}
+            onContextMenu={e => {
+              const items: ContextMenuItem[] = [
+                { icon: 'check', label: isEnabled(mod.id) ? 'Disable' : 'Enable', onClick: () => void toggle(mod.id) },
+                ...(mod.settingsHref ? [{ icon: 'open', label: 'View details', onClick: () => router.push(mod.settingsHref!) }] : []),
+                { type: 'separator' as const },
+                { icon: 'copy', label: 'Copy module name', onClick: () => navigator.clipboard.writeText(mod.name) },
+              ];
+              openMenu(e, items);
+            }}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '12px 16px', borderRadius: 10,
@@ -104,6 +117,7 @@ export default function ModulesSettingsPage() {
           </div>
         ))}
       </div>
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }

@@ -9,6 +9,8 @@ import { TaskDetailPanel } from '@/modules/projects/components/TaskDetailPanel';
 import { AvatarGroup } from '@/modules/projects/components/AvatarGroup';
 import { TaskCreateModal } from '@/modules/projects/components/TaskCreateModal';
 import { Icon } from '@/modules/shared/components/ui/Icon';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 
 const PRIORITY_COLORS: Record<string, string> = {
   LOW: 'var(--text3)', MEDIUM: 'var(--amber)', HIGH: 'var(--red)', URGENT: 'var(--red)',
@@ -56,6 +58,50 @@ export default function ProjectListPage() {
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
   });
+
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+
+  const duplicateMutation = useMutation({
+    mutationFn: async (task: TaskWithAssignees) => {
+      const token = await getToken();
+      return pmApi.createTask(token, projectId, {
+        title: `${task.title} (copy)`,
+        status_id: task.status_id,
+        priority: task.priority,
+        due_date: task.due_date,
+        assignee_ids: task.assignees.map(a => a.id),
+      });
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const token = await getToken();
+      return pmApi.deleteTask(token, projectId, taskId);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
+  });
+
+  function openTaskMenu(e: React.MouseEvent, task: TaskWithAssignees) {
+    const items: ContextMenuItem[] = [
+      { icon: 'open', label: 'Open', onClick: () => void openTask(task) },
+      { icon: 'edit', label: 'Edit', onClick: () => void openTask(task) },
+      { icon: 'copy', label: 'Copy ID', onClick: () => navigator.clipboard.writeText(task.id) },
+      { type: 'separator' },
+      { icon: 'duplicate', label: 'Duplicate', onClick: () => duplicateMutation.mutate(task) },
+      { type: 'separator' },
+      { icon: 'trash', label: 'Delete', danger: true, onClick: () => askConfirm({
+        title: 'Delete task',
+        message: `Delete "${task.title}"? This cannot be undone.`,
+        confirmLabel: 'Delete',
+        variant: 'danger',
+        onConfirm: () => deleteMutation.mutate(task.id),
+      }) },
+    ];
+    openMenu(e, items);
+  }
 
   async function openTask(task: Task) {
     const token = await getToken();
@@ -186,6 +232,7 @@ export default function ProjectListPage() {
                   <tr
                     key={task.id}
                     onClick={() => void openTask(task)}
+                    onContextMenu={e => openTaskMenu(e, task)}
                     style={{ cursor: 'pointer', borderBottom: isLast ? 'none' : '1px solid var(--border)' }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
@@ -305,6 +352,8 @@ export default function ProjectListPage() {
           }}
         />
       )}
+      <ContextMenu menu={menu} onClose={closeMenu} />
+      {confirmEl}
     </div>
   );
 }

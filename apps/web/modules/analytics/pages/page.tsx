@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Topbar } from '@/modules/shared/components/Topbar';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getRevenue, getPipeline, getTeam } from '@/modules/analytics/lib/analytics';
@@ -11,6 +11,20 @@ import { RevenueChart } from '../components/RevenueChart';
 import { PipelineChart } from '../components/PipelineChart';
 import { RepLeaderboard } from '../components/RepLeaderboard';
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+
+function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
+  if (rows.length === 0) return;
+  const headers = Object.keys(rows[0]!);
+  const csv = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const PERIODS: { label: string; value: Period }[] = [
   { label: '30D', value: '30d' },
@@ -27,7 +41,9 @@ const card: React.CSSProperties = {
 
 export default function AnalyticsPage() {
   const getToken = useApiToken();
+  const qc = useQueryClient();
   const [period, setPeriod] = useState<Period>('30d');
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data: revenueData, isLoading: revLoading } = useQuery({
     queryKey: ['analytics-revenue', period],
@@ -43,6 +59,14 @@ export default function AnalyticsPage() {
     queryKey: ['analytics-team', period],
     queryFn: async () => getTeam(await getToken(), period),
   });
+
+  function chartMenu(queryKey: string, rows: Record<string, unknown>[] | undefined, filename: string) {
+    const items: ContextMenuItem[] = [
+      { icon: 'refresh', label: 'Refresh', onClick: () => void qc.invalidateQueries({ queryKey: [queryKey, period] }) },
+      { icon: 'open', label: 'Export CSV', disabled: !rows || rows.length === 0, onClick: () => downloadCsv(filename, rows ?? []) },
+    ];
+    return (e: React.MouseEvent) => openMenu(e, items);
+  }
 
   const periodToggle = (
     <div
@@ -86,7 +110,10 @@ export default function AnalyticsPage() {
         <KpiCards data={revenueData?.data} isLoading={revLoading} />
 
         {/* Revenue over time */}
-        <div style={{ ...card, padding: '20px 24px' }}>
+        <div
+          onContextMenu={chartMenu('analytics-revenue', revenueData?.data?.series as Record<string, unknown>[] | undefined, 'revenue.csv')}
+          style={{ ...card, padding: '20px 24px' }}
+        >
           <div
             style={{
               fontSize: 13,
@@ -105,7 +132,10 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Pipeline by stage */}
-        <div style={{ ...card, padding: '20px 24px' }}>
+        <div
+          onContextMenu={chartMenu('analytics-pipeline', pipelineData?.data?.stages as Record<string, unknown>[] | undefined, 'pipeline.csv')}
+          style={{ ...card, padding: '20px 24px' }}
+        >
           <div
             style={{
               fontSize: 13,
@@ -123,7 +153,10 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Rep leaderboard */}
-        <div style={{ ...card, marginBottom: 0, overflow: 'hidden' }}>
+        <div
+          onContextMenu={chartMenu('analytics-team', teamData?.data?.reps as Record<string, unknown>[] | undefined, 'rep-leaderboard.csv')}
+          style={{ ...card, marginBottom: 0, overflow: 'hidden' }}
+        >
           <div
             style={{
               padding: '20px 24px 0',
@@ -137,6 +170,7 @@ export default function AnalyticsPage() {
           <RepLeaderboard reps={teamData?.data?.reps} isLoading={teamLoading} />
         </div>
       </div>
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </ModuleGuard>
   );
 }

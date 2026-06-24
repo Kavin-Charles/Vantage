@@ -9,6 +9,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { addReaction, removeReaction, deleteMessage, editMessage } from '../lib/messaging';
 
 interface Props {
+  channelId: string;
   messages: Message[];
   currentUserId: string;
   hasMore: boolean;
@@ -47,7 +48,7 @@ function isDifferentDay(a: Message, b: Message) {
 }
 
 export function MessageList({
-  messages, currentUserId, hasMore, loadingHistory, onLoadMore, onMarkRead, onThreadOpen, onlineUsers,
+  channelId, messages, currentUserId, hasMore, loadingHistory, onLoadMore, onMarkRead, onThreadOpen, onlineUsers,
 }: Props) {
   const getToken = useApiToken();
   const qc = useQueryClient();
@@ -198,6 +199,7 @@ export function MessageList({
               />
             ) : (
               <MessageBubble
+                channelId={channelId}
                 message={msg}
                 currentUserId={currentUserId}
                 showAvatar={showAvatar}

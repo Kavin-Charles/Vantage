@@ -6,6 +6,8 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { Input, FormField } from '@/modules/shared/components/ui/FormField';
+import { ContextMenu, useContextMenu } from '@/modules/shared/components/ui/ContextMenu';
+import { settingRowMenu } from '@/modules/shared/lib/settingsMenu';
 
 export default function ProfilePage() {
   const { user, isLoading, refetch } = useAuth();
@@ -15,6 +17,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -83,13 +86,18 @@ export default function ProfilePage() {
             { label: 'Role', value: user.role },
             { label: 'User ID', value: user.id },
           ].map(({ label, value }) => (
-            <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: '1px solid var(--border)' }}>
+            <div
+              key={label}
+              onContextMenu={e => openMenu(e, settingRowMenu({ label, value }))}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderTop: '1px solid var(--border)' }}
+            >
               <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500 }}>{label}</span>
               <span style={{ color: 'var(--text)', fontFamily: label === 'User ID' ? 'monospace' : 'inherit', fontSize: label === 'User ID' ? 11 : 13 } as React.CSSProperties}>{value}</span>
             </div>
           ))}
         </div>
       </div>
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }

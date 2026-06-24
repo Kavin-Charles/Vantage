@@ -69,8 +69,7 @@ export function ContextMenu({
   menu: MenuState | null;
   onClose: () => void;
 }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  const [mounted] = useState(() => typeof document !== 'undefined');
   if (!mounted || !menu) return null;
   return createPortal(
     <MenuRoot x={menu.x} y={menu.y} items={menu.items} onClose={onClose} />,
@@ -96,6 +95,14 @@ function estimateH(items: ContextMenuItem[]): number {
   }, 0);
 }
 
+/** Indices of items that can receive keyboard focus (skips separators/headers). */
+function focusableIndices(items: { type?: string }[]): number[] {
+  return items.reduce<number[]>((acc, it, i) => {
+    if (it.type !== 'separator' && it.type !== 'header') acc.push(i);
+    return acc;
+  }, []);
+}
+
 const CONTAINER: React.CSSProperties = {
   position: 'fixed',
   background: 'var(--surface)',
@@ -109,6 +116,7 @@ const CONTAINER: React.CSSProperties = {
   minWidth: MENU_W,
   userSelect: 'none',
   animation: 'ctx-in .12s ease',
+  outline: 'none',
 };
 
 // ── CSS animation (injected once) ─────────────────────────────────────────────
@@ -132,21 +140,28 @@ function ensureStyle() {
 
 function SubItem({
   item,
+  id,
+  focused,
+  onHover,
   onClose,
 }: {
   item: ContextMenuSubItem;
+  id: string;
+  focused: boolean;
+  onHover: () => void;
   onClose: () => void;
 }) {
-  const [hover, setHover] = useState(false);
   return (
     <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      id={id}
+      role="menuitem"
+      aria-disabled={item.disabled || undefined}
+      onMouseEnter={onHover}
       onClick={() => { if (!item.disabled) { item.onClick(); onClose(); } }}
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '7px 10px', borderRadius: 8,
-        background: hover && !item.disabled ? 'var(--surface2)' : 'transparent',
+        background: focused && !item.disabled ? 'var(--surface2)' : 'transparent',
         cursor: item.disabled ? 'default' : 'pointer',
         opacity: item.disabled ? 0.4 : 1,
         color: 'var(--text)', transition: 'background .12s',
@@ -171,12 +186,18 @@ function SubItem({
 function SubMenu({
   items,
   anchorEl,
+  menuId,
+  focusedIdx,
+  onHover,
   onClose,
   onEnter,
   onLeave,
 }: {
   items: ContextMenuSubItem[];
   anchorEl: HTMLDivElement;
+  menuId: string;
+  focusedIdx: number;
+  onHover: (i: number) => void;
   onClose: () => void;
   onEnter: () => void;
   onLeave: () => void;
@@ -190,11 +211,23 @@ function SubMenu({
 
   return (
     <div
+      id={menuId}
+      role="menu"
+      aria-orientation="vertical"
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
       style={{ ...CONTAINER, left: Math.max(EDGE, x), top: Math.max(EDGE, y), zIndex: 10000, minWidth: SUB_W }}
     >
-      {items.map((it, i) => <SubItem key={i} item={it} onClose={onClose} />)}
+      {items.map((it, i) => (
+        <SubItem
+          key={i}
+          id={`${menuId}-item-${i}`}
+          item={it}
+          focused={focusedIdx === i}
+          onHover={() => onHover(i)}
+          onClose={onClose}
+        />
+      ))}
     </div>
   );
 }
@@ -202,6 +235,7 @@ function SubMenu({
 // ── Menu item ──────────────────────────────────────────────────────────────────
 
 function MenuItem({
+  id,
   label,
   icon,
   shortcut,
@@ -209,10 +243,13 @@ function MenuItem({
   disabled = false,
   isSubmenu = false,
   subOpen = false,
+  focused = false,
+  submenuId,
   onClick,
   onEnter,
   onLeave,
 }: {
+  id: string;
   label: string;
   icon?: string;
   shortcut?: string;
@@ -220,19 +257,26 @@ function MenuItem({
   disabled?: boolean;
   isSubmenu?: boolean;
   subOpen?: boolean;
+  focused?: boolean;
+  submenuId?: string;
   onClick: () => void;
   onEnter: (el: HTMLDivElement) => void;
   onLeave: () => void;
 }) {
-  const [hover, setHover] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const active = hover || subOpen;
+  const active = focused || subOpen;
 
   return (
     <div
+      id={id}
       ref={ref}
-      onMouseEnter={() => { setHover(true); onEnter(ref.current!); }}
-      onMouseLeave={() => { setHover(false); onLeave(); }}
+      role="menuitem"
+      aria-disabled={disabled || undefined}
+      aria-haspopup={isSubmenu ? 'menu' : undefined}
+      aria-expanded={isSubmenu ? subOpen : undefined}
+      aria-controls={isSubmenu && subOpen ? submenuId : undefined}
+      onMouseEnter={() => onEnter(ref.current!)}
+      onMouseLeave={onLeave}
       onClick={disabled ? undefined : onClick}
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
@@ -272,79 +316,192 @@ function MenuRoot({
 }) {
   ensureStyle();
 
+  const [menuId] = useState(() => `ctx-menu-${Math.random().toString(36).slice(2)}`);
+  const submenuId = `${menuId}-sub`;
+
   const [openSubIdx, setOpenSubIdx] = useState<number | null>(null);
   const [subAnchor, setSubAnchor]   = useState<HTMLDivElement | null>(null);
+  const [focusLevel, setFocusLevel] = useState<'main' | 'sub'>('main');
+  const [subFocusedIdx, setSubFocusedIdx] = useState(0);
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(null!);
-  const menuRef   = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const panelRef   = useRef<HTMLDivElement>(null);
+  const restoreFocusEl = useRef<HTMLElement | null>(null);
+
+  const focusable = focusableIndices(items);
+  const [focusedIdx, setFocusedIdx] = useState<number>(focusable[0] ?? -1);
 
   // Edge-aware position
   const h = estimateH(items);
   const rx = x + MENU_W > window.innerWidth  - EDGE ? x - MENU_W : x;
   const ry = y + h       > window.innerHeight - EDGE ? y - h       : y;
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose(); }
-    function onDown(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        // check if click is inside an open submenu — handled by portal, can't detect easily
-        // so we rely on Escape and item clicks
-      }
-    }
-    function onScroll() { onClose(); }
-    document.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      window.removeEventListener('scroll', onScroll, true);
-    };
+  const handleClose = useCallback(() => {
+    restoreFocusEl.current?.focus?.();
+    onClose();
   }, [onClose]);
 
-  // click-outside on the wrapper div (covers both menu + submenu)
+  // Focus management: remember what had focus, move focus into the menu
+  useEffect(() => {
+    restoreFocusEl.current = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
+    function onScroll() { handleClose(); }
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    return () => window.removeEventListener('scroll', onScroll, true);
+  }, [handleClose]);
+
+  // click-outside (covers both menu + submenu)
   useEffect(() => {
     function onDown(e: MouseEvent) {
       const t = e.target as Node;
-      // if it's inside our menu root div OR inside any ctx-submenu, ignore
-      if (menuRef.current?.contains(t)) return;
+      if (wrapperRef.current?.contains(t)) return;
       if ((t as Element).closest?.('[data-ctx-sub]')) return;
-      onClose();
+      handleClose();
     }
     // slight delay so the contextmenu event itself doesn't immediately close
     const id = setTimeout(() => document.addEventListener('mousedown', onDown), 0);
     return () => { clearTimeout(id); document.removeEventListener('mousedown', onDown); };
-  }, [onClose]);
+  }, [handleClose]);
 
   function scheduleHide() {
     clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => { setOpenSubIdx(null); setSubAnchor(null); }, 160);
+    hideTimer.current = setTimeout(() => { setOpenSubIdx(null); setSubAnchor(null); setFocusLevel('main'); }, 160);
   }
   function cancelHide() { clearTimeout(hideTimer.current); }
 
+  function openSubmenuAt(i: number, el: HTMLDivElement) {
+    cancelHide();
+    setOpenSubIdx(i);
+    setSubAnchor(el);
+  }
+
   function handleItemEnter(i: number, el: HTMLDivElement) {
+    setFocusedIdx(i);
+    setFocusLevel('main');
     cancelHide();
     setOpenSubIdx(null);
     setSubAnchor(null);
     if (items[i]?.type === 'submenu') {
-      setOpenSubIdx(i);
-      setSubAnchor(el);
+      openSubmenuAt(i, el);
     }
   }
 
   const openSubItem = openSubIdx !== null ? items[openSubIdx] : null;
   const subItems    = openSubItem?.type === 'submenu' ? openSubItem.items : null;
 
+  function activateItem(i: number) {
+    const it = items[i];
+    if (!it || it.type === 'separator' || it.type === 'header') return;
+    if (it.type === 'submenu') {
+      const el = document.getElementById(`${menuId}-item-${i}`) as HTMLDivElement | null;
+      if (el) openSubmenuAt(i, el);
+      setFocusLevel('sub');
+      setSubFocusedIdx(0);
+      return;
+    }
+    if (it.disabled) return;
+    it.onClick();
+    handleClose();
+  }
+
+  function moveFocus(dir: 1 | -1) {
+    if (focusable.length === 0) return;
+    const pos = focusable.indexOf(focusedIdx);
+    const nextPos = (pos + dir + focusable.length) % focusable.length;
+    setFocusedIdx(focusable[nextPos]!);
+  }
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (focusLevel === 'sub') {
+        setFocusLevel('main');
+        scheduleHide();
+      } else {
+        handleClose();
+      }
+      return;
+    }
+
+    if (focusLevel === 'sub' && subItems) {
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSubFocusedIdx(i => (i + 1) % subItems.length);
+          return;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSubFocusedIdx(i => (i - 1 + subItems.length) % subItems.length);
+          return;
+        case 'ArrowLeft':
+          e.preventDefault();
+          setFocusLevel('main');
+          scheduleHide();
+          return;
+        case 'Enter':
+        case ' ': {
+          e.preventDefault();
+          const it = subItems[subFocusedIdx];
+          if (it && !it.disabled) { it.onClick(); handleClose(); }
+          return;
+        }
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        moveFocus(1);
+        return;
+      case 'ArrowUp':
+        e.preventDefault();
+        moveFocus(-1);
+        return;
+      case 'ArrowRight': {
+        const it = items[focusedIdx];
+        if (it?.type === 'submenu') { e.preventDefault(); activateItem(focusedIdx); }
+        return;
+      }
+      case 'Home':
+        e.preventDefault();
+        if (focusable[0] !== undefined) setFocusedIdx(focusable[0]);
+        return;
+      case 'End':
+        e.preventDefault();
+        if (focusable.length) setFocusedIdx(focusable[focusable.length - 1]!);
+        return;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        activateItem(focusedIdx);
+        return;
+    }
+  }
+
   return (
-    <div ref={menuRef} style={{ position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none' }}>
+    <div ref={wrapperRef} style={{ position: 'fixed', inset: 0, zIndex: 9998, pointerEvents: 'none' }}>
       {/* Menu panel */}
       <div
+        ref={panelRef}
+        id={menuId}
+        role="menu"
+        aria-orientation="vertical"
+        tabIndex={-1}
+        aria-activedescendant={focusedIdx >= 0 ? `${menuId}-item-${focusedIdx}` : undefined}
+        onKeyDown={onKeyDown}
         style={{ ...CONTAINER, left: Math.max(EDGE, rx), top: Math.max(EDGE, ry), pointerEvents: 'auto' }}
       >
         {items.map((it, i) => {
           if (it.type === 'separator') {
-            return <div key={i} style={{ height: 1, background: 'var(--border)', margin: '6px' }} />;
+            return <div key={i} role="separator" style={{ height: 1, background: 'var(--border)', margin: '6px' }} />;
           }
           if (it.type === 'header') {
             return (
-              <div key={i} style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4, padding: '8px 10px 4px' }}>
+              <div key={i} role="presentation" style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.4, padding: '8px 10px 4px' }}>
                 {it.label}
               </div>
             );
@@ -353,10 +510,13 @@ function MenuRoot({
             return (
               <MenuItem
                 key={i}
+                id={`${menuId}-item-${i}`}
                 label={it.label}
                 icon={it.icon}
                 isSubmenu
                 subOpen={openSubIdx === i}
+                focused={focusedIdx === i && focusLevel === 'main'}
+                submenuId={submenuId}
                 onClick={() => {}}
                 onEnter={el => handleItemEnter(i, el)}
                 onLeave={scheduleHide}
@@ -366,12 +526,14 @@ function MenuRoot({
           return (
             <MenuItem
               key={i}
+              id={`${menuId}-item-${i}`}
               label={it.label}
               icon={it.icon}
               shortcut={it.shortcut}
               danger={it.danger}
               disabled={it.disabled}
-              onClick={() => { it.onClick(); onClose(); }}
+              focused={focusedIdx === i && focusLevel === 'main'}
+              onClick={() => { it.onClick(); handleClose(); }}
               onEnter={el => handleItemEnter(i, el)}
               onLeave={() => {}}
             />
@@ -385,7 +547,10 @@ function MenuRoot({
           <SubMenu
             items={subItems}
             anchorEl={subAnchor}
-            onClose={onClose}
+            menuId={submenuId}
+            focusedIdx={focusLevel === 'sub' ? subFocusedIdx : -1}
+            onHover={i => { setFocusLevel('sub'); setSubFocusedIdx(i); }}
+            onClose={handleClose}
             onEnter={cancelHide}
             onLeave={scheduleHide}
           />
