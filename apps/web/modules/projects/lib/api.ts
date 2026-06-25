@@ -1,12 +1,22 @@
 import { apiFetch } from '@/modules/shared/lib/api';
 
+export interface CRMContact { id: string; name: string; email: string; phone: string | null; status: string; last_contacted_at: string | null }
+export interface CRMCompany { id: string; name: string; industry: string | null; location: string | null; website: string | null; employee_count: number | null }
+export interface CRMItem { id: string; field_values: Record<string, unknown>; stage_id: string; pipeline_id: string }
+
 export interface Project {
   id: string; workspace_id: string; name: string; description: string | null;
   cover_image: string | null; color: string | null; status: string; health: string;
   start_date: string | null; end_date: string | null; budget: string | null;
+  contact_id: string | null; company_id: string | null; source_item_id: string | null;
   created_by: string; created_at: string; updated_at: string;
 }
-export interface ProjectWithProgress extends Project { progress: number }
+export interface ProjectWithProgress extends Project {
+  progress: number;
+  crm_contact: CRMContact | null;
+  crm_company: CRMCompany | null;
+  crm_item: CRMItem | null;
+}
 export interface TaskStatus { id: string; project_id: string; name: string; color: string; position: number; is_done: boolean }
 export interface Task {
   id: string; project_id: string; parent_id: string | null; status_id: string; title: string;
@@ -54,10 +64,12 @@ export const pmApi = {
     apiFetch<{ data: ProjectWithProgress[] }>(`/api/projects${params ? '?' + new URLSearchParams(params) : ''}`, { token }),
   getProject: (token: string, id: string) =>
     apiFetch<{ data: ProjectWithProgress }>(`/api/projects/${id}`, { token }),
-  createProject: (token: string, body: { name: string; color?: string; start_date?: string; end_date?: string }) =>
+  createProject: (token: string, body: { name: string; color?: string; start_date?: string; end_date?: string; contact_id?: string; company_id?: string; source_item_id?: string }) =>
     apiFetch<{ data: Project }>('/api/projects', { token, method: 'POST', body: JSON.stringify(body) }),
-  updateProject: (token: string, id: string, body: Partial<Project>) =>
+  updateProject: (token: string, id: string, body: Partial<Project & { contact_id?: string | null; company_id?: string | null; source_item_id?: string | null }>) =>
     apiFetch<{ data: Project }>(`/api/projects/${id}`, { token, method: 'PATCH', body: JSON.stringify(body) }),
+  getCRMActivity: (token: string, projectId: string, params?: { page?: number; limit?: number }) =>
+    apiFetch<{ data: unknown[] }>(`/api/projects/${projectId}/crm-activity${params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])) : ''}`, { token }),
   deleteProject: (token: string, id: string) =>
     apiFetch<{ data: { success: boolean } }>(`/api/projects/${id}`, { token, method: 'DELETE' }),
   listStatuses: (token: string, projectId: string) =>

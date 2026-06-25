@@ -4,6 +4,68 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { logItemCreated, logStageChanged, logFieldChanged } from '../lib/pipeline-activity';
+import { resolveHook } from '../lib/hooks-runtime';
+
+async function seedDefaultStatuses(db: Kysely<Database>, projectId: string) {
+  const statuses = [
+    { name: 'Backlog',     color: '#9e998f', position: 0, is_done: false },
+    { name: 'In Progress', color: '#1e3a8a', position: 1, is_done: false },
+    { name: 'In Review',   color: '#92400e', position: 2, is_done: false },
+    { name: 'Done',        color: '#2d6a4f', position: 3, is_done: true  },
+  ]
+  await db.insertInto('project_task_statuses')
+    .values(statuses.map(s => ({ ...s, project_id: projectId })))
+    .execute()
+}
+
+async function maybeAutoCreateProject(
+  db: Kysely<Database>,
+  workspaceId: string,
+  itemId: string,
+  newStageId: string,
+  createdByUserId: string,
+) {
+  const hook = await resolveHook(db, workspaceId, 'projects', 'auto_project_from_deal')
+  if (!hook) return
+
+  const stage = await db.selectFrom('pipeline_stages')
+    .select(['is_won'])
+    .where('id', '=', newStageId)
+    .executeTakeFirst()
+  if (!stage?.is_won) return
+
+  // idempotent — only create once per item
+  const existing = await db.selectFrom('projects')
+    .select('id')
+    .where('source_item_id', '=', itemId)
+    .where('workspace_id', '=', workspaceId)
+    .executeTakeFirst()
+  if (existing) return
+
+  const item = await db.selectFrom('pipeline_items')
+    .select(['field_values'])
+    .where('id', '=', itemId)
+    .where('workspace_id', '=', workspaceId)
+    .executeTakeFirst()
+  if (!item) return
+
+  const fieldValues = item.field_values as Record<string, unknown>
+  const projectName = (fieldValues['name'] as string | undefined)
+    ?? (fieldValues['title'] as string | undefined)
+    ?? 'New Project'
+
+  const project = await db.insertInto('projects')
+    .values({
+      workspace_id: workspaceId,
+      created_by: createdByUserId,
+      name: String(projectName),
+      source_item_id: itemId,
+    })
+    .returningAll()
+    .executeTakeFirstOrThrow()
+
+  await seedDefaultStatuses(db, project.id)
+}
 
 const createItemSchema = z.object({
   stage_id: z.string().uuid(),
@@ -143,6 +205,7 @@ export function createItemRouter(
           workspaceId, userId,
           fromStageId: current.stage_id, toStageId: body.stage_id,
         });
+        await maybeAutoCreateProject(db, workspaceId, current.id, body.stage_id, userId);
       }
 
       if (body.field_values) {
@@ -169,7 +232,7 @@ export function createItemRouter(
       const workspaceId = (req as AuthenticatedRequest).workspace.id;
       const userId = (req as AuthenticatedRequest).user.id;
 
-      const current = await db.selectFrom('pipeline_items').select(['id', 'stage_id', 'pipeline_id'])
+      const current = await db.selectFrom('pipeline_items').select(['id', 'stage_id', 'pipeline_id', 'field_values'])
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspaceId)
         .where('deleted_at', 'is', null)
@@ -188,6 +251,7 @@ export function createItemRouter(
           workspaceId, userId,
           fromStageId: current.stage_id, toStageId: stage_id,
         });
+        await maybeAutoCreateProject(db, workspaceId, current.id, stage_id, userId);
       }
 
       res.json({ data: { id: current.id, stage_id, position }, error: null });
