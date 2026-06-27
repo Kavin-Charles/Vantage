@@ -46,6 +46,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
   // Index raw snapshots by recorded_at so retention pruning is cheap.
   await db.schema
     .createIndex('metrics_snapshots_recorded_at_idx')
+    .ifNotExists()
     .on('metrics_snapshots')
     .columns(['recorded_at'])
     .execute();

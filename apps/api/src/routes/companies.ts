@@ -84,16 +84,20 @@ export function createCompaniesRouter(db: Kysely<Database>, requirePermission: (
       const { workspace } = req as unknown as AuthenticatedRequest;
       const page = Number(req.query['page'] ?? 1);
       const per_page = Math.min(Number(req.query['per_page'] ?? 25), 100);
+      const search = req.query['search'] as string | undefined;
 
-      const companies = await db
+      let query = db
         .selectFrom('companies')
         .where('workspace_id', '=', workspace.id)
         .where('deleted_at', 'is', null)
         .selectAll()
         .orderBy('created_at', 'desc')
         .limit(per_page)
-        .offset((page - 1) * per_page)
-        .execute();
+        .offset((page - 1) * per_page);
+
+      if (search) query = query.where('name', 'ilike', `%${search}%`);
+
+      const companies = await query.execute();
 
       const { count } = await db
         .selectFrom('companies')

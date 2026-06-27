@@ -817,6 +817,10 @@ export interface ProjectTable {
   start_date: Date | null
   end_date: Date | null
   created_by: string
+  // CRM hook links
+  contact_id: string | null
+  company_id: string | null
+  source_item_id: string | null
   created_at: Generated<Date>
   updated_at: Generated<Date>
 }
@@ -1155,6 +1159,29 @@ export interface ChannelReadStateTable {
   last_read_message_id: string | null;
 }
 
+export interface HookProviderTable {
+  id: Generated<string>;
+  workspace_id: string;
+  provider_id: string;
+  name: string;
+  source: 'builtin' | 'plugin';
+  enabled: Generated<boolean>;
+  meta: Record<string, unknown> | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface WorkspaceHookConfigTable {
+  id: Generated<string>;
+  workspace_id: string;
+  module_id: string;
+  feature_id: string;
+  provider_id: string | null;
+  enabled: Generated<boolean>;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -1257,6 +1284,8 @@ export interface Database {
   message_reactions: MessageReactionTable
   message_attachments: MessageAttachmentTable
   channel_read_state: ChannelReadStateTable
+  hook_providers: HookProviderTable;
+  workspace_hook_configs: WorkspaceHookConfigTable;
 }
 
 // Convenience types
@@ -1493,3 +1522,11 @@ export type NewMessageAttachment = Insertable<MessageAttachmentTable>;
 
 export type ChannelReadState = Selectable<ChannelReadStateTable>;
 export type NewChannelReadState = Insertable<ChannelReadStateTable>;
+
+export type HookProvider = Selectable<HookProviderTable>;
+export type NewHookProvider = Insertable<HookProviderTable>;
+export type HookProviderUpdate = Updateable<HookProviderTable>;
+
+export type WorkspaceHookConfig = Selectable<WorkspaceHookConfigTable>;
+export type NewWorkspaceHookConfig = Insertable<WorkspaceHookConfigTable>;
+export type WorkspaceHookConfigUpdate = Updateable<WorkspaceHookConfigTable>;

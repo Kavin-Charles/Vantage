@@ -18,7 +18,7 @@ const MODULE_META = [
   { id: 'databases',  name: 'Databases',  description: 'Database health monitoring and connection management.', settingsHref: null },
   { id: 'analytics', name: 'Analytics', description: 'Revenue, pipeline stats, and team leaderboard.',     settingsHref: null },
   { id: 'activity',  name: 'Activity',  description: 'Unified activity feed across all workspace records.', settingsHref: null },
-  { id: 'projects',  name: 'Project Management', description: 'Projects, tasks, sprints, automations, and client portals.', settingsHref: null },
+  { id: 'projects',  name: 'Project Management', description: 'Projects, tasks, sprints, automations, and client portals.', settingsHref: '/settings/project-management/hooks' },
   { id: 'messaging', name: 'Messaging',          description: 'Real-time team messaging, channels, and direct messages.',  settingsHref: '/settings/messaging' },
 ];
 

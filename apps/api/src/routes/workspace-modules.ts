@@ -7,6 +7,23 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 import { MODULE_IDS } from '../modules/registry';
 import { invalidateModuleCache } from '../middleware/module';
 
+// Built-in modules that act as hook providers when enabled
+const MODULE_PROVIDER_MAP: Record<string, { providerId: string; name: string } | null> = {
+  'contacts':   { providerId: 'vencore-crm',       name: 'Vencore CRM' },
+  'companies':  { providerId: 'vencore-crm',        name: 'Vencore CRM' },
+  'messaging':  { providerId: 'vencore-messaging',  name: 'Vencore Messaging' },
+  'servers':    { providerId: 'vencore-infra',      name: 'Vencore Infra' },
+  'databases':  { providerId: 'vencore-infra',      name: 'Vencore Infra' },
+  'pipelines':  null,
+  'tasks':      null,
+  'analytics':  null,
+  'activity':   null,
+  'websites':   null,
+  'dashboard':  null,
+  'projects':   null,
+  'alerts':     null,
+};
+
 const patchSchema = z.object({
   enabled: z.boolean(),
 });
@@ -75,6 +92,47 @@ export function createWorkspaceModulesRouter(db: Kysely<Database>): Router {
 
       // Invalidate cache so next request re-reads from DB
       invalidateModuleCache(workspace.id, moduleId);
+
+      // Register/deregister as a hook provider if this module supplies one
+      const providerDef = MODULE_PROVIDER_MAP[moduleId];
+      if (providerDef) {
+        if (parsed.data.enabled) {
+          await db
+            .insertInto('hook_providers')
+            .values({
+              workspace_id: workspace.id,
+              provider_id: providerDef.providerId,
+              name: providerDef.name,
+              source: 'builtin',
+              enabled: true,
+            })
+            .onConflict(oc =>
+              oc.columns(['workspace_id', 'provider_id']).doUpdateSet({
+                enabled: true,
+                updated_at: new Date(),
+              }),
+            )
+            .execute();
+        } else {
+          // Disable provider and any hook configs that used it
+          const providerRow = await db
+            .updateTable('hook_providers')
+            .set({ enabled: false, updated_at: new Date() })
+            .where('workspace_id', '=', workspace.id)
+            .where('provider_id', '=', providerDef.providerId)
+            .returning('id')
+            .executeTakeFirst();
+
+          if (providerRow) {
+            await db
+              .updateTable('workspace_hook_configs')
+              .set({ enabled: false, updated_at: new Date() })
+              .where('workspace_id', '=', workspace.id)
+              .where('provider_id', '=', providerRow.id)
+              .execute();
+          }
+        }
+      }
 
       res.json({ data: { module_id: moduleId, enabled: parsed.data.enabled }, error: null });
     } catch (err) {

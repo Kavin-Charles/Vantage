@@ -1,4 +1,5 @@
 export * from './types';
+export * from './hook-types';
 export * from './contacts';
 export * from './companies';
 export * from './pipelines';
@@ -27,6 +28,12 @@ import { PROJECTS_MODULE } from './projects';
 import { ALERTS_MODULE } from './alerts';
 import { MESSAGING_MODULE } from './messaging';
 import type { ModuleDefinition, PermissionDef, UserRole } from './types';
+import type { HookFeature } from './hook-types';
+import { PROJECT_MANAGEMENT_HOOKS } from './projects/hooks';
+
+export const HOOK_REGISTRY: Record<string, HookFeature[]> = {
+  'projects': PROJECT_MANAGEMENT_HOOKS,
+};
 
 export const MODULE_REGISTRY: ModuleDefinition[] = [
   DASHBOARD_MODULE,
