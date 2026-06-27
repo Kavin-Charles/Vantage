@@ -70,6 +70,12 @@ export const pmApi = {
     apiFetch<{ data: Project }>(`/api/projects/${id}`, { token, method: 'PATCH', body: JSON.stringify(body) }),
   getCRMActivity: (token: string, projectId: string, params?: { page?: number; limit?: number }) =>
     apiFetch<{ data: unknown[] }>(`/api/projects/${projectId}/crm-activity${params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])) : ''}`, { token }),
+  searchContacts: (token: string, search: string) =>
+    apiFetch<{ data: { id: string; name: string; email: string; status: string }[] }>(`/api/contacts?search=${encodeURIComponent(search)}&limit=10`, { token }),
+  searchCompanies: (token: string, search: string) =>
+    apiFetch<{ data: { id: string; name: string; industry: string | null }[] }>(`/api/companies?search=${encodeURIComponent(search)}&per_page=10`, { token }),
+  searchItems: (token: string, search: string) =>
+    apiFetch<{ data: { id: string; field_values: Record<string, unknown>; pipeline_name: string; stage_name: string }[] }>(`/api/items?search=${encodeURIComponent(search)}&limit=10`, { token }),
   deleteProject: (token: string, id: string) =>
     apiFetch<{ data: { success: boolean } }>(`/api/projects/${id}`, { token, method: 'DELETE' }),
   listStatuses: (token: string, projectId: string) =>

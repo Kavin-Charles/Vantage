@@ -2,9 +2,11 @@
 
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { pmApi, type CRMContact, type CRMCompany, type CRMItem } from '@/modules/projects/lib/api';
+
+// ─── Design tokens ────────────────────────────────────────────────────────────
 
 const pill: React.CSSProperties = {
   display: 'inline-block', fontFamily: 'DM Sans', fontSize: 11, fontWeight: 600,
@@ -18,7 +20,7 @@ const contactStatusStyle = (status: string): React.CSSProperties => {
     cold:      { background: 'var(--surface2)', color: 'var(--text2)' },
     churned:   { background: 'var(--red-bg)', color: 'var(--red)' },
   };
-  return { ...pill, ...(map[status] ?? map['cold']) };
+  return { ...pill, ...(map[status] ?? map['cold']!) };
 };
 
 const sectionHead: React.CSSProperties = {
@@ -30,6 +32,17 @@ const card: React.CSSProperties = {
   background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20,
 };
 
+const inputStyle: React.CSSProperties = {
+  fontFamily: 'DM Sans', fontSize: 13, padding: '8px 10px',
+  borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)',
+  color: 'var(--text)', outline: 'none', width: '100%', boxSizing: 'border-box',
+};
+
+const labelStyle: React.CSSProperties = {
+  fontFamily: 'DM Sans', fontSize: 12, fontWeight: 600,
+  color: 'var(--text2)', marginBottom: 6, display: 'block',
+};
+
 const kv = (label: string, value: string | null | undefined) =>
   value ? (
     <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', marginBottom: 6 }}>
@@ -37,6 +50,108 @@ const kv = (label: string, value: string | null | undefined) =>
       <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)' }}>{value}</span>
     </div>
   ) : null;
+
+// ─── Combobox ─────────────────────────────────────────────────────────────────
+
+interface ComboOption { id: string; label: string; sublabel?: string }
+
+function Combobox({
+  placeholder, value, onSelect, onClear, fetchOptions,
+}: {
+  placeholder: string;
+  value: { id: string; label: string } | null;
+  onSelect: (opt: ComboOption) => void;
+  onClear: () => void;
+  fetchOptions: (q: string) => Promise<ComboOption[]>;
+}) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const [options, setOptions] = useState<ComboOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  const search = useCallback(async (q: string) => {
+    if (!q.trim()) { setOptions([]); return; }
+    setLoading(true);
+    try { setOptions(await fetchOptions(q)); }
+    finally { setLoading(false); }
+  }, [fetchOptions]);
+
+  useEffect(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => void search(query), 250);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [query, search]);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  if (value) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)' }}>
+        <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)', flex: 1 }}>{value.label}</span>
+        <button
+          type="button"
+          onClick={onClear}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 16, lineHeight: 1, padding: '0 2px' }}
+          title="Remove"
+        >×</button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      <input
+        value={query}
+        onChange={e => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder}
+        style={inputStyle}
+      />
+      {open && (query.length > 0) && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50,
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8,
+          marginTop: 4, maxHeight: 220, overflowY: 'auto', boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+        }}>
+          {loading && (
+            <div style={{ padding: '10px 12px', fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text3)' }}>Searching…</div>
+          )}
+          {!loading && options.length === 0 && (
+            <div style={{ padding: '10px 12px', fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text3)' }}>No results</div>
+          )}
+          {!loading && options.map(opt => (
+            <button
+              key={opt.id}
+              type="button"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => { onSelect(opt); setQuery(''); setOpen(false); setOptions([]); }}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                padding: '9px 12px', background: 'none', border: 'none', cursor: 'pointer',
+                borderBottom: '1px solid var(--border)',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface2)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              <div style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{opt.label}</div>
+              {opt.sublabel && <div style={{ fontFamily: 'DM Sans', fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{opt.sublabel}</div>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── CRM record display cards ──────────────────────────────────────────────────
 
 function ContactCard({ contact }: { contact: CRMContact }) {
   return (
@@ -84,19 +199,12 @@ function DealCard({ item }: { item: CRMItem }) {
   );
 }
 
-type ActivityEntry = {
-  id: string;
-  type: string;
-  body: string | null;
-  created_at: string;
-};
+// ─── Activity timeline ────────────────────────────────────────────────────────
+
+type ActivityEntry = { id: string; type: string; body: string | null; created_at: string };
 
 const ACTIVITY_ICONS: Record<string, string> = {
-  email: '✉',
-  call: '📞',
-  note: '📝',
-  meeting: '🗓',
-  deal_change: '💼',
+  email: '✉', call: '📞', note: '📝', meeting: '🗓', deal_change: '💼',
 };
 
 function ActivityFeed({ projectId }: { projectId: string }) {
@@ -113,9 +221,7 @@ function ActivityFeed({ projectId }: { projectId: string }) {
   if (isError) return <div style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text3)', padding: 16 }}>Activity timeline not available — enable the <strong>client_activity_timeline</strong> hook in Hooks settings.</div>;
 
   const activities = (data?.data ?? []) as ActivityEntry[];
-  if (activities.length === 0) {
-    return <div style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text3)', fontStyle: 'italic' }}>No activity recorded for this contact yet.</div>;
-  }
+  if (activities.length === 0) return <div style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text3)', fontStyle: 'italic' }}>No activity recorded for this contact yet.</div>;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -140,25 +246,35 @@ function ActivityFeed({ projectId }: { projectId: string }) {
   );
 }
 
-type LinkForm = { contact_id: string; company_id: string; source_item_id: string };
+// ─── Link form with comboboxes ─────────────────────────────────────────────────
 
-function LinkCRMForm({ projectId, current }: { projectId: string; current: { contact_id?: string | null; company_id?: string | null; source_item_id?: string | null } }) {
+type Selection = { id: string; label: string } | null;
+
+function LinkCRMForm({ projectId, current }: {
+  projectId: string;
+  current: { contact_id?: string | null; contact_name?: string | null; company_id?: string | null; company_name?: string | null; source_item_id?: string | null; item_name?: string | null };
+}) {
   const getToken = useApiToken();
   const qc = useQueryClient();
-  const [form, setForm] = useState<LinkForm>({
-    contact_id: current.contact_id ?? '',
-    company_id: current.company_id ?? '',
-    source_item_id: current.source_item_id ?? '',
-  });
+
+  const [contact, setContact] = useState<Selection>(
+    current.contact_id ? { id: current.contact_id, label: current.contact_name ?? current.contact_id } : null
+  );
+  const [company, setCompany] = useState<Selection>(
+    current.company_id ? { id: current.company_id, label: current.company_name ?? current.company_id } : null
+  );
+  const [item, setItem] = useState<Selection>(
+    current.source_item_id ? { id: current.source_item_id, label: current.item_name ?? current.source_item_id } : null
+  );
   const [flash, setFlash] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: async (body: Partial<LinkForm>) => {
+    mutationFn: async () => {
       const token = await getToken();
       return pmApi.updateProject(token, projectId, {
-        contact_id: body.contact_id || null,
-        company_id: body.company_id || null,
-        source_item_id: body.source_item_id || null,
+        contact_id: contact?.id ?? null,
+        company_id: company?.id ?? null,
+        source_item_id: item?.id ?? null,
       });
     },
     onSuccess: () => {
@@ -169,54 +285,66 @@ function LinkCRMForm({ projectId, current }: { projectId: string; current: { con
     },
   });
 
-  const inputStyle: React.CSSProperties = {
-    fontFamily: 'DM Sans', fontSize: 13, padding: '8px 10px',
-    borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)',
-    color: 'var(--text)', outline: 'none', width: '100%', boxSizing: 'border-box',
-  };
-  const labelStyle: React.CSSProperties = {
-    fontFamily: 'DM Sans', fontSize: 12, fontWeight: 600,
-    color: 'var(--text2)', marginBottom: 6, display: 'block',
-  };
+  const fetchContacts = useCallback(async (q: string): Promise<ComboOption[]> => {
+    const token = await getToken();
+    const res = await pmApi.searchContacts(token, q);
+    return (res.data ?? []).map(c => ({ id: c.id, label: c.name, sublabel: c.email }));
+  }, [getToken]);
+
+  const fetchCompanies = useCallback(async (q: string): Promise<ComboOption[]> => {
+    const token = await getToken();
+    const res = await pmApi.searchCompanies(token, q);
+    return (res.data ?? []).map(c => ({ id: c.id, label: c.name, sublabel: c.industry ?? undefined }));
+  }, [getToken]);
+
+  const fetchItems = useCallback(async (q: string): Promise<ComboOption[]> => {
+    const token = await getToken();
+    const res = await pmApi.searchItems(token, q);
+    return (res.data ?? []).map(i => ({
+      id: i.id,
+      label: (i.field_values['name'] as string | undefined) ?? i.id,
+      sublabel: `${i.pipeline_name} → ${i.stage_name}`,
+    }));
+  }, [getToken]);
 
   return (
     <div style={card}>
       <p style={sectionHead}>Link CRM Records</p>
-      <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)', margin: '0 0 16px' }}>
-        Paste the UUID of the contact, company, or pipeline item to link. Requires the respective hooks to be enabled.
-      </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <label style={labelStyle}>Contact ID</label>
-          <input
-            value={form.contact_id}
-            onChange={e => setForm(f => ({ ...f, contact_id: e.target.value }))}
-            placeholder="uuid…"
-            style={inputStyle}
+          <label style={labelStyle}>Contact</label>
+          <Combobox
+            placeholder="Search contacts by name or email…"
+            value={contact}
+            onSelect={opt => setContact(opt)}
+            onClear={() => setContact(null)}
+            fetchOptions={fetchContacts}
           />
         </div>
         <div>
-          <label style={labelStyle}>Company ID</label>
-          <input
-            value={form.company_id}
-            onChange={e => setForm(f => ({ ...f, company_id: e.target.value }))}
-            placeholder="uuid…"
-            style={inputStyle}
+          <label style={labelStyle}>Company</label>
+          <Combobox
+            placeholder="Search companies by name…"
+            value={company}
+            onSelect={opt => setCompany(opt)}
+            onClear={() => setCompany(null)}
+            fetchOptions={fetchCompanies}
           />
         </div>
         <div>
-          <label style={labelStyle}>Pipeline Item ID</label>
-          <input
-            value={form.source_item_id}
-            onChange={e => setForm(f => ({ ...f, source_item_id: e.target.value }))}
-            placeholder="uuid…"
-            style={inputStyle}
+          <label style={labelStyle}>Pipeline Deal</label>
+          <Combobox
+            placeholder="Search deals by name…"
+            value={item}
+            onSelect={opt => setItem(opt)}
+            onClear={() => setItem(null)}
+            fetchOptions={fetchItems}
           />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
             type="button"
-            onClick={() => mutation.mutate(form)}
+            onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
             style={{ fontFamily: 'DM Sans', fontSize: 13, fontWeight: 600, padding: '8px 16px', borderRadius: 8, background: 'var(--text)', color: '#fff', border: 'none', cursor: 'pointer' }}
           >
@@ -229,6 +357,8 @@ function LinkCRMForm({ projectId, current }: { projectId: string; current: { con
     </div>
   );
 }
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CRMPage() {
   const { id: projectId } = useParams<{ id: string }>();
@@ -248,6 +378,10 @@ export default function CRMPage() {
     return <div style={{ padding: 24, fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text3)' }}>Loading…</div>;
   }
 
+  const crmContact = project?.crm_contact as CRMContact | null;
+  const crmCompany = project?.crm_company as CRMCompany | null;
+  const crmItem = project?.crm_item as CRMItem | null;
+
   return (
     <div style={{ padding: 24 }}>
       <h2 style={{ fontFamily: 'Instrument Serif', fontSize: 22, color: 'var(--text)', margin: '0 0 24px' }}>
@@ -255,31 +389,33 @@ export default function CRMPage() {
       </h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 20, alignItems: 'start' }}>
-        {/* Left column: linked records */}
+        {/* Left: linked record cards + link form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {project?.crm_contact
-            ? <ContactCard contact={project.crm_contact as CRMContact} />
+          {crmContact
+            ? <ContactCard contact={crmContact} />
             : !project?.contact_id && (
               <div style={{ ...card, color: 'var(--text3)', fontFamily: 'DM Sans', fontSize: 13, fontStyle: 'italic' }}>
                 No contact linked.
               </div>
             )
           }
-          {project?.crm_company && <CompanyCard company={project.crm_company as CRMCompany} />}
-          {project?.crm_item && <DealCard item={project.crm_item as CRMItem} />}
+          {crmCompany && <CompanyCard company={crmCompany} />}
+          {crmItem && <DealCard item={crmItem} />}
 
-          {/* Link form */}
           <LinkCRMForm
             projectId={projectId}
             current={{
               contact_id: project?.contact_id,
+              contact_name: crmContact?.name,
               company_id: project?.company_id,
+              company_name: crmCompany?.name,
               source_item_id: project?.source_item_id,
+              item_name: crmItem ? ((crmItem.field_values['name'] as string | undefined) ?? undefined) : undefined,
             }}
           />
         </div>
 
-        {/* Right column: activity timeline */}
+        {/* Right: activity timeline */}
         <div style={card}>
           <p style={sectionHead}>Contact Activity Timeline</p>
           {project?.contact_id

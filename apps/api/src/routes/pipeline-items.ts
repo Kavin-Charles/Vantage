@@ -1,5 +1,6 @@
 import { Router, type Router as ExpressRouter, type RequestHandler } from 'express';
 import { z } from 'zod';
+import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
@@ -160,6 +161,29 @@ export function createItemRouter(
   const view = requirePermission('pipelines:view');
   const edit = requirePermission('pipelines:edit');
   const del  = requirePermission('pipelines:delete');
+
+  // Search items across all pipelines — used by CRM link combobox
+  router.get('/', view, async (req, res, next) => {
+    try {
+      const workspaceId = (req as AuthenticatedRequest).workspace.id;
+      const search = (req.query['search'] as string | undefined)?.trim();
+      const limit = Math.min(20, Math.max(1, Number(req.query['limit'] ?? 10)));
+      if (!search) return res.json({ data: [], error: null });
+
+      const pattern = `%${search}%`;
+      const items = await db.selectFrom('pipeline_items as i')
+        .innerJoin('pipeline_stages as s', 's.id', 'i.stage_id')
+        .innerJoin('pipelines as p', 'p.id', 'i.pipeline_id')
+        .select(['i.id', 'i.field_values', 'i.stage_id', 'i.pipeline_id', 'p.name as pipeline_name', 's.name as stage_name'])
+        .where('i.workspace_id', '=', workspaceId)
+        .where('i.deleted_at', 'is', null)
+        .where(sql<boolean>`i.field_values->>'name' ilike ${pattern}`)
+        .limit(limit)
+        .execute();
+
+      res.json({ data: items, error: null });
+    } catch (e) { next(e); }
+  });
 
   // Get single item
   router.get('/:id', view, async (req, res, next) => {
