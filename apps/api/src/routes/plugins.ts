@@ -403,7 +403,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const plugin = await db.selectFrom('workspace_plugins').selectAll()
-        .where((eb) => eb.or([eb('id', '=', req.params['id']!), eb('plugin_id', '=', req.params['id']!)]))
+        .where(/^[0-9a-f-]{36}$/i.test(req.params['id']!) ? 'id' : 'plugin_id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
         .executeTakeFirst();
       if (!plugin) {
@@ -454,7 +454,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const plugin = await db.selectFrom('workspace_plugins').select(['plugin_id', 'manifest'])
-        .where((eb) => eb.or([eb('id', '=', req.params['id']!), eb('plugin_id', '=', req.params['id']!)]))
+        .where(/^[0-9a-f-]{36}$/i.test(req.params['id']!) ? 'id' : 'plugin_id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
         .executeTakeFirst();
       if (!plugin) {
@@ -494,7 +494,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const plugin = await db.selectFrom('workspace_plugins').select(['plugin_id', 'manifest'])
-        .where((eb) => eb.or([eb('id', '=', req.params['id']!), eb('plugin_id', '=', req.params['id']!)]))
+        .where(/^[0-9a-f-]{36}$/i.test(req.params['id']!) ? 'id' : 'plugin_id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
         .executeTakeFirst();
       if (!plugin) {
