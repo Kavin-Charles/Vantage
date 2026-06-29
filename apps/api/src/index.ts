@@ -414,4 +414,22 @@ httpServer.on('upgrade', (request, socket, head) => {
 
 httpServer.listen(env.PORT, () => {
   logger.info({ port: env.PORT }, 'API server running');
+
+  // Respawn backends for all enabled plugins on boot — otherwise plugin
+  // sandboxes stay dead after a restart until each is re-uploaded/re-enabled.
+  void (async () => {
+    try {
+      const rows = await db
+        .selectFrom('workspace_plugins')
+        .select(['plugin_id', 'workspace_id'])
+        .where('enabled', '=', true)
+        .execute();
+      for (const r of rows) {
+        try { loadPluginBackend(r.plugin_id, r.workspace_id, db); } catch { /* per-plugin failure is non-fatal */ }
+      }
+      logger.info({ count: rows.length }, 'Loaded enabled plugin backends on startup');
+    } catch (err) {
+      logger.error({ err }, 'Failed to load plugin backends on startup');
+    }
+  })();
 });
