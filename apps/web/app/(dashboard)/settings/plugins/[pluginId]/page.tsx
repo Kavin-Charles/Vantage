@@ -75,8 +75,19 @@ export default function PluginSettingsPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (settingsData) setFormValues(settingsData);
-  }, [settingsData]);
+    if (!settingsData) return;
+    // Do not seed secret fields into the editable form — their stored value is a
+    // masked placeholder, which would block typing. Leave them blank; a blank
+    // secret on save keeps the existing value.
+    const secretKeys = new Set(
+      (plugin?.manifest?.settings_schema ?? []).filter((f) => f.secret).map((f) => f.key),
+    );
+    const seeded: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(settingsData)) {
+      if (!secretKeys.has(k)) seeded[k] = v;
+    }
+    setFormValues(seeded);
+  }, [settingsData, plugin]);
 
   const saveSettings = async () => {
     setSaving(true);
@@ -127,10 +138,12 @@ export default function PluginSettingsPage() {
               style={{
                 width: 44, height: 44, borderRadius: 10,
                 background: 'var(--surface2)', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', fontSize: 20,
+                alignItems: 'center', justifyContent: 'center', color: 'var(--text2)',
               }}
             >
-              📦
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 7h2.5a1.5 1.5 0 0 1 0 3H14v3.5a1.5 1.5 0 0 1-3 0V14H7.5a1.5 1.5 0 0 1 0-3H11V7.5a2.5 2.5 0 0 0-5 0V7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2h.5a2.5 2.5 0 0 0 0-5H16V9a2 2 0 0 0-2-2z" />
+              </svg>
             </div>
             <div>
               <h2 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>{plugin.name}</h2>
@@ -297,10 +310,11 @@ function SettingsFieldInput({
       <label style={labelStyle}>{field.label}</label>
       <input
         type={field.type === 'number' ? 'number' : field.secret ? 'password' : 'text'}
-        value={field.secret ? '' : ((value as string | number | undefined) ?? (field.default as string | number | undefined) ?? '')}
-        placeholder={field.secret ? '••••••••' : undefined}
+        value={(value as string | number | undefined) ?? (field.secret ? '' : (field.default as string | number | undefined) ?? '')}
+        placeholder={field.secret ? 'Enter to set — leave blank to keep current' : undefined}
         min={field.min}
         max={field.max}
+        autoComplete={field.secret ? 'new-password' : undefined}
         onChange={(e) => onChange(field.type === 'number' ? Number(e.target.value) : e.target.value)}
         style={inputStyle}
       />
