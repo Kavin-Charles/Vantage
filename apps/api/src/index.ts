@@ -209,7 +209,8 @@ bridgeRegistry
     return row ?? null;
   })
   .register('workspace.get', null, async (ctx, _p, db) => {
-    const row = await (db as any).selectFrom('workspaces').select(['id', 'name', 'plan'])
+    // workspaces has no 'plan' column — selecting it threw 42703 for every plugin.
+    const row = await (db as any).selectFrom('workspaces').select(['id', 'name'])
       .where('id', '=', ctx.workspaceId)
       .executeTakeFirst();
     return row ?? null;
