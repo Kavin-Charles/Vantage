@@ -1,6 +1,8 @@
 # Worktrees
 .clone/
 
+_design/
+
 # Local scratch / brainstorm artifacts
 artifacts/
 
