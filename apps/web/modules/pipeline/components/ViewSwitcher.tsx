@@ -1,6 +1,6 @@
 'use client';
 
-type View = 'kanban' | 'table';
+type View = 'kanban' | 'table' | 'list';
 
 interface Props {
   current: View;
