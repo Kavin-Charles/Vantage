@@ -169,6 +169,24 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
               bus: {
                 on: (_event: string, _handler: (p: unknown) => void) => () => {},
               },
+              // Call this plugin's own backend HTTP endpoints (registered via
+              // http.onEndpoint) with the user's session. Returns the parsed body.
+              invoke: async (path: string, payload?: unknown) => {
+                const t = await getToken();
+                const normalized = path.startsWith('/') ? path : `/${path}`;
+                const r = await fetch(`${apiUrl}/api/plugins/route/${plugin.plugin_id}${normalized}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                  credentials: 'include',
+                  body: JSON.stringify(payload ?? {}),
+                });
+                const text = await r.text();
+                try {
+                  return text ? JSON.parse(text) : null;
+                } catch {
+                  return text;
+                }
+              },
               list: async (resource: string, filter?: unknown) => {
                 const t = await getToken();
                 const r = await fetch(`${apiUrl}/api/plugins/bridge`, {
