@@ -109,7 +109,8 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
 
             const makeVencore = () => ({
               registerPage: (path: string, component: AnyComponent) => {
-                registry.pages.set(path, component);
+                // Slot lookup keys pages as `${pluginId}:${path}` — match it.
+                registry.pages.set(`${plugin.plugin_id}:${path}`, component);
               },
               registerWidget: (id: string, component: AnyComponent) => {
                 registry.widgets.set(id, { id, pluginId: plugin.plugin_id, component });
