@@ -1,5 +1,6 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import type { Kysely } from 'kysely';
+import { sql } from 'kysely';
 import type { Database } from '@vencore/db';
 import { z } from 'zod';
 import multer from 'multer';
@@ -517,16 +518,19 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           storedValue = encryptSettingValue(value as string);
           encrypted = true;
         }
+        // The value column is jsonb — JSON-encode scalars too (a bare string like
+        // "groq" is not valid JSON to Postgres). Cast explicitly to jsonb.
+        const jsonbValue = sql`${JSON.stringify(storedValue)}::jsonb`;
         await (db as any).insertInto('plugin_settings')
           .values({
             workspace_id: workspace.id,
             plugin_id: plugin.plugin_id,
             key,
-            value: storedValue,
+            value: jsonbValue,
             encrypted,
           })
           .onConflict((oc: any) =>
-            oc.columns(['workspace_id', 'plugin_id', 'key']).doUpdateSet({ value: storedValue, encrypted, updated_at: new Date() })
+            oc.columns(['workspace_id', 'plugin_id', 'key']).doUpdateSet({ value: jsonbValue, encrypted, updated_at: new Date() })
           )
           .execute();
       }
