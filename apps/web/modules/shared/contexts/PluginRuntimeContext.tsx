@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import * as ReactDOM from 'react-dom';
+import { useRouter } from 'next/navigation';
 import { useInstalledPlugins } from '@/modules/shared/hooks/useInstalledPlugins';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import type { DashboardWidgetDef } from '@/modules/shared/lib/dashboard-registry';
@@ -61,6 +62,7 @@ export function useDashboardWidgets(): Map<string, DashboardWidgetDef> {
 export function PluginRuntimeProvider({ children }: { children: React.ReactNode }) {
   const { data: plugins = [], isLoading } = useInstalledPlugins();
   const getToken = useApiToken();
+  const router = useRouter();
   const apiUrl = (typeof process !== 'undefined' && process.env['NEXT_PUBLIC_API_URL']) ?? '';
   const [registry] = useState<FrontendSurfaceRegistry>({
     pages: new Map(),
@@ -309,6 +311,17 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
       window.removeEventListener('vencore:dashboard:register-widget', handleDashboardWidget);
     };
   }, []);
+
+  // Route in-app when a plugin calls vencore.navigate(path) — powers plugin
+  // deep links and settings shortcuts.
+  useEffect(() => {
+    function handleNavigate(e: Event) {
+      const path = (e as CustomEvent<{ path?: string }>).detail?.path;
+      if (path) router.push(path);
+    }
+    window.addEventListener('vencore:navigate', handleNavigate);
+    return () => window.removeEventListener('vencore:navigate', handleNavigate);
+  }, [router]);
 
   return (
     <PluginRuntimeCtx.Provider value={{ registry, loading, dashboardWidgets }}>
