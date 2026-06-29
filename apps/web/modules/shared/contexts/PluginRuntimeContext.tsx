@@ -99,7 +99,7 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
 
           try {
             const token = await getToken();
-            const res = await fetch(`${apiUrl}/api/plugins/${plugin.id}/client.js`, {
+            const res = await fetch(`${apiUrl}/api/plugins/${plugin.plugin_id}/client.js`, {
               headers: token ? { Authorization: `Bearer ${token}` } : {},
               credentials: 'include',
             });
