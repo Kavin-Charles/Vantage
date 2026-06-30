@@ -107,9 +107,29 @@ async function createPluginTable(db: DB, pluginSlug: string, tableDef: PluginTab
 }
 
 /**
+ * Adds any declared columns missing from an existing physical table.
+ * Idempotent (ADD COLUMN IF NOT EXISTS). Lets a plugin add table columns in a
+ * new version without an uninstall — the create step only runs IF NOT EXISTS,
+ * so without this, schema changes to existing tables would never apply.
+ */
+async function reconcileColumns(db: DB, pluginSlug: string, tableDef: PluginTableDef): Promise<void> {
+  validateIdentifier(pluginSlug.replace(/-/g, '_'), 'plugin slug');
+  validateIdentifier(tableDef.name, `table "${tableDef.name}"`);
+  const fullName = physicalTableName(pluginSlug, tableDef.name);
+
+  for (const col of tableDef.columns) {
+    validateIdentifier(col.name, `column "${col.name}" in table "${tableDef.name}"`);
+    if (!(col.type in COLUMN_TYPE_MAP)) continue;
+    const pgType = COLUMN_TYPE_MAP[col.type];
+    // Identifiers are validated above; pgType is a fixed constant from the map.
+    await sql`ALTER TABLE ${sql.ref(fullName)} ADD COLUMN IF NOT EXISTS ${sql.ref(col.name)} ${sql.raw(pgType)}`.execute(db);
+  }
+}
+
+/**
  * Runs table migrations for a plugin in a workspace.
  * Generates DDL from PluginTableDef — no raw SQL accepted.
- * Idempotent: already-created tables are skipped.
+ * Creates missing tables and reconciles missing columns on every run.
  * Uses pg_advisory_xact_lock to prevent concurrent creation races.
  */
 export async function runMigrations(
@@ -139,9 +159,13 @@ export async function runMigrations(
 
     for (const tableDef of tables) {
       const versionKey = `table:${tableDef.name}`;
-      if (appliedVersions.has(versionKey)) continue;
 
+      // Always reconcile: create the table if missing, then add any new columns.
+      // Both steps are idempotent, so this is safe to run on every upload.
       await createPluginTable(trx, pluginSlug, tableDef);
+      await reconcileColumns(trx, pluginSlug, tableDef);
+
+      if (appliedVersions.has(versionKey)) continue;
 
       await (trx as any)
         .insertInto(MIGRATION_LOG_TABLE)

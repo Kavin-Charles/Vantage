@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import * as ReactDOM from 'react-dom';
+import { useRouter } from 'next/navigation';
 import { useInstalledPlugins } from '@/modules/shared/hooks/useInstalledPlugins';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import type { DashboardWidgetDef } from '@/modules/shared/lib/dashboard-registry';
@@ -61,6 +62,7 @@ export function useDashboardWidgets(): Map<string, DashboardWidgetDef> {
 export function PluginRuntimeProvider({ children }: { children: React.ReactNode }) {
   const { data: plugins = [], isLoading } = useInstalledPlugins();
   const getToken = useApiToken();
+  const router = useRouter();
   const apiUrl = (typeof process !== 'undefined' && process.env['NEXT_PUBLIC_API_URL']) ?? '';
   const [registry] = useState<FrontendSurfaceRegistry>({
     pages: new Map(),
@@ -99,7 +101,7 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
 
           try {
             const token = await getToken();
-            const res = await fetch(`${apiUrl}/api/plugins/${plugin.id}/client.js`, {
+            const res = await fetch(`${apiUrl}/api/plugins/${plugin.plugin_id}/client.js`, {
               headers: token ? { Authorization: `Bearer ${token}` } : {},
               credentials: 'include',
             });
@@ -109,7 +111,8 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
 
             const makeVencore = () => ({
               registerPage: (path: string, component: AnyComponent) => {
-                registry.pages.set(path, component);
+                // Slot lookup keys pages as `${pluginId}:${path}` — match it.
+                registry.pages.set(`${plugin.plugin_id}:${path}`, component);
               },
               registerWidget: (id: string, component: AnyComponent) => {
                 registry.widgets.set(id, { id, pluginId: plugin.plugin_id, component });
@@ -168,6 +171,24 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
               },
               bus: {
                 on: (_event: string, _handler: (p: unknown) => void) => () => {},
+              },
+              // Call this plugin's own backend HTTP endpoints (registered via
+              // http.onEndpoint) with the user's session. Returns the parsed body.
+              invoke: async (path: string, payload?: unknown) => {
+                const t = await getToken();
+                const normalized = path.startsWith('/') ? path : `/${path}`;
+                const r = await fetch(`${apiUrl}/api/plugins/route/${plugin.plugin_id}${normalized}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+                  credentials: 'include',
+                  body: JSON.stringify(payload ?? {}),
+                });
+                const text = await r.text();
+                try {
+                  return text ? JSON.parse(text) : null;
+                } catch {
+                  return text;
+                }
               },
               list: async (resource: string, filter?: unknown) => {
                 const t = await getToken();
@@ -290,6 +311,17 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
       window.removeEventListener('vencore:dashboard:register-widget', handleDashboardWidget);
     };
   }, []);
+
+  // Route in-app when a plugin calls vencore.navigate(path) — powers plugin
+  // deep links and settings shortcuts.
+  useEffect(() => {
+    function handleNavigate(e: Event) {
+      const path = (e as CustomEvent<{ path?: string }>).detail?.path;
+      if (path) router.push(path);
+    }
+    window.addEventListener('vencore:navigate', handleNavigate);
+    return () => window.removeEventListener('vencore:navigate', handleNavigate);
+  }, [router]);
 
   return (
     <PluginRuntimeCtx.Provider value={{ registry, loading, dashboardWidgets }}>
