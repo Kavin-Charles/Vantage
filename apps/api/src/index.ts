@@ -211,7 +211,7 @@ bridgeRegistry
       .executeTakeFirst();
     return row?.granted ?? false;
   })
-  .register('alert.create', 'alerts:view', async (ctx, p, db) => {
+  .register('alert.create', null, async (ctx, p, db) => {
     await createAlert(db as Kysely<Database>, {
       workspaceId: ctx.workspaceId,
       severity: (p.severity as 'critical' | 'warning' | 'info') ?? 'info',
@@ -235,7 +235,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(cookieParser());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Public routes (no auth)
 app.use('/api/config', createConfigRouter(config, db));

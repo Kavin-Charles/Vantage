@@ -99,6 +99,11 @@ const ICONS: Record<string, React.ReactNode> = {
   lock:             <><rect x="5" y="11" width="14" height="11" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></>,
   paperclip:        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>,
   file:             <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></>,
+
+  // Setup wizard icons
+  upload:    <><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M5 20h14"/></>,
+  eye:       <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
+  'eye-off': <><path d="M3 3l18 18"/><path d="M10.6 5.2A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a14.6 14.6 0 0 1-2.9 3.9M6.5 6.6C4 8.3 2 12 2 12s3.5 7 10 7a9.9 9.9 0 0 0 3.4-.6"/><path d="M9.5 9.7A3 3 0 0 0 12 15a3 3 0 0 0 2.3-1.1"/></>,
 };
 
 export function Icon({

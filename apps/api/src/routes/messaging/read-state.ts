@@ -9,7 +9,7 @@ const markReadSchema = z.object({ message_id: z.string().uuid() });
 export function createReadStateRouter(
   db: Kysely<Database>,
   requirePermission: (p: string) => import('express').RequestHandler,
-) {
+): Router {
   const router = Router({ mergeParams: true });
 
   // PATCH /channels/:channelId/read

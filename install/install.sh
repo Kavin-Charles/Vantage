@@ -104,6 +104,7 @@ REDIS_URL=redis://redis:6379
 JWT_SECRET=$(gen_secret)
 CRON_SECRET=$(gen_secret)
 AGENT_SIGNING_SECRET=$(gen_secret)
+SSH_ENCRYPTION_KEY=$(gen_secret)
 
 # App
 NODE_ENV=production
@@ -123,7 +124,7 @@ wait_for_api() {
     attempts=$((attempts + 1))
     sleep 3
   done
-  warn "API health check timed out. Check logs: cd $INSTALL_DIR && docker compose logs api"
+  err "API health check timed out. Check logs: cd $INSTALL_DIR && docker compose logs api"
 }
 
 main() {

@@ -10,7 +10,7 @@ const reactionSchema = z.object({ emoji: z.string().trim().min(1).max(64) });
 export function createReactionsRouter(
   db: Kysely<Database>,
   requirePermission: (p: string) => import('express').RequestHandler,
-) {
+): Router {
   const router = Router({ mergeParams: true });
 
   // POST /messages/:messageId/reactions
