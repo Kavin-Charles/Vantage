@@ -21,7 +21,7 @@ const updateChannelSchema = z.object({
 export function createChannelsRouter(
   db: Kysely<Database>,
   requirePermission: (p: string) => import('express').RequestHandler,
-) {
+): import('express').Router {
   const router = Router();
 
   // List channels the user belongs to, with unread counts.

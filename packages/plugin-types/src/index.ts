@@ -312,6 +312,7 @@ export type PluginPermission =
   | 'activity:read' | 'activity:write'
   | 'servers:read'
   | 'websites:read'
+  | 'alerts:view'
   | 'storage:read' | 'storage:write'
   | 'http:fetch';
 

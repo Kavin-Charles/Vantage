@@ -9,7 +9,7 @@ const inviteMemberSchema = z.object({ user_id: z.string().uuid() });
 export function createMembersRouter(
   db: Kysely<Database>,
   requirePermission: (p: string) => import('express').RequestHandler,
-) {
+): import('express').Router {
   const router = Router({ mergeParams: true });
 
   // GET /channels/:channelId/members

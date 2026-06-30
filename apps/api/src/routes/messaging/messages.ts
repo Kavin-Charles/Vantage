@@ -103,7 +103,7 @@ async function hydrateMessages(db: Kysely<Database>, messages: { id: string; use
 export function createMessagesRouter(
   db: Kysely<Database>,
   requirePermission: (p: string) => import('express').RequestHandler,
-) {
+): import('express').Router {
   const router = Router({ mergeParams: true });
 
   // GET /channels/:channelId/messages — cursor-paginated history

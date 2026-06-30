@@ -100,9 +100,9 @@ export async function handleMessagingUpgrade(
   });
 
   ws.on('close', () => {
-    broadcastToWorkspace(workspace.id, {
+    broadcastToWorkspace(workspace!.id, {
       type: 'user.presence',
-      user_id: user.id,
+      user_id: user!.id,
       status: 'offline',
     });
   });
@@ -124,11 +124,11 @@ export async function handleMessagingUpgrade(
         break;
 
       case 'typing.start':
-        broadcastToWorkspace(workspace.id, {
+        broadcastToWorkspace(workspace!.id, {
           type: 'user.typing',
           channel_id: event.channel_id,
-          user_id: user.id,
-          name: user.name,
+          user_id: user!.id,
+          name: user!.name,
         });
         break;
 
@@ -142,7 +142,7 @@ export async function handleMessagingUpgrade(
         db.insertInto('channel_read_state')
           .values({
             channel_id: event.channel_id,
-            user_id: user.id,
+            user_id: user!.id,
             last_read_message_id: event.message_id,
           })
           .onConflict(oc =>

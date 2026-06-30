@@ -16,7 +16,7 @@ const searchQuerySchema = z.object({
 export function createSearchRouter(
   db: Kysely<Database>,
   requirePermission: (p: string) => import('express').RequestHandler,
-) {
+): import('express').Router {
   const router = Router();
 
   router.get('/', requirePermission('messaging:view'), async (req, res, next) => {
