@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { StepId, SetupState } from './types';
 import { getStepList, getStepStatus, OPTIONAL_STEPS } from './types';
 
@@ -9,7 +10,6 @@ const STEP_LABELS: Record<StepId, string> = {
   features: 'Features',
   admin: 'Admin Account',
   review: 'Review & Complete',
-  complete: 'Complete',
 };
 
 type Props = {
@@ -21,7 +21,7 @@ export function Sidebar({ state, onGoTo }: Props) {
   const stepList = getStepList(state);
 
   return (
-    <aside style={{
+    <aside className="setup-sidebar" style={{
       width: 240,
       flexShrink: 0,
       borderRight: '1px solid var(--border)',
@@ -37,42 +37,69 @@ export function Sidebar({ state, onGoTo }: Props) {
         const isClickable = status === 'done' || status === 'skipped' || status === 'current';
 
         return (
-          <button
+          <SidebarRow
             key={stepId}
-            onClick={() => isClickable && onGoTo(stepId)}
-            disabled={!isClickable}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '9px 20px',
-              background: status === 'current' ? 'var(--surface2)' : 'transparent',
-              border: 'none',
-              borderLeft: status === 'current' ? '2px solid var(--text)' : '2px solid transparent',
-              cursor: isClickable ? 'pointer' : 'default',
-              textAlign: 'left',
-              width: '100%',
-            }}
-          >
-            <StatusIcon status={status} />
-            <span style={{
-              fontSize: 13,
-              fontWeight: status === 'current' ? 600 : 400,
-              color: status === 'locked' ? 'var(--text3)' : 'var(--text)',
-            }}>
-              {STEP_LABELS[stepId]}
-              {isOptional && status === 'skipped' && (
-                <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>skipped</span>
-              )}
-            </span>
-          </button>
+            stepId={stepId}
+            status={status}
+            isOptional={isOptional}
+            isClickable={isClickable}
+            onGoTo={onGoTo}
+          />
         );
       })}
     </aside>
   );
 }
 
-function StatusIcon({ status }: { status: 'done' | 'current' | 'locked' | 'skipped' }) {
+type RowStatus = 'done' | 'current' | 'locked' | 'skipped';
+
+function SidebarRow({
+  stepId, status, isOptional, isClickable, onGoTo,
+}: {
+  stepId: StepId;
+  status: RowStatus;
+  isOptional: boolean;
+  isClickable: boolean;
+  onGoTo: (step: StepId) => void;
+}) {
+  const [hover, setHover] = useState(false);
+
+  return (
+    <button
+      onClick={() => isClickable && onGoTo(stepId)}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      disabled={!isClickable}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        padding: '9px 20px',
+        background: status === 'current' ? 'var(--surface2)' : (hover && isClickable ? 'var(--surface2)' : 'transparent'),
+        border: 'none',
+        borderLeft: status === 'current' ? '2px solid var(--text)' : '2px solid transparent',
+        cursor: isClickable ? 'pointer' : 'default',
+        textAlign: 'left',
+        width: '100%',
+        transition: 'background var(--motion-fast) var(--motion-ease)',
+      }}
+    >
+      <StatusIcon status={status} />
+      <span style={{
+        fontSize: 13,
+        fontWeight: status === 'current' ? 600 : 400,
+        color: status === 'locked' ? 'var(--text3)' : 'var(--text)',
+      }}>
+        {STEP_LABELS[stepId]}
+        {isOptional && status === 'skipped' && (
+          <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>skipped</span>
+        )}
+      </span>
+    </button>
+  );
+}
+
+function StatusIcon({ status }: { status: RowStatus }) {
   const base: React.CSSProperties = {
     width: 18,
     height: 18,
@@ -83,6 +110,7 @@ function StatusIcon({ status }: { status: 'done' | 'current' | 'locked' | 'skipp
     justifyContent: 'center',
     fontSize: 10,
     fontWeight: 700,
+    transition: 'background var(--motion-fast) var(--motion-ease)',
   };
 
   if (status === 'done') return (

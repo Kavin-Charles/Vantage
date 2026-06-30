@@ -77,10 +77,14 @@ export async function handleMessagingUpgrade(
     return;
   }
 
+  const userId = user.id;
+  const userName = user.name;
+  const workspaceId = workspace.id;
+
   // ── Check messaging module enabled ────────────────────────────────────────
   const moduleRow = await db
     .selectFrom('workspace_modules')
-    .where('workspace_id', '=', workspace.id)
+    .where('workspace_id', '=', workspaceId)
     .where('module_id', '=', 'messaging')
     .select('enabled')
     .executeTakeFirst();
@@ -91,18 +95,18 @@ export async function handleMessagingUpgrade(
   }
 
   // ── Register in WS registry + broadcast presence ──────────────────────────
-  registerSocket(workspace.id, ws);
+  registerSocket(workspaceId, ws);
 
-  broadcastToWorkspace(workspace.id, {
+  broadcastToWorkspace(workspaceId, {
     type: 'user.presence',
-    user_id: user.id,
+    user_id: userId,
     status: 'online',
   });
 
   ws.on('close', () => {
-    broadcastToWorkspace(workspace.id, {
+    broadcastToWorkspace(workspaceId, {
       type: 'user.presence',
-      user_id: user.id,
+      user_id: userId,
       status: 'offline',
     });
   });
@@ -124,11 +128,11 @@ export async function handleMessagingUpgrade(
         break;
 
       case 'typing.start':
-        broadcastToWorkspace(workspace.id, {
+        broadcastToWorkspace(workspaceId, {
           type: 'user.typing',
           channel_id: event.channel_id,
-          user_id: user.id,
-          name: user.name,
+          user_id: userId,
+          name: userName,
         });
         break;
 
@@ -142,7 +146,7 @@ export async function handleMessagingUpgrade(
         db.insertInto('channel_read_state')
           .values({
             channel_id: event.channel_id,
-            user_id: user.id,
+            user_id: userId,
             last_read_message_id: event.message_id,
           })
           .onConflict(oc =>
@@ -165,6 +169,6 @@ export async function handleMessagingUpgrade(
   for (const raw of earlyMessages) handleEvent(raw);
 
   ws.on('error', (err) => {
-    logger.error({ err, userId: user.id }, '[messaging-ws] socket error');
+    logger.error({ err, userId }, '[messaging-ws] socket error');
   });
 }

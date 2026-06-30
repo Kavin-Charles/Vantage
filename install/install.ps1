@@ -105,14 +105,15 @@ volumes:
 
 function Write-Env {
     @"
-# Database (internal Docker network — do not change hostnames)
+# Database (internal Docker network - do not change hostnames)
 DATABASE_URL=postgresql://vencore:vencore@db:5432/vencore
 REDIS_URL=redis://redis:6379
 
-# Secrets (auto-generated — keep private)
+# Secrets (auto-generated - keep private)
 JWT_SECRET=$(New-Secret)
 CRON_SECRET=$(New-Secret)
 AGENT_SIGNING_SECRET=$(New-Secret)
+SSH_ENCRYPTION_KEY=$(New-Secret)
 
 # App
 NODE_ENV=production
@@ -127,14 +128,14 @@ function Wait-ForApi {
         try {
             docker compose -f "$INSTALL_DIR\docker-compose.yml" exec -T api `
                 wget -qO- http://localhost:3001/api/setup/status 2>$null | Out-Null
-            return
+            return $true
         } catch {}
         Start-Sleep -Seconds 3
     }
-    Write-Warn "API health check timed out. Check logs: cd '$INSTALL_DIR'; docker compose logs api"
+    return $false
 }
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# -- Main -----------------------------------------------------------------
 
 Write-Host ""
 Write-Host "  Vencore Installer"
@@ -152,7 +153,7 @@ Write-Log "Writing docker-compose.yml..."
 Write-Compose
 
 if (Test-Path "$INSTALL_DIR\.env") {
-    Write-Warn ".env already exists — skipping secret generation."
+    Write-Warn ".env already exists - skipping secret generation."
     Write-Warn "To regenerate: Remove-Item '$INSTALL_DIR\.env' then re-run this script."
 } else {
     Write-Log "Generating secrets and writing .env..."
@@ -166,7 +167,9 @@ docker compose -f "$INSTALL_DIR\docker-compose.yml" pull
 Write-Log "Starting Vencore..."
 docker compose -f "$INSTALL_DIR\docker-compose.yml" up -d
 
-Wait-ForApi
+if (-not (Wait-ForApi)) {
+    Write-Err "API health check timed out. Check logs: cd '$INSTALL_DIR'; docker compose logs api"
+}
 
 $ip = Get-LocalIP
 
