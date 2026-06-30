@@ -1,0 +1,11 @@
+# Build output
+dist/** linguist-generated
+build/** linguist-generated
+out/** linguist-generated
+.next/** linguist-generated
+
+# Coverage
+coverage/** linguist-generated
+
+# Generated docs
+docs/api/** linguist-generated
