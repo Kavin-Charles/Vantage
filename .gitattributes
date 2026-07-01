@@ -7,5 +7,10 @@ out/** linguist-generated
 # Coverage
 coverage/** linguist-generated
 
+# Exclude all HTML files from language statistics
+*.html linguist-detectable=false
+*.htm linguist-detectable=false
+
+
 # Generated docs
 docs/api/** linguist-generated
