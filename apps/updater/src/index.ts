@@ -37,7 +37,7 @@ function run(cmd: string, args: string[], extraEnv: Record<string, string> = {})
     child.stderr.on('data', d => pushLog(String(d)));
     child.on('error', reject);
     child.on('close', code =>
-      code === 0 ? resolve() : reject(new Error(`${cmd} ${args[0]} exited with code ${code}`)),
+      code === 0 ? resolve() : reject(new Error(`${cmd} ${args.join(' ')} exited with code ${code}`)),
     );
   });
 }
@@ -109,13 +109,19 @@ const server = createServer((req, res) => {
       if (state === 'pulling' || state === 'recreating') {
         return send(res, 409, { data: null, error: { code: 'UPDATE_IN_PROGRESS', message: 'An update is already running' } });
       }
+      // Reserve the state machine synchronously — no await may sit between
+      // the guard above and this assignment, or two requests can both pass.
+      const previousState = state;
+      state = 'pulling';
       let version: unknown;
       try {
         version = (JSON.parse(await readBody(req)) as { version?: unknown }).version;
       } catch {
+        state = previousState;
         return send(res, 400, { data: null, error: { code: 'INVALID_INPUT', message: 'Body must be JSON' } });
       }
       if (typeof version !== 'string' || !isValidVersion(version)) {
+        state = previousState;
         return send(res, 400, { data: null, error: { code: 'INVALID_INPUT', message: 'version must be x.y.z' } });
       }
       void runUpdate(version);
