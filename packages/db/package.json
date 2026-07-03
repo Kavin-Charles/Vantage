@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && tsc -p tsconfig.migrations.json",
     "dev": "tsc --watch",
     "db:migrate": "tsx --env-file=../../apps/api/.env src/migrate.ts",
     "lint": "tsc --noEmit"
