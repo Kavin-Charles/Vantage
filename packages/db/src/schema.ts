@@ -100,7 +100,7 @@ export interface ActivityTable {
 export interface AlertTable {
   id: Generated<string>;
   workspace_id: string;
-  resource_type: 'server' | 'database' | 'website' | 'crm';
+  resource_type: 'server' | 'database' | 'website' | 'crm' | 'projects';
   resource_id: string | null;
   severity: 'critical' | 'warning' | 'info';
   message: string;
