@@ -10,7 +10,17 @@ function buildMockDb(shouldFail = false) {
   } else {
     chain['executeTakeFirstOrThrow'] = vi.fn().mockResolvedValue({ id: 'act1' });
   }
-  return { insertInto: vi.fn().mockReturnValue(chain) };
+
+  const selectChain: Record<string, unknown> = {};
+  for (const f of ['select','where','executeTakeFirst']) {
+    selectChain[f] = vi.fn().mockReturnValue(selectChain);
+  }
+  selectChain['executeTakeFirst'] = vi.fn().mockResolvedValue({ activity_on: true });
+
+  return {
+    insertInto: vi.fn().mockReturnValue(chain),
+    selectFrom: vi.fn().mockReturnValue(selectChain),
+  };
 }
 
 describe('logActivity', () => {
@@ -45,6 +55,32 @@ describe('logActivity', () => {
       body: 'Deal moved to Closing',
       record_id: 'd1',
       meta: { old_stage: 'Qualifying', new_stage: 'Closing' },
+    });
+    expect(db.insertInto).toHaveBeenCalledWith('activities');
+  });
+
+  it('accepts pm_task_created as a valid ActivityType', async () => {
+    const db = buildMockDb();
+    const { logActivity } = await import('../lib/log-activity');
+    await logActivity(db as never, {
+      workspace_id: 'ws-1',
+      user_id: 'user-1',
+      type: 'pm_task_created',
+      source_module_id: 'projects',
+      record_id: 'task-1',
+    });
+    expect(db.insertInto).toHaveBeenCalledWith('activities');
+  });
+
+  it('accepts milestone_completed as a valid ActivityType', async () => {
+    const db = buildMockDb();
+    const { logActivity } = await import('../lib/log-activity');
+    await logActivity(db as never, {
+      workspace_id: 'ws-1',
+      user_id: 'user-1',
+      type: 'milestone_completed',
+      source_module_id: 'projects',
+      record_id: 'milestone-1',
     });
     expect(db.insertInto).toHaveBeenCalledWith('activities');
   });
