@@ -21,4 +21,6 @@ COPY apps/worker/ ./apps/worker/
 RUN pnpm --filter "@vencore/worker..." build
 
 ENV NODE_ENV=production
+ARG VENCORE_VERSION=0.0.0-dev
+ENV VENCORE_VERSION=$VENCORE_VERSION
 CMD ["node", "apps/worker/dist/index.js"]
