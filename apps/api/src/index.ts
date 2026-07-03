@@ -8,7 +8,7 @@ import { handleSftpUpgrade } from './ws/sftp-session';
 import { handleMessagingUpgrade } from './ws/messaging-session';
 import { initRedisMessaging } from './lib/messaging-pubsub';
 import { apiEnvSchema, readConfig } from '@vencore/config';
-import { createDb } from '@vencore/db';
+import { createDb, runMigrations } from '@vencore/db';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import { errorHandler } from './middleware/errors';
@@ -417,24 +417,37 @@ httpServer.on('upgrade', (request, socket, head) => {
   }
 });
 
-httpServer.listen(env.PORT, () => {
-  logger.info({ port: env.PORT }, 'API server running');
+async function start(): Promise<void> {
+  if (env.NODE_ENV === 'production') {
+    logger.info('Running database migrations...');
+    await runMigrations(env.DATABASE_URL);
+    logger.info('Migrations up to date');
+  }
 
-  // Respawn backends for all enabled plugins on boot — otherwise plugin
-  // sandboxes stay dead after a restart until each is re-uploaded/re-enabled.
-  void (async () => {
-    try {
-      const rows = await db
-        .selectFrom('workspace_plugins')
-        .select(['plugin_id', 'workspace_id'])
-        .where('enabled', '=', true)
-        .execute();
-      for (const r of rows) {
-        try { loadPluginBackend(r.plugin_id, r.workspace_id, db); } catch { /* per-plugin failure is non-fatal */ }
+  httpServer.listen(env.PORT, () => {
+    logger.info({ port: env.PORT }, 'API server running');
+
+    // Respawn backends for all enabled plugins on boot — otherwise plugin
+    // sandboxes stay dead after a restart until each is re-uploaded/re-enabled.
+    void (async () => {
+      try {
+        const rows = await db
+          .selectFrom('workspace_plugins')
+          .select(['plugin_id', 'workspace_id'])
+          .where('enabled', '=', true)
+          .execute();
+        for (const r of rows) {
+          try { loadPluginBackend(r.plugin_id, r.workspace_id, db); } catch { /* per-plugin failure is non-fatal */ }
+        }
+        logger.info({ count: rows.length }, 'Loaded enabled plugin backends on startup');
+      } catch (err) {
+        logger.error({ err }, 'Failed to load plugin backends on startup');
       }
-      logger.info({ count: rows.length }, 'Loaded enabled plugin backends on startup');
-    } catch (err) {
-      logger.error({ err }, 'Failed to load plugin backends on startup');
-    }
-  })();
+    })();
+  });
+}
+
+void start().catch((err: unknown) => {
+  logger.error({ err }, 'API startup failed');
+  process.exit(1);
 });
