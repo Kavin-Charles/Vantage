@@ -3,7 +3,7 @@ import * as path from 'path';
 import { promises as fs } from 'fs';
 import { createDb } from './client';
 
-export async function runMigrations(db: any): Promise<{ error?: any; results?: any[] }> {
+export async function migrate(db: any): Promise<{ error?: any; results?: any[] }> {
   const migrator = new Migrator({
     db,
     provider: new FileMigrationProvider({
@@ -25,7 +25,8 @@ async function runCli(): Promise<void> {
   }
 
   const db = createDb(connectionString);
-  const { error, results } = await runMigrations(db);
+  const { error, results } = await migrate(db);
+
 
   results?.forEach(r => {
     if (r.status === 'Success') {

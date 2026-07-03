@@ -8,7 +8,7 @@ import { handleSftpUpgrade } from './ws/sftp-session';
 import { handleMessagingUpgrade } from './ws/messaging-session';
 import { initRedisMessaging } from './lib/messaging-pubsub';
 import { apiEnvSchema, readConfig } from '@vencore/config';
-import { createDb, runMigrations } from '@vencore/db';
+import { createDb, migrate } from '@vencore/db';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import { errorHandler } from './middleware/errors';
@@ -95,7 +95,7 @@ const db = createDb(env.DATABASE_URL);
 void (async () => {
   try {
     logger.info('Checking/running database migrations...');
-    const { error, results } = await runMigrations(db);
+    const { error, results } = await migrate(db);
     
     results?.forEach(r => {
       if (r.status === 'Success') {
