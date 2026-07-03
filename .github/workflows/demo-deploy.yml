@@ -7,9 +7,6 @@ on:
 env:
   REGISTRY: ghcr.io
   ORG: vencorehq
-  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  GCP_ZONE: ${{ secrets.GCP_ZONE }}
-  VM_NAME: vencore-demo
 
 jobs:
   build-and-push:
@@ -65,57 +62,52 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
 
     steps:
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Checkout (for compose file)
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEMO_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.DEMO_VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Copy compose file to VM
         run: |
-          gcloud compute scp docker-compose.demo.yml ${{ env.VM_NAME }}:~/vencore/docker-compose.yml \
-            --project=${{ env.GCP_PROJECT_ID }} \
-            --zone=${{ env.GCP_ZONE }}
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEMO_VM_USER }}@${{ secrets.DEMO_VM_HOST }} "mkdir -p ~/vencore"
+          scp -i ~/.ssh/deploy_key docker-compose.demo.yml ${{ secrets.DEMO_VM_USER }}@${{ secrets.DEMO_VM_HOST }}:~/vencore/docker-compose.yml
 
       - name: Deploy to VM
         run: |
-          gcloud compute ssh ${{ env.VM_NAME }} \
-            --project=${{ env.GCP_PROJECT_ID }} \
-            --zone=${{ env.GCP_ZONE }} \
-            --command="
-              set -e
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEMO_VM_USER }}@${{ secrets.DEMO_VM_HOST }} << 'DEPLOY'
+            set -e
 
-              echo '🔄 Pulling latest demo images...'
-              docker pull ghcr.io/vencorehq/vencore-web:demo
-              docker pull ghcr.io/vencorehq/vencore-api:demo
-              docker pull ghcr.io/vencorehq/vencore-worker:demo
+            echo '🔄 Pulling latest demo images...'
+            docker pull ghcr.io/vencorehq/vencore-web:demo
+            docker pull ghcr.io/vencorehq/vencore-api:demo
+            docker pull ghcr.io/vencorehq/vencore-worker:demo
 
-              echo '🚀 Restarting services...'
-              cd ~/vencore
-              docker compose down
-              docker compose up -d
+            echo '🚀 Restarting services...'
+            cd ~/vencore
+            docker compose down
+            docker compose up -d
 
-              echo '⏳ Waiting for API health check...'
-              for i in \$(seq 1 30); do
-                if docker compose exec -T api wget -qO- http://localhost:3001/api/setup/status > /dev/null 2>&1; then
-                  echo '✅ Demo deployment complete!'
-                  exit 0
-                fi
-                sleep 3
-              done
+            echo '⏳ Waiting for API health check...'
+            for i in $(seq 1 30); do
+              if docker compose exec -T api wget -qO- http://localhost:3001/api/setup/status > /dev/null 2>&1; then
+                echo '✅ Demo deployment complete!'
+                exit 0
+              fi
+              sleep 3
+            done
 
-              echo '❌ API health check timed out'
-              docker compose logs --tail=50 api
-              exit 1
-            "
+            echo '❌ API health check timed out'
+            docker compose logs --tail=50 api
+            exit 1
+          DEPLOY
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
