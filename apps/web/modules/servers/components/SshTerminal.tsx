@@ -3,11 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import '@xterm/xterm/css/xterm.css';
 
-const API_URL = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
-
-function toWsUrl(base: string, path: string): string {
-  return base.replace(/^http/, 'ws') + path;
-}
+import { getWsUrl } from '../../shared/lib/api';
 
 interface Props {
   serverId: string;
@@ -82,8 +78,7 @@ export function SshTerminal({ serverId }: Props) {
       const cols = term.cols;
       const rows = term.rows;
 
-      const wsUrl = toWsUrl(
-        API_URL,
+      const wsUrl = getWsUrl(
         `/api/servers/${serverId}/ssh/terminal?cols=${cols}&rows=${rows}`,
       );
       const ws = new WebSocket(wsUrl);
