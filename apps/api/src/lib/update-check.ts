@@ -2,7 +2,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 
 const GHCR_IMAGE = 'vencorehq/vencore-api';
-const RELEASES_BASE = 'https://github.com/Kavin-Charles/Vencore/releases/tag';
+const RELEASES_BASE = 'https://github.com/vencorehq/Vencore/releases/tag';
 
 export function currentVersion(): string {
   return process.env['VENCORE_VERSION'] ?? '0.0.0-dev';
