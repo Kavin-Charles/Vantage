@@ -3,15 +3,7 @@ import * as path from 'path';
 import { promises as fs } from 'fs';
 import { createDb } from './client';
 
-async function migrate(): Promise<void> {
-  const connectionString = process.env['DATABASE_URL'];
-  if (!connectionString) {
-    console.error('DATABASE_URL env var is required');
-    process.exit(1);
-  }
-
-  const db = createDb(connectionString);
-
+export async function runMigrations(db: any): Promise<{ error?: any; results?: any[] }> {
   const migrator = new Migrator({
     db,
     provider: new FileMigrationProvider({
@@ -22,6 +14,18 @@ async function migrate(): Promise<void> {
   });
 
   const { error, results } = await migrator.migrateToLatest();
+  return { error, results };
+}
+
+async function runCli(): Promise<void> {
+  const connectionString = process.env['DATABASE_URL'];
+  if (!connectionString) {
+    console.error('DATABASE_URL env var is required');
+    process.exit(1);
+  }
+
+  const db = createDb(connectionString);
+  const { error, results } = await runMigrations(db);
 
   results?.forEach(r => {
     if (r.status === 'Success') {
@@ -43,4 +47,7 @@ async function migrate(): Promise<void> {
   await db.destroy();
 }
 
-migrate();
+if (require.main === module) {
+  runCli();
+}
+
