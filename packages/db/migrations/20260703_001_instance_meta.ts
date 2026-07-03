@@ -1,19 +1,19 @@
-import { sql } from 'kysely';
-import type { Kysely } from 'kysely';
+import { type Kysely, sql } from 'kysely';
 
 export async function up(db: Kysely<unknown>): Promise<void> {
-  await sql`
-    CREATE TABLE IF NOT EXISTS instance_meta (
-      id int PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-      latest_version text,
-      release_url text,
-      last_checked_at timestamptz,
-      notified_version text
-    )
-  `.execute(db);
+  await db.schema
+    .createTable('instance_meta')
+    .ifNotExists()
+    .addColumn('id', 'integer', c => c.primaryKey().defaultTo(1).check(sql`id = 1`))
+    .addColumn('latest_version', 'text')
+    .addColumn('release_url', 'text')
+    .addColumn('last_checked_at', 'timestamptz')
+    .addColumn('notified_version', 'text')
+    .execute();
+
   await sql`INSERT INTO instance_meta (id) VALUES (1) ON CONFLICT (id) DO NOTHING`.execute(db);
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
-  await sql`DROP TABLE IF EXISTS instance_meta`.execute(db);
+  await db.schema.dropTable('instance_meta').ifExists().execute();
 }
