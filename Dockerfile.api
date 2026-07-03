@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 WORKDIR /app
 ENV NODE_OPTIONS=--max-old-space-size=2048
