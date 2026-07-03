@@ -38,7 +38,7 @@ function getR2Client(env: NodeJS.ProcessEnv) {
 
 export function createUploadRouter(
   requirePermission: (p: string) => import('express').RequestHandler,
-) {
+): Router {
   const router = Router();
 
   // POST /messaging/upload/presign

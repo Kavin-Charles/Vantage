@@ -1,5 +1,6 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import type { Kysely } from 'kysely';
+import { sql } from 'kysely';
 import type { Database } from '@vencore/db';
 import { z } from 'zod';
 import multer from 'multer';
@@ -403,7 +404,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const plugin = await db.selectFrom('workspace_plugins').selectAll()
-        .where('id', '=', req.params['id']!)
+        .where(/^[0-9a-f-]{36}$/i.test(req.params['id']!) ? 'id' : 'plugin_id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
         .executeTakeFirst();
       if (!plugin) {
@@ -454,7 +455,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const plugin = await db.selectFrom('workspace_plugins').select(['plugin_id', 'manifest'])
-        .where('id', '=', req.params['id']!)
+        .where(/^[0-9a-f-]{36}$/i.test(req.params['id']!) ? 'id' : 'plugin_id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
         .executeTakeFirst();
       if (!plugin) {
@@ -494,7 +495,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const plugin = await db.selectFrom('workspace_plugins').select(['plugin_id', 'manifest'])
-        .where('id', '=', req.params['id']!)
+        .where(/^[0-9a-f-]{36}$/i.test(req.params['id']!) ? 'id' : 'plugin_id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
         .executeTakeFirst();
       if (!plugin) {
@@ -517,16 +518,19 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           storedValue = encryptSettingValue(value as string);
           encrypted = true;
         }
+        // The value column is jsonb — JSON-encode scalars too (a bare string like
+        // "groq" is not valid JSON to Postgres). Cast explicitly to jsonb.
+        const jsonbValue = sql`${JSON.stringify(storedValue)}::jsonb`;
         await (db as any).insertInto('plugin_settings')
           .values({
             workspace_id: workspace.id,
             plugin_id: plugin.plugin_id,
             key,
-            value: storedValue,
+            value: jsonbValue,
             encrypted,
           })
           .onConflict((oc: any) =>
-            oc.columns(['workspace_id', 'plugin_id', 'key']).doUpdateSet({ value: storedValue, encrypted, updated_at: new Date() })
+            oc.columns(['workspace_id', 'plugin_id', 'key']).doUpdateSet({ value: jsonbValue, encrypted, updated_at: new Date() })
           )
           .execute();
       }

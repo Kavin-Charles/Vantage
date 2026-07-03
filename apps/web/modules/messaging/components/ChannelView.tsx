@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { MessageList } from './MessageList';
@@ -24,10 +24,18 @@ export function ChannelView({ channelId }: Props) {
   const getToken = useApiToken();
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
   const [showSearch, setShowSearch] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  // Sidebar's "View details" action deep-links here with ?settings=1
+  const [showSettings, setShowSettings] = useState(() => searchParams.get('settings') === '1');
+
+  useEffect(() => {
+    if (searchParams.get('settings') === '1') {
+      router.replace(`/messaging/${channelId}`, { scroll: false });
+    }
+  }, [searchParams, channelId, router]);
 
   const { messages, hasMore, loadingHistory, typing, wsReady, onlineUsers, loadMore, send, sendTyping, markRead } =
     useChat(channelId);
@@ -107,6 +115,7 @@ export function ChannelView({ channelId }: Props) {
 
         {/* Messages */}
         <MessageList
+          channelId={channelId}
           messages={messages}
           currentUserId={user?.id ?? ''}
           hasMore={hasMore}

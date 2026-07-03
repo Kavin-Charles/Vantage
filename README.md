@@ -68,7 +68,6 @@ apps/
   web/      Next.js 14 (App Router) — the dashboard
   api/      Express REST API — all data operations
   worker/   Background job runner — website pings, alert evaluation, DB health
-  agent/    Monitoring daemon — installed on customer servers, reports metrics
 
 packages/
   db/       Kysely database client + schema types
@@ -180,10 +179,7 @@ On any server you want to monitor:
 # Register the server in the dashboard first to get a token, then:
 VENCORE_TOKEN=<your-token> \
 VENCORE_API_URL=https://your-vencore-instance.com \
-npx @vencore/agent
-```
-
-Or run it as a systemd service — see [`apps/agent/`](apps/agent/) for a sample unit file.
+npx vencore-agent
 
 ---
 
@@ -251,11 +247,6 @@ apps/worker/src/jobs/
   website-ping.ts   Checks all monitored URLs, records response time + status
   alert-eval.ts     Evaluates thresholds, deduplicates with 2-ping rule, creates alerts
   db-health.ts      Connects to configured databases, checks replication lag
-
-apps/agent/src/
-  collect.ts      OS metrics via systeminformation
-  db-checks.ts    Database connectivity checks
-  reporter.ts     HTTP POST to Vencore API
 ```
 
 ---

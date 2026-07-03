@@ -18,6 +18,13 @@ const HOVER_BG: Record<Variant, string> = {
   ghost:     'var(--surface2)',
 };
 
+const DISABLED: Record<Variant, React.CSSProperties> = {
+  primary:   { background: 'var(--surface2)', color: 'var(--text3)', border: '1px solid var(--border)' },
+  secondary: { background: 'var(--surface2)', color: 'var(--text3)', border: '1px solid var(--border)' },
+  danger:    { background: 'var(--surface2)', color: 'var(--text3)', border: '1px solid var(--border)' },
+  ghost:     { background: 'transparent',     color: 'var(--text3)', border: '1px solid transparent' },
+};
+
 export function Button({
   children,
   variant = 'secondary',
@@ -25,6 +32,8 @@ export function Button({
   type = 'button',
   disabled,
   style,
+  id,
+  'aria-label': ariaLabel,
 }: {
   children: React.ReactNode;
   variant?: Variant;
@@ -32,10 +41,14 @@ export function Button({
   type?: 'button' | 'submit';
   disabled?: boolean;
   style?: React.CSSProperties;
+  id?: string;
+  'aria-label'?: string;
 }) {
   const [hover, setHover] = useState(false);
   return (
     <button
+      id={id}
+      aria-label={ariaLabel}
       type={type}
       onClick={onClick}
       disabled={disabled}
@@ -46,11 +59,11 @@ export function Button({
         padding: '7px 14px', borderRadius: 'var(--radius-md)',
         fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
         cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.6 : 1,
         transition: 'all .15s',
         whiteSpace: 'nowrap',
         ...BASE[variant],
-        ...(hover && !disabled ? { background: HOVER_BG[variant] } : {}),
+        ...(hover && !disabled ? { background: HOVER_BG[variant], transform: 'translateY(-1px)' } : {}),
+        ...(disabled ? DISABLED[variant] : {}),
         ...style,
       }}
     >

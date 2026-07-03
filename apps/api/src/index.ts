@@ -8,11 +8,12 @@ import { handleSftpUpgrade } from './ws/sftp-session';
 import { handleMessagingUpgrade } from './ws/messaging-session';
 import { initRedisMessaging } from './lib/messaging-pubsub';
 import { apiEnvSchema, readConfig } from '@vencore/config';
-import { createDb } from '@vencore/db';
+import { createDb, migrate } from '@vencore/db';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import { errorHandler } from './middleware/errors';
 import { createRequireAuth, requireAdmin, type AuthenticatedRequest } from './middleware/auth';
+import { decryptSettingValue, isEncryptedValue } from './lib/plugin-settings-crypto';
 import { createRequireModule } from './middleware/module';
 import { createRequirePermission } from './middleware/permission';
 import { createWorkspaceModulesRouter } from './routes/workspace-modules';
@@ -90,6 +91,32 @@ const env = apiEnvSchema.parse(process.env);
 const config = readConfig();
 const db = createDb(env.DATABASE_URL);
 
+// Run database migrations on startup
+void (async () => {
+  try {
+    logger.info('Checking/running database migrations...');
+    const { error, results } = await migrate(db);
+    
+    results?.forEach(r => {
+      if (r.status === 'Success') {
+        logger.info(`Migration success: ${r.migrationName}`);
+      } else if (r.status === 'Error') {
+        logger.error(`Migration error: ${r.migrationName}`);
+      }
+    });
+
+    if (error) {
+      logger.error({ err: error }, 'Database migration failed');
+    } else if (!results?.length) {
+      logger.info('No pending database migrations.');
+    } else {
+      logger.info('Database migrations completed successfully.');
+    }
+  } catch (err) {
+    logger.error({ err }, 'Failed to initialize database migrations');
+  }
+})();
+
 initAutomationEngine(db);
 
 // Register all module bridge methods
@@ -127,22 +154,50 @@ bridgeRegistry
       .execute();
     return null;
   })
-  .register('http.fetch', 'http:fetch', async (_ctx, p) => {
+  .register('http.fetch', 'http:fetch', async (ctx, p, db) => {
     const url = p.url as string;
     const timeoutMs = (p.timeout as number | undefined) ?? 30_000;
+
+    // Merge plain headers with server-resolved secret headers. Secret header
+    // values may contain {settingKey} tokens, replaced with the decrypted plugin
+    // secret. The decrypted secret never returns to plugin code or the browser.
+    const headers: Record<string, string> = { ...(p.headers as Record<string, string> | undefined ?? {}) };
+    const secretHeaders = p.secret_headers as Record<string, string> | undefined;
+    if (secretHeaders && Object.keys(secretHeaders).length > 0) {
+      const needed = new Set<string>();
+      for (const tmpl of Object.values(secretHeaders)) {
+        for (const m of tmpl.matchAll(/\{([a-zA-Z0-9_]+)\}/g)) needed.add(m[1]!);
+      }
+      const resolved: Record<string, string> = {};
+      for (const key of needed) {
+        const row = await (db as any).selectFrom('plugin_settings').select(['value', 'encrypted'])
+          .where('workspace_id', '=', ctx.workspaceId)
+          .where('plugin_id', '=', ctx.pluginSlug)
+          .where('key', '=', key)
+          .executeTakeFirst() as { value: unknown; encrypted: boolean } | undefined;
+        if (!row || row.value == null || row.value === '') {
+          throw { code: 'NO_KEY', message: `Secret setting '${key}' is not configured.` };
+        }
+        resolved[key] = isEncryptedValue(row.value) ? decryptSettingValue(row.value) : String(row.value);
+      }
+      for (const [name, tmpl] of Object.entries(secretHeaders)) {
+        headers[name] = tmpl.replace(/\{([a-zA-Z0-9_]+)\}/g, (_, k: string) => resolved[k] ?? '');
+      }
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const res = await fetch(url, {
         method: (p.method as string | undefined) ?? 'GET',
-        headers: p.headers as Record<string, string> | undefined,
+        headers: Object.keys(headers).length > 0 ? headers : undefined,
         body: p.body as string | undefined,
         signal: controller.signal,
       });
       const body = await res.text();
-      const headers: Record<string, string> = {};
-      res.headers.forEach((v: string, k: string) => { headers[k] = v; });
-      return { status: res.status, headers, body, ok: res.ok };
+      const respHeaders: Record<string, string> = {};
+      res.headers.forEach((v: string, k: string) => { respHeaders[k] = v; });
+      return { status: res.status, headers: respHeaders, body, ok: res.ok };
     } catch (err) {
       const isAbort = err instanceof Error && err.name === 'AbortError';
       throw { code: isAbort ? 'TIMEOUT' : 'BRIDGE_ERROR', message: err instanceof Error ? err.message : String(err) };
@@ -180,7 +235,8 @@ bridgeRegistry
     return row ?? null;
   })
   .register('workspace.get', null, async (ctx, _p, db) => {
-    const row = await (db as any).selectFrom('workspaces').select(['id', 'name', 'plan'])
+    // workspaces has no 'plan' column — selecting it threw 42703 for every plugin.
+    const row = await (db as any).selectFrom('workspaces').select(['id', 'name'])
       .where('id', '=', ctx.workspaceId)
       .executeTakeFirst();
     return row ?? null;
@@ -212,7 +268,7 @@ bridgeRegistry
       .executeTakeFirst();
     return row?.granted ?? false;
   })
-  .register('alert.create', 'alerts:view', async (ctx, p, db) => {
+  .register('alert.create', null, async (ctx, p, db) => {
     await createAlert(db as Kysely<Database>, {
       workspaceId: ctx.workspaceId,
       severity: (p.severity as 'critical' | 'warning' | 'info') ?? 'info',
@@ -236,7 +292,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(cookieParser());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Public routes (no auth)
 app.use('/api/config', createConfigRouter(config, db));
@@ -385,4 +441,22 @@ httpServer.on('upgrade', (request, socket, head) => {
 
 httpServer.listen(env.PORT, () => {
   logger.info({ port: env.PORT }, 'API server running');
+
+  // Respawn backends for all enabled plugins on boot — otherwise plugin
+  // sandboxes stay dead after a restart until each is re-uploaded/re-enabled.
+  void (async () => {
+    try {
+      const rows = await db
+        .selectFrom('workspace_plugins')
+        .select(['plugin_id', 'workspace_id'])
+        .where('enabled', '=', true)
+        .execute();
+      for (const r of rows) {
+        try { loadPluginBackend(r.plugin_id, r.workspace_id, db); } catch { /* per-plugin failure is non-fatal */ }
+      }
+      logger.info({ count: rows.length }, 'Loaded enabled plugin backends on startup');
+    } catch (err) {
+      logger.error({ err }, 'Failed to load plugin backends on startup');
+    }
+  })();
 });

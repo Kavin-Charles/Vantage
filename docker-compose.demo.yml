@@ -1,0 +1,72 @@
+# docker-compose.demo.yml
+# Demo environment compose file — uses :demo tagged images.
+# Deployed by the CI/CD pipeline to the vencore-demo GCP VM.
+# Usage: copy .env to ~/vencore/.env, then:
+#   docker compose -f docker-compose.demo.yml up -d
+services:
+  web:
+    image: ghcr.io/vencorehq/vencore-web:demo
+    ports:
+      - "80:3000"
+    env_file: .env
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/vencorehq/vencore-api:demo
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/api/setup/status || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  worker:
+    image: ghcr.io/vencorehq/vencore-worker:demo
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: vencore
+      POSTGRES_PASSWORD: vencore
+      POSTGRES_DB: vencore
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vencore"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  redis_data:

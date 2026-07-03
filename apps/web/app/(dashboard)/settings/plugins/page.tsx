@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 
 interface WorkspacePlugin {
   id: string;
@@ -131,6 +132,7 @@ export default function PluginsSettingsPage() {
   const [installing, setInstalling] = useState<string | null>(null);
   const [licenseTarget, setLicenseTarget] = useState<WorkspacePlugin | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? '';
 
@@ -338,6 +340,16 @@ export default function PluginsSettingsPage() {
                 {plugins.map(plugin => (
                   <div
                     key={plugin.id}
+                    onContextMenu={e => {
+                      const items: ContextMenuItem[] = [
+                        { icon: 'open', label: 'View details', onClick: () => router.push(`/settings/plugins/${plugin.plugin_id}`) },
+                        { icon: 'check', label: plugin.enabled ? 'Disable' : 'Enable', disabled: toggling === plugin.id, onClick: () => void togglePlugin(plugin) },
+                        { icon: 'copy', label: 'Copy plugin ID', onClick: () => navigator.clipboard.writeText(plugin.plugin_id) },
+                        { type: 'separator' },
+                        { icon: 'trash', label: 'Remove', danger: true, disabled: removing === plugin.id, onClick: () => removePlugin(plugin) },
+                      ];
+                      openMenu(e, items);
+                    }}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '12px 16px', borderRadius: 10,
@@ -418,6 +430,13 @@ export default function PluginsSettingsPage() {
                 {uninstalledMarketplace.map(mp => (
                   <div
                     key={mp.id}
+                    onContextMenu={e => {
+                      const items: ContextMenuItem[] = [
+                        { icon: 'open', label: installing === mp.id ? 'Installing…' : 'Install', disabled: installing === mp.id, onClick: () => void installFromMarketplace(mp) },
+                        { icon: 'copy', label: 'Copy plugin name', onClick: () => navigator.clipboard.writeText(mp.name) },
+                      ];
+                      openMenu(e, items);
+                    }}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '12px 16px', borderRadius: 10,
@@ -474,6 +493,7 @@ export default function PluginsSettingsPage() {
         />
       )}
       {confirmEl}
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }

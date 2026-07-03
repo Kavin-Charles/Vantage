@@ -6,7 +6,7 @@ import { Icon } from '@/modules/shared/components/ui/Icon';
 import { MessageBubble } from './MessageBubble';
 import { MessageInput } from './MessageInput';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { getThread, sendMessage, addReaction, removeReaction } from '../lib/messaging';
+import { getThread, sendMessage, addReaction, removeReaction, deleteMessage } from '../lib/messaging';
 import type { Message } from '@vencore/types';
 
 interface Props {
@@ -56,6 +56,15 @@ export function ThreadPanel({ parentMessage, currentUserId, onClose }: Props) {
     },
   });
 
+  const remove = useMutation({
+    mutationFn: async (messageId: string) => {
+      const token = await getToken();
+      if (!token) return;
+      await deleteMessage(token, messageId);
+      void refetch();
+    },
+  });
+
   return (
     <div style={{
       width: 360, borderLeft: '1px solid var(--border)',
@@ -84,10 +93,12 @@ export function ThreadPanel({ parentMessage, currentUserId, onClose }: Props) {
       {/* Original message */}
       <div style={{ padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
         <MessageBubble
+          channelId={parentMessage.channel_id}
           message={parentMessage}
           currentUserId={currentUserId}
           onReact={(id, emoji) => react.mutate({ messageId: id, emoji })}
           onUnreact={(id, emoji) => unreact.mutate({ messageId: id, emoji })}
+          onDelete={id => remove.mutate(id)}
           showAvatar
         />
       </div>
@@ -102,10 +113,12 @@ export function ThreadPanel({ parentMessage, currentUserId, onClose }: Props) {
         {replies.map(msg => (
           <MessageBubble
             key={msg.id}
+            channelId={parentMessage.channel_id}
             message={msg as unknown as Message}
             currentUserId={currentUserId}
             onReact={(id, emoji) => react.mutate({ messageId: id, emoji })}
             onUnreact={(id, emoji) => unreact.mutate({ messageId: id, emoji })}
+            onDelete={id => remove.mutate(id)}
             showAvatar
           />
         ))}

@@ -5,8 +5,7 @@ export type StepId =
   | 'smtp'
   | 'features'
   | 'admin'
-  | 'review'
-  | 'complete';
+  | 'review';
 
 export type SmtpConfig = {
   host: string;
@@ -54,7 +53,7 @@ export const INITIAL_STATE: SetupState = {
 };
 
 export function getStepList(_state: SetupState): StepId[] {
-  return ['branding', 'smtp', 'features', 'admin', 'review', 'complete'];
+  return ['branding', 'smtp', 'features', 'admin', 'review'];
 }
 
 export function getStepStatus(

@@ -29,6 +29,7 @@ export interface Pipeline {
   description: string | null;
   is_default: boolean;
   position: number;
+  view?: 'kanban' | 'table' | 'list';
   stages: PipelineStage[];
   fields: PipelineField[];
 }

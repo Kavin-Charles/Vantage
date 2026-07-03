@@ -10,8 +10,11 @@ import {
   getDashboard,
   listDashboards,
   createDashboard,
+  renameDashboard,
+  deleteDashboard,
   saveLayout,
   assignGroups,
+  type DashboardSummary,
   type LayoutWidget,
   type SaveLayoutWidget,
 } from '../../lib/dashboard-api';
@@ -23,6 +26,8 @@ import { DashboardTabs } from '../../components/DashboardTabs';
 import { CreateDashboardModal } from '../../components/CreateDashboardModal';
 import type { DashboardWidgetDef } from '@/modules/shared/lib/dashboard-registry';
 import { Icon } from '@/modules/shared/components/ui/Icon';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 
 interface Props {
   dashboardId: string;
@@ -42,6 +47,8 @@ export function DashboardPage({ dashboardId }: Props) {
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [showGroupAssign, setShowGroupAssign] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
 
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ['dashboard', dashboardId],
@@ -117,6 +124,58 @@ export function DashboardPage({ dashboardId }: Props) {
     await queryClient.invalidateQueries({ queryKey: ['dashboard', dashboardId] });
   }
 
+  async function handleRenameDashboard(id: string, name: string) {
+    const token = await getToken();
+    await renameDashboard(id, name, token);
+    await queryClient.invalidateQueries({ queryKey: ['dashboards'] });
+    if (id === dashboardId) await queryClient.invalidateQueries({ queryKey: ['dashboard', dashboardId] });
+  }
+
+  async function handleDuplicateDashboard(source: DashboardSummary) {
+    const token = await getToken();
+    const detail = await getDashboard(source.id, token);
+    const created = await createDashboard(`${source.name} (copy)`, token);
+    if (detail.layout.length > 0) {
+      await saveLayout(created.id, detail.layout.map(r => ({
+        widget_id: r.widget_id, x: r.x, y: r.y, w: r.w, h: r.h,
+        min_w: r.min_w, min_h: r.min_h, permission_key: r.permission_key,
+      })), token);
+    }
+    await queryClient.invalidateQueries({ queryKey: ['dashboards'] });
+    router.push(`/dashboard/${created.id}`);
+  }
+
+  function handleDeleteDashboard(target: DashboardSummary) {
+    askConfirm({
+      title: 'Delete dashboard',
+      message: `Delete "${target.name}"? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      variant: 'danger',
+      onConfirm: async () => {
+        const token = await getToken();
+        await deleteDashboard(target.id, token);
+        await queryClient.invalidateQueries({ queryKey: ['dashboards'] });
+        if (target.id === dashboardId) {
+          const remaining = allDashboards.filter(d => d.id !== target.id);
+          router.push(remaining[0] ? `/dashboard/${remaining[0].id}` : '/dashboard');
+        }
+      },
+    });
+  }
+
+  function handleCanvasContextMenu(e: React.MouseEvent) {
+    const items: ContextMenuItem[] = [
+      { icon: 'refresh', label: 'Refresh', onClick: () => void queryClient.invalidateQueries({ queryKey: ['dashboard', dashboardId] }) },
+      { icon: 'plugin', label: 'Add widget', onClick: () => setShowAddWidget(true) },
+      { type: 'separator' },
+      { icon: 'edit', label: isEditMode ? 'Exit edit layout' : 'Edit layout', onClick: () => (isEditMode ? handleCancel() : handleToggleEdit()) },
+      { icon: 'convert', label: 'Reset layout', disabled: !isEditMode, onClick: () => setPendingLayout(dashboard?.layout ?? []) },
+      { type: 'separator' },
+      { icon: 'settings', label: 'Dashboard settings', onClick: () => setShowGroupAssign(true) },
+    ];
+    openMenu(e, items);
+  }
+
   if (isLoading || !dashboard) {
     return (
       <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -150,9 +209,12 @@ export function DashboardPage({ dashboardId }: Props) {
       <DashboardTabs
         dashboards={allDashboards}
         currentId={dashboardId}
+        onRename={handleRenameDashboard}
+        onDuplicate={handleDuplicateDashboard}
+        onDelete={handleDeleteDashboard}
       />
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 24px' }}>
+      <div onContextMenu={handleCanvasContextMenu} style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 24px' }}>
         {isEditMode && currentLayout.length === 0 && (
           <div
             className="fade-in"
@@ -207,6 +269,8 @@ export function DashboardPage({ dashboardId }: Props) {
           router.push(`/dashboard/${d.id}`);
         }}
       />
+      <ContextMenu menu={menu} onClose={closeMenu} />
+      {confirmEl}
     </div>
   );
 }

@@ -169,7 +169,11 @@ process.on('message', async (msg: InboundMsg) => {
       const pending = pendingBridgeCalls.get(msg.id);
       if (pending) {
         pendingBridgeCalls.delete(msg.id);
-        pending.resolve(msg.result);
+        // Unwrap the bridge envelope to match the SDK contract: reject on error,
+        // resolve with the data payload. Plugins receive values, not { data, error }.
+        const result = msg.result as { data: unknown; error: unknown } | null | undefined;
+        if (result && result.error) pending.reject(result.error);
+        else pending.resolve(result ? result.data : undefined);
       }
       break;
     }
