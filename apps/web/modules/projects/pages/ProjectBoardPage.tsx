@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { Icon } from '@/modules/shared/components/ui/Icon';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { pmApi, type Task, type TaskWithAssignees, type TaskStatus } from '@/modules/projects/lib/api';
 import { TaskDetailPanel } from '@/modules/projects/components/TaskDetailPanel';
 import { AvatarGroup } from '@/modules/projects/components/AvatarGroup';
@@ -24,12 +26,17 @@ function TaskCard({
   task,
   onClick,
   onDragStart,
+  onDuplicate,
+  onDelete,
 }: {
   task: TaskWithAssignees;
   onClick: () => void;
   onDragStart: (e: React.DragEvent) => void;
+  onDuplicate?: () => void;
+  onDelete?: () => void;
 }) {
   const [hover, setHover] = useState(false);
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
   const now = new Date();
   const dueDate = task.due_date ? new Date(task.due_date) : null;
   const overdue = dueDate && dueDate < now;
@@ -44,6 +51,17 @@ function TaskCard({
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onContextMenu={e => {
+        const items: ContextMenuItem[] = [
+          { icon: 'open', label: 'Open', onClick },
+          { icon: 'edit', label: 'Edit', onClick },
+          { icon: 'copy', label: 'Copy ID', onClick: () => navigator.clipboard.writeText(task.id) },
+          { type: 'separator' },
+          { icon: 'duplicate', label: onDuplicate ? 'Duplicate' : 'Duplicate (coming soon)', disabled: !onDuplicate, onClick: () => onDuplicate?.() },
+          ...(onDelete ? [{ type: 'separator' as const }, { icon: 'trash', label: 'Delete', danger: true, onClick: onDelete }] : []),
+        ];
+        openMenu(e, items);
+      }}
       style={{
         background: '#ffffff',
         border: `1px solid ${hover ? priorityBorder : 'var(--border)'}`,
@@ -109,6 +127,7 @@ function TaskCard({
           </span>
         )}
       </div>
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }
@@ -144,6 +163,30 @@ export default function ProjectBoardPage() {
     mutationFn: async ({ taskId, patch }: { taskId: string; patch: Partial<Task> }) => {
       const token = await getToken();
       return pmApi.updateTask(token, projectId, taskId, patch);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
+  });
+
+  const { ask: askConfirm, el: confirmEl } = useConfirm();
+
+  const duplicateMutation = useMutation({
+    mutationFn: async (task: TaskWithAssignees) => {
+      const token = await getToken();
+      return pmApi.createTask(token, projectId, {
+        title: `${task.title} (copy)`,
+        status_id: task.status_id,
+        priority: task.priority,
+        due_date: task.due_date,
+        assignee_ids: task.assignees.map(a => a.id),
+      });
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (taskId: string) => {
+      const token = await getToken();
+      return pmApi.deleteTask(token, projectId, taskId);
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
   });
@@ -266,6 +309,14 @@ export default function ProjectBoardPage() {
                           task={task}
                           onClick={() => void openTask(task)}
                           onDragStart={() => setDraggedTaskId(task.id)}
+                          onDuplicate={() => duplicateMutation.mutate(task)}
+                          onDelete={() => askConfirm({
+                            title: 'Delete task',
+                            message: `Delete "${task.title}"? This cannot be undone.`,
+                            confirmLabel: 'Delete',
+                            variant: 'danger',
+                            onConfirm: () => deleteMutation.mutate(task.id),
+                          })}
                         />
                       ))}
                       <button
@@ -323,6 +374,7 @@ export default function ProjectBoardPage() {
           onClose={() => setCreateForStatus(null)}
         />
       )}
+      {confirmEl}
     </div>
   );
 }

@@ -7,29 +7,29 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getPipeline } from '@/modules/pipeline/lib/pipelines';
 import { ViewSwitcher } from '@/modules/pipeline/components/ViewSwitcher';
 import { PipelineSwitcher } from '@/modules/pipeline/components/shared/PipelineSwitcher';
-import type { PipelineWithDetails } from '@vencore/types';
+import type { Pipeline } from '@/modules/pipeline/lib/pipelines';
 
 type View = 'kanban' | 'table' | 'list';
 
-interface KanbanProps { pipeline: PipelineWithDetails; search: string; addTrigger: number }
-interface TableProps  { pipeline: PipelineWithDetails; search: string; addTrigger: number }
-interface ListProps   { pipeline: PipelineWithDetails; search: string }
+interface KanbanProps { pipeline: Pipeline; search: string; addTrigger: number }
+interface TableProps  { pipeline: Pipeline; search: string; addTrigger: number }
+interface ListProps   { pipeline: Pipeline; search: string }
 
-// Lazy imports — components built in later tasks
+// Lazy imports — cast each resolved component to the page's prop shape.
 const PipelineKanban = dynamic(
-  () => import('@/modules/pipeline/components/PipelineKanban').then(m => ({ default: m.PipelineKanban })),
+  () => import('@/modules/pipeline/components/PipelineKanban').then(m => ({ default: m.PipelineKanban as ComponentType<KanbanProps> })),
   { ssr: false }
-) as ComponentType<KanbanProps>;
+);
 
 const PipelineTable = dynamic(
-  () => import('@/modules/pipeline/components/PipelineTable').then(m => ({ default: m.PipelineTable })),
+  () => import('@/modules/pipeline/components/PipelineTable').then(m => ({ default: m.PipelineTable as unknown as ComponentType<TableProps> })),
   { ssr: false }
-) as ComponentType<TableProps>;
+);
 
 const PipelineList = dynamic(
-  () => import('@/modules/pipeline/components/PipelineList').then(m => ({ default: m.PipelineList })),
+  () => import('@/modules/pipeline/components/PipelineList').then(m => ({ default: m.PipelineList as unknown as ComponentType<ListProps> })),
   { ssr: false }
-) as ComponentType<ListProps>;
+);
 
 export default function PipelineViewPage() {
   const { pipelineId } = useParams<{ pipelineId: string }>();
@@ -70,7 +70,7 @@ export default function PipelineViewPage() {
           }}
         />
         {pipeline && (
-          <ViewSwitcher pipelineId={pipelineId} current={view} onChange={setView} />
+          <ViewSwitcher current={view} onChange={setView} />
         )}
         <button
           onClick={() => setAddTrigger(n => n + 1)}

@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import { useTheme } from '@/modules/shared/contexts/ThemeContext';
+import { ContextMenu, useContextMenu } from '@/modules/shared/components/ui/ContextMenu';
+import { settingRowMenu } from '@/modules/shared/lib/settingsMenu';
 
 export default function AppearancePage() {
   const { theme, setTheme } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   async function handleToggle(next: 'light' | 'dark') {
     if (next === theme) return;
@@ -27,7 +30,10 @@ export default function AppearancePage() {
       <p style={{ margin: '0 0 24px', fontSize: 13, color: 'var(--text2)' }}>Choose how Vencore looks on this device.</p>
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '20px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div
+          onContextMenu={e => openMenu(e, settingRowMenu({ label: 'Theme', value: theme, onReset: () => void handleToggle('light') }))}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+        >
           <div>
             <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>Theme</p>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text3)' }}>Light or dark interface.</p>
@@ -59,6 +65,7 @@ export default function AppearancePage() {
         </div>
         {error && <p style={{ fontSize: 12, color: 'var(--red)', marginTop: 12 }}>{error}</p>}
       </div>
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }

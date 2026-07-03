@@ -57,8 +57,12 @@ export async function dispatchBridgeCall(
 
     return { data: null, error: { code: 'UNKNOWN_METHOD', message: `Unknown bridge method: ${method}` } };
   } catch (e) {
+    // Normalize to a plain { code, message }. Error/DatabaseError 'message' is
+    // non-enumerable and is lost over the sandbox IPC boundary, so copy it into
+    // a plain object explicitly.
     if (e !== null && typeof e === 'object' && 'code' in e && 'message' in e) {
-      return { data: null, error: e as { code: string; message: string } };
+      const err = e as { code: unknown; message: unknown };
+      return { data: null, error: { code: String(err.code), message: String(err.message) } };
     }
     const message = e instanceof Error ? e.message : 'Internal bridge error';
     return { data: null, error: { code: 'INTERNAL', message } };

@@ -332,6 +332,7 @@ R2_BUCKET_NAME=
 
 # Internal
 AGENT_SIGNING_SECRET=   # Shared secret for agent authentication
+SSH_ENCRYPTION_KEY=     # 64-char hex (32 bytes) — encrypts stored SSH credentials
 CRON_SECRET=            # Protects cron endpoints
 ```
 

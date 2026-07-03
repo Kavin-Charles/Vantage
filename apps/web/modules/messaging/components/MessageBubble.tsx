@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { EmojiPicker } from './EmojiPicker';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import type { Message } from '@vencore/types';
 
 interface Props {
+  channelId: string;
   message: Message;
   currentUserId: string;
   onReact: (messageId: string, emoji: string) => void;
@@ -34,6 +36,7 @@ function groupReactions(reactions: Message['reactions']) {
 }
 
 export function MessageBubble({
+  channelId,
   message,
   currentUserId,
   onReact,
@@ -46,6 +49,7 @@ export function MessageBubble({
 }: Props) {
   const [hover, setHover] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const isDeleted = !!message.deleted_at;
   const isOwn = message.user_id === currentUserId;
@@ -55,6 +59,25 @@ export function MessageBubble({
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => { setHover(false); setShowEmojiPicker(false); }}
+      onContextMenu={e => {
+        if (isDeleted) return;
+        const link = `${window.location.origin}/messaging/${channelId}?message=${message.id}`;
+        const items: ContextMenuItem[] = [
+          ...(onThreadOpen ? [{ icon: 'message-square', label: 'Reply in thread', onClick: () => onThreadOpen(message) }] : []),
+          { icon: 'smile', label: 'Add reaction', onClick: () => setShowEmojiPicker(true) },
+          { type: 'separator' as const },
+          ...(isOwn && onEdit ? [{ icon: 'edit', label: 'Edit', onClick: () => onEdit(message) }] : []),
+          { icon: 'copy', label: 'Copy text', onClick: () => navigator.clipboard.writeText(message.body) },
+          { icon: 'link', label: 'Copy link', onClick: () => navigator.clipboard.writeText(link) },
+          { type: 'separator' as const },
+          { label: 'Pin message (coming soon)', disabled: true, onClick: () => {} },
+          { label: 'Forward (coming soon)', disabled: true, onClick: () => {} },
+          { label: 'Mark unread (coming soon)', disabled: true, onClick: () => {} },
+          { label: 'Save message (coming soon)', disabled: true, onClick: () => {} },
+          ...((isOwn || onDelete) ? [{ type: 'separator' as const }, { icon: 'trash', label: 'Delete', danger: true, onClick: () => onDelete?.(message.id) }] : []),
+        ];
+        openMenu(e, items);
+      }}
       style={{
         display: 'flex', alignItems: 'flex-start', gap: 10,
         padding: '4px 16px',
@@ -203,6 +226,8 @@ export function MessageBubble({
           )}
         </div>
       )}
+
+      <ContextMenu menu={menu} onClose={closeMenu} />
     </div>
   );
 }
@@ -210,39 +235,57 @@ export function MessageBubble({
 function AttachmentPreview({ att }: { att: { id: string; filename: string; mime_type: string; size_bytes: number; url?: string } }) {
   const isImage = att.mime_type.startsWith('image/');
   const sizeKB = Math.round(att.size_bytes / 1024);
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const items: ContextMenuItem[] = [
+      { icon: 'open', label: 'Open', disabled: !att.url, onClick: () => window.open(att.url, '_blank') },
+      { icon: 'file', label: 'Download', disabled: !att.url, onClick: () => { const a = document.createElement('a'); a.href = att.url!; a.download = att.filename; a.click(); } },
+      { icon: 'link', label: 'Copy link', disabled: !att.url, onClick: () => navigator.clipboard.writeText(att.url ?? '') },
+    ];
+    openMenu(e, items);
+  };
 
   if (isImage && att.url) {
     return (
-      <a href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
-        <img
-          src={att.url}
-          alt={att.filename}
-          style={{ maxWidth: 300, maxHeight: 200, borderRadius: 8, border: '1px solid var(--border)', objectFit: 'cover', display: 'block' }}
-        />
-      </a>
+      <>
+        <a href={att.url} target="_blank" rel="noopener noreferrer" onContextMenu={handleContextMenu} style={{ display: 'block' }}>
+          <img
+            src={att.url}
+            alt={att.filename}
+            style={{ maxWidth: 300, maxHeight: 200, borderRadius: 8, border: '1px solid var(--border)', objectFit: 'cover', display: 'block' }}
+          />
+        </a>
+        <ContextMenu menu={menu} onClose={closeMenu} />
+      </>
     );
   }
 
   return (
-    <a
-      href={att.url ?? '#'}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px',
-        background: 'var(--bg)', textDecoration: 'none', color: 'var(--text)',
-        maxWidth: 260,
-      }}
-    >
-      <Icon name="file" size={16} />
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {att.filename}
+    <>
+      <a
+        href={att.url ?? '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        onContextMenu={handleContextMenu}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px',
+          background: 'var(--bg)', textDecoration: 'none', color: 'var(--text)',
+          maxWidth: 260,
+        }}
+      >
+        <Icon name="file" size={16} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {att.filename}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)' }}>{sizeKB} KB</div>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{sizeKB} KB</div>
-      </div>
-    </a>
+      </a>
+      <ContextMenu menu={menu} onClose={closeMenu} />
+    </>
   );
 }
 

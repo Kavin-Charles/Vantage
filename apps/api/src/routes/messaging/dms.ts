@@ -9,7 +9,7 @@ const openDmSchema = z.object({ user_id: z.string().uuid() });
 export function createDmsRouter(
   db: Kysely<Database>,
   requirePermission: (p: string) => import('express').RequestHandler,
-) {
+): Router {
   const router = Router();
 
   // GET /dms — list open DM conversations

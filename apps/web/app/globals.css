@@ -110,6 +110,21 @@
   animation: widgetIn .2s ease both;
 }
 
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: .3; transform: scale(.85); }
+  50%      { opacity: 1;  transform: scale(1); }
+}
+
+@keyframes progressFill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
 .settings-shell {
   display: flex;
   gap: 32px;
@@ -196,4 +211,23 @@ textarea:focus-visible,
 [tabindex]:focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .setup-sidebar {
+    display: none !important;
+  }
+  .setup-main-content {
+    padding: 24px 20px !important;
+  }
+  .setup-footer-inner {
+    padding: 12px 20px !important;
+  }
+  .setup-branding-cols {
+    flex-direction: column !important;
+  }
+  .setup-branding-preview {
+    flex: 1 1 auto !important;
+    max-width: none !important;
+  }
 }

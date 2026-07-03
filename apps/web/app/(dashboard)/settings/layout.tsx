@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Topbar } from '@/modules/shared/components/Topbar';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
+import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 
 interface SettingsLink {
   href: string;
@@ -67,6 +68,44 @@ function isActive(pathname: string, href: string): boolean {
   return false;
 }
 
+function SettingsNavLink({ href, label, active }: { href: string; label: string; active: boolean }) {
+  const router = useRouter();
+  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+  return (
+    <>
+      <Link
+        href={href}
+        onContextMenu={e => {
+          const url = `${window.location.origin}${href}`;
+          const items: ContextMenuItem[] = [
+            { icon: 'open', label: 'Open', onClick: () => router.push(href) },
+            { icon: 'open', label: 'Open in new tab', onClick: () => window.open(href, '_blank') },
+            { icon: 'link', label: 'Copy URL', onClick: () => navigator.clipboard.writeText(url) },
+            { type: 'separator' },
+            { icon: 'refresh', label: 'Refresh', onClick: () => router.refresh() },
+          ];
+          openMenu(e, items);
+        }}
+        style={{
+          display: 'block',
+          padding: '8px 10px',
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: active ? 600 : 400,
+          color: active ? 'var(--text)' : 'var(--text2)',
+          background: active ? 'var(--surface2)' : 'transparent',
+          textDecoration: 'none',
+          whiteSpace: 'nowrap',
+          transition: 'all .15s',
+        }}
+      >
+        {label}
+      </Link>
+      <ContextMenu menu={menu} onClose={closeMenu} />
+    </>
+  );
+}
+
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -112,29 +151,9 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                     {group.label}
                   </div>
                 )}
-                {group.links.map(link => {
-                  const active = isActive(pathname, link.href);
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      style={{
-                        display: 'block',
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontWeight: active ? 600 : 400,
-                        color: active ? 'var(--text)' : 'var(--text2)',
-                        background: active ? 'var(--surface2)' : 'transparent',
-                        textDecoration: 'none',
-                        whiteSpace: 'nowrap',
-                        transition: 'all .15s',
-                      }}
-                    >
-                      {link.label}
-                    </Link>
-                  );
-                })}
+                {group.links.map(link => (
+                  <SettingsNavLink key={link.href} href={link.href} label={link.label} active={isActive(pathname, link.href)} />
+                ))}
               </div>
             ))}
           </nav>

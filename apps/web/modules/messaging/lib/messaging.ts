@@ -166,3 +166,10 @@ export async function removeChannelMember(token: string, channelId: string, user
     { method: 'DELETE', token },
   );
 }
+
+export async function markChannelRead(token: string, channelId: string, messageId: string) {
+  return apiFetch<{ data: { channel_id: string; last_read_message_id: string }; error: null }>(
+    `/api/messaging/channels/${channelId}/read`,
+    { method: 'PATCH', body: JSON.stringify({ message_id: messageId }), token },
+  );
+}

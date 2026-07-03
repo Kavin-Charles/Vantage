@@ -817,6 +817,10 @@ export interface ProjectTable {
   start_date: Date | null
   end_date: Date | null
   created_by: string
+  // CRM hook links
+  contact_id: string | null
+  company_id: string | null
+  source_item_id: string | null
   created_at: Generated<Date>
   updated_at: Generated<Date>
 }

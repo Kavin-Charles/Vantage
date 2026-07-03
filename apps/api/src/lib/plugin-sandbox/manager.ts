@@ -62,8 +62,12 @@ export function spawnPluginSandbox(
   }
 
   const runnerPath = getRunnerPath();
+  // Use tsx's unified registration (`--import tsx`) rather than the ESM-only
+  // loader. On Node 23+ the ESM-only loader plus the runner's require() of the
+  // CJS plugin bundle trips ERR_REQUIRE_CYCLE_MODULE; the unified hook installs
+  // both CJS + ESM handling and avoids it. Prod (compiled runner.js) skips tsx.
   const execArgs: string[] = isUsingTsx()
-    ? ['--import', 'tsx/esm']
+    ? ['--import', 'tsx']
     : [];
 
   const child = fork(runnerPath, [], {
