@@ -33,7 +33,7 @@ resolve_version() {
     tags=$(curl -fsSL -H "Authorization: Bearer $token" \
       "https://ghcr.io/v2/vencorehq/vencore-api/tags/list?n=1000" 2>/dev/null) || true
     echo "$tags" | tr '",' '\n\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
-      | sort -t. -k1,1n -k2,2n -k3,3n | tail -1
+      | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 || true
   fi
 }
 

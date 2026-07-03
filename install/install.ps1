@@ -209,7 +209,7 @@ Write-Host "  Useful commands:"
 Write-Host "    cd '$INSTALL_DIR'"
 Write-Host "    docker compose logs -f                           # View logs"
 Write-Host "    docker compose down                              # Stop"
-Write-Host "    docker compose pull; docker compose up -d       # Update"
+Write-Host "    Updates: Settings -> Updates in the dashboard (or docker compose pull; docker compose up -d)"
 Write-Host ""
 
 Start-Process "http://$ip"
