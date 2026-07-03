@@ -11,6 +11,7 @@ import { runOverdueScan } from './jobs/pm/overdue-scan';
 import { runHealthRecalc } from './jobs/pm/health-recalc';
 import { runSprintRollover } from './jobs/pm/sprint-rollover';
 import { runPipelineReminders } from './jobs/pipeline-reminders';
+import { runUpdateCheck } from './jobs/update-check';
 
 const config = readConfig();
 const db = createDb(process.env['DATABASE_URL']!);
@@ -38,6 +39,7 @@ setInterval(async () => {
       await runHealthRecalc(db);
       await runSprintRollover(db);
       await runPipelineReminders(db);
+      await runUpdateCheck();
     } catch (err) {
       logger.error({ err }, 'job error');
     } finally {
@@ -50,6 +52,7 @@ setInterval(async () => {
 
 // Run immediately on start
 runWebsitePing().catch((err: unknown) => logger.error({ err }, 'initial website ping error'));
+runUpdateCheck().catch((err: unknown) => logger.error({ err }, 'initial update check error'));
 
 process.on('SIGTERM', async () => {
   shuttingDown = true;
