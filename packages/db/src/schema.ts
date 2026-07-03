@@ -442,6 +442,14 @@ export interface NotificationTable {
   created_at: Generated<Date>;
 }
 
+export interface InstanceMetaTable {
+  id: Generated<number>;
+  latest_version: string | null;
+  release_url: string | null;
+  last_checked_at: Date | null;
+  notified_version: string | null;
+}
+
 export interface EmailAccountTable {
   id: Generated<string>;
   user_id: string;
@@ -1286,6 +1294,7 @@ export interface Database {
   channel_read_state: ChannelReadStateTable
   hook_providers: HookProviderTable;
   workspace_hook_configs: WorkspaceHookConfigTable;
+  instance_meta: InstanceMetaTable;
 }
 
 // Convenience types
