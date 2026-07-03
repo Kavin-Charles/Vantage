@@ -62,6 +62,7 @@ import { createProjectMembersRouter } from './routes/project-members';
 import { createPortalRouter, createPortalInternalRouter } from './routes/portal';
 import { createModuleEventSettingsRouter } from './routes/module-event-settings';
 import { createHooksRouter } from './routes/hooks';
+import { createSystemRouter } from './routes/system';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
@@ -354,6 +355,9 @@ app.use('/api/alert-thresholds', requireAuth, requireModule('alerts'), createAle
 app.use('/api/settings/module-events', requireAuth, createModuleEventSettingsRouter(db));
 app.use('/api/settings/notifications', requireAuth, createNotificationPreferencesRouter(db));
 app.use('/api/settings', requireAuth, createHooksRouter(db));
+
+// System — version + updates. Mixed auth handled inside the router.
+app.use('/api/system', createSystemRouter(db, env, requireAuth, requireAdmin));
 
 // SSH management
 app.use('/api/ssh', requireAuth, createSshKeypairRouter(db));
