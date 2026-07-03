@@ -8,7 +8,7 @@ import { handleSftpUpgrade } from './ws/sftp-session';
 import { handleMessagingUpgrade } from './ws/messaging-session';
 import { initRedisMessaging } from './lib/messaging-pubsub';
 import { apiEnvSchema, readConfig } from '@vencore/config';
-import { createDb } from '@vencore/db';
+import { createDb, migrate } from '@vencore/db';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import { errorHandler } from './middleware/errors';
@@ -90,6 +90,32 @@ import { logger } from './lib/logger';
 const env = apiEnvSchema.parse(process.env);
 const config = readConfig();
 const db = createDb(env.DATABASE_URL);
+
+// Run database migrations on startup
+void (async () => {
+  try {
+    logger.info('Checking/running database migrations...');
+    const { error, results } = await migrate(db);
+    
+    results?.forEach(r => {
+      if (r.status === 'Success') {
+        logger.info(`Migration success: ${r.migrationName}`);
+      } else if (r.status === 'Error') {
+        logger.error(`Migration error: ${r.migrationName}`);
+      }
+    });
+
+    if (error) {
+      logger.error({ err: error }, 'Database migration failed');
+    } else if (!results?.length) {
+      logger.info('No pending database migrations.');
+    } else {
+      logger.info('Database migrations completed successfully.');
+    }
+  } catch (err) {
+    logger.error({ err }, 'Failed to initialize database migrations');
+  }
+})();
 
 initAutomationEngine(db);
 

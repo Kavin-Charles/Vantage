@@ -19,18 +19,6 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
-  apps/agent:
-    devDependencies:
-      '@types/node':
-        specifier: ^25.6.2
-        version: 25.6.2
-      tsx:
-        specifier: ^4.0.0
-        version: 4.21.0
-      typescript:
-        specifier: ^5.0.0
-        version: 5.9.3
-
   apps/api:
     dependencies:
       '@aws-sdk/client-s3':
@@ -6059,6 +6047,7 @@ snapshots:
   '@types/node@25.6.2':
     dependencies:
       undici-types: 7.19.2
+    optional: true
 
   '@types/nodemailer@8.0.0':
     dependencies:
@@ -9273,7 +9262,8 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici-types@7.19.2: {}
+  undici-types@7.19.2:
+    optional: true
 
   undici@7.25.0: {}
 
