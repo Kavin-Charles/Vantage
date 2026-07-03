@@ -56,7 +56,10 @@ async function runUpdate(version: string): Promise<void> {
     writeFileSync(envPath, rewriteEnvVersion(readFileSync(envPath, 'utf8'), version));
 
     state = 'recreating';
-    await run('docker', ['compose', 'up', '-d', 'web', 'api', 'worker']);
+    // Same VENCORE_VERSION override as the pull step: this process's own
+    // env still holds the version it booted with (from env_file), which
+    // Compose would otherwise prefer over the just-rewritten .env file.
+    await run('docker', ['compose', 'up', '-d', 'web', 'api', 'worker'], { VENCORE_VERSION: version });
 
     if (HOST_INSTALL_DIR) {
       // Recreating this container from within kills the compose process
