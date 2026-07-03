@@ -44,7 +44,6 @@ apps/
   web/      Next.js 14 dashboard — pages live in app/(dashboard)/
   api/      Express REST API — one file per resource in src/routes/
   worker/   Background jobs — website pings, alert evaluation, DB health
-  agent/    Server monitoring daemon — reports metrics every 30s
 
 packages/
   db/       Kysely client and generated types

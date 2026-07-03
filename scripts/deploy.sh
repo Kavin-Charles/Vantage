@@ -48,7 +48,6 @@ tar -czf "$ARCHIVE" \
   --exclude='*/node_modules' \
   --exclude='./.env.prod' \
   --exclude='./apps/mobile' \
-  --exclude='./apps/agent' \
   --exclude='./_design' \
   --exclude='./screenshots' \
   --exclude='*.zip' \
