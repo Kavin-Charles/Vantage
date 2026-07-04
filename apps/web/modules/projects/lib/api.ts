@@ -37,6 +37,13 @@ export interface Milestone {
   due_date: string; status: string; client_visible: boolean; position: number;
 }
 
+export interface WidgetStats {
+  active_projects: number;
+  at_risk_projects: number;
+  overdue_tasks: number;
+  upcoming_milestones: { id: string; name: string; due_date: string; project_id: string }[];
+}
+
 export interface CreateTaskBody {
   title: string;
   status_id?: string;
@@ -96,4 +103,6 @@ export const pmApi = {
     apiFetch<{ data: Comment }>(`/api/projects/${projectId}/tasks/${taskId}/comments`, { token, method: 'POST', body: JSON.stringify({ body }) }),
   listMembers: (token: string, projectId: string) =>
     apiFetch<{ data: ProjectMember[] }>(`/api/projects/${projectId}/members`, { token }),
+  getWidgetStats: (token: string) =>
+    apiFetch<{ data: WidgetStats }>('/api/projects/widget-stats', { token }),
 };
