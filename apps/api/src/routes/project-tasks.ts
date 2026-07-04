@@ -257,6 +257,15 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
     if (parsed.data.client_visible !== undefined) updates['client_visible'] = parsed.data.client_visible
     if (parsed.data.parent_id !== undefined) updates['parent_id'] = parsed.data.parent_id
 
+    let priorAssigneeIds = new Set<string>()
+    if (parsed.data.assignee_ids !== undefined) {
+      const priorAssigneeRows = await db.selectFrom('project_task_assignees')
+        .select('user_id')
+        .where('task_id', '=', taskId)
+        .execute()
+      priorAssigneeIds = new Set(priorAssigneeRows.map(r => r.user_id))
+    }
+
     try {
       const task = await db.updateTable('project_tasks')
         .set(updates as any)
@@ -272,25 +281,29 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
             .values(parsed.data.assignee_ids.map(uid => ({ task_id: task.id, user_id: uid })))
             .execute()
 
-          void logActivity(db, {
-            workspace_id: workspace.id,
-            user_id: user.id,
-            type: 'pm_task_assigned',
-            source_module_id: 'projects',
-            record_id: task.id,
-            body: `Assigned task "${task.title}"`,
-          })
+          const newAssigneeIds = parsed.data.assignee_ids.filter(id => !priorAssigneeIds.has(id))
 
-          for (const assigneeId of parsed.data.assignee_ids) {
-            void notify(db, {
-              workspaceId: workspace.id,
-              userId: assigneeId,
+          if (newAssigneeIds.length > 0) {
+            void logActivity(db, {
+              workspace_id: workspace.id,
+              user_id: user.id,
               type: 'pm_task_assigned',
-              title: 'New task assigned',
-              body: `You were assigned "${task.title}"`,
-              resourceType: 'projects',
-              resourceId: task.id,
+              source_module_id: 'projects',
+              record_id: task.id,
+              body: `Assigned task "${task.title}"`,
             })
+
+            for (const assigneeId of newAssigneeIds) {
+              void notify(db, {
+                workspaceId: workspace.id,
+                userId: assigneeId,
+                type: 'pm_task_assigned',
+                title: 'New task assigned',
+                body: `You were assigned "${task.title}"`,
+                resourceType: 'projects',
+                resourceId: task.id,
+              })
+            }
           }
         }
       }

@@ -120,6 +120,7 @@ describe('createProjectTasksRouter activity + notify wiring', () => {
     const existingChain = buildChain({
       executeTakeFirst: vi.fn().mockResolvedValue({ id: 'task-1', title: 'Ship feature', status_id: 'd3f5880e-4726-4574-b81b-0328cff169b2' }),
     });
+    const priorAssigneesChain = buildChain({ execute: vi.fn().mockResolvedValue([]) });
     const updateChain = buildChain({
       executeTakeFirstOrThrow: vi.fn().mockResolvedValue({
         id: 'task-1', project_id: 'project-1', title: 'Ship feature', status_id: 'd3f5880e-4726-4574-b81b-0328cff169b2',
@@ -128,7 +129,11 @@ describe('createProjectTasksRouter activity + notify wiring', () => {
     const deleteChain = buildChain();
     const insertAssigneeChain = buildChain();
     const db = {
-      selectFrom: vi.fn((table: string) => (table === 'projects' ? projectChain : existingChain)),
+      selectFrom: vi.fn((table: string) => {
+        if (table === 'projects') return projectChain;
+        if (table === 'project_task_assignees') return priorAssigneesChain;
+        return existingChain;
+      }),
       updateTable: vi.fn(() => updateChain),
       deleteFrom: vi.fn(() => deleteChain),
       insertInto: vi.fn(() => insertAssigneeChain),
@@ -151,6 +156,49 @@ describe('createProjectTasksRouter activity + notify wiring', () => {
     expect(logActivity).toHaveBeenCalledWith(
       db,
       expect.objectContaining({ type: 'pm_task_assigned', record_id: 'task-1' }),
+    );
+  });
+
+  it('does not notify when PATCH /:taskId assignee list is unchanged', async () => {
+    const projectChain = projectAccessChain();
+    const existingChain = buildChain({
+      executeTakeFirst: vi.fn().mockResolvedValue({ id: 'task-1', title: 'Ship feature', status_id: 'd3f5880e-4726-4574-b81b-0328cff169b2' }),
+    });
+    const priorAssigneesChain = buildChain({
+      execute: vi.fn().mockResolvedValue([{ user_id: '8bbc1f6a-d24a-4610-a203-a22c9ea0ff55' }]),
+    });
+    const updateChain = buildChain({
+      executeTakeFirstOrThrow: vi.fn().mockResolvedValue({
+        id: 'task-1', project_id: 'project-1', title: 'Ship feature', status_id: 'd3f5880e-4726-4574-b81b-0328cff169b2',
+      }),
+    });
+    const deleteChain = buildChain();
+    const insertAssigneeChain = buildChain();
+    const db = {
+      selectFrom: vi.fn((table: string) => {
+        if (table === 'projects') return projectChain;
+        if (table === 'project_task_assignees') return priorAssigneesChain;
+        return existingChain;
+      }),
+      updateTable: vi.fn(() => updateChain),
+      deleteFrom: vi.fn(() => deleteChain),
+      insertInto: vi.fn(() => insertAssigneeChain),
+    } as any;
+
+    const app = express();
+    app.use(express.json());
+    injectUser(app);
+    app.use('/api/projects/:projectId/tasks', createProjectTasksRouter(db));
+
+    const res = await request(app)
+      .patch('/api/projects/project-1/tasks/task-1')
+      .send({ assignee_ids: ['8bbc1f6a-d24a-4610-a203-a22c9ea0ff55'] });
+
+    expect(res.status).toBe(200);
+    expect(notify).not.toHaveBeenCalled();
+    expect(logActivity).not.toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ type: 'pm_task_assigned' }),
     );
   });
 
