@@ -58,6 +58,7 @@ import { createPortalRouter, createPortalInternalRouter } from './routes/portal'
 import { createModuleEventSettingsRouter } from './routes/module-event-settings';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
+import { startPmDueAlertWorker } from './workers/pm-due-alert';
 import { startWebhookDelivery } from './workers/webhook-delivery';
 import { startMetricsRollup } from './workers/metrics-rollup';
 import { createPluginsRouter } from './routes/plugins';
@@ -335,6 +336,9 @@ startWebsiteChecker(db);
 
 // Start task-due notifier (fires at midnight UTC daily)
 startTaskDueNotifier(db);
+
+// Start pm-due alert worker (fires at midnight UTC daily)
+startPmDueAlertWorker(db);
 
 // Start webhook delivery worker (polls every 10 s)
 startWebhookDelivery(db);
