@@ -139,8 +139,8 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
       user_id: user.id,
       type: 'pm_task_created',
       source_module_id: 'projects',
-      record_id: task.id,
       body: `Created task "${task.title}"`,
+      meta: { task_id: task.id, project_id: projectId },
     })
 
     if (parsed.data.assignee_ids?.length) {
@@ -149,8 +149,8 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
         user_id: user.id,
         type: 'pm_task_assigned',
         source_module_id: 'projects',
-        record_id: task.id,
         body: `Assigned task "${task.title}"`,
+        meta: { task_id: task.id, project_id: projectId },
       })
 
       for (const assigneeId of parsed.data.assignee_ids) {
@@ -289,8 +289,8 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
               user_id: user.id,
               type: 'pm_task_assigned',
               source_module_id: 'projects',
-              record_id: task.id,
               body: `Assigned task "${task.title}"`,
+              meta: { task_id: task.id, project_id: projectId },
             })
 
             for (const assigneeId of newAssigneeIds) {
@@ -329,7 +329,6 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
               user_id: user.id,
               type: 'task_done',
               source_module_id: 'projects',
-              record_id: taskId,
               body: `Task "${task.title}" marked as done`,
               meta: { task_id: taskId, project_id: projectId },
             })
@@ -461,8 +460,8 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
       user_id: user.id,
       type: 'pm_comment_added',
       source_module_id: 'projects',
-      record_id: taskId,
       body: comment.body,
+      meta: { task_id: taskId, project_id: projectId },
     })
 
     return res.status(201).json({ data: comment, error: null })

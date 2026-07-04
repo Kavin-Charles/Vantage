@@ -76,8 +76,8 @@ export function createMilestonesRouter(db: Kysely<Database>): Router {
         user_id: user.id,
         type: 'milestone_created',
         source_module_id: 'projects',
-        record_id: milestone.id,
         body: `Created milestone "${milestone.name}"`,
+        meta: { milestone_id: milestone.id, project_id: milestone.project_id },
       })
 
       return res.status(201).json({ data: milestone, error: null })
@@ -123,8 +123,8 @@ export function createMilestonesRouter(db: Kysely<Database>): Router {
           user_id: user.id,
           type: 'milestone_completed',
           source_module_id: 'projects',
-          record_id: milestone.id,
           body: `Completed milestone "${milestone.name}"`,
+          meta: { milestone_id: milestone.id, project_id: milestone.project_id },
         })
       }
 
