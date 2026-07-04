@@ -64,10 +64,14 @@ async function runUpdate(version: string): Promise<void> {
     if (HOST_INSTALL_DIR) {
       // Recreating this container from within kills the compose process
       // mid-flight, so a detached helper container does it instead.
+      // `-v HOST:CONTAINER` splits on ':', which breaks on Windows paths
+      // like C:\Users\... (the drive-letter colon collides with the
+      // separator). `--mount` takes comma-separated key=value pairs and
+      // never re-splits the source value, so it survives Windows paths.
       await run('docker', [
         'run', '-d', '--rm',
         '-v', '/var/run/docker.sock:/var/run/docker.sock',
-        '-v', `${HOST_INSTALL_DIR}:/vencore`,
+        '--mount', `type=bind,source=${HOST_INSTALL_DIR},destination=/vencore`,
         '-w', '/vencore',
         'docker:cli',
         'docker', 'compose', 'up', '-d', 'updater',
