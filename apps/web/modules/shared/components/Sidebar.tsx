@@ -145,7 +145,7 @@ export function Sidebar() {
   const { user, logout } = useAuth();
   const { data: config } = useConfig();
   const { isEnabled } = useModules();
-  const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
+  const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? '';
   const { data: pluginNavItems = [] } = useQuery({
     queryKey: ['sidebar-plugins'],
     queryFn: async (): Promise<WorkspacePlugin[]> => {
@@ -197,6 +197,22 @@ export function Sidebar() {
     staleTime: 15_000,
   });
 
+  const isAdmin = user?.role === 'admin';
+  const { data: updateAvailable = false } = useQuery({
+    queryKey: ['update-badge'],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const res = await apiFetch<{ data: { updateAvailable: boolean; latestVersion: string | null } }>(
+        '/api/system/update-info',
+        { token: await getToken() },
+      );
+      if (!res.data.updateAvailable || !res.data.latestVersion) return false;
+      return localStorage.getItem('vencore-update-dismissed') !== res.data.latestVersion;
+    },
+    refetchInterval: 5 * 60_000,
+    staleTime: 60_000,
+  });
+
   return (
     <div style={{
       width: 'var(--sidebar-w)',
@@ -246,7 +262,12 @@ export function Sidebar() {
                 href={item.href}
                 label={item.label}
                 icon={item.icon}
-                dot={'dot' in item && item.dot && hasCritical ? true : undefined}
+                dot={
+                  ('dot' in item && item.dot && hasCritical) ||
+                  (item.href === '/settings' && updateAvailable)
+                    ? true
+                    : undefined
+                }
                 badge={item.href === '/messaging' ? messagingUnread : undefined}
               />
             );

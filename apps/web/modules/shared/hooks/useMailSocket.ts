@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { getWsUrl } from '../api';
+import { getWsUrl } from '../lib/api';
 
 export interface MailSocketEmail {
   id: string;

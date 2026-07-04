@@ -53,7 +53,13 @@ export function StepReview({ state, dispatch }: Props) {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          branding: { name: state.branding.name, logoUrl: state.branding.logoUrl },
+          branding: {
+            name: state.branding.name,
+            logoUrl: state.branding.logoUrl,
+            faviconUrl: state.branding.faviconUrl || undefined,
+            tagline: state.branding.tagline || undefined,
+            primaryColor: state.branding.primaryColor,
+          },
           features: state.features,
           smtp: state.smtp,
           admin: state.admin,

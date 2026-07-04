@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="Vencore" width="120" />
+  <img src="log_o.png" alt="Vencore" width="120" />
 </p>
 
 # Vencore

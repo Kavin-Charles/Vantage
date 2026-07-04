@@ -1,7 +1,5 @@
 import { type NextRequest } from 'next/server';
 
-const API_URL = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000';
-
 /**
  * Serves the plugin iframe shell page.
  * This runs outside Next.js layouts — returns raw HTML.
@@ -169,9 +167,8 @@ export async function GET(
         new Function(code)();
       }
 
-      // Load plugin client.js with auth token
-      const apiUrl = ${JSON.stringify(API_URL)};
-      const clientUrl = apiUrl + '/api/plugins/' + encodeURIComponent(pluginId) + '/client.js';
+      // Load plugin client.js with auth token (relative path — proxied to the API by Next.js rewrites)
+      const clientUrl = '/api/plugins/' + encodeURIComponent(pluginId) + '/client.js';
       const res = await fetch(clientUrl, {
         headers: token ? { Authorization: 'Bearer ' + token } : {},
         credentials: 'include',

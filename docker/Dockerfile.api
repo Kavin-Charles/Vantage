@@ -24,4 +24,6 @@ RUN pnpm --filter "@vencore/api..." build
 
 ENV NODE_ENV=production
 EXPOSE 3001
+ARG VENCORE_VERSION=0.0.0-dev
+ENV VENCORE_VERSION=$VENCORE_VERSION
 CMD ["node", "apps/api/dist/index.js"]

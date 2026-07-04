@@ -29,4 +29,6 @@ RUN pnpm --filter "@vencore/web..." build
 ENV NODE_ENV=production
 EXPOSE 3000
 WORKDIR /app/apps/web
+ARG VENCORE_VERSION=0.0.0-dev
+ENV VENCORE_VERSION=$VENCORE_VERSION
 CMD ["node_modules/.bin/next", "start", "-p", "3000"]
