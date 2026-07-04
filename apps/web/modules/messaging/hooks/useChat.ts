@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { Message, MessagesPage, WsServerEvent } from '@vencore/types';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getMessages, sendMessage, type PendingAttachment } from '../lib/messaging';
+import { getWsUrl } from '@/modules/shared/lib/api';
 
 const WS_RECONNECT_DELAY = 3000;
 
@@ -112,8 +113,7 @@ export function useChat(channelId: string | null) {
       const token = await getToken();
       if (!token || !mountedRef.current) return;
 
-      const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
-      const wsUrl = apiUrl.replace(/^http/, 'ws') + `/api/messaging/ws?token=${token}`;
+      const wsUrl = getWsUrl(`/api/messaging/ws?token=${token}`);
 
       ws = new WebSocket(wsUrl);
       wsRef.current = ws;

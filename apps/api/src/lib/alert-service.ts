@@ -40,7 +40,7 @@ async function hasOpenAlert(
     .selectFrom('alerts')
     .select('id')
     .where('workspace_id', '=', workspaceId)
-    .where('resource_type', '=', resourceType as 'server' | 'database' | 'website' | 'crm')
+    .where('resource_type', '=', resourceType)
     .where('resource_id', '=', resourceId)
     .where('message', 'like', `${messagePrefix}%`)
     .where('resolved', '=', false)
@@ -74,7 +74,7 @@ export async function createAlert(
       .insertInto('alerts')
       .values({
         workspace_id: params.workspaceId,
-        resource_type: params.resourceType as 'server' | 'database' | 'website' | 'crm',
+        resource_type: params.resourceType,
         resource_id: params.resourceId ?? null,
         severity: params.severity,
         message: params.message,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { getWsUrl } from '../lib/api';
 
 export interface MailSocketEmail {
   id: string;
@@ -31,8 +32,7 @@ export function useMailSocket({ onNewEmail, enabled = true }: UseMailSocketOptio
   useEffect(() => {
     if (!enabled) return;
 
-    const apiBase = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
-    const wsBase = apiBase.replace(/^http/, 'ws');
+    const apiBase = typeof window !== 'undefined' ? window.location.origin : (process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001');
 
     // Mutable container so the async setup can hand off the socket to the cleanup closure.
     const state: {
@@ -59,7 +59,7 @@ export function useMailSocket({ onNewEmail, enabled = true }: UseMailSocketOptio
       const qs = wsToken ? `?token=${encodeURIComponent(wsToken)}` : '';
       let ws: WebSocket;
       try {
-        ws = new WebSocket(`${wsBase}/api/mail/ws${qs}`);
+        ws = new WebSocket(getWsUrl(`/api/mail/ws${qs}`));
       } catch {
         return;
       }

@@ -1,0 +1,120 @@
+name: Deploy Demo
+
+on:
+  push:
+    branches: [demo]
+
+env:
+  REGISTRY: ghcr.io
+  ORG: vencorehq
+  DEMO_VM_HOST: 34.72.251.25
+  DEMO_VM_USER: kavin
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - image: vencore-web
+            dockerfile: Dockerfile.web
+          - image: vencore-api
+            dockerfile: Dockerfile.api
+          - image: vencore-worker
+            dockerfile: Dockerfile.worker
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.ORG }}/${{ matrix.image }}
+          tags: |
+            type=raw,value=demo
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push ${{ matrix.image }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=demo-${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=demo-${{ matrix.image }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEMO_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ env.DEMO_VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy compose file to VM
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.DEMO_VM_USER }}@${{ env.DEMO_VM_HOST }} "mkdir -p ~/vencore"
+          scp -i ~/.ssh/deploy_key docker-compose.demo.yml ${{ env.DEMO_VM_USER }}@${{ env.DEMO_VM_HOST }}:~/vencore/docker-compose.yml
+
+      - name: Deploy to VM
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ env.DEMO_VM_USER }}@${{ env.DEMO_VM_HOST }} << 'DEPLOY'
+            set -e
+
+            echo '🔄 Pulling latest demo images...'
+            docker pull ghcr.io/vencorehq/vencore-web:demo
+            docker pull ghcr.io/vencorehq/vencore-api:demo
+            docker pull ghcr.io/vencorehq/vencore-worker:demo
+
+            echo '🚀 Restarting services...'
+            cd ~/vencore
+            docker compose down
+            docker compose up -d
+
+            echo '⏳ Waiting for API health check...'
+            for i in $(seq 1 30); do
+              if docker compose exec -T api wget -qO- http://localhost:3001/api/setup/status > /dev/null 2>&1; then
+                echo '✅ Demo deployment complete!'
+                exit 0
+              fi
+              sleep 3
+            done
+
+            echo '❌ API health check timed out'
+            docker compose logs --tail=50 api
+            exit 1
+          DEPLOY
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+

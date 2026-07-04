@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
 WORKDIR /app
 ENV NODE_OPTIONS=--max-old-space-size=2048
@@ -20,9 +20,9 @@ COPY packages/ ./packages/
 COPY apps/web/ ./apps/web/
 
 ARG NEXT_PUBLIC_APP_URL=http://localhost:3000
-ARG NEXT_PUBLIC_API_URL=http://api:3001
+ARG API_URL=http://api:3001
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
-    NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+    API_URL=$API_URL
 
 RUN pnpm --filter "@vencore/web..." build
 

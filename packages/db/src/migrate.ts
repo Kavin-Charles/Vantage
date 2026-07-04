@@ -3,7 +3,26 @@ import * as path from 'path';
 import { promises as fs } from 'fs';
 import { createDb } from './client';
 
-async function migrate(): Promise<void> {
+export async function migrate(db: any): Promise<{ error?: any; results?: any[] }> {
+  const isTsNode = __filename.endsWith('.ts');
+  const migrationFolder = isTsNode 
+    ? path.join(__dirname, '../migrations') 
+    : path.join(__dirname, 'migrations');
+
+  const migrator = new Migrator({
+    db,
+    provider: new FileMigrationProvider({
+      fs,
+      path,
+      migrationFolder,
+    }),
+  });
+
+  const { error, results } = await migrator.migrateToLatest();
+  return { error, results };
+}
+
+async function runCli(): Promise<void> {
   const connectionString = process.env['DATABASE_URL'];
   if (!connectionString) {
     console.error('DATABASE_URL env var is required');
@@ -11,17 +30,8 @@ async function migrate(): Promise<void> {
   }
 
   const db = createDb(connectionString);
+  const { error, results } = await migrate(db);
 
-  const migrator = new Migrator({
-    db,
-    provider: new FileMigrationProvider({
-      fs,
-      path,
-      migrationFolder: path.join(__dirname, '../migrations'),
-    }),
-  });
-
-  const { error, results } = await migrator.migrateToLatest();
 
   results?.forEach(r => {
     if (r.status === 'Success') {
@@ -43,4 +53,7 @@ async function migrate(): Promise<void> {
   await db.destroy();
 }
 
-migrate();
+if (require.main === module) {
+  runCli();
+}
+
