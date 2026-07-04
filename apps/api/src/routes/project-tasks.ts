@@ -5,6 +5,7 @@ import type { Database } from '@vencore/db'
 import type { AuthenticatedRequest } from '../middleware/auth'
 import { pmEvents } from '../lib/pm-events'
 import { logActivity } from '../lib/log-activity'
+import { notify } from '../lib/notify'
 
 const createTaskSchema = z.object({
   title: z.string().min(1).max(500),
@@ -133,6 +134,38 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
         .execute()
     }
 
+    void logActivity(db, {
+      workspace_id: workspace.id,
+      user_id: user.id,
+      type: 'pm_task_created',
+      source_module_id: 'projects',
+      record_id: task.id,
+      body: `Created task "${task.title}"`,
+    })
+
+    if (parsed.data.assignee_ids?.length) {
+      void logActivity(db, {
+        workspace_id: workspace.id,
+        user_id: user.id,
+        type: 'pm_task_assigned',
+        source_module_id: 'projects',
+        record_id: task.id,
+        body: `Assigned task "${task.title}"`,
+      })
+
+      for (const assigneeId of parsed.data.assignee_ids) {
+        void notify(db, {
+          workspaceId: workspace.id,
+          userId: assigneeId,
+          type: 'pm_task_assigned',
+          title: 'New task assigned',
+          body: `You were assigned "${task.title}"`,
+          resourceType: 'projects',
+          resourceId: task.id,
+        })
+      }
+    }
+
     return res.status(201).json({ data: task, error: null })
   })
 
@@ -238,6 +271,27 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
           await db.insertInto('project_task_assignees')
             .values(parsed.data.assignee_ids.map(uid => ({ task_id: task.id, user_id: uid })))
             .execute()
+
+          void logActivity(db, {
+            workspace_id: workspace.id,
+            user_id: user.id,
+            type: 'pm_task_assigned',
+            source_module_id: 'projects',
+            record_id: task.id,
+            body: `Assigned task "${task.title}"`,
+          })
+
+          for (const assigneeId of parsed.data.assignee_ids) {
+            void notify(db, {
+              workspaceId: workspace.id,
+              userId: assigneeId,
+              type: 'pm_task_assigned',
+              title: 'New task assigned',
+              body: `You were assigned "${task.title}"`,
+              resourceType: 'projects',
+              resourceId: task.id,
+            })
+          }
         }
       }
 
@@ -387,6 +441,16 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
       .values({ task_id: taskId, user_id: user.id, body, parent_id: parent_id ?? null })
       .returningAll()
       .executeTakeFirstOrThrow()
+
+    void logActivity(db, {
+      workspace_id: workspace.id,
+      user_id: user.id,
+      type: 'pm_comment_added',
+      source_module_id: 'projects',
+      record_id: taskId,
+      body: comment.body,
+    })
+
     return res.status(201).json({ data: comment, error: null })
   })
 
