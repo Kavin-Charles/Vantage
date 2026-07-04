@@ -29,7 +29,7 @@ export function createAlertsRouter(db: Kysely<Database>): ExpressRouter {
       }
 
       if (resourceType) {
-        query = query.where('resource_type', '=', resourceType as 'server' | 'database' | 'website' | 'crm');
+        query = query.where('resource_type', '=', resourceType);
       }
       if (resourceId) {
         query = query.where('resource_id', '=', resourceId);

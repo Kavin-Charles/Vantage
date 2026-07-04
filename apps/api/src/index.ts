@@ -53,6 +53,7 @@ import { createNotificationsRouter } from './routes/notifications';
 import { createMessagingRouter } from './routes/messaging';
 import { createDashboardsRouter } from './routes/dashboards'
 import { createProjectsRouter, createProjectStatusesRouter, createProjectLabelsRouter } from './routes/projects';
+import { createProjectWidgetStatsRouter } from './routes/project-widget-stats';
 import { createProjectTasksRouter, createMyTasksRouter } from './routes/project-tasks';
 import { createCustomFieldsRouter, createTaskFieldValuesRouter } from './routes/custom-fields';
 import { createTimeLogsRouter } from './routes/time-logs';
@@ -65,6 +66,7 @@ import { createHooksRouter } from './routes/hooks';
 import { createSystemRouter } from './routes/system';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
+import { startPmDueAlertWorker } from './workers/pm-due-alert';
 import { startWebhookDelivery } from './workers/webhook-delivery';
 import { startMetricsRollup } from './workers/metrics-rollup';
 import { createPluginsRouter } from './routes/plugins';
@@ -298,6 +300,7 @@ app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db,
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
 app.use('/api/alerts', requireAuth, requireModule('alerts'), createAlertsRouter(db));
 app.use('/api/dashboards', requireAuth, createDashboardsRouter(db))
+app.use('/api/projects/widget-stats', requireAuth, createProjectWidgetStatsRouter(db));
 app.use('/api/projects', requireAuth, createProjectsRouter(db))
 app.use('/api/projects/:projectId/tasks/statuses', requireAuth, createProjectStatusesRouter(db));
 app.use('/api/projects/:projectId/labels', requireAuth, createProjectLabelsRouter(db));
@@ -379,6 +382,9 @@ startWebsiteChecker(db);
 
 // Start task-due notifier (fires at midnight UTC daily)
 startTaskDueNotifier(db);
+
+// Start pm-due alert worker (fires at midnight UTC daily)
+startPmDueAlertWorker(db);
 
 // Start webhook delivery worker (polls every 10 s)
 startWebhookDelivery(db);

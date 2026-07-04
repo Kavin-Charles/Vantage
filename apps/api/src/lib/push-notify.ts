@@ -9,6 +9,7 @@ export interface PushPreferences {
   tasks_due?: boolean;
   deals_assigned?: boolean;
   contacts_assigned?: boolean;
+  pm_assigned?: boolean;
 }
 
 /**
