@@ -31,6 +31,7 @@ export async function notify(db: Kysely<Database>, params: NotifyParams): Promis
     const tokenRows = await db
       .selectFrom('push_tokens')
       .where('user_id', '=', params.userId)
+      .where('workspace_id', '=', params.workspaceId)
       .select(['token', 'preferences'])
       .execute();
 
