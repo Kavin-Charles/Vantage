@@ -84,12 +84,13 @@ describe('createMilestonesRouter activity + pmEvents wiring', () => {
   });
 
   it('emits milestone_completed and logs activity on PENDING -> COMPLETED transition', async () => {
+    const projectChain = projectAccessChain();
     const priorChain = buildChain({ executeTakeFirst: vi.fn().mockResolvedValue({ status: 'PENDING' }) });
     const updateChain = buildChain({
       executeTakeFirstOrThrow: vi.fn().mockResolvedValue({ id: MILESTONE_ID, project_id: PROJECT_ID, name: 'Beta', status: 'COMPLETED' }),
     });
     const db = {
-      selectFrom: vi.fn(() => priorChain),
+      selectFrom: vi.fn((table: string) => (table === 'projects' ? projectChain : priorChain)),
       updateTable: vi.fn(() => updateChain),
     } as any;
 
@@ -111,12 +112,13 @@ describe('createMilestonesRouter activity + pmEvents wiring', () => {
   });
 
   it('does not emit milestone_completed when status stays COMPLETED', async () => {
+    const projectChain = projectAccessChain();
     const priorChain = buildChain({ executeTakeFirst: vi.fn().mockResolvedValue({ status: 'COMPLETED' }) });
     const updateChain = buildChain({
       executeTakeFirstOrThrow: vi.fn().mockResolvedValue({ id: MILESTONE_ID, project_id: PROJECT_ID, name: 'Beta v2', status: 'COMPLETED' }),
     });
     const db = {
-      selectFrom: vi.fn(() => priorChain),
+      selectFrom: vi.fn((table: string) => (table === 'projects' ? projectChain : priorChain)),
       updateTable: vi.fn(() => updateChain),
     } as any;
 

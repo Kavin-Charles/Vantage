@@ -93,6 +93,11 @@ export function createMilestonesRouter(db: Kysely<Database>): Router {
     const parsed = updateMilestoneSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
+      const project = await db.selectFrom('projects').select('id')
+        .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
+        .executeTakeFirst()
+      if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+
       const updates: Record<string, unknown> = {}
       if (parsed.data.name !== undefined) updates.name = parsed.data.name
       if (parsed.data.description !== undefined) updates.description = parsed.data.description
@@ -130,9 +135,19 @@ export function createMilestonesRouter(db: Kysely<Database>): Router {
 
   // DELETE /api/projects/:projectId/milestones/:milestoneId
   router.delete('/:milestoneId', async (req, res) => {
+    const { workspace } = req as unknown as AuthenticatedRequest
     const { milestoneId, projectId } = req.params as { milestoneId: string; projectId: string }
-    await db.deleteFrom('milestones').where('id', '=', milestoneId).where('project_id', '=', projectId).execute()
-    return res.json({ data: { success: true }, error: null })
+    try {
+      const project = await db.selectFrom('projects').select('id')
+        .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
+        .executeTakeFirst()
+      if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+
+      await db.deleteFrom('milestones').where('id', '=', milestoneId).where('project_id', '=', projectId).execute()
+      return res.json({ data: { success: true }, error: null })
+    } catch {
+      return res.status(500).json({ data: null, error: { code: 'SERVER_ERROR', message: 'Internal error' } })
+    }
   })
 
   return router
