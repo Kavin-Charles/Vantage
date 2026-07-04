@@ -25,24 +25,25 @@ export function createProjectWidgetStatsRouter(db: Kysely<Database>): ExpressRou
         .select(db.fn.countAll().as('count'))
         .executeTakeFirst();
 
+      const now = new Date();
+      const startOfTodayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      const weekOut = new Date(startOfTodayUtc.getTime() + 7 * 24 * 60 * 60 * 1000);
+
       const overdueRow = await db
         .selectFrom('project_tasks')
         .innerJoin('projects', 'projects.id', 'project_tasks.project_id')
         .innerJoin('project_task_statuses', 'project_task_statuses.id', 'project_tasks.status_id')
         .where('projects.workspace_id', '=', workspace.id)
-        .where('project_tasks.due_date', '<', new Date())
+        .where('project_tasks.due_date', '<', startOfTodayUtc)
         .where('project_task_statuses.is_done', '=', false)
         .select(db.fn.countAll().as('count'))
         .executeTakeFirst();
-
-      const now = new Date();
-      const weekOut = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
       const upcomingMilestones = await db
         .selectFrom('milestones')
         .innerJoin('projects', 'projects.id', 'milestones.project_id')
         .where('projects.workspace_id', '=', workspace.id)
-        .where('milestones.due_date', '>=', now)
+        .where('milestones.due_date', '>=', startOfTodayUtc)
         .where('milestones.due_date', '<=', weekOut)
         .where('milestones.status', '!=', 'COMPLETED')
         .select(['milestones.id', 'milestones.name', 'milestones.due_date', 'milestones.project_id'])
