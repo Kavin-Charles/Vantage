@@ -21,11 +21,11 @@ jobs:
       matrix:
         include:
           - image: vencore-web
-            dockerfile: Dockerfile.web
+            dockerfile: docker/Dockerfile.web
           - image: vencore-api
-            dockerfile: Dockerfile.api
+            dockerfile: docker/Dockerfile.api
           - image: vencore-worker
-            dockerfile: Dockerfile.worker
+            dockerfile: docker/Dockerfile.worker
 
     steps:
       - name: Checkout

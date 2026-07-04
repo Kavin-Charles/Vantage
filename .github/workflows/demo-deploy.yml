@@ -7,8 +7,6 @@ on:
 env:
   REGISTRY: ghcr.io
   ORG: vencorehq
-  DEMO_VM_HOST: 34.72.251.25
-  DEMO_VM_USER: kavin
 
 jobs:
   build-and-push:
@@ -22,11 +20,11 @@ jobs:
       matrix:
         include:
           - image: vencore-web
-            dockerfile: Dockerfile.web
+            dockerfile: docker/Dockerfile.web
           - image: vencore-api
-            dockerfile: Dockerfile.api
+            dockerfile: docker/Dockerfile.api
           - image: vencore-worker
-            dockerfile: Dockerfile.worker
+            dockerfile: docker/Dockerfile.worker
 
     steps:
       - name: Checkout
@@ -78,16 +76,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.DEMO_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ env.DEMO_VM_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.DEMO_VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Copy compose file to VM
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ env.DEMO_VM_USER }}@${{ env.DEMO_VM_HOST }} "mkdir -p ~/vencore"
-          scp -i ~/.ssh/deploy_key docker-compose.demo.yml ${{ env.DEMO_VM_USER }}@${{ env.DEMO_VM_HOST }}:~/vencore/docker-compose.yml
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEMO_VM_USER }}@${{ secrets.DEMO_VM_HOST }} "mkdir -p ~/vencore"
+          scp -i ~/.ssh/deploy_key docker-compose.yml ${{ secrets.DEMO_VM_USER }}@${{ secrets.DEMO_VM_HOST }}:~/vencore/docker-compose.yml
 
       - name: Deploy to VM
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ env.DEMO_VM_USER }}@${{ env.DEMO_VM_HOST }} << 'DEPLOY'
+          ssh -i ~/.ssh/deploy_key ${{ secrets.DEMO_VM_USER }}@${{ secrets.DEMO_VM_HOST }} << 'DEPLOY'
             set -e
 
             echo '🔄 Pulling latest demo images...'
