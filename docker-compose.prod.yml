@@ -4,7 +4,7 @@
 #   docker compose -f docker-compose.prod.yml up -d
 services:
   web:
-    image: ghcr.io/vencorehq/vencore-web:latest
+    image: ghcr.io/vencorehq/vencore-web:${VENCORE_VERSION:-latest}
     ports:
       - "80:3000"
     env_file: .env
@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
 
   api:
-    image: ghcr.io/vencorehq/vencore-api:latest
+    image: ghcr.io/vencorehq/vencore-api:${VENCORE_VERSION:-latest}
     env_file: .env
     depends_on:
       db:
@@ -29,13 +29,21 @@ services:
     restart: unless-stopped
 
   worker:
-    image: ghcr.io/vencorehq/vencore-worker:latest
+    image: ghcr.io/vencorehq/vencore-worker:${VENCORE_VERSION:-latest}
     env_file: .env
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
+
+  updater:
+    image: ghcr.io/vencorehq/vencore-updater:${VENCORE_VERSION:-latest}
+    env_file: .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/vencore
     restart: unless-stopped
 
   db:

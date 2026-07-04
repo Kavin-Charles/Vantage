@@ -33,11 +33,21 @@ function Get-LocalIP {
     return 'localhost'
 }
 
+function Resolve-Version {
+    try {
+        $tok = (Invoke-RestMethod "https://ghcr.io/token?service=ghcr.io&scope=repository:vencorehq/vencore-api:pull").token
+        $tags = (Invoke-RestMethod "https://ghcr.io/v2/vencorehq/vencore-api/tags/list?n=1000" -Headers @{ Authorization = "Bearer $tok" }).tags
+        $semvers = $tags | Where-Object { $_ -match '^\d+\.\d+\.\d+$' } | Sort-Object { [version]$_ }
+        if ($semvers) { return $semvers[-1] }
+    } catch {}
+    return 'latest'
+}
+
 function Write-Compose {
     @'
 services:
   web:
-    image: ghcr.io/vencorehq/vencore-web:latest
+    image: ghcr.io/vencorehq/vencore-web:${VENCORE_VERSION:-latest}
     ports:
       - "80:3000"
     env_file: .env
@@ -47,7 +57,7 @@ services:
     restart: unless-stopped
 
   api:
-    image: ghcr.io/vencorehq/vencore-api:latest
+    image: ghcr.io/vencorehq/vencore-api:${VENCORE_VERSION:-latest}
     env_file: .env
     depends_on:
       db:
@@ -62,13 +72,21 @@ services:
     restart: unless-stopped
 
   worker:
-    image: ghcr.io/vencorehq/vencore-worker:latest
+    image: ghcr.io/vencorehq/vencore-worker:${VENCORE_VERSION:-latest}
     env_file: .env
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
+
+  updater:
+    image: ghcr.io/vencorehq/vencore-updater:${VENCORE_VERSION:-latest}
+    env_file: .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/vencore
     restart: unless-stopped
 
   db:
@@ -114,11 +132,16 @@ JWT_SECRET=$(New-Secret)
 CRON_SECRET=$(New-Secret)
 AGENT_SIGNING_SECRET=$(New-Secret)
 SSH_ENCRYPTION_KEY=$(New-Secret)
+UPDATER_SECRET=$(New-Secret)
 
 # App
 NODE_ENV=production
 NEXT_PUBLIC_API_URL=http://api:3001
 COOKIE_SECURE=false
+
+# Updater (managed by the in-app updater - do not edit by hand)
+VENCORE_VERSION=$script:ResolvedVersion
+VENCORE_INSTALL_DIR=$INSTALL_DIR
 "@ | Set-Content -Path "$INSTALL_DIR\.env" -Encoding utf8
 }
 
@@ -152,6 +175,10 @@ New-Item -ItemType Directory -Force -Path $INSTALL_DIR | Out-Null
 Write-Log "Writing docker-compose.yml..."
 Write-Compose
 
+Write-Log "Resolving latest release version..."
+$script:ResolvedVersion = Resolve-Version
+Write-Ok "Installing version: $script:ResolvedVersion"
+
 if (Test-Path "$INSTALL_DIR\.env") {
     Write-Warn ".env already exists - skipping secret generation."
     Write-Warn "To regenerate: Remove-Item '$INSTALL_DIR\.env' then re-run this script."
@@ -182,7 +209,7 @@ Write-Host "  Useful commands:"
 Write-Host "    cd '$INSTALL_DIR'"
 Write-Host "    docker compose logs -f                           # View logs"
 Write-Host "    docker compose down                              # Stop"
-Write-Host "    docker compose pull; docker compose up -d       # Update"
+Write-Host "    Updates: Settings -> Updates in the dashboard (or docker compose pull; docker compose up -d)"
 Write-Host ""
 
 Start-Process "http://$ip"

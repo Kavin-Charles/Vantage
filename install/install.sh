@@ -14,6 +14,7 @@ check_deps() {
   command -v docker >/dev/null 2>&1 || err "Docker not found. Install from https://docs.docker.com/get-docker/"
   docker compose version >/dev/null 2>&1 || err "Docker Compose v2 plugin not found. Update Docker Desktop or run: apt-get install docker-compose-plugin"
   command -v openssl >/dev/null 2>&1 || err "openssl not found. Install it: apt-get install openssl"
+  command -v curl >/dev/null 2>&1 || err "curl not found. Install it: apt-get install curl"
 }
 
 gen_secret() { openssl rand -hex 32; }
@@ -24,11 +25,23 @@ detect_ip() {
   echo "localhost"
 }
 
+resolve_version() {
+  local token tags
+  token=$(curl -fsSL "https://ghcr.io/token?service=ghcr.io&scope=repository:vencorehq/vencore-api:pull" 2>/dev/null \
+    | sed -n 's/.*"token" *: *"\([^"]*\)".*/\1/p') || true
+  if [ -n "${token:-}" ]; then
+    tags=$(curl -fsSL -H "Authorization: Bearer $token" \
+      "https://ghcr.io/v2/vencorehq/vencore-api/tags/list?n=1000" 2>/dev/null) || true
+    echo "$tags" | tr '",' '\n\n' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
+      | sort -t. -k1,1n -k2,2n -k3,3n | tail -1 || true
+  fi
+}
+
 write_compose() {
   cat > "$INSTALL_DIR/docker-compose.yml" <<'COMPOSE'
 services:
   web:
-    image: ghcr.io/vencorehq/vencore-web:latest
+    image: ghcr.io/vencorehq/vencore-web:${VENCORE_VERSION:-latest}
     ports:
       - "80:3000"
     env_file: .env
@@ -38,7 +51,7 @@ services:
     restart: unless-stopped
 
   api:
-    image: ghcr.io/vencorehq/vencore-api:latest
+    image: ghcr.io/vencorehq/vencore-api:${VENCORE_VERSION:-latest}
     env_file: .env
     depends_on:
       db:
@@ -53,13 +66,21 @@ services:
     restart: unless-stopped
 
   worker:
-    image: ghcr.io/vencorehq/vencore-worker:latest
+    image: ghcr.io/vencorehq/vencore-worker:${VENCORE_VERSION:-latest}
     env_file: .env
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: unless-stopped
+
+  updater:
+    image: ghcr.io/vencorehq/vencore-updater:${VENCORE_VERSION:-latest}
+    env_file: .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/vencore
     restart: unless-stopped
 
   db:
@@ -105,11 +126,16 @@ JWT_SECRET=$(gen_secret)
 CRON_SECRET=$(gen_secret)
 AGENT_SIGNING_SECRET=$(gen_secret)
 SSH_ENCRYPTION_KEY=$(gen_secret)
+UPDATER_SECRET=$(gen_secret)
 
 # App
 NODE_ENV=production
 NEXT_PUBLIC_API_URL=http://api:3001
 COOKIE_SECURE=false
+
+# Updater (managed by the in-app updater — do not edit by hand)
+VENCORE_VERSION=${RESOLVED_VERSION}
+VENCORE_INSTALL_DIR=${INSTALL_DIR}
 EOF
 }
 
@@ -143,6 +169,11 @@ main() {
   log "Writing docker-compose.yml..."
   write_compose
 
+  log "Resolving latest release version..."
+  RESOLVED_VERSION=$(resolve_version)
+  RESOLVED_VERSION=${RESOLVED_VERSION:-latest}
+  ok "Installing version: $RESOLVED_VERSION"
+
   if [ -f "$INSTALL_DIR/.env" ]; then
     warn ".env already exists — skipping secret generation."
     warn "To regenerate secrets: rm $INSTALL_DIR/.env && bash $0"
@@ -171,7 +202,7 @@ main() {
   echo "    cd $INSTALL_DIR"
   echo "    docker compose logs -f         # View logs"
   echo "    docker compose down            # Stop"
-  echo "    docker compose pull && docker compose up -d  # Update"
+  echo "    Updates: Settings → Updates in the dashboard (or docker compose pull && docker compose up -d)"
   echo ""
 }
 

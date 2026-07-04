@@ -26,6 +26,8 @@ jobs:
             dockerfile: Dockerfile.api
           - image: vencore-worker
             dockerfile: Dockerfile.worker
+          - image: vencore-updater
+            dockerfile: Dockerfile.updater
 
     steps:
       - name: Checkout
@@ -59,6 +61,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VENCORE_VERSION=${{ steps.meta.outputs.version }}
           cache-from: type=gha,scope=${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
 

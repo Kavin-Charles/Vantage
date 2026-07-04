@@ -8,7 +8,7 @@ import { handleSftpUpgrade } from './ws/sftp-session';
 import { handleMessagingUpgrade } from './ws/messaging-session';
 import { initRedisMessaging } from './lib/messaging-pubsub';
 import { apiEnvSchema, readConfig } from '@vencore/config';
-import { createDb, migrate } from '@vencore/db';
+import { createDb, runMigrations } from '@vencore/db';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import { errorHandler } from './middleware/errors';
@@ -62,6 +62,7 @@ import { createProjectMembersRouter } from './routes/project-members';
 import { createPortalRouter, createPortalInternalRouter } from './routes/portal';
 import { createModuleEventSettingsRouter } from './routes/module-event-settings';
 import { createHooksRouter } from './routes/hooks';
+import { createSystemRouter } from './routes/system';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startWebhookDelivery } from './workers/webhook-delivery';
@@ -90,32 +91,6 @@ import { logger } from './lib/logger';
 const env = apiEnvSchema.parse(process.env);
 const config = readConfig();
 const db = createDb(env.DATABASE_URL);
-
-// Run database migrations on startup
-void (async () => {
-  try {
-    logger.info('Checking/running database migrations...');
-    const { error, results } = await migrate(db);
-    
-    results?.forEach(r => {
-      if (r.status === 'Success') {
-        logger.info(`Migration success: ${r.migrationName}`);
-      } else if (r.status === 'Error') {
-        logger.error(`Migration error: ${r.migrationName}`);
-      }
-    });
-
-    if (error) {
-      logger.error({ err: error }, 'Database migration failed');
-    } else if (!results?.length) {
-      logger.info('No pending database migrations.');
-    } else {
-      logger.info('Database migrations completed successfully.');
-    }
-  } catch (err) {
-    logger.error({ err }, 'Failed to initialize database migrations');
-  }
-})();
 
 initAutomationEngine(db);
 
@@ -381,6 +356,9 @@ app.use('/api/settings/module-events', requireAuth, createModuleEventSettingsRou
 app.use('/api/settings/notifications', requireAuth, createNotificationPreferencesRouter(db));
 app.use('/api/settings', requireAuth, createHooksRouter(db));
 
+// System — version + updates. Mixed auth handled inside the router.
+app.use('/api/system', createSystemRouter(db, env, requireAuth, requireAdmin));
+
 // SSH management
 app.use('/api/ssh', requireAuth, createSshKeypairRouter(db));
 app.use('/api/servers/:id/ssh', requireAuth, requireModule('servers'), requirePermission('servers:ssh'), createSshActionsRouter(db));
@@ -439,24 +417,37 @@ httpServer.on('upgrade', (request, socket, head) => {
   }
 });
 
-httpServer.listen(env.PORT, () => {
-  logger.info({ port: env.PORT }, 'API server running');
+async function start(): Promise<void> {
+  if (env.NODE_ENV === 'production') {
+    logger.info('Running database migrations...');
+    await runMigrations(env.DATABASE_URL);
+    logger.info('Migrations up to date');
+  }
 
-  // Respawn backends for all enabled plugins on boot — otherwise plugin
-  // sandboxes stay dead after a restart until each is re-uploaded/re-enabled.
-  void (async () => {
-    try {
-      const rows = await db
-        .selectFrom('workspace_plugins')
-        .select(['plugin_id', 'workspace_id'])
-        .where('enabled', '=', true)
-        .execute();
-      for (const r of rows) {
-        try { loadPluginBackend(r.plugin_id, r.workspace_id, db); } catch { /* per-plugin failure is non-fatal */ }
+  httpServer.listen(env.PORT, () => {
+    logger.info({ port: env.PORT }, 'API server running');
+
+    // Respawn backends for all enabled plugins on boot — otherwise plugin
+    // sandboxes stay dead after a restart until each is re-uploaded/re-enabled.
+    void (async () => {
+      try {
+        const rows = await db
+          .selectFrom('workspace_plugins')
+          .select(['plugin_id', 'workspace_id'])
+          .where('enabled', '=', true)
+          .execute();
+        for (const r of rows) {
+          try { loadPluginBackend(r.plugin_id, r.workspace_id, db); } catch { /* per-plugin failure is non-fatal */ }
+        }
+        logger.info({ count: rows.length }, 'Loaded enabled plugin backends on startup');
+      } catch (err) {
+        logger.error({ err }, 'Failed to load plugin backends on startup');
       }
-      logger.info({ count: rows.length }, 'Loaded enabled plugin backends on startup');
-    } catch (err) {
-      logger.error({ err }, 'Failed to load plugin backends on startup');
-    }
-  })();
+    })();
+  });
+}
+
+void start().catch((err: unknown) => {
+  logger.error({ err }, 'API startup failed');
+  process.exit(1);
 });

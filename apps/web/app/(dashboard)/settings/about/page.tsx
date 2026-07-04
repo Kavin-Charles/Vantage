@@ -1,11 +1,18 @@
 'use client';
 
-import webPackageJson from '../../../../package.json';
+import { useEffect, useState } from 'react';
 import { ContextMenu, useContextMenu } from '@/modules/shared/components/ui/ContextMenu';
 import { settingRowMenu } from '@/modules/shared/lib/settingsMenu';
+import { apiFetch } from '@/modules/shared/lib/api';
 
 export default function AboutPage() {
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+  const [version, setVersion] = useState('…');
+  useEffect(() => {
+    apiFetch<{ data: { version: string } }>('/api/system/version')
+      .then(r => setVersion(r.data.version))
+      .catch(() => setVersion('unknown'));
+  }, []);
   const card: React.CSSProperties = {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
@@ -25,11 +32,11 @@ export default function AboutPage() {
 
       <div style={card}>
         <div
-          onContextMenu={e => openMenu(e, settingRowMenu({ label: 'Version', value: webPackageJson.version }))}
+          onContextMenu={e => openMenu(e, settingRowMenu({ label: 'Version', value: version }))}
           style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--border)' }}
         >
           <span style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 500 }}>Version</span>
-          <span style={{ fontSize: 13, color: 'var(--text)' }}>{webPackageJson.version}</span>
+          <span style={{ fontSize: 13, color: 'var(--text)' }}>{version}</span>
         </div>
         {links.map(link => (
           <div

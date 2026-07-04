@@ -54,6 +54,7 @@ const GROUPS: SettingsGroup[] = [
       { href: '/settings/plugins', label: 'Plugins' },
       { href: '/settings/api-keys', label: 'API Keys' },
       { href: '/settings/ssh', label: 'SSH Keys' },
+      { href: '/settings/updates', label: 'Updates' },
     ],
   },
   {

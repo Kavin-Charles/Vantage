@@ -29,6 +29,9 @@ export const apiEnvSchema = z.object({
   R2_BUCKET_NAME: z.string().optional(),
   // Redis — optional; messaging real-time requires it
   REDIS_URL: z.string().optional(),
+  // Updater sidecar — optional; update routes return 503 when unset
+  UPDATER_URL: z.string().default('http://updater:9500'),
+  UPDATER_SECRET: z.string().optional(),
 });
 
 // Web env
