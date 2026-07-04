@@ -2,7 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from './api';
 
 interface PublicConfig {
-  app: { name: string; logoUrl: string };
+  app: {
+    name: string;
+    logoUrl: string;
+    faviconUrl: string | null;
+    tagline: string | null;
+    primaryColor: string | null;
+  };
   features: {
     crm: boolean;
     infra: boolean;

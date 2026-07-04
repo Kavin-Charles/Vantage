@@ -131,6 +131,7 @@ UPDATER_SECRET=$(gen_secret)
 # App
 NODE_ENV=production
 NEXT_PUBLIC_API_URL=http://api:3001
+APP_URL=http://${SERVER_IP}
 COOKIE_SECURE=false
 
 # Updater (managed by the in-app updater — do not edit by hand)
@@ -166,6 +167,8 @@ main() {
   log "Creating install directory: $INSTALL_DIR"
   mkdir -p "$INSTALL_DIR"
 
+  SERVER_IP=$(detect_ip)
+
   log "Writing docker-compose.yml..."
   write_compose
 
@@ -190,8 +193,6 @@ main() {
   docker compose -f "$INSTALL_DIR/docker-compose.yml" up -d
 
   wait_for_api
-
-  SERVER_IP=$(detect_ip)
 
   echo ""
   ok "Vencore is running!"

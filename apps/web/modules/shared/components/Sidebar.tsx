@@ -145,7 +145,7 @@ export function Sidebar() {
   const { user, logout } = useAuth();
   const { data: config } = useConfig();
   const { isEnabled } = useModules();
-  const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
+  const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? '';
   const { data: pluginNavItems = [] } = useQuery({
     queryKey: ['sidebar-plugins'],
     queryFn: async (): Promise<WorkspacePlugin[]> => {

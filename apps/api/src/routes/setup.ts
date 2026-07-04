@@ -30,6 +30,9 @@ const setupSchema = z.object({
     name: z.string().min(1).max(100),
     logoUrl: z.string().default('/logo.png'),
     domain: z.string().optional(),
+    faviconUrl: z.string().optional(),
+    tagline: z.string().optional(),
+    primaryColor: z.string().optional(),
   }),
   features: z.object({
     crm: z.boolean(),
@@ -124,7 +127,14 @@ export function createSetupRouter(db: Kysely<Database>): Router {
 
         // Save config row
         const configValue = {
-          app: { name: branding.name, logoUrl: branding.logoUrl, domain: branding.domain },
+          app: {
+            name: branding.name,
+            logoUrl: branding.logoUrl,
+            domain: branding.domain,
+            faviconUrl: branding.faviconUrl,
+            tagline: branding.tagline,
+            primaryColor: branding.primaryColor,
+          },
           features,
           smtp: smtpToStore,
         };
