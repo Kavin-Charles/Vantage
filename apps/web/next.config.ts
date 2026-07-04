@@ -1,4 +1,8 @@
+import { loadEnvConfig } from '@next/env';
+import { resolve } from 'path';
 import type { NextConfig } from 'next';
+
+loadEnvConfig(resolve(process.cwd(), '../..'));
 
 const apiUrl = process.env.API_URL ?? process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
 
