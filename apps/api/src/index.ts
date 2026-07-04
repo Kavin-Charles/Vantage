@@ -48,6 +48,7 @@ import { createApiKeysRouter } from './routes/api-keys';
 import { createNotificationsRouter } from './routes/notifications';
 import { createDashboardsRouter } from './routes/dashboards'
 import { createProjectsRouter, createProjectStatusesRouter, createProjectLabelsRouter } from './routes/projects';
+import { createProjectWidgetStatsRouter } from './routes/project-widget-stats';
 import { createProjectTasksRouter, createMyTasksRouter } from './routes/project-tasks';
 import { createCustomFieldsRouter, createTaskFieldValuesRouter } from './routes/custom-fields';
 import { createTimeLogsRouter } from './routes/time-logs';
@@ -263,6 +264,7 @@ app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db,
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
 app.use('/api/alerts', requireAuth, requireModule('alerts'), createAlertsRouter(db));
 app.use('/api/dashboards', requireAuth, createDashboardsRouter(db))
+app.use('/api/projects/widget-stats', requireAuth, createProjectWidgetStatsRouter(db));
 app.use('/api/projects', requireAuth, createProjectsRouter(db))
 app.use('/api/projects/:projectId/tasks/statuses', requireAuth, createProjectStatusesRouter(db));
 app.use('/api/projects/:projectId/labels', requireAuth, createProjectLabelsRouter(db));
