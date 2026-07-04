@@ -98,6 +98,7 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
       const prior = await db
         .selectFrom('sprints')
         .where('id', '=', sprintId)
+        .where('project_id', '=', projectId)
         .select(['status'])
         .executeTakeFirst()
 

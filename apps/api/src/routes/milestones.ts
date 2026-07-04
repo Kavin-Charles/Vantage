@@ -108,6 +108,7 @@ export function createMilestonesRouter(db: Kysely<Database>): Router {
       const prior = await db
         .selectFrom('milestones')
         .where('id', '=', milestoneId)
+        .where('project_id', '=', projectId)
         .select(['status'])
         .executeTakeFirst()
 
