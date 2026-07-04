@@ -329,6 +329,7 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
               user_id: user.id,
               type: 'task_done',
               source_module_id: 'projects',
+              record_id: taskId,
               body: `Task "${task.title}" marked as done`,
               meta: { task_id: taskId, project_id: projectId },
             })
