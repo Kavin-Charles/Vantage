@@ -303,22 +303,36 @@ export default function ProjectBoardPage() {
                     </button>
                   ) : (
                     <>
-                      {columnTasks.map(task => (
-                        <TaskCard
+                      {columnTasks.map((task, i) => (
+                        <div
                           key={task.id}
-                          task={task}
-                          onClick={() => void openTask(task)}
-                          onDragStart={() => setDraggedTaskId(task.id)}
-                          onDuplicate={() => duplicateMutation.mutate(task)}
-                          onDelete={() => askConfirm({
-                            title: 'Delete task',
-                            message: `Delete "${task.title}"? This cannot be undone.`,
-                            confirmLabel: 'Delete',
-                            variant: 'danger',
-                            onConfirm: () => deleteMutation.mutate(task.id),
-                          })}
-                        />
+                          style={{
+                            opacity: 0,
+                            transform: 'translateY(6px)',
+                            animation: 'boardCardFadeIn 0.2s ease forwards',
+                            animationDelay: `${Math.min(i * 30, 300)}ms`,
+                          }}
+                        >
+                          <TaskCard
+                            task={task}
+                            onClick={() => void openTask(task)}
+                            onDragStart={() => setDraggedTaskId(task.id)}
+                            onDuplicate={() => duplicateMutation.mutate(task)}
+                            onDelete={() => askConfirm({
+                              title: 'Delete task',
+                              message: `Delete "${task.title}"? This cannot be undone.`,
+                              confirmLabel: 'Delete',
+                              variant: 'danger',
+                              onConfirm: () => deleteMutation.mutate(task.id),
+                            })}
+                          />
+                        </div>
                       ))}
+                      <style>{`
+                        @keyframes boardCardFadeIn {
+                          to { opacity: 1; transform: translateY(0); }
+                        }
+                      `}</style>
                       <button
                         onClick={() => setCreateForStatus(status.id)}
                         style={{
