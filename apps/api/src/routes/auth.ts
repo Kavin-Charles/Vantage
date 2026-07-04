@@ -26,6 +26,7 @@ export function createAuthRouter(
   db: Kysely<Database>,
   jwtSecret: string,
   smtp: SmtpConfig | null | undefined,
+  appUrl: string,
 ): Router {
   const router = Router();
 
@@ -196,12 +197,11 @@ export function createAuthRouter(
         auth: { user: smtp.user, pass: smtp.password },
       });
 
-      const domain = process.env['APP_DOMAIN'] ?? 'localhost:3000';
       await transporter.sendMail({
         from: smtp.from,
         to: user.email,
         subject: 'Password Reset',
-        text: `Reset your password: https://${domain}/reset-password?token=${token}\n\nExpires in 1 hour.`,
+        text: `Reset your password: ${appUrl}/reset-password?token=${token}\n\nExpires in 1 hour.`,
       });
     } catch (err) {
       logger.error({ err }, 'Failed to send password reset email');

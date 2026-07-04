@@ -14,7 +14,13 @@ export function createConfigRouter(config: VencoreConfig, db: Kysely<Database>):
 
     res.json({
       data: {
-        app: { name: effective.app.name, logoUrl: effective.app.logoUrl },
+        app: {
+          name: effective.app.name,
+          logoUrl: effective.app.logoUrl,
+          faviconUrl: effective.app.faviconUrl ?? null,
+          tagline: effective.app.tagline ?? null,
+          primaryColor: effective.app.primaryColor ?? null,
+        },
         features: effective.features,
       },
       error: null,

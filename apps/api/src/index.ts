@@ -263,7 +263,7 @@ const requirePermission = createRequirePermission(db);
 const app = express();
 
 app.use(cors({
-  origin: process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000',
+  origin: env.APP_URL,
   credentials: true,
 }));
 app.use(cookieParser());
@@ -271,7 +271,7 @@ app.use(express.json({ limit: '10mb' }));
 
 // Public routes (no auth)
 app.use('/api/config', createConfigRouter(config, db));
-app.use('/api/auth', createAuthRouter(db, env.JWT_SECRET, config.smtp));
+app.use('/api/auth', createAuthRouter(db, env.JWT_SECRET, config.smtp, env.APP_URL));
 // Setup (public — must come before requireAuth routes)
 app.use('/api/setup', createSetupRouter(db));
 
@@ -339,7 +339,7 @@ app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/workspace', requireAuth, requireAdmin, createWorkspaceRouter(db));
 app.use('/api/groups', requireAuth, requireAdmin, createGroupsRouter(db));
-app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requireAdmin));
+app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requireAdmin, env.APP_URL));
 app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 

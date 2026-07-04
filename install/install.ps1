@@ -137,6 +137,7 @@ UPDATER_SECRET=$(New-Secret)
 # App
 NODE_ENV=production
 NEXT_PUBLIC_API_URL=http://api:3001
+APP_URL=http://$script:ip
 COOKIE_SECURE=false
 
 # Updater (managed by the in-app updater - do not edit by hand)
@@ -172,6 +173,8 @@ Write-Ok "Dependencies OK."
 Write-Log "Creating install directory: $INSTALL_DIR"
 New-Item -ItemType Directory -Force -Path $INSTALL_DIR | Out-Null
 
+$script:ip = Get-LocalIP
+
 Write-Log "Writing docker-compose.yml..."
 Write-Compose
 
@@ -198,7 +201,7 @@ if (-not (Wait-ForApi)) {
     Write-Err "API health check timed out. Check logs: cd '$INSTALL_DIR'; docker compose logs api"
 }
 
-$ip = Get-LocalIP
+$ip = $script:ip
 
 Write-Host ""
 Write-Ok "Vencore is running!"

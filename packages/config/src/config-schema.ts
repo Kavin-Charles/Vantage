@@ -25,6 +25,9 @@ export const configSchema = z.object({
     name: z.string(),
     logoUrl: z.string().default('/logo.png'),
     domain: z.string().optional(),
+    faviconUrl: z.string().optional(),
+    tagline: z.string().optional(),
+    primaryColor: z.string().optional(),
   }),
   features: z.object({
     crm: z.boolean().default(true),
