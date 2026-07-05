@@ -3,6 +3,8 @@ import { z } from 'zod'
 import type { Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
 import type { AuthenticatedRequest } from '../middleware/auth'
+import { logActivity } from '../lib/log-activity'
+import { pmEvents } from '../lib/pm-events'
 
 const createSprintSchema = z.object({
   name: z.string().min(1).max(255),
@@ -76,10 +78,16 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
 
   // PATCH /api/projects/:projectId/sprints/:sprintId
   router.patch('/:sprintId', async (req, res) => {
+    const { user, workspace } = req as unknown as AuthenticatedRequest
     const { sprintId, projectId } = req.params as { sprintId: string; projectId: string }
     const parsed = updateSprintSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
+      const project = await db.selectFrom('projects').select('id')
+        .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
+        .executeTakeFirst()
+      if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+
       const updates: Record<string, unknown> = {}
       if (parsed.data.name !== undefined) updates.name = parsed.data.name
       if (parsed.data.start_date !== undefined) updates.start_date = parsed.data.start_date
@@ -87,9 +95,41 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
       if (parsed.data.status !== undefined) updates.status = parsed.data.status
       if (parsed.data.goal !== undefined) updates.goal = parsed.data.goal
 
+      const prior = await db
+        .selectFrom('sprints')
+        .where('id', '=', sprintId)
+        .where('project_id', '=', projectId)
+        .select(['status'])
+        .executeTakeFirst()
+
       const sprint = await db.updateTable('sprints').set(updates)
         .where('id', '=', sprintId).where('project_id', '=', projectId)
         .returningAll().executeTakeFirstOrThrow()
+
+      if (prior?.status !== 'ACTIVE' && sprint.status === 'ACTIVE') {
+        pmEvents.emit('pm', { type: 'sprint_started', projectId: sprint.project_id, sprintId: sprint.id })
+        void logActivity(db, {
+          workspace_id: workspace.id,
+          user_id: user.id,
+          type: 'sprint_started',
+          source_module_id: 'projects',
+          body: `Started sprint "${sprint.name}"`,
+          meta: { sprint_id: sprint.id, project_id: sprint.project_id },
+        })
+      }
+
+      if (prior?.status !== 'COMPLETED' && sprint.status === 'COMPLETED') {
+        pmEvents.emit('pm', { type: 'sprint_ended', projectId: sprint.project_id, sprintId: sprint.id })
+        void logActivity(db, {
+          workspace_id: workspace.id,
+          user_id: user.id,
+          type: 'sprint_ended',
+          source_module_id: 'projects',
+          body: `Ended sprint "${sprint.name}"`,
+          meta: { sprint_id: sprint.id, project_id: sprint.project_id },
+        })
+      }
+
       return res.json({ data: sprint, error: null })
     } catch {
       return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Sprint not found' } })

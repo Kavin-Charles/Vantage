@@ -13,6 +13,7 @@ interface Props {
   tasks: GanttTask[];
   startDate: Date;
   endDate: Date;
+  onTaskClick?: (taskId: string) => void;
 }
 
 const DAY_PX = 32;
@@ -59,7 +60,7 @@ function getMonthGroups(days: Date[]): MonthGroup[] {
   return groups;
 }
 
-export default function GanttChart({ tasks, startDate, endDate }: Props) {
+export default function GanttChart({ tasks, startDate, endDate, onTaskClick }: Props) {
   const days = getDaysArray(startDate, endDate);
   const monthGroups = getMonthGroups(days);
   const gridW = days.length * DAY_PX;
@@ -186,7 +187,11 @@ export default function GanttChart({ tasks, startDate, endDate }: Props) {
           const hasBar = startIdx !== null && endIdx !== null;
 
           return (
-            <g key={task.id}>
+            <g
+              key={task.id}
+              style={{ cursor: onTaskClick ? 'pointer' : undefined }}
+              onClick={() => onTaskClick?.(task.id)}
+            >
               {/* Row bg */}
               <rect x={0} y={y} width={totalW} height={ROW_H} fill={rowIdx % 2 === 0 ? 'var(--surface)' : 'var(--bg)'} />
 

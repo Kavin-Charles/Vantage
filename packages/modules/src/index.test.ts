@@ -51,4 +51,10 @@ describe('MODULE_REGISTRY', () => {
       expect(mod.permissions.length).toBeGreaterThan(0);
     }
   });
+
+  it('projects module emits both activity and alerts', () => {
+    const projects = MODULE_REGISTRY.find(m => m.id === 'projects');
+    expect(projects?.emitsActivity).toBe(true);
+    expect(projects?.emitsAlerts).toBe(true);
+  });
 });

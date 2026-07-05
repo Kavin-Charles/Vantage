@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createAlert } from '../lib/alert-service';
 
-function buildChain(overrides: Record<string, unknown> = {}) {
+function buildQueryChain(overrides: Record<string, unknown> = {}) {
   const chain: Record<string, unknown> = {
     selectFrom: vi.fn().mockReturnThis(),
     insertInto: vi.fn().mockReturnThis(),
@@ -17,10 +17,14 @@ function buildChain(overrides: Record<string, unknown> = {}) {
 }
 
 describe('alert-service resourceType: projects', () => {
-  it('createAlert accepts resourceType "projects" and inserts a row', async () => {
-    const settingsChain = buildChain({ executeTakeFirst: vi.fn().mockResolvedValue(undefined) });
-    const openAlertChain = buildChain({ executeTakeFirst: vi.fn().mockResolvedValue(undefined) });
-    const insertChain = buildChain();
+  it('createAlert inserts a row with resource_type "projects"', async () => {
+    const settingsChain = buildQueryChain({
+      executeTakeFirst: vi.fn().mockResolvedValue(undefined),
+    });
+    const openAlertChain = buildQueryChain({
+      executeTakeFirst: vi.fn().mockResolvedValue(undefined),
+    });
+    const insertChain = buildQueryChain();
 
     const db = {
       selectFrom: vi.fn((table: string) =>
@@ -45,23 +49,29 @@ describe('alert-service resourceType: projects', () => {
     );
   });
 
-  it('createAlert without sourceModuleId works with projects type', async () => {
-    const insertChain = buildChain();
+  it('createAlert accepts resourceType "projects" without TypeScript type errors', async () => {
+    const settingsChain = buildQueryChain({
+      executeTakeFirst: vi.fn().mockResolvedValue(undefined),
+    });
+    const openAlertChain = buildQueryChain({
+      executeTakeFirst: vi.fn().mockResolvedValue(undefined),
+    });
+    const insertChain = buildQueryChain();
 
     const db = {
+      selectFrom: vi.fn((table: string) =>
+        table === 'module_event_settings' ? settingsChain : openAlertChain,
+      ),
       insertInto: vi.fn(() => insertChain),
     } as any;
 
-    await createAlert(db, {
-      workspaceId: 'ws-1',
-      severity: 'info',
-      resourceType: 'projects',
-      message: 'Project status updated',
-    });
-
-    expect(db.insertInto).toHaveBeenCalledWith('alerts');
-    expect(insertChain.values).toHaveBeenCalledWith(
-      expect.objectContaining({ resource_type: 'projects' }),
-    );
+    await expect(
+      createAlert(db, {
+        workspaceId: 'ws-2',
+        severity: 'info',
+        resourceType: 'projects',
+        message: 'Milestone approaching',
+      }),
+    ).resolves.toBeUndefined();
   });
 });
