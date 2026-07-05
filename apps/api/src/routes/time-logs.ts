@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
 import type { AuthenticatedRequest } from '../middleware/auth'
+import { logActivity } from '../lib/log-activity'
 
 const createLogSchema = z.object({
   minutes: z.number().int().min(1).max(1440),
@@ -61,6 +62,15 @@ export function createTimeLogsRouter(db: Kysely<Database>): Router {
         })
         .returningAll()
         .executeTakeFirstOrThrow()
+
+      void logActivity(db, {
+        workspace_id: workspace.id,
+        user_id: user.id,
+        type: 'pm_time_logged',
+        source_module_id: 'projects',
+        record_id: taskId,
+        body: `Logged ${parsed.data.minutes} min`,
+      })
 
       return res.status(201).json({ data: log, error: null })
     } catch {
