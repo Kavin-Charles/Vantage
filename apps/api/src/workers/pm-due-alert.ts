@@ -6,7 +6,7 @@ import { logger } from '../lib/logger';
 export async function runPmDueAlerts(db: Kysely<Database>): Promise<void> {
   const now = new Date();
   const startOfTodayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  const twoDaysOut = new Date(startOfTodayUtc.getTime() + 2 * 24 * 60 * 60 * 1000);
+  const threeDaysOut = new Date(startOfTodayUtc.getTime() + 3 * 24 * 60 * 60 * 1000);
 
   const overdueTasks = await db
     .selectFrom('project_tasks')
@@ -32,7 +32,7 @@ export async function runPmDueAlerts(db: Kysely<Database>): Promise<void> {
   const atRiskMilestones = await db
     .selectFrom('milestones')
     .innerJoin('projects', 'projects.id', 'milestones.project_id')
-    .where('milestones.due_date', '<=', twoDaysOut)
+    .where('milestones.due_date', '<=', threeDaysOut)
     .where('milestones.status', '!=', 'COMPLETED')
     .select(['milestones.id', 'milestones.name', 'milestones.project_id', 'projects.workspace_id'])
     .execute();

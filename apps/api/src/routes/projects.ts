@@ -224,7 +224,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         })
       }
 
-      if (prior?.health !== 'OFF_TRACK' && project.health === 'OFF_TRACK') {
+      if (prior?.health !== project.health && (project.health === 'AT_RISK' || project.health === 'OFF_TRACK')) {
         void createAlert(db, {
           workspaceId: workspace.id,
           severity: 'warning',
