@@ -32,6 +32,17 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('assign_task'), user_id: z.string().uuid() }),
   z.object({ type: z.literal('mark_milestone_complete'), milestone_id: z.string().uuid() }),
   z.object({ type: z.literal('send_webhook'), url: z.string().url(), payload: z.record(z.unknown()).optional() }),
+  z.object({
+    type: z.literal('create_task'),
+    title: z.string().min(1).max(500),
+    status_id: z.string().uuid().optional(),
+    assignee_ids: z.array(z.string().uuid()).optional(),
+  }),
+  z.object({
+    type: z.literal('set_custom_field'),
+    custom_field_id: z.string().uuid(),
+    value: z.string(),
+  }),
 ])
 
 export const createRuleSchema = z.object({
