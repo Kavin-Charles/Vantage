@@ -32,6 +32,14 @@ export default function TimelinePage() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ taskId, patch }: { taskId: string; patch: Partial<Task> }) => {
+      const token = await getToken();
+      return pmApi.updateTask(token, projectId, taskId, patch);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
+  });
+
   if (tasksLoading || statusesLoading) {
     return (
       <div style={{ padding: 32, fontFamily: 'DM Sans', color: 'var(--text3)' }}>
@@ -47,14 +55,6 @@ export default function TimelinePage() {
   for (const s of statuses) {
     statusMap[s.id] = s;
   }
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ taskId, patch }: { taskId: string; patch: Partial<Task> }) => {
-      const token = await getToken();
-      return pmApi.updateTask(token, projectId, taskId, patch);
-    },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
-  });
 
   async function openTask(taskId: string) {
     const token = await getToken();
