@@ -132,16 +132,20 @@ export default function ProjectListPage() {
     if (filter !== 'ALL') return filtered.map(t => ({ task: t, depth: 0 }));
     const childrenMap = new Map<string | null, TaskWithAssignees[]>();
     for (const t of filtered) {
-      const pid = (t as any).parent_id as string | null ?? null;
+      const pid = t.parent_id ?? null;
       const arr = childrenMap.get(pid) ?? [];
       arr.push(t);
       childrenMap.set(pid, arr);
     }
     const rows: TreeRow[] = [];
+    const visited = new Set<string>();
     function walk(parentId: string | null, depth: number) {
+      if (depth > 10) return;
       const children = childrenMap.get(parentId) ?? [];
       children.sort((a, b) => a.position - b.position);
       for (const child of children) {
+        if (visited.has(child.id)) continue;
+        visited.add(child.id);
         rows.push({ task: child, depth });
         if (!collapsedIds.has(child.id)) walk(child.id, depth + 1);
       }
@@ -160,7 +164,7 @@ export default function ProjectListPage() {
   }
 
   function hasChildren(taskId: string): boolean {
-    return tasks.some(t => (t as any).parent_id === taskId);
+    return tasks.some(t => t.parent_id === taskId);
   }
 
   const done = tasks.filter(t => statuses.find(s => s.id === t.status_id)?.is_done).length;

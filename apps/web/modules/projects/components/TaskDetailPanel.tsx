@@ -81,7 +81,7 @@ export function TaskDetailPanel({ projectId, task, statuses, allTasks = [], onCl
   function toggleSubtaskDone(child: TaskWithAssignees) {
     const currentStatus = statuses.find(s => s.id === child.status_id);
     const doneStatus = statuses.find(s => s.is_done);
-    const todoStatus = statuses.find(s => !s.is_done);
+    const todoStatus = [...statuses].filter(s => !s.is_done).sort((a, b) => a.position - b.position)[0];
     if (!doneStatus || !todoStatus) return;
     const targetStatusId = currentStatus?.is_done ? todoStatus.id : doneStatus.id;
     childStatusMutation.mutate({ childId: child.id, statusId: targetStatusId });

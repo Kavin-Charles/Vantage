@@ -277,6 +277,10 @@ export function TaskCreateModal({ projectId, defaultStatusId, parentId, onClose 
         </div>
 
         {/* Footer */}
+        {createMutation.isError && (
+          <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--red)', margin: 0 }}>Failed to create task.</p>
+        )}
+
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
           <button
             type="button"
