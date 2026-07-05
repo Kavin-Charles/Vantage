@@ -59,6 +59,7 @@ import { createCustomFieldsRouter, createTaskFieldValuesRouter } from './routes/
 import { createTimeLogsRouter } from './routes/time-logs';
 import { createMilestonesRouter } from './routes/milestones';
 import { createSprintsRouter } from './routes/sprints';
+import { createRecurringRulesRouter } from './routes/recurring-rules';
 import { createProjectMembersRouter } from './routes/project-members';
 import { createPortalRouter, createPortalInternalRouter } from './routes/portal';
 import { createModuleEventSettingsRouter } from './routes/module-event-settings';
@@ -69,6 +70,7 @@ import { startTaskDueNotifier } from './workers/task-due-notifier';
 import { startPmDueAlertWorker } from './workers/pm-due-alert';
 import { startWebhookDelivery } from './workers/webhook-delivery';
 import { startMetricsRollup } from './workers/metrics-rollup';
+import { startRecurringTaskGenerator } from './workers/recurring-task-generator';
 import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
 import { loadPluginBackend, getPluginRouter } from './lib/plugin-loader';
@@ -305,6 +307,7 @@ app.use('/api/projects', requireAuth, createProjectsRouter(db))
 app.use('/api/projects/:projectId/tasks/statuses', requireAuth, createProjectStatusesRouter(db));
 app.use('/api/projects/:projectId/labels', requireAuth, createProjectLabelsRouter(db));
 app.use('/api/projects/:projectId/tasks', requireAuth, createProjectTasksRouter(db));
+app.use('/api/projects/:projectId/recurring-rules', requireAuth, createRecurringRulesRouter(db));
 app.use('/api/projects/:projectId/milestones', requireAuth, createMilestonesRouter(db));
 app.use('/api/projects/:projectId/sprints', requireAuth, createSprintsRouter(db));
 app.use('/api/projects/:projectId/members', requireAuth, createProjectMembersRouter(db));
@@ -391,6 +394,8 @@ startWebhookDelivery(db);
 
 // Start metrics rollup + retention worker (15-min cycle)
 startMetricsRollup(db);
+
+startRecurringTaskGenerator(db);
 
 // Init messaging Redis pub/sub (optional — falls back to local broadcast without it)
 if (env.REDIS_URL) {
