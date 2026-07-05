@@ -101,6 +101,13 @@ export function createRecurringRulesRouter(db: Kysely<Database>): Router {
       const project = await verifyProjectAccess(db, projectId, workspace.id)
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
+      const existing = await db.selectFrom('recurring_task_rules')
+        .selectAll()
+        .where('id', '=', ruleId)
+        .where('project_id', '=', projectId)
+        .executeTakeFirst()
+      if (!existing) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Rule not found' } })
+
       const updates: Record<string, unknown> = { updated_at: new Date() }
       if (parsed.data.title !== undefined) updates.title = parsed.data.title
       if (parsed.data.description !== undefined) updates.description = parsed.data.description
@@ -110,6 +117,12 @@ export function createRecurringRulesRouter(db: Kysely<Database>): Router {
       if (parsed.data.frequency !== undefined) updates.frequency = parsed.data.frequency
       if (parsed.data.interval !== undefined) updates.interval = parsed.data.interval
       if (parsed.data.is_active !== undefined) updates.is_active = parsed.data.is_active
+
+      if (parsed.data.frequency !== undefined || parsed.data.interval !== undefined) {
+        const freq = (parsed.data.frequency ?? existing.frequency) as 'DAILY' | 'WEEKLY' | 'MONTHLY'
+        const intv = parsed.data.interval ?? existing.interval
+        updates.next_run_at = computeNextRun(new Date(), freq, intv)
+      }
 
       const rule = await db.updateTable('recurring_task_rules')
         .set(updates as never)

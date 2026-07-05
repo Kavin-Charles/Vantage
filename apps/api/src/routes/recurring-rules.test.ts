@@ -195,6 +195,12 @@ describe('PATCH /api/projects/:projectId/recurring-rules/:ruleId', () => {
       where: vi.fn().mockReturnThis(),
       executeTakeFirst: vi.fn().mockResolvedValue({ id: PROJECT_ID }),
     }
+    const existingRuleChain = {
+      selectFrom: vi.fn().mockReturnThis(),
+      selectAll: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      executeTakeFirst: vi.fn().mockResolvedValue({ id: RULE_ID, frequency: 'DAILY', interval: 1, is_active: true }),
+    }
     const updateChain = {
       updateTable: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
@@ -203,7 +209,7 @@ describe('PATCH /api/projects/:projectId/recurring-rules/:ruleId', () => {
       executeTakeFirst: vi.fn().mockResolvedValue({ id: RULE_ID, is_active: false }),
     }
     const db = {
-      selectFrom: vi.fn(() => projectChain),
+      selectFrom: vi.fn((table: string) => table === 'projects' ? projectChain : existingRuleChain),
       updateTable: vi.fn(() => updateChain),
     } as unknown as Kysely<Database>
 
@@ -228,16 +234,14 @@ describe('PATCH /api/projects/:projectId/recurring-rules/:ruleId', () => {
       where: vi.fn().mockReturnThis(),
       executeTakeFirst: vi.fn().mockResolvedValue({ id: PROJECT_ID }),
     }
-    const updateChain = {
-      updateTable: vi.fn().mockReturnThis(),
-      set: vi.fn().mockReturnThis(),
+    const missingRuleChain = {
+      selectFrom: vi.fn().mockReturnThis(),
+      selectAll: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
-      returningAll: vi.fn().mockReturnThis(),
       executeTakeFirst: vi.fn().mockResolvedValue(undefined),
     }
     const db = {
-      selectFrom: vi.fn(() => projectChain),
-      updateTable: vi.fn(() => updateChain),
+      selectFrom: vi.fn((table: string) => table === 'projects' ? projectChain : missingRuleChain),
     } as unknown as Kysely<Database>
 
     const { createRecurringRulesRouter } = await import('./recurring-rules')

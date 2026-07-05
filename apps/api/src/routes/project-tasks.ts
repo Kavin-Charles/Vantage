@@ -405,15 +405,19 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
     const parsed = reorderSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
 
-    const targetStatusId = parsed.data.status_id
-    const siblings = targetStatusId
-      ? await db.selectFrom('project_tasks').selectAll()
-          .where('project_id', '=', projectId)
-          .where('status_id', '=', targetStatusId)
-          .where('id', '!=', taskId)
-          .orderBy('position', 'asc')
-          .execute()
-      : []
+    let targetStatusId = parsed.data.status_id
+    if (!targetStatusId) {
+      const current = await db.selectFrom('project_tasks').select('status_id').where('id', '=', taskId).where('project_id', '=', projectId).executeTakeFirst()
+      if (!current) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Task not found' } })
+      targetStatusId = current.status_id
+    }
+
+    const siblings = await db.selectFrom('project_tasks').selectAll()
+      .where('project_id', '=', projectId)
+      .where('status_id', '=', targetStatusId)
+      .where('id', '!=', taskId)
+      .orderBy('position', 'asc')
+      .execute()
 
     let newPosition: number
     if (!parsed.data.after_task_id) {

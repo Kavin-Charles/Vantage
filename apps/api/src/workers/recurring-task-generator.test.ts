@@ -54,20 +54,22 @@ describe('runRecurringTaskGeneration', () => {
       executeTakeFirst: vi.fn().mockResolvedValue({ workspace_id: 'ws-1' }),
     }
 
-    let insertCallCount = 0
-    const db = {
+    const trx = {
       selectFrom: vi.fn((table: string) => {
-        if (table === 'recurring_task_rules') return ruleSelectChain
         if (table === 'project_task_statuses') return statusSelectChain
         return projectSelectChain
       }),
       insertInto: vi.fn((table: string) => {
         if (table === 'project_tasks') return taskInsertChain
         if (table === 'project_task_assignees') return assigneeInsertChain
-        insertCallCount++
         return activityInsertChain
       }),
       updateTable: vi.fn(() => ruleUpdateChain),
+    }
+    const db = {
+      selectFrom: vi.fn(() => ruleSelectChain),
+      insertInto: vi.fn(() => activityInsertChain),
+      transaction: vi.fn().mockReturnValue({ execute: (cb: (t: unknown) => Promise<void>) => cb(trx) }),
     } as unknown as Kysely<Database>
 
     const { runRecurringTaskGeneration } = await import('./recurring-task-generator')
