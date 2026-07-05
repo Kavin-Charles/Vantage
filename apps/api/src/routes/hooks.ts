@@ -2,8 +2,40 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
+import type { PluginManifest } from '@vencore/plugin-types';
 import { HOOK_REGISTRY } from '../modules/registry';
 import type { AuthenticatedRequest } from '../middleware/auth';
+
+interface ProviderRef { id: string; name: string }
+
+/**
+ * Compatible providers for a feature = static builtin entries + any enabled
+ * workspace plugin that provides the feature's requires_contract.
+ */
+async function computeCompatibleProviders(
+  db: Kysely<Database>,
+  workspaceId: string,
+  feature: { requires_contract?: string; compatible_providers: ProviderRef[] },
+): Promise<ProviderRef[]> {
+  const result: ProviderRef[] = [...feature.compatible_providers];
+  if (!feature.requires_contract) return result;
+
+  const plugins = await db
+    .selectFrom('workspace_plugins')
+    .select(['plugin_id', 'name', 'manifest'])
+    .where('workspace_id', '=', workspaceId)
+    .where('enabled', '=', true)
+    .execute();
+
+  for (const p of plugins) {
+    const mf = p.manifest as unknown as PluginManifest;
+    const provides = (mf.provides ?? []).some((pr) => pr.contract === feature.requires_contract);
+    if (provides && !result.some((r) => r.id === p.plugin_id)) {
+      result.push({ id: p.plugin_id, name: p.name });
+    }
+  }
+  return result;
+}
 
 const patchFeatureSchema = z.object({
   enabled: z.boolean(),
@@ -53,8 +85,9 @@ export function createHooksRouter(db: Kysely<Database>): Router {
 
       const configMap = new Map(configs.map(c => [c.feature_id, c]));
 
-      const data = features.map(feature => {
-        const compatibleInstalled = feature.compatible_providers
+      const data = await Promise.all(features.map(async feature => {
+        const compatible = await computeCompatibleProviders(db, workspace.id, feature);
+        const compatibleInstalled = compatible
           .map(cp => installedMap.get(cp.id))
           .filter((p): p is NonNullable<typeof p> => p !== undefined);
 
@@ -80,7 +113,8 @@ export function createHooksRouter(db: Kysely<Database>): Router {
           id: feature.id,
           name: feature.name,
           description: feature.description,
-          compatible_providers: feature.compatible_providers.map(cp => ({
+          requires_contract: feature.requires_contract ?? null,
+          compatible_providers: compatible.map(cp => ({
             ...cp,
             installed: installedMap.has(cp.id),
           })),
@@ -94,7 +128,7 @@ export function createHooksRouter(db: Kysely<Database>): Router {
           selected_provider_name: selectedProvider?.name ?? null,
           enabled: config?.enabled ?? false,
         };
-      });
+      }));
 
       res.json({ data, error: null });
     } catch (err) {
@@ -143,7 +177,8 @@ export function createHooksRouter(db: Kysely<Database>): Router {
           return;
         }
 
-        const isCompatible = feature.compatible_providers.some(cp => cp.id === installed.provider_id);
+        const compatible = await computeCompatibleProviders(db, workspace.id, feature);
+        const isCompatible = compatible.some(cp => cp.id === installed.provider_id);
         if (!isCompatible) {
           res.status(422).json({ data: null, error: { code: 'PROVIDER_INCOMPATIBLE', message: 'Provider is not compatible with this feature' } });
           return;

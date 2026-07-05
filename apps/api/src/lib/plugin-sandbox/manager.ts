@@ -9,7 +9,7 @@ import fs from 'fs';
 import { Router } from 'express';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
-import type { PluginPermission } from '@vencore/plugin-types';
+import type { PluginPermission, PluginManifest } from '@vencore/plugin-types';
 import { dispatchBridgeCall, pluginEventBus } from '@vencore/plugin-runtime';
 import { logger } from '../logger';
 
@@ -33,6 +33,7 @@ interface SandboxEntry {
   pendingHttpRequests: Map<string, { resolve: (r: unknown) => void; reject: (e: unknown) => void }>;
   pluginId: string;
   workspaceId: string;
+  busSubscriptions: Array<{ event: string; handler: (payload: unknown) => void | Promise<void> }>;
 }
 
 let httpRequestIdCounter = 0;
@@ -43,6 +44,14 @@ function sandboxKey(pluginId: string, workspaceId: string): string {
   return `${pluginId}:${workspaceId}`;
 }
 
+function unsubscribeBus(entry: SandboxEntry): void {
+  const bus = pluginEventBus.forWorkspace(entry.workspaceId);
+  for (const sub of entry.busSubscriptions) {
+    bus.off(sub.event, sub.handler);
+  }
+  entry.busSubscriptions = [];
+}
+
 export function spawnPluginSandbox(
   pluginId: string,
   workspaceId: string,
@@ -50,12 +59,15 @@ export function spawnPluginSandbox(
   dataAccess: readonly PluginPermission[],
   tables: string[],
   db: Kysely<Database>,
+  listens: readonly string[] = [],
+  manifest?: PluginManifest,
 ): void {
   const key = sandboxKey(pluginId, workspaceId);
 
   // Kill existing sandbox for this plugin+workspace
   const existing = sandboxes.get(key);
   if (existing) {
+    unsubscribeBus(existing);
     existing.child.kill('SIGTERM');
     sandboxes.delete(key);
     routerCache.delete(key);
@@ -85,6 +97,7 @@ export function spawnPluginSandbox(
     pendingHttpRequests: new Map(),
     pluginId,
     workspaceId,
+    busSubscriptions: [],
   };
   sandboxes.set(key, entry);
 
@@ -109,12 +122,30 @@ export function spawnPluginSandbox(
       case 'setup_done': {
         entry.router = router;
         routerCache.set(key, router);
-        logger.info({ pluginId, workspaceId }, 'Plugin sandbox setup complete');
+
+        // Subscribe declared listen topics on the workspace bus and forward
+        // each event to the sandbox over IPC. Topics come from the manifest
+        // (`listens` + `hooks` + hub change topics) — the parent cannot see
+        // the child's internal bus.on registrations, so the manifest is the
+        // source of truth for what reaches the sandbox.
+        const bus = pluginEventBus.forWorkspace(workspaceId);
+        for (const event of new Set(listens)) {
+          const handler = (payload: unknown): void => {
+            if (child.connected) {
+              child.send({ type: 'bus_event', event, payload });
+            }
+          };
+          bus.on(event, handler);
+          entry.busSubscriptions.push({ event, handler });
+        }
+
+        logger.info({ pluginId, workspaceId, listens: [...new Set(listens)] }, 'Plugin sandbox setup complete');
         break;
       }
 
       case 'setup_error': {
         logger.warn({ pluginId, workspaceId, message: msg['message'] }, 'Plugin sandbox setup failed');
+        unsubscribeBus(entry);
         child.kill('SIGTERM');
         sandboxes.delete(key);
         break;
@@ -125,7 +156,7 @@ export function spawnPluginSandbox(
         try {
           const result = await dispatchBridgeCall(
             db as Kysely<any>,
-            { workspaceId, pluginSlug: pluginId, dataAccess, tables },
+            { workspaceId, pluginSlug: pluginId, dataAccess, tables, manifest },
             { method, payload: payload as any },
           );
           child.send({ type: 'bridge_response', id, result });
@@ -200,23 +231,13 @@ export function spawnPluginSandbox(
     }
   });
 
-  // Subscribe to bus events from this workspace and forward to sandbox
-  const busHandler = (event: string) => (payload: unknown) => {
-    if (child.connected) {
-      child.send({ type: 'bus_event', event, payload });
-    }
-  };
-
-  // We can't know ahead of time which events the plugin listens to,
-  // so we intercept bus.emit calls in dispatchBridgeCall which already fires pluginEventBus.
-  // The sandbox's bus.on registrations are internal to the child process.
-
   child.on('error', (err) => {
     logger.error({ err, pluginId, workspaceId }, 'Plugin sandbox process error');
   });
 
   child.on('exit', (code, signal) => {
     logger.warn({ pluginId, workspaceId, code, signal }, 'Plugin sandbox process exited');
+    unsubscribeBus(entry);
     sandboxes.delete(key);
     routerCache.delete(key);
     // Auto-restart on crash (but not on deliberate kill)
@@ -224,7 +245,7 @@ export function spawnPluginSandbox(
       logger.info({ pluginId, workspaceId }, 'Restarting plugin sandbox after crash');
       setTimeout(() => {
         if (fs.existsSync(bundlePath)) {
-          spawnPluginSandbox(pluginId, workspaceId, bundlePath, dataAccess, tables, db);
+          spawnPluginSandbox(pluginId, workspaceId, bundlePath, dataAccess, tables, db, listens, manifest);
         }
       }, 5_000);
     }
@@ -240,10 +261,33 @@ export function getSandboxRouter(pluginId: string, workspaceId: string): Router 
   return routerCache.get(sandboxKey(pluginId, workspaceId)) ?? null;
 }
 
+/**
+ * Sends a bus-style event directly to one sandbox (used by the plugin cron
+ * worker to fire `cron:<name>` handlers registered inside the child).
+ * Returns false when the sandbox is not running.
+ */
+export function sendBusEventToSandbox(
+  pluginId: string,
+  workspaceId: string,
+  event: string,
+  payload: unknown,
+): boolean {
+  const entry = sandboxes.get(sandboxKey(pluginId, workspaceId));
+  if (!entry || !entry.child.connected) return false;
+  entry.child.send({ type: 'bus_event', event, payload });
+  return true;
+}
+
+export function isSandboxRunning(pluginId: string, workspaceId: string): boolean {
+  const entry = sandboxes.get(sandboxKey(pluginId, workspaceId));
+  return Boolean(entry?.child.connected);
+}
+
 export function killSandbox(pluginId: string, workspaceId: string): void {
   const key = sandboxKey(pluginId, workspaceId);
   const entry = sandboxes.get(key);
   if (entry) {
+    unsubscribeBus(entry);
     entry.child.kill('SIGTERM');
     sandboxes.delete(key);
     routerCache.delete(key);
@@ -252,6 +296,7 @@ export function killSandbox(pluginId: string, workspaceId: string): void {
 
 export function killAllSandboxes(): void {
   for (const [, entry] of sandboxes) {
+    unsubscribeBus(entry);
     entry.child.kill('SIGTERM');
   }
   sandboxes.clear();

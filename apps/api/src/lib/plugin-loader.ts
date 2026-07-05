@@ -43,7 +43,16 @@ export function loadPluginBackend(pluginId: string, workspaceId: string, db: Kys
   const dataAccess = (manifest?.data_access ?? []) as PluginPermission[];
   const tables = (manifest?.tables ?? []).map((t) => t.name);
 
-  spawnPluginSandbox(pluginId, workspaceId, bundlePath, dataAccess, tables, db);
+  // Bus topics forwarded into the sandbox: system hook events, declared
+  // cross-plugin listens, and hub change topics for every consumed contract.
+  const listens = [
+    ...(manifest?.hooks ?? []),
+    ...(manifest?.listens ?? []),
+    ...(manifest?.consumes ?? []).map((c) => `hub:${c.contract}:changed`),
+    ...(manifest?.consumes ?? []).map((c) => `hub:${c.contract}:provider_removed`),
+  ];
+
+  spawnPluginSandbox(pluginId, workspaceId, bundlePath, dataAccess, tables, db, listens, manifest ?? undefined);
 }
 
 export function getPluginRouter(pluginId: string, workspaceId: string): Router | null {

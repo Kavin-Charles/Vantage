@@ -11,7 +11,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
-import { dispatchBridgeCall, runMigrations, dropPluginTables } from '@vencore/plugin-runtime';
+import { dispatchBridgeCall, runMigrations, dropPluginTables, isKnownContract, hasHubPermission, removeProviderHubData, CONTRACT_ID_RE } from '@vencore/plugin-runtime';
 import { savePluginFile, loadPluginBackend, invalidatePlugin } from '../lib/plugin-loader';
 import { encryptSettingValue, isEncryptedValue, decryptSettingValue } from '../lib/plugin-settings-crypto';
 import { logger } from '../lib/logger';
@@ -123,6 +123,16 @@ const manifestSchema = z.object({
   migrations: z.array(z.object({ version: z.string(), up: z.string(), down: z.string().optional() })).optional().default([]),
   hooks: z.array(z.string()).optional().default([]),
   emits: z.array(z.string()).optional().default([]),
+  listens: z.array(z.string()).optional().default([]),
+  provides: z.array(z.object({
+    contract: z.string().regex(CONTRACT_ID_RE, 'Contract id must look like namespace.name@vN'),
+    mode: z.literal('synced').optional(),
+  })).optional().default([]),
+  consumes: z.array(z.object({
+    contract: z.string().regex(CONTRACT_ID_RE, 'Contract id must look like namespace.name@vN'),
+    optional: z.boolean().optional(),
+  })).optional().default([]),
+  endpoints: z.array(z.string()).optional().default([]),
   surfaces: z.object({
     nav: z.array(z.object({ label: z.string(), path: z.string(), icon: z.string().optional(), group: z.enum(['crm', 'infra', 'general']).optional() })).optional(),
     pages: z.array(z.object({ path: z.string(), title: z.string() })).optional(),
@@ -132,6 +142,65 @@ const manifestSchema = z.object({
   settings_schema: z.array(settingsFieldSchema).optional().default([]),
   build: z.object({ server: z.string().optional(), client: z.string().optional() }).optional(),
 });
+
+// ── Hub declaration validation ────────────────────────────────────────────────
+
+type ParsedManifest = z.infer<typeof manifestSchema>;
+
+/**
+ * Cross-checks provides/consumes against the contract registry and the
+ * plugin's own data_access grants. Returns an error message or null.
+ */
+function validateHubDeclarations(mf: ParsedManifest): string | null {
+  for (const p of mf.provides) {
+    if (!isKnownContract(p.contract)) {
+      return `provides: unknown contract '${p.contract}'`;
+    }
+    if (!hasHubPermission(mf.data_access, 'write', p.contract)) {
+      return `provides '${p.contract}' requires data_access 'hub:write:${p.contract}'`;
+    }
+  }
+  for (const c of mf.consumes) {
+    if (!isKnownContract(c.contract)) {
+      return `consumes: unknown contract '${c.contract}'`;
+    }
+    if (!hasHubPermission(mf.data_access, 'read', c.contract)) {
+      return `consumes '${c.contract}' requires data_access 'hub:read:${c.contract}'`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Keeps hook_providers in sync with plugin lifecycle: a plugin that provides
+ * hub contracts is automatically available as a hook provider.
+ */
+async function syncHookProvider(
+  db: Kysely<Database>,
+  workspaceId: string,
+  mf: Pick<ParsedManifest, 'id' | 'name' | 'provides'>,
+  enabled: boolean,
+): Promise<void> {
+  if (mf.provides.length === 0) return;
+  await db.insertInto('hook_providers')
+    .values({
+      workspace_id: workspaceId,
+      provider_id: mf.id,
+      name: mf.name,
+      source: 'plugin',
+      meta: { contracts: mf.provides.map((p) => p.contract) } as unknown as Record<string, unknown>,
+      enabled,
+    })
+    .onConflict((oc) =>
+      oc.columns(['workspace_id', 'provider_id']).doUpdateSet({
+        name: mf.name,
+        meta: { contracts: mf.provides.map((p) => p.contract) } as unknown as Record<string, unknown>,
+        enabled,
+        updated_at: new Date(),
+      }),
+    )
+    .execute();
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -189,7 +258,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
 
       const result = await dispatchBridgeCall(
         db as Kysely<any>,
-        { workspaceId: workspace.id, pluginSlug: plugin_id, dataAccess, tables },
+        { workspaceId: workspace.id, pluginSlug: plugin_id, dataAccess, tables, manifest },
         { method, payload },
       );
 
@@ -302,6 +371,11 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       }
       const mf = parsed.data;
 
+      const hubError = validateHubDeclarations(mf);
+      if (hubError) {
+        return res.status(400).json({ data: null, error: { code: 'INVALID_MANIFEST', message: hubError } });
+      }
+
       // Use pre-built bundles from the zip (marketplace stores built artifacts)
       const serverBundlePath = path.join(tmpDir, 'server.cjs');
       if (fs.existsSync(serverBundlePath)) {
@@ -366,6 +440,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         .returningAll()
         .executeTakeFirstOrThrow();
 
+      await syncHookProvider(db, workspace.id, mf, true);
       loadPluginBackend(mf.id, workspace.id, db);
       return res.status(201).json({ data: plugin, error: null });
     } catch (err) {
@@ -410,7 +485,33 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       if (!plugin) {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
       }
-      return res.json({ data: plugin, error: null });
+
+      // Hub observability: per-contract record counts + last publish time
+      const mf = plugin.manifest as unknown as import('@vencore/plugin-types').PluginManifest;
+      let hubStats: Array<{ contract: string; record_count: number; last_published_at: string | null }> = [];
+      if ((mf.provides ?? []).length > 0) {
+        const rows = await db.selectFrom('plugin_hub_records')
+          .select(['contract'])
+          .select((eb) => eb.fn.count('id').as('record_count'))
+          .select((eb) => eb.fn.max('updated_at').as('last_published_at'))
+          .where('workspace_id', '=', workspace.id)
+          .where('provider_plugin_id', '=', plugin.plugin_id)
+          .groupBy('contract')
+          .execute();
+        const byContract = new Map(rows.map((r) => [r.contract, r]));
+        hubStats = (mf.provides ?? []).map((p) => {
+          const s = byContract.get(p.contract);
+          return {
+            contract: p.contract,
+            record_count: s ? Number(s.record_count) : 0,
+            last_published_at: s?.last_published_at
+              ? new Date(s.last_published_at as unknown as string | Date).toISOString()
+              : null,
+          };
+        });
+      }
+
+      return res.json({ data: { ...plugin, hub_stats: hubStats }, error: null });
     } catch (err) {
       return next(err);
     }
@@ -575,6 +676,11 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       }
       const mf = parsed.data;
 
+      const hubError = validateHubDeclarations(mf);
+      if (hubError) {
+        return res.status(400).json({ data: null, error: { code: 'INVALID_MANIFEST', message: hubError } });
+      }
+
       // Compile server bundle
       if (mf.build?.server) {
         const entryPath = path.join(tmpDir, mf.build.server);
@@ -646,6 +752,8 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         )
         .returningAll()
         .executeTakeFirstOrThrow();
+
+      await syncHookProvider(db, workspace.id, mf, true);
 
       // Load backend bundle
       loadPluginBackend(mf.id, workspace.id, db);
@@ -733,7 +841,18 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Plugin not found' } });
       }
 
-      if (!enabled) invalidatePlugin(plugin.plugin_id, workspace.id);
+      const mfDecl = plugin.manifest as unknown as import('@vencore/plugin-types').PluginManifest;
+      const provides = (mfDecl.provides ?? []).map((pr) => ({ contract: pr.contract }));
+
+      if (!enabled) {
+        invalidatePlugin(plugin.plugin_id, workspace.id);
+        // Disabled providers must not serve stale data to consumers
+        await removeProviderHubData(db as Kysely<any>, workspace.id, plugin.plugin_id);
+        await syncHookProvider(db, workspace.id, { id: plugin.plugin_id, name: plugin.name, provides }, false);
+      } else {
+        await syncHookProvider(db, workspace.id, { id: plugin.plugin_id, name: plugin.name, provides }, true);
+        loadPluginBackend(plugin.plugin_id, workspace.id, db);
+      }
 
       return res.json({ data: plugin, error: null });
     } catch (err) {
@@ -793,6 +912,27 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           .where('plugin_id', '=', pluginId)
           .execute(),
       ]);
+
+      // Remove published hub data + hook provider registration
+      await removeProviderHubData(db as Kysely<any>, workspace.id, pluginId).catch((err) => {
+        logger.warn({ err, pluginId }, 'Failed to remove hub data during uninstall');
+      });
+      const removedProvider = await db
+        .deleteFrom('hook_providers')
+        .where('workspace_id', '=', workspace.id)
+        .where('provider_id', '=', pluginId)
+        .returningAll()
+        .executeTakeFirst();
+      if (removedProvider) {
+        // ON DELETE SET NULL cleared provider_id on configs — disable them too
+        await db
+          .updateTable('workspace_hook_configs')
+          .set({ enabled: false, updated_at: new Date() })
+          .where('workspace_id', '=', workspace.id)
+          .where('provider_id', 'is', null)
+          .where('enabled', '=', true)
+          .execute();
+      }
 
       await db
         .deleteFrom('workspace_plugins')

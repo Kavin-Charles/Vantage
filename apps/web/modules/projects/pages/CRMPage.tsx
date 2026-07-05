@@ -285,26 +285,44 @@ function LinkCRMForm({ projectId, current }: {
     },
   });
 
+  // Provider-aware search: routes through whichever CRM provider the hook is
+  // configured with (builtin or plugin). Falls back to core CRM search when
+  // the hook endpoint is unavailable (e.g. hook disabled).
   const fetchContacts = useCallback(async (q: string): Promise<ComboOption[]> => {
     const token = await getToken();
-    const res = await pmApi.searchContacts(token, q);
-    return (res.data ?? []).map(c => ({ id: c.id, label: c.name, sublabel: c.email }));
+    try {
+      const res = await pmApi.searchCrm(token, 'contact', q);
+      return (res.data ?? []).map(c => ({ id: c.id, label: c.label, sublabel: c.sublabel ?? undefined }));
+    } catch {
+      const res = await pmApi.searchContacts(token, q);
+      return (res.data ?? []).map(c => ({ id: c.id, label: c.name, sublabel: c.email }));
+    }
   }, [getToken]);
 
   const fetchCompanies = useCallback(async (q: string): Promise<ComboOption[]> => {
     const token = await getToken();
-    const res = await pmApi.searchCompanies(token, q);
-    return (res.data ?? []).map(c => ({ id: c.id, label: c.name, sublabel: c.industry ?? undefined }));
+    try {
+      const res = await pmApi.searchCrm(token, 'company', q);
+      return (res.data ?? []).map(c => ({ id: c.id, label: c.label, sublabel: c.sublabel ?? undefined }));
+    } catch {
+      const res = await pmApi.searchCompanies(token, q);
+      return (res.data ?? []).map(c => ({ id: c.id, label: c.name, sublabel: c.industry ?? undefined }));
+    }
   }, [getToken]);
 
   const fetchItems = useCallback(async (q: string): Promise<ComboOption[]> => {
     const token = await getToken();
-    const res = await pmApi.searchItems(token, q);
-    return (res.data ?? []).map(i => ({
-      id: i.id,
-      label: (i.field_values['name'] as string | undefined) ?? i.id,
-      sublabel: `${i.pipeline_name} → ${i.stage_name}`,
-    }));
+    try {
+      const res = await pmApi.searchCrm(token, 'deal', q);
+      return (res.data ?? []).map(d => ({ id: d.id, label: d.label, sublabel: d.sublabel ?? undefined }));
+    } catch {
+      const res = await pmApi.searchItems(token, q);
+      return (res.data ?? []).map(i => ({
+        id: i.id,
+        label: (i.field_values['name'] as string | undefined) ?? i.id,
+        sublabel: `${i.pipeline_name} → ${i.stage_name}`,
+      }));
+    }
   }, [getToken]);
 
   return (

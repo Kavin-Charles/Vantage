@@ -21,6 +21,7 @@ export interface Workspace {
   contact_count: number;
   server_count: number;
   db_count: number;
+  plugin_data_sharing?: boolean;
   trial_ends_at: Date | null;
   created_at: Date;
   updated_at: Date;

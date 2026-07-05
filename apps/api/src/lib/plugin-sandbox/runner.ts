@@ -147,6 +147,19 @@ process.on('message', async (msg: InboundMsg) => {
             },
             emit: (event: string, payload: unknown) => bridge('bus.emit', { event, payload }),
           },
+          hub: {
+            publish: (contract: string, records: unknown[]) => bridge('hub.publish', { contract, records }),
+            query: (contract: string, opts?: unknown) => bridge('hub.query', { contract, ...(opts as object ?? {}) }),
+            providers: (contract: string) => bridge('hub.providers', { contract }),
+            delete: (contract: string, externalIds: string[]) => bridge('hub.delete', { contract, external_ids: externalIds }),
+            contracts: () => bridge('hub.contracts', {}),
+            subscribe: (contract: string, handler: (payload: unknown) => void | Promise<void>) => {
+              const event = `hub:${contract}:changed`;
+              const arr = busHandlers.get(event) ?? [];
+              arr.push(handler);
+              busHandlers.set(event, arr);
+            },
+          },
           on: (event: string, handler: (payload: unknown) => void | Promise<void>) => {
             const arr = busHandlers.get(event) ?? [];
             arr.push(handler);

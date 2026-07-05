@@ -4,6 +4,7 @@ import type { Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
 import type { AuthenticatedRequest } from '../middleware/auth'
 import { resolveHook } from '../lib/hooks-runtime'
+import { getLinkedContact, getLinkedCompany, getLinkedDeal, getContactActivity, searchCrmRecords } from '../lib/crm-provider'
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(255),
@@ -29,7 +30,7 @@ const updateProjectSchema = z.object({
   source_item_id: z.string().uuid().nullable().optional(),
 })
 
-async function seedDefaultStatuses(db: Kysely<Database>, projectId: string) {
+export async function seedDefaultStatuses(db: Kysely<Database>, projectId: string) {
   const statuses = [
     { name: 'Backlog',     color: '#9e998f', position: 0, is_done: false },
     { name: 'In Progress', color: '#1e3a8a', position: 1, is_done: false },
@@ -91,6 +92,28 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
     }
   })
 
+  // Provider-aware CRM record search for the project link comboboxes.
+  // Uses whichever provider the customer_sync hook is configured with.
+  router.get('/crm-search', async (req, res) => {
+    const { workspace } = req as unknown as AuthenticatedRequest
+    try {
+      const kind = String(req.query['kind'] ?? 'contact') as 'contact' | 'company' | 'deal'
+      if (!['contact', 'company', 'deal'].includes(kind)) {
+        return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: 'kind must be contact|company|deal' } })
+      }
+      const search = String(req.query['q'] ?? '')
+      const featureId = kind === 'deal' ? 'revenue_attribution' : 'customer_sync'
+      const hook = await resolveHook(db, workspace.id, 'projects', featureId)
+      if (!hook) {
+        return res.status(403).json({ data: null, error: { code: 'HOOK_DISABLED', message: 'CRM hook is not enabled' } })
+      }
+      const results = await searchCrmRecords(db, workspace.id, hook.providerStringId, kind, search)
+      return res.json({ data: results, error: null })
+    } catch (err) {
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+    }
+  })
+
   // Get project by ID (with progress + CRM enrichment)
   router.get('/:id', async (req, res) => {
     const { workspace } = req as unknown as AuthenticatedRequest
@@ -123,34 +146,18 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
       let crm_company: Record<string, unknown> | null = null
       let crm_item: Record<string, unknown> | null = null
 
+      // Reads go through the provider adapter — same code path whether the
+      // selected provider is the builtin CRM or a hub-backed plugin.
       if (customerHook && project.contact_id) {
-        const contact = await db.selectFrom('contacts')
-          .select(['id', 'name', 'email', 'phone', 'status', 'last_contacted_at'])
-          .where('id', '=', project.contact_id)
-          .where('workspace_id', '=', workspace.id)
-          .where('deleted_at', 'is', null)
-          .executeTakeFirst()
-        if (contact) crm_contact = contact as Record<string, unknown>
+        crm_contact = await getLinkedContact(db, workspace.id, customerHook.providerStringId, project.contact_id)
       }
 
       if (customerHook && project.company_id) {
-        const company = await db.selectFrom('companies')
-          .select(['id', 'name', 'industry', 'location', 'website', 'employee_count'])
-          .where('id', '=', project.company_id)
-          .where('workspace_id', '=', workspace.id)
-          .where('deleted_at', 'is', null)
-          .executeTakeFirst()
-        if (company) crm_company = company as Record<string, unknown>
+        crm_company = await getLinkedCompany(db, workspace.id, customerHook.providerStringId, project.company_id)
       }
 
       if (revenueHook && project.source_item_id) {
-        const item = await db.selectFrom('pipeline_items')
-          .select(['id', 'field_values', 'stage_id', 'pipeline_id'])
-          .where('id', '=', project.source_item_id)
-          .where('workspace_id', '=', workspace.id)
-          .where('deleted_at', 'is', null)
-          .executeTakeFirst()
-        if (item) crm_item = item as Record<string, unknown>
+        crm_item = await getLinkedDeal(db, workspace.id, revenueHook.providerStringId, project.source_item_id)
       }
 
       return res.json({
@@ -213,14 +220,9 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
       const page = Math.max(1, Number(req.query['page'] ?? 1))
       const limit = Math.min(50, Math.max(1, Number(req.query['limit'] ?? 20)))
 
-      const activities = await db.selectFrom('activities')
-        .selectAll()
-        .where('workspace_id', '=', workspace.id)
-        .where('contact_id', '=', project.contact_id)
-        .orderBy('created_at', 'desc')
-        .limit(limit)
-        .offset((page - 1) * limit)
-        .execute()
+      const activities = await getContactActivity(
+        db, workspace.id, hook.providerStringId, project.contact_id, page, limit,
+      )
 
       return res.json({ data: activities, error: null })
     } catch (err) {
