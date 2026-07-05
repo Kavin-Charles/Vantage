@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { pmApi, type TaskLabel } from '@/modules/projects/lib/api';
 import { Icon } from '@/modules/shared/components/ui/Icon';
+import { RecurringRulesPanel } from '@/modules/projects/components/RecurringRulesPanel';
 
 const HEALTH_OPTIONS = [
   { value: 'ON_TRACK',  label: 'On Track'  },
@@ -351,6 +352,8 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      <RecurringRulesPanel projectId={projectId} />
     </div>
   );
 }

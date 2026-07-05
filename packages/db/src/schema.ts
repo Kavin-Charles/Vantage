@@ -92,7 +92,7 @@ export interface ActivityTable {
   user_id: string | null;
   contact_id: string | null;
   record_id: string | null;
-  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert' | 'contact_created' | 'task_done' | 'database_added' | 'database_removed' | 'database_settings_changed' | 'database_connection_tested';
+  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert' | 'contact_created' | 'task_done' | 'database_added' | 'database_removed' | 'database_settings_changed' | 'database_connection_tested' | 'project_created' | 'project_updated' | 'project_archived' | 'pm_task_created' | 'pm_task_assigned' | 'pm_task_status_changed' | 'pm_comment_added' | 'milestone_created' | 'milestone_completed' | 'sprint_started' | 'sprint_ended';
   body: string | null;
   meta: Record<string, unknown> | null;
   created_at: Generated<Date>;
@@ -970,6 +970,23 @@ export interface SprintTaskTable {
   points: number | null
 }
 
+export interface RecurringTaskRuleTable {
+  id: Generated<string>
+  project_id: string
+  title: string
+  description: string | null
+  status_id: string | null
+  priority: Generated<string>
+  assignee_ids: string[] | null
+  frequency: string
+  interval: Generated<number>
+  next_run_at: Date
+  is_active: Generated<boolean>
+  created_by: string
+  created_at: Generated<Date>
+  updated_at: Generated<Date>
+}
+
 export interface ProjectMemberTable {
   id: Generated<string>
   project_id: string
@@ -1274,6 +1291,7 @@ export interface Database {
   milestone_tasks: MilestoneTaskTable
   sprints: SprintTable
   sprint_tasks: SprintTaskTable
+  recurring_task_rules: RecurringTaskRuleTable
   project_members: ProjectMemberTable
   portal_access: PortalAccessTable
   client_portal_sessions: ClientPortalSessionTable
@@ -1498,6 +1516,10 @@ export type ProjectTask = Selectable<ProjectTaskTable>
 export type ProjectMember = Selectable<ProjectMemberTable>
 export type Milestone = Selectable<MilestoneTable>
 export type Sprint = Selectable<SprintTable>
+export type RecurringTaskRule = Selectable<RecurringTaskRuleTable>
+export type NewRecurringTaskRule = Insertable<RecurringTaskRuleTable>
+export type RecurringTaskRuleUpdate = Updateable<RecurringTaskRuleTable>
+
 export type PortalAccess = Selectable<PortalAccessTable>
 export type ClientPortalSession = Selectable<ClientPortalSessionTable>
 export type ApprovalRequest = Selectable<ApprovalRequestTable>

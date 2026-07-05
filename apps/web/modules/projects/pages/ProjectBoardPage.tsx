@@ -7,7 +7,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
-import { pmApi, type Task, type TaskWithAssignees, type TaskStatus } from '@/modules/projects/lib/api';
+import { pmApi, type TaskWithAssignees, type TaskStatus } from '@/modules/projects/lib/api';
 import { TaskDetailPanel } from '@/modules/projects/components/TaskDetailPanel';
 import { AvatarGroup } from '@/modules/projects/components/AvatarGroup';
 import { TaskCreateModal } from '@/modules/projects/components/TaskCreateModal';
@@ -28,12 +28,14 @@ function TaskCard({
   onDragStart,
   onDuplicate,
   onDelete,
+  onDropOnCard,
 }: {
   task: TaskWithAssignees;
   onClick: () => void;
   onDragStart: (e: React.DragEvent) => void;
   onDuplicate?: () => void;
   onDelete?: () => void;
+  onDropOnCard: (e: React.DragEvent, task: TaskWithAssignees) => void;
 }) {
   const [hover, setHover] = useState(false);
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
@@ -48,6 +50,8 @@ function TaskCard({
     <div
       draggable
       onDragStart={onDragStart}
+      onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+      onDrop={e => { e.preventDefault(); e.stopPropagation(); onDropOnCard(e, task); }}
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -159,10 +163,10 @@ export default function ProjectBoardPage() {
     enabled: !!projectId,
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async ({ taskId, patch }: { taskId: string; patch: Partial<Task> }) => {
+  const reorderMutation = useMutation({
+    mutationFn: async ({ taskId, statusId, afterTaskId }: { taskId: string; statusId: string; afterTaskId: string | null }) => {
       const token = await getToken();
-      return pmApi.updateTask(token, projectId, taskId, patch);
+      return pmApi.reorderTask(token, projectId, taskId, { status_id: statusId, after_task_id: afterTaskId });
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
   });
@@ -193,10 +197,26 @@ export default function ProjectBoardPage() {
 
   function handleDrop(e: React.DragEvent, statusId: string) {
     e.preventDefault();
-    if (draggedTaskId) {
-      updateMutation.mutate({ taskId: draggedTaskId, patch: { status_id: statusId } });
-      setDraggedTaskId(null);
-    }
+    if (!draggedTaskId) return;
+    const columnTasks = tasks
+      .filter(t => t.status_id === statusId && t.id !== draggedTaskId)
+      .sort((a, b) => a.position - b.position);
+    const lastId = columnTasks.length > 0 ? columnTasks[columnTasks.length - 1]!.id : null;
+    reorderMutation.mutate({ taskId: draggedTaskId, statusId, afterTaskId: lastId });
+    setDraggedTaskId(null);
+  }
+
+  function handleDropOnCard(e: React.DragEvent, targetTask: TaskWithAssignees) {
+    if (!draggedTaskId || draggedTaskId === targetTask.id) { setDraggedTaskId(null); return; }
+    const columnTasks = tasks
+      .filter(t => t.status_id === targetTask.status_id && t.id !== draggedTaskId)
+      .sort((a, b) => a.position - b.position);
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const dropBefore = e.clientY < rect.top + rect.height / 2;
+    const idx = columnTasks.findIndex(t => t.id === targetTask.id);
+    const afterTaskId = dropBefore ? (idx > 0 ? columnTasks[idx - 1]!.id : null) : targetTask.id;
+    reorderMutation.mutate({ taskId: draggedTaskId, statusId: targetTask.status_id, afterTaskId });
+    setDraggedTaskId(null);
   }
 
   async function openTask(task: TaskWithAssignees) {
@@ -309,6 +329,7 @@ export default function ProjectBoardPage() {
                           task={task}
                           onClick={() => void openTask(task)}
                           onDragStart={() => setDraggedTaskId(task.id)}
+                          onDropOnCard={handleDropOnCard}
                           onDuplicate={() => duplicateMutation.mutate(task)}
                           onDelete={() => askConfirm({
                             title: 'Delete task',
@@ -362,6 +383,7 @@ export default function ProjectBoardPage() {
           projectId={projectId}
           task={selectedTask}
           statuses={statuses}
+          allTasks={tasks}
           onClose={() => setSelectedTask(null)}
           onUpdate={patch => setSelectedTask(prev => prev ? { ...prev, ...patch } : null)}
         />

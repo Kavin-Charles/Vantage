@@ -4,6 +4,8 @@ import type { Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
 import type { AuthenticatedRequest } from '../middleware/auth'
 import { resolveHook } from '../lib/hooks-runtime'
+import { logActivity } from '../lib/log-activity'
+import { createAlert } from '../lib/alert-service'
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(255),
@@ -85,6 +87,14 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         .returningAll()
         .executeTakeFirstOrThrow()
       await seedDefaultStatuses(db, project.id)
+      void logActivity(db, {
+        workspace_id: workspace.id,
+        user_id: user.id,
+        type: 'project_created',
+        source_module_id: 'projects',
+        body: `Created project "${project.name}"`,
+        meta: { project_id: project.id },
+      })
       return res.status(201).json({ data: project, error: null })
     } catch (err) {
       return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
@@ -164,10 +174,17 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
 
   // Update project
   router.patch('/:id', async (req, res) => {
-    const { workspace } = req as unknown as AuthenticatedRequest
+    const { user, workspace } = req as unknown as AuthenticatedRequest
     const parsed = updateProjectSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
+      const prior = await db
+        .selectFrom('projects')
+        .where('id', '=', req.params.id!)
+        .where('workspace_id', '=', workspace.id)
+        .select(['status', 'health'])
+        .executeTakeFirst()
+
       const updates: Record<string, unknown> = { updated_at: new Date() }
       if (parsed.data.name !== undefined) updates['name'] = parsed.data.name
       if (parsed.data.description !== undefined) updates['description'] = parsed.data.description
@@ -186,6 +203,39 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         .where('workspace_id', '=', workspace.id)
         .returningAll()
         .executeTakeFirstOrThrow()
+
+      void logActivity(db, {
+        workspace_id: workspace.id,
+        user_id: user.id,
+        type: 'project_updated',
+        source_module_id: 'projects',
+        body: `Updated project "${project.name}"`,
+        meta: { project_id: project.id },
+      })
+
+      if (prior?.status !== 'ARCHIVED' && project.status === 'ARCHIVED') {
+        void logActivity(db, {
+          workspace_id: workspace.id,
+          user_id: user.id,
+          type: 'project_archived',
+          source_module_id: 'projects',
+          body: `Archived project "${project.name}"`,
+          meta: { project_id: project.id },
+        })
+      }
+
+      if (prior?.health !== project.health && (project.health === 'AT_RISK' || project.health === 'OFF_TRACK')) {
+        void createAlert(db, {
+          workspaceId: workspace.id,
+          severity: 'warning',
+          resourceType: 'projects',
+          resourceId: project.id,
+          message: `Project at risk: "${project.name}"`,
+          messagePrefix: 'Project at risk:',
+          sourceModuleId: 'projects',
+        }).catch(() => {})
+      }
+
       return res.json({ data: project, error: null })
     } catch {
       return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
