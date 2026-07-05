@@ -12,10 +12,11 @@ type Priority = typeof PRIORITIES[number];
 interface Props {
   projectId: string;
   defaultStatusId?: string;
+  parentId?: string;
   onClose: () => void;
 }
 
-export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) {
+export function TaskCreateModal({ projectId, defaultStatusId, parentId, onClose }: Props) {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const titleRef = useRef<HTMLInputElement>(null);
@@ -72,6 +73,7 @@ export function TaskCreateModal({ projectId, defaultStatusId, onClose }: Props) 
         priority,
         assignee_ids: selectedIds,
         due_date: dueDate || null,
+        parent_id: parentId,
       });
     },
     onSuccess: () => {

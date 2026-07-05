@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { pmApi, type TaskWithAssignees, type TaskStatus, type Comment } from '@/modules/projects/lib/api';
+import { TaskCreateModal } from './TaskCreateModal';
 
 const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 const PRIORITY_COLORS: Record<string, string> = {
@@ -15,11 +16,12 @@ interface Props {
   projectId: string;
   task: TaskWithAssignees;
   statuses: TaskStatus[];
+  allTasks?: TaskWithAssignees[];
   onClose: () => void;
   onUpdate: (patch: Partial<TaskWithAssignees>) => void;
 }
 
-export function TaskDetailPanel({ projectId, task, statuses, onClose, onUpdate }: Props) {
+export function TaskDetailPanel({ projectId, task, statuses, allTasks = [], onClose, onUpdate }: Props) {
   const getToken = useApiToken();
   const qc = useQueryClient();
   const [editingTitle, setEditingTitle] = useState(false);
@@ -63,6 +65,28 @@ export function TaskDetailPanel({ projectId, task, statuses, onClose, onUpdate }
     }
   }
 
+  const [showAddSubtask, setShowAddSubtask] = useState(false);
+
+  const subtasks = allTasks.filter(t => t.parent_id === task.id);
+  const parentTask = task.parent_id ? allTasks.find(t => t.id === task.parent_id) ?? null : null;
+
+  const childStatusMutation = useMutation({
+    mutationFn: async ({ childId, statusId }: { childId: string; statusId: string }) => {
+      const token = await getToken();
+      return pmApi.updateTask(token, projectId, childId, { status_id: statusId });
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
+  });
+
+  function toggleSubtaskDone(child: TaskWithAssignees) {
+    const currentStatus = statuses.find(s => s.id === child.status_id);
+    const doneStatus = statuses.find(s => s.is_done);
+    const todoStatus = statuses.find(s => !s.is_done);
+    if (!doneStatus || !todoStatus) return;
+    const targetStatusId = currentStatus?.is_done ? todoStatus.id : doneStatus.id;
+    childStatusMutation.mutate({ childId: child.id, statusId: targetStatusId });
+  }
+
   const panelStyle: React.CSSProperties = {
     position: 'fixed', top: 0, right: 0, bottom: 0, width: 460,
     background: 'var(--surface)', borderLeft: '1px solid var(--border)',
@@ -93,40 +117,48 @@ export function TaskDetailPanel({ projectId, task, statuses, onClose, onUpdate }
       <div style={panelStyle}>
         {/* Header */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          display: 'flex', flexDirection: 'column',
           padding: '14px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0,
+          gap: parentTask ? 6 : 0,
         }}>
-          {editingTitle ? (
-            <input
-              autoFocus
-              value={titleVal}
-              onChange={e => setTitleVal(e.target.value)}
-              onBlur={saveTitle}
-              onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') setEditingTitle(false); }}
-              style={{
-                fontFamily: 'Instrument Serif', fontSize: 18, color: 'var(--text)',
-                border: '1px solid var(--border)', borderRadius: 8, padding: '4px 8px',
-                background: 'var(--bg)', outline: 'none', flex: 1,
-              }}
-            />
-          ) : (
-            <h2
-              onClick={() => setEditingTitle(true)}
-              style={{
-                fontFamily: 'Instrument Serif', fontSize: 18, color: 'var(--text)',
-                margin: 0, cursor: 'text', flex: 1, paddingRight: 12,
-              }}
-              title="Click to edit"
-            >
-              {task.title}
-            </h2>
+          {parentTask && (
+            <span style={{ fontFamily: 'DM Sans', fontSize: 11, color: 'var(--text3)' }}>
+              Subtask of <span style={{ fontWeight: 600, color: 'var(--text2)' }}>{parentTask.title}</span>
+            </span>
           )}
-          <button
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 4, borderRadius: 6, flexShrink: 0 }}
-          >
-            <Icon name="x" size={16} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            {editingTitle ? (
+              <input
+                autoFocus
+                value={titleVal}
+                onChange={e => setTitleVal(e.target.value)}
+                onBlur={saveTitle}
+                onKeyDown={e => { if (e.key === 'Enter') saveTitle(); if (e.key === 'Escape') setEditingTitle(false); }}
+                style={{
+                  fontFamily: 'Instrument Serif', fontSize: 18, color: 'var(--text)',
+                  border: '1px solid var(--border)', borderRadius: 8, padding: '4px 8px',
+                  background: 'var(--bg)', outline: 'none', flex: 1,
+                }}
+              />
+            ) : (
+              <h2
+                onClick={() => setEditingTitle(true)}
+                style={{
+                  fontFamily: 'Instrument Serif', fontSize: 18, color: 'var(--text)',
+                  margin: 0, cursor: 'text', flex: 1, paddingRight: 12,
+                }}
+                title="Click to edit"
+              >
+                {task.title}
+              </h2>
+            )}
+            <button
+              onClick={onClose}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 4, borderRadius: 6, flexShrink: 0 }}
+            >
+              <Icon name="x" size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -222,6 +254,48 @@ export function TaskDetailPanel({ projectId, task, statuses, onClose, onUpdate }
             </div>
           )}
 
+          {/* Subtasks */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={labelStyle}>Subtasks ({subtasks.length})</div>
+              <button
+                onClick={() => setShowAddSubtask(true)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'DM Sans', fontSize: 11 }}
+              >
+                <Icon name="plus" size={11} /> Add
+              </button>
+            </div>
+            {subtasks.length === 0 ? (
+              <p style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text3)', margin: 0 }}>No subtasks.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {subtasks.map(child => {
+                  const childStatus = statuses.find(s => s.id === child.status_id);
+                  return (
+                    <label
+                      key={child.id}
+                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 8px', borderRadius: 8, background: 'var(--bg)', cursor: 'pointer' }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!!childStatus?.is_done}
+                        onChange={() => toggleSubtaskDone(child)}
+                        style={{ width: 15, height: 15, cursor: 'pointer' }}
+                      />
+                      <span style={{
+                        fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)',
+                        textDecoration: childStatus?.is_done ? 'line-through' : 'none',
+                        opacity: childStatus?.is_done ? 0.6 : 1,
+                      }}>
+                        {child.title}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* Comments */}
           <div>
             <div style={{ ...labelStyle, marginBottom: 12 }}>Comments ({comments.length})</div>
@@ -273,6 +347,13 @@ export function TaskDetailPanel({ projectId, task, statuses, onClose, onUpdate }
           </div>
         </div>
       </div>
+      {showAddSubtask && (
+        <TaskCreateModal
+          projectId={projectId}
+          parentId={task.id}
+          onClose={() => setShowAddSubtask(false)}
+        />
+      )}
     </>
   );
 }
