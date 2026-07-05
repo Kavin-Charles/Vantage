@@ -48,6 +48,26 @@ async function getDefaultStatusId(db: Kysely<Database>, projectId: string): Prom
   return first.id
 }
 
+const MAX_TASK_DEPTH = 3
+
+async function getTaskDepth(db: Kysely<Database>, taskId: string, candidateChildId?: string): Promise<number> {
+  let depth = 0
+  let currentId: string | null = taskId
+  const visited = new Set<string>()
+  while (currentId) {
+    if (candidateChildId && currentId === candidateChildId) {
+      throw new Error('CYCLE_DETECTED')
+    }
+    if (visited.has(currentId)) throw new Error('CYCLE_DETECTED')
+    visited.add(currentId)
+    const row = await db.selectFrom('project_tasks').select(['id', 'parent_id']).where('id', '=', currentId).executeTakeFirst()
+    if (!row) break
+    depth++
+    currentId = row.parent_id
+  }
+  return depth
+}
+
 export function createProjectTasksRouter(db: Kysely<Database>): Router {
   const router = Router({ mergeParams: true })
 
@@ -106,6 +126,20 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
 
     const parsed = createTaskSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
+
+    if (parsed.data.parent_id) {
+      try {
+        const parentDepth = await getTaskDepth(db, parsed.data.parent_id)
+        if (parentDepth >= MAX_TASK_DEPTH) {
+          return res.status(400).json({ data: null, error: { code: 'DEPTH_EXCEEDED', message: `Subtasks cannot be nested more than ${MAX_TASK_DEPTH} levels deep` } })
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message === 'CYCLE_DETECTED') {
+          return res.status(400).json({ data: null, error: { code: 'CYCLE_DETECTED', message: 'Invalid parent reference' } })
+        }
+        throw err
+      }
+    }
 
     const statusId = parsed.data.status_id ?? await getDefaultStatusId(db, projectId)
 
@@ -246,6 +280,20 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
       .executeTakeFirst()
     if (!existingTask) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Task not found' } })
 
+    if (parsed.data.parent_id !== undefined && parsed.data.parent_id !== null) {
+      try {
+        const parentDepth = await getTaskDepth(db, parsed.data.parent_id, taskId)
+        if (parentDepth >= MAX_TASK_DEPTH) {
+          return res.status(400).json({ data: null, error: { code: 'DEPTH_EXCEEDED', message: `Subtasks cannot be nested more than ${MAX_TASK_DEPTH} levels deep` } })
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message === 'CYCLE_DETECTED') {
+          return res.status(400).json({ data: null, error: { code: 'CYCLE_DETECTED', message: 'Invalid parent reference' } })
+        }
+        throw err
+      }
+    }
+
     const updates: Record<string, unknown> = { updated_at: new Date() }
     if (parsed.data.title !== undefined) updates['title'] = parsed.data.title
     if (parsed.data.description !== undefined) updates['description'] = parsed.data.description
@@ -340,6 +388,55 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
     } catch {
       return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Task not found' } })
     }
+  })
+
+  // Reorder task (drag-to-reorder, supports cross-column moves)
+  const reorderSchema = z.object({
+    status_id: z.string().uuid().optional(),
+    after_task_id: z.string().uuid().optional().nullable(),
+  })
+
+  router.post('/:taskId/reorder', async (req, res) => {
+    const { workspace } = req as unknown as AuthenticatedRequest
+    const { projectId, taskId } = req.params as { projectId: string; taskId: string }
+    const project = await verifyProjectAccess(db, projectId, workspace.id)
+    if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+
+    const parsed = reorderSchema.safeParse(req.body)
+    if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
+
+    const targetStatusId = parsed.data.status_id
+    const siblings = targetStatusId
+      ? await db.selectFrom('project_tasks').selectAll()
+          .where('project_id', '=', projectId)
+          .where('status_id', '=', targetStatusId)
+          .where('id', '!=', taskId)
+          .orderBy('position', 'asc')
+          .execute()
+      : []
+
+    let newPosition: number
+    if (!parsed.data.after_task_id) {
+      newPosition = siblings.length > 0 ? siblings[0]!.position - 1000 : 0
+    } else {
+      const idx = siblings.findIndex(s => s.id === parsed.data.after_task_id)
+      const afterPos = idx >= 0 ? siblings[idx]!.position : 0
+      const nextPos = idx >= 0 && idx + 1 < siblings.length ? siblings[idx + 1]!.position : afterPos + 2000
+      newPosition = (afterPos + nextPos) / 2
+    }
+
+    const updates: Record<string, unknown> = { position: newPosition, updated_at: new Date() }
+    if (targetStatusId) updates['status_id'] = targetStatusId
+
+    const task = await db.updateTable('project_tasks')
+      .set(updates as never)
+      .where('id', '=', taskId)
+      .where('project_id', '=', projectId)
+      .returningAll()
+      .executeTakeFirst()
+
+    if (!task) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Task not found' } })
+    return res.json({ data: task, error: null })
   })
 
   // Delete task
