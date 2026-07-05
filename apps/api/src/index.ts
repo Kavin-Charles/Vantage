@@ -74,7 +74,7 @@ import { startRecurringTaskGenerator } from './workers/recurring-task-generator'
 import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
 import { loadPluginBackend, getPluginRouter } from './lib/plugin-loader';
-import { createAutomationRouter } from './routes/automation';
+import { createAutomationRouter, createAutomationLogsRouter } from './routes/automation';
 import { initAutomationEngine } from './lib/automation-engine';
 import { createPmAnalyticsRouter } from './routes/pm-analytics';
 import { createProjectDocsRouter } from './routes/project-docs';
@@ -313,6 +313,7 @@ app.use('/api/projects/:projectId/sprints', requireAuth, createSprintsRouter(db)
 app.use('/api/projects/:projectId/members', requireAuth, createProjectMembersRouter(db));
 app.use('/api/projects/:projectId/portal', requireAuth, createPortalInternalRouter(db));
 app.use('/api/projects/:projectId/automations', requireAuth, createAutomationRouter(db));
+app.use('/api/projects/:projectId/automation-logs', requireAuth, createAutomationLogsRouter(db));
 app.use('/api/projects/:projectId/custom-fields', requireAuth, createCustomFieldsRouter(db));
 app.use('/api/projects/:projectId/tasks/:taskId/field-values', requireAuth, createTaskFieldValuesRouter(db));
 app.use('/api/projects/:projectId/tasks/:taskId/time-logs', requireAuth, createTimeLogsRouter(db));

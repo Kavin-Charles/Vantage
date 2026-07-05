@@ -204,3 +204,30 @@ export function createAutomationRouter(db: Kysely<Database>): Router {
 
   return router
 }
+
+export function createAutomationLogsRouter(db: Kysely<Database>): Router {
+  const router = Router({ mergeParams: true })
+
+  router.get('/', async (req, res) => {
+    const { workspace } = req as unknown as AuthenticatedRequest
+    const { projectId } = req.params as { projectId: string }
+    try {
+      const project = await verifyProjectAccess(db, projectId, workspace.id)
+      if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+
+      const logs = await db.selectFrom('automation_logs as l')
+        .innerJoin('automation_rules as r', 'r.id', 'l.rule_id')
+        .select(['l.id', 'l.rule_id', 'r.name as rule_name', 'l.triggered_at', 'l.success', 'l.detail'])
+        .where('r.project_id', '=', projectId)
+        .orderBy('l.triggered_at', 'desc')
+        .limit(100)
+        .execute()
+
+      return res.json({ data: logs, error: null })
+    } catch {
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
+    }
+  })
+
+  return router
+}
