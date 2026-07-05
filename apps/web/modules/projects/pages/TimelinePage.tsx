@@ -1,14 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { pmApi, type Task, type TaskStatus } from '@/modules/projects/lib/api';
+import { pmApi, type Task, type TaskStatus, type TaskWithAssignees } from '@/modules/projects/lib/api';
 import GanttChart, { type GanttTask } from '@/modules/projects/components/GanttChart';
+import { TaskDetailPanel } from '@/modules/projects/components/TaskDetailPanel';
 
 export default function TimelinePage() {
   const { id: projectId } = useParams<{ id: string }>();
   const getToken = useApiToken();
+  const qc = useQueryClient();
+  const [selectedTask, setSelectedTask] = useState<TaskWithAssignees | null>(null);
 
   const { data: tasksData, isLoading: tasksLoading } = useQuery({
     queryKey: ['tasks', projectId],
@@ -42,6 +46,20 @@ export default function TimelinePage() {
   const statusMap: Record<string, TaskStatus> = {};
   for (const s of statuses) {
     statusMap[s.id] = s;
+  }
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ taskId, patch }: { taskId: string; patch: Partial<Task> }) => {
+      const token = await getToken();
+      return pmApi.updateTask(token, projectId, taskId, patch);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
+  });
+
+  async function openTask(taskId: string) {
+    const token = await getToken();
+    const res = await pmApi.getTask(token, projectId, taskId);
+    setSelectedTask(res.data);
   }
 
   if (tasks.length === 0) {
@@ -94,8 +112,22 @@ export default function TimelinePage() {
         </span>
       </div>
       <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 24 }}>
-        <GanttChart tasks={ganttTasks} startDate={minDate} endDate={maxDate} />
+        <GanttChart tasks={ganttTasks} startDate={minDate} endDate={maxDate} onTaskClick={openTask} />
       </div>
+
+      {selectedTask && (
+        <TaskDetailPanel
+          projectId={projectId}
+          task={selectedTask}
+          statuses={statuses}
+          allTasks={tasks as TaskWithAssignees[]}
+          onClose={() => setSelectedTask(null)}
+          onUpdate={patch => {
+            setSelectedTask(prev => prev ? { ...prev, ...patch } : null);
+            updateMutation.mutate({ taskId: selectedTask.id, patch });
+          }}
+        />
+      )}
     </div>
   );
 }

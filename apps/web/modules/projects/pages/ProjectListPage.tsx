@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
@@ -30,6 +30,8 @@ export default function ProjectListPage() {
   const [filter, setFilter] = useState<string>('ALL');
   const [selectedTask, setSelectedTask] = useState<TaskWithAssignees | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
 
   const { data: statuses = [] } = useQuery<TaskStatus[]>({
     queryKey: ['statuses', projectId],
@@ -55,6 +57,14 @@ export default function ProjectListPage() {
     mutationFn: async ({ taskId, patch }: { taskId: string; patch: Partial<Task> }) => {
       const token = await getToken();
       return pmApi.updateTask(token, projectId, taskId, patch);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: async ({ taskId, statusId, afterTaskId }: { taskId: string; statusId: string; afterTaskId: string | null }) => {
+      const token = await getToken();
+      return pmApi.reorderTask(token, projectId, taskId, { status_id: statusId, after_task_id: afterTaskId });
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
   });
@@ -107,6 +117,50 @@ export default function ProjectListPage() {
     const token = await getToken();
     const res = await pmApi.getTask(token, projectId, task.id);
     setSelectedTask(res.data);
+  }
+
+  function toggleCollapsed(id: string) {
+    setCollapsedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  type TreeRow = { task: TaskWithAssignees; depth: number };
+  const treeRows = useMemo<TreeRow[]>(() => {
+    if (filter !== 'ALL') return filtered.map(t => ({ task: t, depth: 0 }));
+    const childrenMap = new Map<string | null, TaskWithAssignees[]>();
+    for (const t of filtered) {
+      const pid = (t as any).parent_id as string | null ?? null;
+      const arr = childrenMap.get(pid) ?? [];
+      arr.push(t);
+      childrenMap.set(pid, arr);
+    }
+    const rows: TreeRow[] = [];
+    function walk(parentId: string | null, depth: number) {
+      const children = childrenMap.get(parentId) ?? [];
+      children.sort((a, b) => a.position - b.position);
+      for (const child of children) {
+        rows.push({ task: child, depth });
+        if (!collapsedIds.has(child.id)) walk(child.id, depth + 1);
+      }
+    }
+    walk(null, 0);
+    return rows;
+  }, [filtered, filter, collapsedIds]);
+
+  function handleDropOnRow(e: React.DragEvent, targetTaskId: string) {
+    e.preventDefault();
+    if (!draggedTaskId || draggedTaskId === targetTaskId) return;
+    const target = tasks.find(t => t.id === targetTaskId);
+    if (!target) return;
+    reorderMutation.mutate({ taskId: draggedTaskId, statusId: target.status_id, afterTaskId: targetTaskId });
+    setDraggedTaskId(null);
+  }
+
+  function hasChildren(taskId: string): boolean {
+    return tasks.some(t => (t as any).parent_id === taskId);
   }
 
   const done = tasks.filter(t => statuses.find(s => s.id === t.status_id)?.is_done).length;
@@ -220,30 +274,55 @@ export default function ProjectListPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((task, i) => {
+              {treeRows.map(({ task, depth }, i) => {
                 const status = statuses.find(s => s.id === task.status_id);
                 const isOverdue = task.due_date && new Date(task.due_date) < new Date();
                 const priorityBorder = task.priority && task.priority !== 'NONE'
                   ? PRIORITY_BORDER[task.priority] ?? 'var(--border)'
                   : 'transparent';
-                const isLast = i === filtered.length - 1;
+                const isLast = i === treeRows.length - 1;
+                const isDragging = draggedTaskId === task.id;
+                const hasKids = hasChildren(task.id);
+                const isCollapsed = collapsedIds.has(task.id);
 
                 return (
                   <tr
                     key={task.id}
+                    draggable
+                    onDragStart={() => setDraggedTaskId(task.id)}
+                    onDragEnd={() => setDraggedTaskId(null)}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => handleDropOnRow(e, task.id)}
                     onClick={() => void openTask(task)}
                     onContextMenu={e => openTaskMenu(e, task)}
-                    style={{ cursor: 'pointer', borderBottom: isLast ? 'none' : '1px solid var(--border)' }}
+                    style={{
+                      cursor: 'pointer',
+                      borderBottom: isLast ? 'none' : '1px solid var(--border)',
+                      opacity: isDragging ? 0.4 : 1,
+                      transition: 'opacity 0.15s ease',
+                    }}
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg)')}
                     onMouseLeave={e => (e.currentTarget.style.background = '')}
                   >
-                    {/* Title with priority left border */}
                     <td style={{ padding: '0', position: 'relative' }}>
                       <div style={{
                         display: 'flex', alignItems: 'center',
                         padding: '12px 16px',
+                        paddingLeft: `${16 + depth * 24}px`,
                         borderLeft: `3px solid ${priorityBorder}`,
                       }}>
+                        {hasKids && filter === 'ALL' && (
+                          <button
+                            onClick={e => { e.stopPropagation(); toggleCollapsed(task.id); }}
+                            style={{
+                              background: 'none', border: 'none', cursor: 'pointer',
+                              padding: '0 4px 0 0', display: 'flex', alignItems: 'center',
+                              color: 'var(--text3)',
+                            }}
+                          >
+                            <Icon name={isCollapsed ? 'chevron-right' : 'chevron'} size={12} />
+                          </button>
+                        )}
                         <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>
                           {task.title}
                         </span>
@@ -259,7 +338,6 @@ export default function ProjectListPage() {
                       </div>
                     </td>
 
-                    {/* Status */}
                     <td style={{ padding: '12px 14px' }}>
                       {status ? (
                         <span style={{
@@ -274,7 +352,6 @@ export default function ProjectListPage() {
                       ) : <span style={{ color: 'var(--text3)', fontSize: 12 }}>—</span>}
                     </td>
 
-                    {/* Priority */}
                     <td style={{ padding: '12px 14px' }}>
                       {task.priority && task.priority !== 'NONE' ? (
                         <span style={{
@@ -289,7 +366,6 @@ export default function ProjectListPage() {
                       ) : <span style={{ color: 'var(--text3)', fontFamily: 'DM Sans', fontSize: 12 }}>—</span>}
                     </td>
 
-                    {/* Due date */}
                     <td style={{ padding: '12px 14px' }}>
                       {task.due_date ? (
                         <span style={{
@@ -302,7 +378,6 @@ export default function ProjectListPage() {
                       ) : <span style={{ color: 'var(--text3)', fontFamily: 'DM Sans', fontSize: 12 }}>—</span>}
                     </td>
 
-                    {/* Assignees */}
                     <td style={{ padding: '12px 14px' }}>
                       {task.assignees?.length > 0
                         ? <AvatarGroup assignees={task.assignees} />
@@ -345,6 +420,7 @@ export default function ProjectListPage() {
           projectId={projectId}
           task={selectedTask}
           statuses={statuses}
+          allTasks={tasks}
           onClose={() => setSelectedTask(null)}
           onUpdate={patch => {
             setSelectedTask(prev => prev ? { ...prev, ...patch } : null);
