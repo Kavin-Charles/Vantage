@@ -84,4 +84,18 @@ describe('logActivity', () => {
     });
     expect(db.insertInto).toHaveBeenCalledWith('activities');
   });
+
+  it('accepts pm_time_logged as a valid ActivityType', async () => {
+    const db = buildMockDb();
+    const { logActivity } = await import('../lib/log-activity');
+    await logActivity(db as never, {
+      workspace_id: 'ws-1',
+      user_id: 'user-1',
+      type: 'pm_time_logged',
+      source_module_id: 'projects',
+      record_id: 'task-1',
+      body: 'Logged 45 min',
+    });
+    expect(db.insertInto).toHaveBeenCalledWith('activities');
+  });
 });
