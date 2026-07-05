@@ -73,3 +73,42 @@ describe('POST /api/projects/:projectId/tasks/:taskId/time-logs', () => {
     )
   })
 })
+
+describe('GET /api/projects/:projectId/time-summary', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('aggregates total minutes by task and by user', async () => {
+    const projectChain = buildChain({ executeTakeFirst: vi.fn().mockResolvedValue({ id: PROJECT_ID }) })
+    const byTaskChain = {
+      selectFrom: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      groupBy: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      execute: vi.fn()
+        .mockResolvedValueOnce([{ task_id: TASK_ID, title: 'Ship feature', total_minutes: 90 }])
+        .mockResolvedValueOnce([{ user_id: USER_ID, user_name: 'Ada', total_minutes: 90 }]),
+    }
+    const db = {
+      selectFrom: vi.fn((table: string) => (table === 'projects' ? projectChain : byTaskChain)),
+      fn: { sum: vi.fn(() => ({ as: vi.fn((alias: string) => alias) })) },
+    } as unknown as Kysely<Database>
+
+    const { createTimeSummaryRouter } = await import('./time-logs')
+    const app = express()
+    app.use(express.json())
+    injectUser(app)
+    app.use('/api/projects/:projectId/time-summary', createTimeSummaryRouter(db))
+
+    const res = await request(app).get(`/api/projects/${PROJECT_ID}/time-summary`)
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.total_minutes).toBe(90)
+    expect(res.body.data.by_task).toEqual([{ task_id: TASK_ID, title: 'Ship feature', total_minutes: 90 }])
+    expect(res.body.data.by_user).toEqual([{ user_id: USER_ID, user_name: 'Ada', total_minutes: 90 }])
+  })
+})

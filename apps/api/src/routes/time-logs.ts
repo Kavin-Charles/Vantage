@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import type { Kysely } from 'kysely'
+import { sql, type Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
 import type { AuthenticatedRequest } from '../middleware/auth'
 import { logActivity } from '../lib/log-activity'
@@ -94,6 +94,51 @@ export function createTimeLogsRouter(db: Kysely<Database>): Router {
 
       await db.deleteFrom('time_logs').where('id', '=', logId).execute()
       return res.json({ data: { success: true }, error: null })
+    } catch {
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
+    }
+  })
+
+  return router
+}
+
+export function createTimeSummaryRouter(db: Kysely<Database>): Router {
+  const router = Router({ mergeParams: true })
+
+  router.get('/', async (req, res) => {
+    const { workspace } = req as unknown as AuthenticatedRequest
+    const { projectId } = req.params as { projectId: string }
+    try {
+      const project = await verifyProjectAccess(db, projectId, workspace.id)
+      if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+
+      const byTask = await db.selectFrom('time_logs as l')
+        .innerJoin('project_tasks as t', 't.id', 'l.task_id')
+        .select(['t.id as task_id', 't.title', db.fn.sum<number>(sql`l.minutes`).as('total_minutes')])
+        .where('t.project_id', '=', projectId)
+        .groupBy(['t.id', 't.title'])
+        .orderBy('total_minutes', 'desc')
+        .execute()
+
+      const byUser = await db.selectFrom('time_logs as l')
+        .innerJoin('project_tasks as t', 't.id', 'l.task_id')
+        .leftJoin('users as u', 'u.id', 'l.user_id')
+        .select(['l.user_id', 'u.name as user_name', db.fn.sum<number>(sql`l.minutes`).as('total_minutes')])
+        .where('t.project_id', '=', projectId)
+        .groupBy(['l.user_id', 'u.name'])
+        .orderBy('total_minutes', 'desc')
+        .execute()
+
+      const totalMinutes = byTask.reduce((sum, row) => sum + Number(row.total_minutes), 0)
+
+      return res.json({
+        data: {
+          total_minutes: totalMinutes,
+          by_task: byTask.map(r => ({ task_id: r.task_id, title: r.title, total_minutes: Number(r.total_minutes) })),
+          by_user: byUser.map(r => ({ user_id: r.user_id, user_name: r.user_name, total_minutes: Number(r.total_minutes) })),
+        },
+        error: null,
+      })
     } catch {
       return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
     }

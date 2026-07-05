@@ -56,7 +56,7 @@ import { createProjectsRouter, createProjectStatusesRouter, createProjectLabelsR
 import { createProjectWidgetStatsRouter } from './routes/project-widget-stats';
 import { createProjectTasksRouter, createMyTasksRouter } from './routes/project-tasks';
 import { createCustomFieldsRouter, createTaskFieldValuesRouter } from './routes/custom-fields';
-import { createTimeLogsRouter } from './routes/time-logs';
+import { createTimeLogsRouter, createTimeSummaryRouter } from './routes/time-logs';
 import { createMilestonesRouter } from './routes/milestones';
 import { createSprintsRouter } from './routes/sprints';
 import { createRecurringRulesRouter } from './routes/recurring-rules';
@@ -316,6 +316,7 @@ app.use('/api/projects/:projectId/automations', requireAuth, createAutomationRou
 app.use('/api/projects/:projectId/custom-fields', requireAuth, createCustomFieldsRouter(db));
 app.use('/api/projects/:projectId/tasks/:taskId/field-values', requireAuth, createTaskFieldValuesRouter(db));
 app.use('/api/projects/:projectId/tasks/:taskId/time-logs', requireAuth, createTimeLogsRouter(db));
+app.use('/api/projects/:projectId/time-summary', requireAuth, createTimeSummaryRouter(db));
 app.use('/api/projects/:projectId/analytics', requireAuth, createPmAnalyticsRouter(db));
 app.use('/api/projects/:projectId/docs', requireAuth, createProjectDocsRouter(db));
 app.use('/api/projects/:projectId/save-as-template', requireAuth, createSaveAsTemplateRouter(db));
