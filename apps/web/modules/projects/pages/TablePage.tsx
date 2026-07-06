@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { pmApi, type TaskWithAssignees, type TaskStatus } from '@/modules/projects/lib/api';
+import { pmApi, type TaskWithAssignees, type TaskStatus, type CustomField, type CustomFieldValue } from '@/modules/projects/lib/api';
 import { AvatarGroup } from '@/modules/projects/components/AvatarGroup';
 
 const PRIORITY_BADGE: Record<string, { label: string; color: string; bg: string }> = {
@@ -39,6 +39,12 @@ export default function TablePage() {
     },
   });
 
+  const { data: fieldsData } = useQuery({
+    queryKey: ['custom-fields', projectId],
+    queryFn: async () => pmApi.listCustomFields(await getToken(), projectId),
+  });
+  const customFields: CustomField[] = fieldsData?.data ?? [];
+
   const tasks: TaskWithAssignees[] = tasksData ?? [];
   const statuses: TaskStatus[] = statusesData ?? [];
   const statusMap: Record<string, TaskStatus> = {};
@@ -51,6 +57,23 @@ export default function TablePage() {
       return matchSearch && matchStatus;
     });
   }, [tasks, search, statusFilter]);
+
+  const visibleTaskIds = filtered.map(t => t.id);
+
+  const { data: valuesData } = useQuery({
+    queryKey: ['field-values-bulk', projectId, visibleTaskIds.join(',')],
+    queryFn: async () => {
+      const token = await getToken();
+      const results = await Promise.all(
+        visibleTaskIds.map(taskId => pmApi.listTaskFieldValues(token, projectId, taskId)),
+      );
+      const map = new Map<string, CustomFieldValue[]>();
+      visibleTaskIds.forEach((taskId, i) => map.set(taskId, results[i].data ?? []));
+      return map;
+    },
+    enabled: visibleTaskIds.length > 0 && customFields.length > 0,
+  });
+  const valuesByTask = valuesData ?? new Map<string, CustomFieldValue[]>();
 
   const now = new Date();
 
@@ -108,6 +131,18 @@ export default function TablePage() {
                     }}
                   >
                     {col}
+                  </th>
+                ))}
+                {customFields.map(f => (
+                  <th
+                    key={f.id}
+                    style={{
+                      padding: '8px 16px', textAlign: 'left', fontSize: 11,
+                      fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase',
+                      letterSpacing: '0.05em', whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {f.name}
                   </th>
                 ))}
               </tr>
@@ -173,12 +208,22 @@ export default function TablePage() {
                     <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
                       {estHours}
                     </td>
+                    {customFields.map(f => {
+                      const value = valuesByTask.get(task.id)?.find(v => v.custom_field_id === f.id)?.value ?? null;
+                      return (
+                        <td key={f.id} style={{ padding: '10px 16px', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, color: 'var(--text2)' }}>
+                            {f.field_type === 'CHECKBOX' ? (value === 'true' ? '✓' : '—') : (value ?? '—')}
+                          </span>
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: 32, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+                  <td colSpan={6 + customFields.length} style={{ padding: 32, textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
                     No tasks match your filters.
                   </td>
                 </tr>
