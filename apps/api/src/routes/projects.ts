@@ -6,6 +6,7 @@ import type { AuthenticatedRequest } from '../middleware/auth'
 import { resolveHook } from '../lib/hooks-runtime'
 import { logActivity } from '../lib/log-activity'
 import { createAlert } from '../lib/alert-service'
+import { getCrossModuleSetting } from '../lib/cross-module-settings'
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(255),
@@ -13,6 +14,7 @@ const createProjectSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   start_date: z.string().optional(),
   end_date: z.string().optional(),
+  deal_id: z.string().uuid().optional(),
   contact_id: z.string().uuid().optional(),
   company_id: z.string().uuid().optional(),
   source_item_id: z.string().uuid().optional(),
@@ -26,12 +28,13 @@ const updateProjectSchema = z.object({
   health: z.enum(['ON_TRACK', 'AT_RISK', 'OFF_TRACK']).optional(),
   start_date: z.string().nullable().optional(),
   end_date: z.string().nullable().optional(),
+  deal_id: z.string().uuid().nullable().optional(),
   contact_id: z.string().uuid().nullable().optional(),
   company_id: z.string().uuid().nullable().optional(),
   source_item_id: z.string().uuid().nullable().optional(),
 })
 
-async function seedDefaultStatuses(db: Kysely<Database>, projectId: string) {
+export async function seedDefaultStatuses(db: Kysely<Database>, projectId: string) {
   const statuses = [
     { name: 'Backlog',     color: '#9e998f', position: 0, is_done: false },
     { name: 'In Progress', color: '#1e3a8a', position: 1, is_done: false },
@@ -41,6 +44,44 @@ async function seedDefaultStatuses(db: Kysely<Database>, projectId: string) {
   await db.insertInto('project_task_statuses')
     .values(statuses.map(s => ({ ...s, project_id: projectId })))
     .execute()
+}
+
+async function verifyLinkTargets(
+  db: Kysely<Database>,
+  workspaceId: string,
+  links: { deal_id?: string | null; contact_id?: string | null; company_id?: string | null },
+): Promise<string | null> {
+  if (links.deal_id === undefined && links.contact_id === undefined && links.company_id === undefined) return null
+
+  if (links.deal_id || links.contact_id || links.company_id) {
+    const linkingEnabled = await getCrossModuleSetting(db, workspaceId, 'pm.deal_link_enabled')
+    if (!linkingEnabled) return 'CRM linking is disabled for this workspace'
+  }
+
+  if (links.deal_id) {
+    const deal = await db.selectFrom('pipeline_items').select('id')
+      .where('id', '=', links.deal_id)
+      .where('workspace_id', '=', workspaceId)
+      .executeTakeFirst()
+    if (!deal) return 'Deal not found'
+  }
+  if (links.contact_id) {
+    const contact = await db.selectFrom('contacts').select('id')
+      .where('id', '=', links.contact_id)
+      .where('workspace_id', '=', workspaceId)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst()
+    if (!contact) return 'Contact not found'
+  }
+  if (links.company_id) {
+    const company = await db.selectFrom('companies').select('id')
+      .where('id', '=', links.company_id)
+      .where('workspace_id', '=', workspaceId)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst()
+    if (!company) return 'Company not found'
+  }
+  return null
 }
 
 export function createProjectsRouter(db: Kysely<Database>): Router {
@@ -71,6 +112,9 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
     const parsed = createProjectSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
+      const linkError = await verifyLinkTargets(db, workspace.id, parsed.data)
+      if (linkError) return res.status(400).json({ data: null, error: { code: 'INVALID_LINK', message: linkError } })
+
       const project = await db.insertInto('projects')
         .values({
           workspace_id: workspace.id,
@@ -80,6 +124,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
           color: parsed.data.color ?? null,
           start_date: parsed.data.start_date ? new Date(parsed.data.start_date) : null,
           end_date: parsed.data.end_date ? new Date(parsed.data.end_date) : null,
+          deal_id: parsed.data.deal_id ?? null,
           contact_id: parsed.data.contact_id ?? null,
           company_id: parsed.data.company_id ?? null,
           source_item_id: parsed.data.source_item_id ?? null,
@@ -92,6 +137,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         user_id: user.id,
         type: 'project_created',
         source_module_id: 'projects',
+        record_id: project.id,
         body: `Created project "${project.name}"`,
         meta: { project_id: project.id },
       })
@@ -178,6 +224,9 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
     const parsed = updateProjectSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
+      const linkError = await verifyLinkTargets(db, workspace.id, parsed.data)
+      if (linkError) return res.status(400).json({ data: null, error: { code: 'INVALID_LINK', message: linkError } })
+
       const prior = await db
         .selectFrom('projects')
         .where('id', '=', req.params.id!)
@@ -193,6 +242,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
       if (parsed.data.health !== undefined) updates['health'] = parsed.data.health
       if (parsed.data.start_date !== undefined) updates['start_date'] = parsed.data.start_date ? new Date(parsed.data.start_date) : null
       if (parsed.data.end_date !== undefined) updates['end_date'] = parsed.data.end_date ? new Date(parsed.data.end_date) : null
+      if (parsed.data.deal_id !== undefined) updates['deal_id'] = parsed.data.deal_id
       if (parsed.data.contact_id !== undefined) updates['contact_id'] = parsed.data.contact_id
       if (parsed.data.company_id !== undefined) updates['company_id'] = parsed.data.company_id
       if (parsed.data.source_item_id !== undefined) updates['source_item_id'] = parsed.data.source_item_id
@@ -209,6 +259,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         user_id: user.id,
         type: 'project_updated',
         source_module_id: 'projects',
+        record_id: project.id,
         body: `Updated project "${project.name}"`,
         meta: { project_id: project.id },
       })
@@ -219,6 +270,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
           user_id: user.id,
           type: 'project_archived',
           source_module_id: 'projects',
+          record_id: project.id,
           body: `Archived project "${project.name}"`,
           meta: { project_id: project.id },
         })

@@ -125,3 +125,68 @@ describe('createProjectsRouter activity + alert wiring', () => {
     );
   });
 });
+
+const DEAL_ID = '11111111-1111-1111-1111-111111111111';
+
+describe('POST /api/projects with deal_id', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('rejects linking to a deal that does not exist in this workspace', async () => {
+    const settingsChain = buildChain({ executeTakeFirst: vi.fn().mockResolvedValue({ enabled: true }) });
+    const dealChain = buildChain({ executeTakeFirst: vi.fn().mockResolvedValue(undefined) });
+
+    let selectCall = 0;
+    const db = {
+      selectFrom: vi.fn((table: string) => {
+        selectCall++;
+        if (table === 'cross_module_settings') return settingsChain;
+        return dealChain;
+      }),
+    } as any;
+
+    const app = express();
+    app.use(express.json());
+    injectUser(app);
+    app.use('/api/projects', createProjectsRouter(db));
+
+    const res = await request(app)
+      .post('/api/projects')
+      .send({ name: 'New Project', deal_id: DEAL_ID });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('INVALID_LINK');
+    expect(selectCall).toBeGreaterThan(0);
+  });
+
+  it('creates the project with deal_id when the deal exists and linking is enabled', async () => {
+    const settingsChain = buildChain({ executeTakeFirst: vi.fn().mockResolvedValue({ enabled: true }) });
+    const dealChain = buildChain({ executeTakeFirst: vi.fn().mockResolvedValue({ id: DEAL_ID }) });
+    const fakeProject = {
+      id: 'project-1', workspace_id: 'ws-1', name: 'New Project',
+      description: null, color: null, status: 'ACTIVE', health: 'ON_TRACK',
+      start_date: null, end_date: null, deal_id: DEAL_ID, contact_id: null, company_id: null,
+      created_by: 'user-1', created_at: new Date(), updated_at: new Date(),
+    };
+    const insertChain = buildChain({ executeTakeFirstOrThrow: vi.fn().mockResolvedValue(fakeProject) });
+    const statusesChain = buildChain();
+
+    const db = {
+      selectFrom: vi.fn((table: string) => (table === 'cross_module_settings' ? settingsChain : dealChain)),
+      insertInto: vi.fn((table: string) => (table === 'projects' ? insertChain : statusesChain)),
+    } as any;
+
+    const app = express();
+    app.use(express.json());
+    injectUser(app);
+    app.use('/api/projects', createProjectsRouter(db));
+
+    const res = await request(app)
+      .post('/api/projects')
+      .send({ name: 'New Project', deal_id: DEAL_ID });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.deal_id).toBe(DEAL_ID);
+  });
+});
