@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { Icon } from '@/modules/shared/components/ui/Icon';
-import { pmApi, type TaskWithAssignees, type TaskStatus, type Comment } from '@/modules/projects/lib/api';
+import { pmApi, type TaskWithAssignees, type TaskStatus, type Comment, type CustomField, type CustomFieldValue, type TimeLog } from '@/modules/projects/lib/api';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
 import { TaskCreateModal } from './TaskCreateModal';
+import { CustomFieldRenderer } from '@/modules/projects/components/CustomFieldRenderer';
 
 const PRIORITY_OPTIONS = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 const PRIORITY_COLORS: Record<string, string> = {
@@ -35,6 +37,62 @@ export function TaskDetailPanel({ projectId, task, statuses, allTasks = [], onCl
     queryFn: async () => pmApi.listComments(await getToken(), projectId, task.id),
   });
   const comments: Comment[] = commentsData?.data ?? [];
+
+  const { user } = useAuth();
+
+  const { data: fieldsData } = useQuery({
+    queryKey: ['custom-fields', projectId],
+    queryFn: async () => pmApi.listCustomFields(await getToken(), projectId),
+  });
+  const customFields: CustomField[] = fieldsData?.data ?? [];
+
+  const { data: valuesData } = useQuery({
+    queryKey: ['field-values', projectId, task.id],
+    queryFn: async () => pmApi.listTaskFieldValues(await getToken(), projectId, task.id),
+  });
+  const fieldValues: CustomFieldValue[] = valuesData?.data ?? [];
+
+  const upsertValueMutation = useMutation({
+    mutationFn: async (body: { custom_field_id: string; value: string | number | boolean | null }) => {
+      const token = await getToken();
+      return pmApi.upsertTaskFieldValue(token, projectId, task.id, body);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['field-values', projectId, task.id] }),
+  });
+
+  const { data: timeLogsData } = useQuery({
+    queryKey: ['time-logs', projectId, task.id],
+    queryFn: async () => pmApi.listTimeLogs(await getToken(), projectId, task.id),
+  });
+  const timeLogs: TimeLog[] = timeLogsData?.data ?? [];
+
+  const [minutesInput, setMinutesInput] = useState('');
+  const [noteInput, setNoteInput] = useState('');
+
+  const createTimeLogMutation = useMutation({
+    mutationFn: async () => {
+      const token = await getToken();
+      return pmApi.createTimeLog(token, projectId, task.id, {
+        minutes: Number(minutesInput),
+        note: noteInput.trim() || undefined,
+      });
+    },
+    onSuccess: () => {
+      setMinutesInput('');
+      setNoteInput('');
+      void qc.invalidateQueries({ queryKey: ['time-logs', projectId, task.id] });
+    },
+  });
+
+  const deleteTimeLogMutation = useMutation({
+    mutationFn: async (logId: string) => {
+      const token = await getToken();
+      return pmApi.deleteTimeLog(token, projectId, task.id, logId);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['time-logs', projectId, task.id] }),
+  });
+
+  const totalLoggedMinutes = timeLogs.reduce((sum, l) => sum + l.minutes, 0);
 
   const updateMutation = useMutation({
     mutationFn: async (patch: Parameters<typeof pmApi.updateTask>[3]) => {
@@ -294,6 +352,96 @@ export function TaskDetailPanel({ projectId, task, statuses, allTasks = [], onCl
                 })}
               </div>
             )}
+          </div>
+
+          {/* Custom Fields */}
+          {customFields.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ ...labelStyle, marginBottom: 10 }}>Custom Fields</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {customFields.map(field => {
+                  const existing = fieldValues.find(v => v.custom_field_id === field.id);
+                  return (
+                    <div key={field.id}>
+                      <div style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, color: 'var(--text2)', marginBottom: 4 }}>{field.name}</div>
+                      <CustomFieldRenderer
+                        field={field}
+                        value={existing?.value ?? null}
+                        onChange={value => upsertValueMutation.mutate({ custom_field_id: field.id, value })}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Time Tracking */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ ...labelStyle, marginBottom: 0 }}>Time Tracking</div>
+              <span style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, fontWeight: 600, color: 'var(--text2)' }}>
+                {Math.floor(totalLoggedMinutes / 60)}h {totalLoggedMinutes % 60}m logged
+              </span>
+            </div>
+
+            {timeLogs.length === 0 ? (
+              <p style={{ fontFamily: 'IBM Plex Sans', fontSize: 13, color: 'var(--text3)', marginBottom: 10 }}>No time logged yet.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                {timeLogs.map(log => (
+                  <div key={log.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: 'var(--bg)' }}>
+                    <span style={{ fontFamily: 'IBM Plex Sans', fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                      {Math.floor(log.minutes / 60)}h {log.minutes % 60}m
+                    </span>
+                    <span style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, color: 'var(--text3)', flex: 1 }}>
+                      {log.user_name ?? 'Unknown'}{log.note ? ` — ${log.note}` : ''}
+                    </span>
+                    <span style={{ fontFamily: 'IBM Plex Sans', fontSize: 11, color: 'var(--text3)' }}>
+                      {new Date(log.logged_at).toLocaleDateString()}
+                    </span>
+                    {log.user_id === user?.id && (
+                      <button
+                        onClick={() => deleteTimeLogMutation.mutate(log.id)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: '0 2px' }}
+                        title="Delete log"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="number"
+                min={1}
+                max={1440}
+                value={minutesInput}
+                onChange={e => setMinutesInput(e.target.value)}
+                placeholder="Minutes"
+                style={{ ...selectStyle, width: 90 }}
+              />
+              <input
+                value={noteInput}
+                onChange={e => setNoteInput(e.target.value)}
+                placeholder="Note (optional)…"
+                style={{ ...selectStyle, flex: 1 }}
+              />
+              <button
+                onClick={() => { if (Number(minutesInput) > 0) createTimeLogMutation.mutate(); }}
+                disabled={!minutesInput || Number(minutesInput) <= 0 || createTimeLogMutation.isPending}
+                style={{
+                  fontFamily: 'IBM Plex Sans', fontSize: 13, fontWeight: 600, padding: '7px 14px', borderRadius: 8,
+                  background: 'var(--text)', color: '#fff', border: 'none', cursor: 'pointer',
+                  opacity: !minutesInput || Number(minutesInput) <= 0 ? 0.5 : 1,
+                }}
+              >
+                {createTimeLogMutation.isPending ? '…' : 'Log'}
+              </button>
+            </div>
           </div>
 
           {/* Comments */}
