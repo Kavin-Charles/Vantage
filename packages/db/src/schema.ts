@@ -829,6 +829,7 @@ export interface ProjectTable {
   contact_id: string | null
   company_id: string | null
   source_item_id: string | null
+  deal_id: string | null
   created_at: Generated<Date>
   updated_at: Generated<Date>
 }
@@ -1027,6 +1028,16 @@ export interface ApprovalRequestTable {
   note: string | null
   responded_at: Date | null
   created_at: Generated<Date>
+}
+
+export interface CrossModuleSettingTable {
+  id: Generated<string>
+  workspace_id: string
+  setting_key: string
+  enabled: Generated<boolean>
+  config: Record<string, unknown> | null
+  created_at: Generated<Date>
+  updated_at: Generated<Date>
 }
 
 export interface AutomationRuleTable {
@@ -1275,6 +1286,7 @@ export interface Database {
   dashboard_layouts: DashboardLayoutTable;
   dashboard_group_assignments: DashboardGroupAssignmentTable;
   projects: ProjectTable
+  cross_module_settings: CrossModuleSettingTable
   project_task_statuses: ProjectTaskStatusTable
   project_tasks: ProjectTaskTable
   project_task_assignees: ProjectTaskAssigneeTable
@@ -1523,6 +1535,9 @@ export type RecurringTaskRuleUpdate = Updateable<RecurringTaskRuleTable>
 export type PortalAccess = Selectable<PortalAccessTable>
 export type ClientPortalSession = Selectable<ClientPortalSessionTable>
 export type ApprovalRequest = Selectable<ApprovalRequestTable>
+export type CrossModuleSetting = Selectable<CrossModuleSettingTable>
+export type NewCrossModuleSetting = Insertable<CrossModuleSettingTable>
+export type CrossModuleSettingUpdate = Updateable<CrossModuleSettingTable>
 export type AutomationRule = Selectable<AutomationRuleTable>
 export type ProjectDoc = Selectable<ProjectDocTable>
 export type ProjectTemplate = Selectable<ProjectTemplateTable>
