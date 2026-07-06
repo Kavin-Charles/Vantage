@@ -9,7 +9,7 @@ interface Props {
 }
 
 const inputStyle: React.CSSProperties = {
-  fontFamily: 'DM Sans', fontSize: 13,
+  fontFamily: 'IBM Plex Sans', fontSize: 13,
   padding: '6px 10px', borderRadius: 8,
   border: '1px solid var(--border)', background: 'var(--bg)',
   color: 'var(--text)', outline: 'none', width: '100%', boxSizing: 'border-box',
@@ -25,7 +25,7 @@ export function CustomFieldRenderer({ field, value, onChange }: Props) {
           onChange={e => onChange(e.target.checked)}
           style={{ width: 16, height: 16, cursor: 'pointer' }}
         />
-        <span style={{ fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text2)' }}>
+        <span style={{ fontFamily: 'IBM Plex Sans', fontSize: 13, color: 'var(--text2)' }}>
           {value === 'true' ? 'Yes' : 'No'}
         </span>
       </label>
@@ -76,7 +76,7 @@ export function CustomFieldRenderer({ field, value, onChange }: Props) {
           style={inputStyle}
         />
         {value && (
-          <a href={value} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--blue)', fontFamily: 'DM Sans', fontSize: 12, flexShrink: 0 }}>
+          <a href={value} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--blue)', fontFamily: 'IBM Plex Sans', fontSize: 12, flexShrink: 0 }}>
             Open
           </a>
         )}

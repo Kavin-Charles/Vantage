@@ -9,7 +9,7 @@ import { Icon } from '@/modules/shared/components/ui/Icon';
 const FIELD_TYPES: CustomField['field_type'][] = ['TEXT', 'NUMBER', 'DATE', 'SELECT', 'CHECKBOX', 'URL'];
 
 const inputStyle: React.CSSProperties = {
-  fontFamily: 'DM Sans', fontSize: 13,
+  fontFamily: 'IBM Plex Sans', fontSize: 13,
   padding: '8px 10px', borderRadius: 8,
   border: '1px solid var(--border)', background: 'var(--bg)',
   color: 'var(--text)', outline: 'none', width: '100%', boxSizing: 'border-box',
@@ -61,15 +61,15 @@ export function CustomFieldsManager({ projectId }: Props) {
 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20, marginTop: 16 }}>
-      <p style={{ fontFamily: 'DM Sans', fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>
+      <p style={{ fontFamily: 'IBM Plex Sans', fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>
         Custom Fields
       </p>
-      <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)', margin: '0 0 16px' }}>
+      <p style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, color: 'var(--text3)', margin: '0 0 16px' }}>
         Track extra task data — budget codes, ticket IDs, anything specific to this project. {fields.length}/20 fields.
       </p>
 
       {fields.length === 0 && (
-        <div style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)', marginBottom: 16, fontStyle: 'italic' }}>
+        <div style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, color: 'var(--text3)', marginBottom: 16, fontStyle: 'italic' }}>
           No custom fields yet.
         </div>
       )}
@@ -78,8 +78,8 @@ export function CustomFieldsManager({ projectId }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16 }}>
           {fields.map(f => (
             <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)' }}>
-              <span style={{ fontFamily: 'DM Sans', fontSize: 13, fontWeight: 500, color: 'var(--text)', flex: 1 }}>{f.name}</span>
-              <span style={{ fontFamily: 'DM Sans', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'var(--surface2)', color: 'var(--text2)' }}>
+              <span style={{ fontFamily: 'IBM Plex Sans', fontSize: 13, fontWeight: 500, color: 'var(--text)', flex: 1 }}>{f.name}</span>
+              <span style={{ fontFamily: 'IBM Plex Sans', fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: 'var(--surface2)', color: 'var(--text2)' }}>
                 {f.field_type}
               </span>
               <button
@@ -119,7 +119,7 @@ export function CustomFieldsManager({ projectId }: Props) {
           onClick={() => createMutation.mutate()}
           disabled={!canCreate || createMutation.isPending}
           style={{
-            fontFamily: 'DM Sans', fontSize: 13, fontWeight: 600, padding: '8px 14px', borderRadius: 8,
+            fontFamily: 'IBM Plex Sans', fontSize: 13, fontWeight: 600, padding: '8px 14px', borderRadius: 8,
             background: 'var(--text)', color: '#fff', border: 'none', cursor: 'pointer',
             opacity: !canCreate ? 0.5 : 1, alignSelf: 'flex-start',
           }}
@@ -128,7 +128,7 @@ export function CustomFieldsManager({ projectId }: Props) {
         </button>
       </div>
       {createMutation.isError && (
-        <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--red)', margin: '8px 0 0' }}>Failed to create field.</p>
+        <p style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, color: 'var(--red)', margin: '8px 0 0' }}>Failed to create field.</p>
       )}
     </div>
   );

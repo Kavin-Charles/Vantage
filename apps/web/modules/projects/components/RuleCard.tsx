@@ -39,9 +39,9 @@ export function RuleCard({ rule, onToggle, onEdit, onDelete, isToggling }: Props
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <span style={{ fontFamily: 'DM Sans', fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{rule.name}</span>
+          <span style={{ fontFamily: 'IBM Plex Sans', fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{rule.name}</span>
           <span style={{
-            fontFamily: 'DM Sans', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20,
+            fontFamily: 'IBM Plex Sans', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 20,
             textTransform: 'uppercase', letterSpacing: '0.04em',
             background: rule.is_active ? 'var(--green-bg)' : 'var(--surface2)',
             color: rule.is_active ? 'var(--green)' : 'var(--text3)',
@@ -49,10 +49,10 @@ export function RuleCard({ rule, onToggle, onEdit, onDelete, isToggling }: Props
             {rule.is_active ? 'Active' : 'Paused'}
           </span>
         </div>
-        <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)', margin: '0 0 4px' }}>
+        <p style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, color: 'var(--text3)', margin: '0 0 4px' }}>
           When <strong style={{ color: 'var(--text2)' }}>{TRIGGER_LABELS[rule.trigger.type] ?? rule.trigger.type}</strong>
         </p>
-        <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--text3)', margin: 0 }}>
+        <p style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, color: 'var(--text3)', margin: 0 }}>
           Then {rule.actions.map(a => ACTION_LABELS[a.type] ?? a.type).join(', ')}
         </p>
       </div>
@@ -61,21 +61,21 @@ export function RuleCard({ rule, onToggle, onEdit, onDelete, isToggling }: Props
           type="button"
           onClick={onToggle}
           disabled={isToggling}
-          style={{ fontFamily: 'DM Sans', fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'none', color: 'var(--text2)', cursor: 'pointer' }}
+          style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'none', color: 'var(--text2)', cursor: 'pointer' }}
         >
           {rule.is_active ? 'Pause' : 'Activate'}
         </button>
         <button
           type="button"
           onClick={onEdit}
-          style={{ fontFamily: 'DM Sans', fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'none', color: 'var(--text2)', cursor: 'pointer' }}
+          style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border)', background: 'none', color: 'var(--text2)', cursor: 'pointer' }}
         >
           Edit
         </button>
         <button
           type="button"
           onClick={onDelete}
-          style={{ fontFamily: 'DM Sans', fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 7, border: '1px solid var(--red-bg)', background: 'none', color: 'var(--red)', cursor: 'pointer' }}
+          style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 7, border: '1px solid var(--red-bg)', background: 'none', color: 'var(--red)', cursor: 'pointer' }}
         >
           Delete
         </button>

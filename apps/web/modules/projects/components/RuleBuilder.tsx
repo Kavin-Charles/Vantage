@@ -38,12 +38,12 @@ interface Props {
 
 const inputStyle: React.CSSProperties = {
   border: '1px solid var(--border)', borderRadius: 8, padding: '7px 10px',
-  fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text)', background: 'var(--bg)',
+  fontFamily: 'IBM Plex Sans', fontSize: 13, color: 'var(--text)', background: 'var(--bg)',
   outline: 'none', width: '100%', boxSizing: 'border-box',
 };
 
 const labelStyle: React.CSSProperties = {
-  fontFamily: 'DM Sans', fontSize: 11, fontWeight: 600, color: 'var(--text3)',
+  fontFamily: 'IBM Plex Sans', fontSize: 11, fontWeight: 600, color: 'var(--text3)',
   textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4,
 };
 
@@ -149,7 +149,7 @@ export function RuleBuilder({ projectId, rule, onClose }: Props) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: 'Instrument Serif', fontSize: 18, color: 'var(--text)' }}>
+          <span style={{ fontFamily: 'IBM Plex Serif', fontSize: 18, color: 'var(--text)' }}>
             {rule ? 'Edit Rule' : 'New Rule'}
           </span>
           <button type="button" aria-label="Close" onClick={handleClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 18, lineHeight: 1, padding: 4 }}>×</button>
@@ -182,7 +182,7 @@ export function RuleBuilder({ projectId, rule, onClose }: Props) {
               type="button"
               onClick={() => setActions(prev => [...prev, defaultAction('send_notification')])}
               disabled={actions.length >= 10}
-              style={{ fontFamily: 'DM Sans', fontSize: 12, fontWeight: 600, color: 'var(--blue)', background: 'none', border: 'none', cursor: 'pointer', opacity: actions.length >= 10 ? 0.5 : 1 }}
+              style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, fontWeight: 600, color: 'var(--blue)', background: 'none', border: 'none', cursor: 'pointer', opacity: actions.length >= 10 ? 0.5 : 1 }}
             >
               + Add action
             </button>
@@ -211,7 +211,7 @@ export function RuleBuilder({ projectId, rule, onClose }: Props) {
                           type="button"
                           onClick={() => toggleUserId(action, index, m.user_id)}
                           style={{
-                            fontFamily: 'DM Sans', fontSize: 12, padding: '4px 10px', borderRadius: 20,
+                            fontFamily: 'IBM Plex Sans', fontSize: 12, padding: '4px 10px', borderRadius: 20,
                             border: '1px solid var(--border)', cursor: 'pointer',
                             background: action.user_ids.includes(m.user_id) ? 'var(--text)' : 'var(--surface)',
                             color: action.user_ids.includes(m.user_id) ? '#fff' : 'var(--text2)',
@@ -304,11 +304,11 @@ export function RuleBuilder({ projectId, rule, onClose }: Props) {
         </div>
 
         {saveMutation.isError && (
-          <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--red)', margin: 0 }}>Failed to save rule.</p>
+          <p style={{ fontFamily: 'IBM Plex Sans', fontSize: 12, color: 'var(--red)', margin: 0 }}>Failed to save rule.</p>
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
-          <button type="button" onClick={handleClose} style={{ padding: '8px 16px', border: '1px solid var(--border)', borderRadius: 8, background: 'none', fontFamily: 'DM Sans', fontSize: 13, color: 'var(--text2)', cursor: 'pointer' }}>
+          <button type="button" onClick={handleClose} style={{ padding: '8px 16px', border: '1px solid var(--border)', borderRadius: 8, background: 'none', fontFamily: 'IBM Plex Sans', fontSize: 13, color: 'var(--text2)', cursor: 'pointer' }}>
             Cancel
           </button>
           <button
@@ -319,7 +319,7 @@ export function RuleBuilder({ projectId, rule, onClose }: Props) {
               padding: '8px 20px', border: 'none', borderRadius: 8,
               background: canSave ? 'var(--text)' : 'var(--surface2)',
               color: canSave ? '#fff' : 'var(--text3)',
-              fontFamily: 'DM Sans', fontSize: 13, fontWeight: 600, cursor: canSave ? 'pointer' : 'not-allowed',
+              fontFamily: 'IBM Plex Sans', fontSize: 13, fontWeight: 600, cursor: canSave ? 'pointer' : 'not-allowed',
             }}
           >
             {saveMutation.isPending ? 'Saving…' : rule ? 'Save Changes' : 'Create Rule'}
