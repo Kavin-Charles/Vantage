@@ -53,7 +53,7 @@ export default function AutomationPage() {
     <div style={{ padding: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <h2 style={{ fontFamily: "'IBM Plex Serif', serif", fontSize: 22, color: 'var(--text)', margin: '0 0 4px' }}>Automation</h2>
+          <h2 style={{ fontFamily: 'IBM Plex Serif', fontSize: 22, color: 'var(--text)', margin: '0 0 4px' }}>Automation</h2>
           <p style={{ fontFamily: 'IBM Plex Sans', fontSize: 13, color: 'var(--text3)', margin: 0 }}>
             {rules.length}/{MAX_RULES} rules
           </p>

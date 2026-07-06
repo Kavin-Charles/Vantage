@@ -250,7 +250,7 @@ export default function SettingsPage() {
 
         {/* Right: Labels + Custom Fields */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20 }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20 }}>
           <p style={{ fontFamily: 'DM Sans', fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>
             Labels
           </p>
@@ -352,8 +352,8 @@ export default function SettingsPage() {
           {createLabelMutation.isError && (
             <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--red)', margin: '8px 0 0' }}>Failed to create label.</p>
           )}
-        </div>
-        <CustomFieldsManager projectId={projectId} />
+          </div>
+          <CustomFieldsManager projectId={projectId} />
         </div>
       </div>
 
