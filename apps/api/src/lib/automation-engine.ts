@@ -8,12 +8,13 @@ import { triggerSchema, actionSchema } from '../routes/automation'
 type ParsedTrigger = z.infer<typeof triggerSchema>
 type ParsedAction = z.infer<typeof actionSchema>
 
-async function executeActions(
+export async function executeActions(
   db: Kysely<Database>,
   ruleId: string,
   projectId: string,
   actions: ParsedAction[],
   event: PMEvent,
+  createdBy: string,
 ): Promise<void> {
   for (const act of actions) {
     try {
@@ -77,6 +78,52 @@ async function executeActions(
         } finally {
           clearTimeout(timer)
         }
+      } else if (act.type === 'create_task') {
+        let statusId = act.status_id
+        if (!statusId) {
+          const defaultStatus = await db.selectFrom('project_task_statuses')
+            .select('id')
+            .where('project_id', '=', projectId)
+            .orderBy('position', 'asc')
+            .executeTakeFirst()
+          if (!defaultStatus) continue
+          statusId = defaultStatus.id
+        }
+
+        const created = await db.insertInto('project_tasks').values({
+          project_id: projectId,
+          status_id: statusId,
+          title: act.title,
+          created_by: createdBy,
+        }).returningAll().executeTakeFirstOrThrow()
+
+        if (act.assignee_ids) {
+          for (const userId of act.assignee_ids) {
+            await db.insertInto('project_task_assignees')
+              .values({ task_id: created.id, user_id: userId })
+              .execute()
+          }
+        }
+
+        const workspaceRow = await db.selectFrom('projects').select('workspace_id')
+          .where('id', '=', projectId).executeTakeFirst()
+        if (workspaceRow) {
+          await db.insertInto('activities').values({
+            workspace_id: workspaceRow.workspace_id,
+            user_id: createdBy,
+            type: 'pm_task_created',
+            body: `Created task "${act.title}" via automation`,
+            meta: { source: 'automation', rule_id: ruleId },
+          }).execute()
+        }
+      } else if (act.type === 'set_custom_field') {
+        if ('taskId' in event) {
+          const taskId = (event as { taskId: string }).taskId
+          await db.insertInto('custom_field_values')
+            .values({ task_id: taskId, custom_field_id: act.custom_field_id, value: act.value })
+            .onConflict(oc => oc.columns(['task_id', 'custom_field_id']).doUpdateSet({ value: act.value }))
+            .execute()
+        }
       }
     } catch (err) {
       logger.error({ err, ruleId, action: act.type }, 'automation action error')
@@ -121,7 +168,7 @@ export function initAutomationEngine(db: Kysely<Database>): void {
         let detail: string | null = null
 
         try {
-          await executeActions(db, rule.id, rule.project_id, actionsParsed.data, event)
+          await executeActions(db, rule.id, rule.project_id, actionsParsed.data, event, rule.created_by)
         } catch (err) {
           success = false
           detail = err instanceof Error ? err.message : String(err)
