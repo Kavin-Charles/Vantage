@@ -1024,6 +1024,7 @@ export interface ApprovalRequestTable {
   task_id: string | null
   milestone_id: string | null
   attachment_id: string | null
+  recipient_email: string | null
   status: Generated<string>
   note: string | null
   responded_at: Date | null
