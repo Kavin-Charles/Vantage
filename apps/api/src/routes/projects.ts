@@ -62,6 +62,7 @@ async function verifyLinkTargets(
     const deal = await db.selectFrom('pipeline_items').select('id')
       .where('id', '=', links.deal_id)
       .where('workspace_id', '=', workspaceId)
+      .where('deleted_at', 'is', null)
       .executeTakeFirst()
     if (!deal) return 'Deal not found'
   }
