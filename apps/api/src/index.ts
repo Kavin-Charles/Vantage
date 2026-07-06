@@ -21,6 +21,7 @@ import { createWorkspaceRouter } from './routes/workspace';
 import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
 import { createGroupsRouter } from './routes/groups';
+import { createCrossModuleSettingsRouter } from './routes/cross-module-settings';
 import { createInvitesRouter } from './routes/invites';
 import { createUserPermissionsRouter } from './routes/user-permissions';
 import { createConfigRouter } from './routes/config';
@@ -347,6 +348,7 @@ app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/workspace', requireAuth, requireAdmin, createWorkspaceRouter(db));
 app.use('/api/groups', requireAuth, requireAdmin, createGroupsRouter(db));
+app.use('/api/cross-module-settings', requireAuth, requireAdmin, createCrossModuleSettingsRouter(db));
 app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requireAdmin, env.APP_URL));
 app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
