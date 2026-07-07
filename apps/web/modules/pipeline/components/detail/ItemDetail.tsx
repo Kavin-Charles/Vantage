@@ -5,6 +5,8 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getItem, updateItem, deleteItem } from '@/modules/pipeline/lib/items';
 import { ItemDetailField } from './ItemDetailField';
 import { ItemActivity } from './ItemActivity';
+import { pmApi } from '@/modules/projects/lib/api';
+import { LinkedProjectCard } from '@/modules/projects/components/LinkedProjectCard';
 import type { Pipeline } from '@/modules/pipeline/lib/pipelines';
 
 interface Props {
@@ -54,6 +56,13 @@ export function ItemDetail({ itemId, pipeline, onClose }: Props) {
       onClose();
     },
   });
+
+  const { data: linkedProjectsData } = useQuery({
+    queryKey: ['deal-projects', itemId],
+    queryFn: async () => pmApi.listProjectsByDeal(await getToken(), itemId),
+    enabled: !!itemId,
+  });
+  const linkedProjects = linkedProjectsData?.data ?? [];
 
   const currentStage = pipeline.stages.find(s => s.id === item?.stage_id);
   const stageColor = currentStage?.is_won ? '#22c55e' : currentStage?.is_lost ? '#ef4444' : (currentStage?.color ?? '#6366f1');
@@ -193,6 +202,27 @@ export function ItemDetail({ itemId, pipeline, onClose }: Props) {
             >
               {pipeline.stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
+          </div>
+        )}
+
+        {/* Linked projects */}
+        {linkedProjects.length > 0 && (
+          <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+            <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+            <label
+              style={{
+                fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
+                letterSpacing: '0.6px', color: 'var(--text3)',
+                fontFamily: 'var(--font-sans)', display: 'block', marginBottom: 8,
+              }}
+            >
+              Project
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {linkedProjects.map((p, i) => (
+                <LinkedProjectCard key={p.id} project={p} animationDelay={i * 30} />
+              ))}
+            </div>
           </div>
         )}
 
