@@ -52,6 +52,7 @@ const GROUPS: SettingsGroup[] = [
       { href: '/settings/notifications', label: 'Notifications' },
       { href: '/settings/modules', label: 'Modules' },
       { href: '/settings/plugins', label: 'Plugins' },
+      { href: '/settings/data-providers', label: 'Data Providers' },
       { href: '/settings/api-keys', label: 'API Keys' },
       { href: '/settings/ssh', label: 'SSH Keys' },
       { href: '/settings/updates', label: 'Updates' },

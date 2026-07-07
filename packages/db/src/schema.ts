@@ -738,6 +738,17 @@ export interface PluginHubRecordTable {
   updated_at: Generated<Date>;
 }
 
+export interface WorkspaceContractProviderTable {
+  id: Generated<string>;
+  workspace_id: string;
+  contract_group: string;
+  active_provider_id: string;
+  status: Generated<'active' | 'pending_selection'>;
+  previous_provider_id: string | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface PluginNotificationTable {
   id: Generated<string>;
   workspace_id: string;
@@ -1278,6 +1289,7 @@ export interface Database {
   plugin_settings: PluginSettingsTable;
   plugin_cron_jobs: PluginCronJobTable;
   plugin_hub_records: PluginHubRecordTable;
+  workspace_contract_providers: WorkspaceContractProviderTable;
   plugin_notifications: PluginNotificationTable;
   user_permissions: UserPermissionTable;
   groups: GroupTable;

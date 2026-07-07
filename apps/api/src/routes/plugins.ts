@@ -11,7 +11,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
-import { dispatchBridgeCall, runMigrations, dropPluginTables, isKnownContract, hasHubPermission, removeProviderHubData, CONTRACT_ID_RE } from '@vencore/plugin-runtime';
+import { dispatchBridgeCall, runMigrations, dropPluginTables, isKnownContract, hasHubPermission, removeProviderHubData, CONTRACT_ID_RE, validateGroupCoverage, detectProviderConflicts, deactivateProvider } from '@vencore/plugin-runtime';
 import { savePluginFile, loadPluginBackend, invalidatePlugin } from '../lib/plugin-loader';
 import { encryptSettingValue, isEncryptedValue, decryptSettingValue } from '../lib/plugin-settings-crypto';
 import { logger } from '../lib/logger';
@@ -168,7 +168,37 @@ function validateHubDeclarations(mf: ParsedManifest): string | null {
       return `consumes '${c.contract}' requires data_access 'hub:read:${c.contract}'`;
     }
   }
+  // Group coverage is all-or-nothing: providing some but not all required
+  // contracts of a group would leave consumers with half a CRM
+  const groupError = validateGroupCoverage(mf.provides.map((p) => p.contract));
+  if (groupError) return groupError;
   return null;
+}
+
+/**
+ * Notifies all workspace admins about a provider event (conflict/fallback).
+ */
+async function notifyAdmins(
+  db: Kysely<Database>,
+  workspaceId: string,
+  pluginId: string,
+  title: string,
+  body: string,
+): Promise<void> {
+  const admins = await db.selectFrom('users').select('id')
+    .where('workspace_id', '=', workspaceId)
+    .where('role', '=', 'admin')
+    .execute();
+  await Promise.allSettled(admins.map((a) =>
+    (db as any).insertInto('plugin_notifications').values({
+      workspace_id: workspaceId,
+      user_id: a.id,
+      plugin_id: pluginId,
+      title,
+      body,
+      type: 'info',
+    }).execute(),
+  ));
 }
 
 /**
@@ -441,6 +471,12 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         .executeTakeFirstOrThrow();
 
       await syncHookProvider(db, workspace.id, mf, true);
+      const conflicts = await detectProviderConflicts(db as Kysely<any>, workspace.id, mf);
+      if (conflicts.length > 0) {
+        await notifyAdmins(db, workspace.id, mf.id,
+          'Choose your data provider',
+          `${mf.name} can power ${conflicts.map((g) => g.label).join(', ')} data. Select the active provider in Settings → Data providers.`);
+      }
       loadPluginBackend(mf.id, workspace.id, db);
       return res.status(201).json({ data: plugin, error: null });
     } catch (err) {
@@ -754,6 +790,12 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         .executeTakeFirstOrThrow();
 
       await syncHookProvider(db, workspace.id, mf, true);
+      const uploadConflicts = await detectProviderConflicts(db as Kysely<any>, workspace.id, mf);
+      if (uploadConflicts.length > 0) {
+        await notifyAdmins(db, workspace.id, mf.id,
+          'Choose your data provider',
+          `${mf.name} can power ${uploadConflicts.map((g) => g.label).join(', ')} data. Select the active provider in Settings → Data providers.`);
+      }
 
       // Load backend bundle
       loadPluginBackend(mf.id, workspace.id, db);
@@ -849,8 +891,21 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         // Disabled providers must not serve stale data to consumers
         await removeProviderHubData(db as Kysely<any>, workspace.id, plugin.plugin_id);
         await syncHookProvider(db, workspace.id, { id: plugin.plugin_id, name: plugin.name, provides }, false);
+        // Groups it served fall back to the builtin provider
+        const fellBack = await deactivateProvider(db as Kysely<any>, workspace.id, plugin.plugin_id);
+        if (fellBack.length > 0) {
+          await notifyAdmins(db, workspace.id, plugin.plugin_id,
+            `${plugin.name} was disabled`,
+            `${fellBack.map((g) => g.label).join(', ')} data is now powered by Vencore CRM.`);
+        }
       } else {
         await syncHookProvider(db, workspace.id, { id: plugin.plugin_id, name: plugin.name, provides }, true);
+        const enableConflicts = await detectProviderConflicts(db as Kysely<any>, workspace.id, { id: plugin.plugin_id, provides: (mfDecl.provides ?? []) });
+        if (enableConflicts.length > 0) {
+          await notifyAdmins(db, workspace.id, plugin.plugin_id,
+            'Choose your data provider',
+            `${plugin.name} can power ${enableConflicts.map((g) => g.label).join(', ')} data. Select the active provider in Settings → Data providers.`);
+        }
         loadPluginBackend(plugin.plugin_id, workspace.id, db);
       }
 
@@ -917,6 +972,16 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       await removeProviderHubData(db as Kysely<any>, workspace.id, pluginId).catch((err) => {
         logger.warn({ err, pluginId }, 'Failed to remove hub data during uninstall');
       });
+      // Groups it served fall back to the builtin provider
+      const uninstallFellBack = await deactivateProvider(db as Kysely<any>, workspace.id, pluginId).catch((err) => {
+        logger.warn({ err, pluginId }, 'Failed to deactivate provider during uninstall');
+        return [];
+      });
+      if (uninstallFellBack.length > 0) {
+        await notifyAdmins(db, workspace.id, pluginId,
+          `${existing.name} was uninstalled`,
+          `${uninstallFellBack.map((g) => g.label).join(', ')} data is now powered by Vencore CRM.`);
+      }
       const removedProvider = await db
         .deleteFrom('hook_providers')
         .where('workspace_id', '=', workspace.id)

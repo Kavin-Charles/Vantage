@@ -11,7 +11,9 @@ import type { PluginManifest } from '@vencore/plugin-types';
 import { bridgeRegistry } from './bridge-registry';
 import type { BridgeContext } from './bridge-router';
 import { pluginEventBus } from './bus';
-import { getContract, validateRecords, isKnownContract } from './contracts';
+import { validateRecords, isKnownContract, groupForContract } from './contracts';
+import { getActiveProviderForContract } from './provider-selection';
+import { queryBuiltinCrm, countBuiltinCrm, builtinAdapterSupports, BUILTIN_CRM_PROVIDER_ID } from './builtin-crm-adapter';
 
 export const HUB_LIMITS = {
   maxBatchSize: 500,
@@ -190,6 +192,31 @@ export function registerHubBridgeMethods(): void {
         HUB_LIMITS.maxQueryLimit,
       );
 
+      // Switch model: grouped contracts serve the workspace's active provider
+      // only. An explicit `provider` param bypasses selection (a plugin
+      // browsing its own published data, admin/audit tooling). Standalone
+      // contracts keep the merge model.
+      const explicitProvider = typeof p['provider'] === 'string' && p['provider'].length > 0
+        ? p['provider'] as string
+        : null;
+      let effectiveProvider = explicitProvider;
+      if (!effectiveProvider && groupForContract(contract)) {
+        const active = await getActiveProviderForContract(db, ctx.workspaceId, contract);
+        effectiveProvider = active?.provider ?? null;
+      }
+
+      // Builtin provider serves live from core tables — no hub rows to read
+      if (effectiveProvider === BUILTIN_CRM_PROVIDER_ID && builtinAdapterSupports(contract)) {
+        const filter = p['filter'] && typeof p['filter'] === 'object' && !Array.isArray(p['filter'])
+          ? p['filter'] as Record<string, unknown>
+          : undefined;
+        return queryBuiltinCrm(db, ctx.workspaceId, contract, {
+          cursor: typeof p['cursor'] === 'string' ? p['cursor'] : undefined,
+          limit,
+          filter,
+        });
+      }
+
       let q = db.selectFrom('plugin_hub_records')
         .select(['provider_plugin_id', 'external_id', 'data', 'updated_at', 'id'])
         .where('workspace_id', '=', ctx.workspaceId)
@@ -198,8 +225,8 @@ export function registerHubBridgeMethods(): void {
         .orderBy('id', 'desc')
         .limit(limit + 1);
 
-      if (typeof p['provider'] === 'string' && p['provider'].length > 0) {
-        q = q.where('provider_plugin_id', '=', p['provider']);
+      if (effectiveProvider) {
+        q = q.where('provider_plugin_id', '=', effectiveProvider);
       }
 
       const filter = p['filter'];
@@ -270,18 +297,34 @@ export function registerHubBridgeMethods(): void {
         .execute() as Array<{ provider_plugin_id: string; record_count: unknown; last_published_at: Date | null }>;
 
       const statMap = new Map(stats.map((s) => [s.provider_plugin_id, s]));
+      const active = await getActiveProviderForContract(db, ctx.workspaceId, contract);
 
-      return providers.map((pl) => {
+      const result = providers.map((pl) => {
         const s = statMap.get(pl.plugin_id);
         return {
           plugin_id: pl.plugin_id,
           name: pl.name,
+          builtin: false,
+          active: active?.provider === pl.plugin_id,
           record_count: s ? Number(s.record_count) : 0,
           last_published_at: s?.last_published_at
             ? (s.last_published_at instanceof Date ? s.last_published_at.toISOString() : String(s.last_published_at))
             : null,
         };
       });
+
+      // Builtin provider serves grouped CRM contracts live
+      if (builtinAdapterSupports(contract)) {
+        result.unshift({
+          plugin_id: BUILTIN_CRM_PROVIDER_ID,
+          name: 'Vencore CRM',
+          builtin: true,
+          active: active === null || active.provider === BUILTIN_CRM_PROVIDER_ID,
+          record_count: await countBuiltinCrm(db, ctx.workspaceId, contract),
+          last_published_at: null,
+        });
+      }
+      return result;
     })
     .register('hub.delete', null, async (ctx, p, db) => {
       const contractId = p['contract'];

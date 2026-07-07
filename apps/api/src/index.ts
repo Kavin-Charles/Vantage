@@ -65,6 +65,7 @@ import { createProjectMembersRouter } from './routes/project-members';
 import { createPortalRouter, createPortalInternalRouter } from './routes/portal';
 import { createModuleEventSettingsRouter } from './routes/module-event-settings';
 import { createHooksRouter } from './routes/hooks';
+import { createHubProvidersRouter } from './routes/hub-providers';
 import { createSystemRouter } from './routes/system';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
@@ -434,6 +435,7 @@ app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesR
 app.use('/api/alert-thresholds', requireAuth, requireModule('alerts'), createAlertThresholdsRouter(db));
 app.use('/api/settings/module-events', requireAuth, createModuleEventSettingsRouter(db));
 app.use('/api/settings/notifications', requireAuth, createNotificationPreferencesRouter(db));
+app.use('/api/settings', requireAuth, createHubProvidersRouter(db));
 app.use('/api/settings', requireAuth, createHooksRouter(db));
 
 // System — version + updates. Mixed auth handled inside the router.

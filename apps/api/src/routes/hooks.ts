@@ -4,6 +4,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { PluginManifest } from '@vencore/plugin-types';
 import { HOOK_REGISTRY } from '../modules/registry';
+import { getActiveProviderForContract, BUILTIN_CRM_PROVIDER_ID } from '@vencore/plugin-runtime';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 interface ProviderRef { id: string; name: string }
@@ -86,12 +87,41 @@ export function createHooksRouter(db: Kysely<Database>): Router {
       const configMap = new Map(configs.map(c => [c.feature_id, c]));
 
       const data = await Promise.all(features.map(async feature => {
+        const config = configMap.get(feature.id);
+
+        // Switch model: contract-backed features are powered by the group's
+        // active provider (chosen once in Settings → Data providers), not a
+        // per-feature selection. Only the enable toggle remains per feature.
+        if (feature.requires_contract) {
+          const active = await getActiveProviderForContract(db as Kysely<any>, workspace.id, feature.requires_contract);
+          if (active) {
+            const providerName = active.provider === BUILTIN_CRM_PROVIDER_ID
+              ? 'Vencore CRM'
+              : installedProviders.find(p => p.provider_id === active.provider)?.name ?? active.provider;
+            const enabled = config?.enabled ?? false;
+            return {
+              id: feature.id,
+              name: feature.name,
+              description: feature.description,
+              requires_contract: feature.requires_contract,
+              powered_by: { id: active.provider, name: providerName, pending_selection: active.status === 'pending_selection' },
+              compatible_providers: [],
+              installed_providers: [],
+              state: enabled ? 'enabled' as const : 'available' as const,
+              selected_provider_id: null,
+              selected_provider_name: providerName,
+              enabled,
+            };
+          }
+        }
+
+        // Legacy path — features without a grouped contract keep explicit
+        // provider selection from PR #48.
         const compatible = await computeCompatibleProviders(db, workspace.id, feature);
         const compatibleInstalled = compatible
           .map(cp => installedMap.get(cp.id))
           .filter((p): p is NonNullable<typeof p> => p !== undefined);
 
-        const config = configMap.get(feature.id);
         const selectedProvider = config?.provider_id
           ? installedProviders.find(p => p.id === config.provider_id) ?? null
           : null;
@@ -114,6 +144,7 @@ export function createHooksRouter(db: Kysely<Database>): Router {
           name: feature.name,
           description: feature.description,
           requires_contract: feature.requires_contract ?? null,
+          powered_by: null,
           compatible_providers: compatible.map(cp => ({
             ...cp,
             installed: installedMap.has(cp.id),
@@ -161,6 +192,29 @@ export function createHooksRouter(db: Kysely<Database>): Router {
       }
 
       const { enabled, provider_id } = parsed.data;
+
+      // Contract-backed features: provider comes from group selection, only
+      // the enable toggle is stored (provider_id ignored)
+      if (feature.requires_contract) {
+        await db
+          .insertInto('workspace_hook_configs')
+          .values({
+            workspace_id: workspace.id,
+            module_id: moduleId,
+            feature_id: featureId,
+            provider_id: null,
+            enabled,
+          })
+          .onConflict(oc =>
+            oc.columns(['workspace_id', 'module_id', 'feature_id']).doUpdateSet({
+              enabled,
+              updated_at: new Date(),
+            }),
+          )
+          .execute();
+        res.json({ data: { module_id: moduleId, feature_id: featureId, enabled }, error: null });
+        return;
+      }
 
       // Validate provider_id is installed and compatible
       if (provider_id) {
