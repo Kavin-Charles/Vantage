@@ -4,12 +4,21 @@ import request from 'supertest'
 import type { Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
 import { signApprovalToken } from '../lib/approval-token'
+import { createPortalInternalRouter } from './portal'
 
 const SECRET = 'test-secret'
 const APPROVAL_ID = 'approval-1'
 
 vi.mock('../lib/pm-events', () => ({ pmEvents: { emit: vi.fn() } }))
 vi.mock('../lib/log-activity', () => ({ logActivity: vi.fn().mockResolvedValue(undefined) }))
+
+function injectUser(app: express.Express) {
+  app.use((req, _res, next) => {
+    (req as any).user = { id: 'user-1', role: 'admin' };
+    (req as any).workspace = { id: 'ws-1' };
+    next();
+  });
+}
 
 describe('GET /api/portal/approve/:token', () => {
   it('returns approval context for a valid token', async () => {
@@ -114,5 +123,84 @@ describe('POST /api/portal/approve/:token', () => {
 
     const res = await request(app).post(`/api/portal/approve/${token}`).send({})
     expect(res.status).toBe(409)
+  })
+})
+
+describe('GET /:portalId/approvals (internal)', () => {
+  it('returns 200 with approvals list scoped to the portal', async () => {
+    const projectId = 'proj-1'
+    const portalId = 'portal-1'
+
+    const projectChain = {
+      selectFrom: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      executeTakeFirst: vi.fn().mockResolvedValue({ id: projectId }),
+    }
+    const portalChain = {
+      selectFrom: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      executeTakeFirst: vi.fn().mockResolvedValue({ id: portalId }),
+    }
+    const approvalsChain = {
+      selectFrom: vi.fn().mockReturnThis(),
+      selectAll: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      execute: vi.fn().mockResolvedValue([
+        { id: 'ar-1', portal_id: portalId, project_id: projectId, task_id: null, milestone_id: null, attachment_id: null, recipient_email: null, status: 'PENDING', note: null, responded_at: null, created_at: new Date() },
+      ]),
+    }
+
+    const db = {
+      selectFrom: vi.fn((table: string) => {
+        if (table === 'projects') return projectChain
+        if (table === 'portal_access') return portalChain
+        return approvalsChain
+      }),
+    } as unknown as Kysely<Database>
+
+    const app = express()
+    app.use(express.json())
+    injectUser(app)
+    app.use('/api/projects/:projectId/portal', createPortalInternalRouter(db, null, SECRET))
+
+    const res = await request(app).get(`/api/projects/${projectId}/portal/${portalId}/approvals`)
+
+    expect(res.status).toBe(200)
+    expect(res.body.data).toHaveLength(1)
+    expect(res.body.data[0].id).toBe('ar-1')
+  })
+
+  it('returns 404 when the portal does not belong to the project', async () => {
+    const projectId = 'proj-1'
+    const portalId = 'portal-missing'
+
+    const projectChain = {
+      selectFrom: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      executeTakeFirst: vi.fn().mockResolvedValue({ id: projectId }),
+    }
+    const portalChain = {
+      selectFrom: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      executeTakeFirst: vi.fn().mockResolvedValue(undefined),
+    }
+
+    const db = {
+      selectFrom: vi.fn((table: string) => (table === 'projects' ? projectChain : portalChain)),
+    } as unknown as Kysely<Database>
+
+    const app = express()
+    app.use(express.json())
+    injectUser(app)
+    app.use('/api/projects/:projectId/portal', createPortalInternalRouter(db, null, SECRET))
+
+    const res = await request(app).get(`/api/projects/${projectId}/portal/${portalId}/approvals`)
+
+    expect(res.status).toBe(404)
   })
 })

@@ -179,6 +179,37 @@ export function createPortalInternalRouter(
     }
   })
 
+  // GET /:portalId/approvals — list approval requests for a specific portal
+  router.get('/:portalId/approvals', async (req, res) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest
+      const { projectId, portalId } = req.params as { projectId: string; portalId: string }
+
+      const project = await db.selectFrom('projects').select('id')
+        .where('id', '=', projectId)
+        .where('workspace_id', '=', workspace.id)
+        .executeTakeFirst()
+      if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+
+      const portal = await db.selectFrom('portal_access').select('id')
+        .where('id', '=', portalId)
+        .where('project_id', '=', projectId)
+        .executeTakeFirst()
+      if (!portal) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Portal not found' } })
+
+      const approvals = await db.selectFrom('approval_requests')
+        .selectAll()
+        .where('portal_id', '=', portalId)
+        .where('project_id', '=', projectId)
+        .orderBy('created_at', 'desc')
+        .execute()
+
+      return res.json({ data: approvals, error: null })
+    } catch (err) {
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+    }
+  })
+
   // GET /approvals — list approval requests for project
   router.get('/approvals', async (req, res) => {
     try {
