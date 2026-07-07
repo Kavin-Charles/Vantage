@@ -4,8 +4,13 @@ import bcrypt from 'bcrypt'
 import { randomBytes } from 'crypto'
 import type { Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
+import type { SmtpConfig } from '@vencore/config'
 import type { AuthenticatedRequest } from '../middleware/auth'
 import type { Request, Response, NextFunction } from 'express'
+import { verifyApprovalToken, signApprovalToken } from '../lib/approval-token'
+import { sendApprovalEmail } from '../lib/send-approval-email'
+import { pmEvents } from '../lib/pm-events'
+import { logActivity } from '../lib/log-activity'
 
 // ── Zod schemas ──────────────────────────────────────────────────────────────
 
@@ -23,12 +28,50 @@ const createApprovalSchema = z.object({
   task_id: z.string().uuid().optional(),
   milestone_id: z.string().uuid().optional(),
   attachment_id: z.string().uuid().optional(),
+  recipient_email: z.string().email().optional(),
 })
 
 const respondApprovalSchema = z.object({
   status: z.enum(['APPROVED', 'REJECTED']),
   note: z.string().optional(),
 })
+
+// ── Shared respond helper ────────────────────────────────────────────────────
+// Used by both the session-based respond route and the signed-link routes so
+// both consistently emit the pm automation event and log activity.
+
+async function respondToApproval(
+  db: Kysely<Database>,
+  params: { approvalId: string; status: 'APPROVED' | 'REJECTED'; note: string | null },
+) {
+  const updated = await db.updateTable('approval_requests')
+    .set({ status: params.status, note: params.note, responded_at: new Date() })
+    .where('id', '=', params.approvalId)
+    .returningAll()
+    .executeTakeFirstOrThrow()
+
+  pmEvents.emit('pm', {
+    type: params.status === 'APPROVED' ? 'client_approved' : 'client_rejected',
+    projectId: updated.project_id,
+    approvalId: updated.id,
+  })
+
+  const project = await db.selectFrom('projects').select('workspace_id')
+    .where('id', '=', updated.project_id)
+    .executeTakeFirst()
+  if (project) {
+    void logActivity(db, {
+      workspace_id: project.workspace_id,
+      user_id: null,
+      type: 'pm_approval_responded',
+      source_module_id: 'projects',
+      record_id: updated.project_id,
+      meta: { approval_id: updated.id, status: params.status },
+    })
+  }
+
+  return updated
+}
 
 // ── Cookie constants ─────────────────────────────────────────────────────────
 
@@ -44,7 +87,11 @@ const PORTAL_COLUMNS = [
 // ── Internal management router ───────────────────────────────────────────────
 // Mounted at: /api/projects/:projectId/portal (JWT-protected via requireAuth)
 
-export function createPortalInternalRouter(db: Kysely<Database>): Router {
+export function createPortalInternalRouter(
+  db: Kysely<Database>,
+  smtp: SmtpConfig | null | undefined,
+  jwtSecret: string,
+): Router {
   const router = Router({ mergeParams: true })
 
   // GET / — list portals for project
@@ -162,7 +209,7 @@ export function createPortalInternalRouter(db: Kysely<Database>): Router {
       const { workspace } = req as unknown as AuthenticatedRequest
       const { projectId } = req.params as { projectId: string }
 
-      const project = await db.selectFrom('projects').select('id')
+      const project = await db.selectFrom('projects').select(['id', 'name'])
         .where('id', '=', projectId)
         .where('workspace_id', '=', workspace.id)
         .executeTakeFirst()
@@ -178,9 +225,20 @@ export function createPortalInternalRouter(db: Kysely<Database>): Router {
           task_id: parsed.data.task_id ?? null,
           milestone_id: parsed.data.milestone_id ?? null,
           attachment_id: parsed.data.attachment_id ?? null,
+          recipient_email: parsed.data.recipient_email ?? null,
         })
         .returningAll()
         .executeTakeFirstOrThrow()
+
+      if (parsed.data.recipient_email) {
+        const approveToken = signApprovalToken({ aid: approval.id, act: 'approve' }, jwtSecret)
+        const rejectToken = signApprovalToken({ aid: approval.id, act: 'reject' }, jwtSecret)
+        void sendApprovalEmail(smtp, parsed.data.recipient_email, {
+          projectName: project.name,
+          approveToken,
+          rejectToken,
+        })
+      }
 
       return res.status(201).json({ data: approval, error: null })
     } catch (err) {
@@ -194,7 +252,7 @@ export function createPortalInternalRouter(db: Kysely<Database>): Router {
 // ── Public portal router ──────────────────────────────────────────────────────
 // Mounted at: /api/portal (no requireAuth)
 
-export function createPortalRouter(db: Kysely<Database>): Router {
+export function createPortalRouter(db: Kysely<Database>, jwtSecret: string): Router {
   const router = Router()
 
   // ── Portal session middleware (closes over db) ──────────────────────────────
@@ -512,15 +570,74 @@ export function createPortalRouter(db: Kysely<Database>): Router {
       if (!approval) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Approval not found' } })
       if (approval.status !== 'PENDING') return res.status(409).json({ data: null, error: { code: 'ALREADY_RESPONDED', message: 'Already responded to this approval' } })
 
-      const updated = await db.updateTable('approval_requests')
-        .set({
-          status: parsed.data.status,
-          note: parsed.data.note ?? null,
-          responded_at: new Date(),
-        })
-        .where('id', '=', approvalId)
-        .returningAll()
-        .executeTakeFirstOrThrow()
+      const updated = await respondToApproval(db, {
+        approvalId,
+        status: parsed.data.status,
+        note: parsed.data.note ?? null,
+      })
+
+      return res.json({ data: updated, error: null })
+    } catch (err) {
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+    }
+  })
+
+  // GET /approve/:token — preview an approval from a signed email link (side-effect-free)
+  router.get('/approve/:token', async (req, res) => {
+    try {
+      const { token } = req.params as { token: string }
+      let payload
+      try {
+        payload = verifyApprovalToken(token, jwtSecret)
+      } catch {
+        return res.status(401).json({ data: null, error: { code: 'TOKEN_INVALID', message: 'This link has expired. Please contact your team for a new one.' } })
+      }
+
+      const approval = await db.selectFrom('approval_requests as a')
+        .innerJoin('projects as p', 'p.id', 'a.project_id')
+        .select(['a.id', 'a.status', 'a.task_id', 'a.milestone_id', 'p.name as project_name'])
+        .where('a.id', '=', payload.aid)
+        .executeTakeFirst()
+
+      if (!approval) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Approval request not found' } })
+
+      return res.json({
+        data: {
+          action: payload.act,
+          already_responded: approval.status !== 'PENDING',
+          status: approval.status,
+          project_name: approval.project_name,
+        },
+        error: null,
+      })
+    } catch (err) {
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+    }
+  })
+
+  // POST /approve/:token — apply the action embedded in the signed link
+  router.post('/approve/:token', async (req, res) => {
+    try {
+      const { token } = req.params as { token: string }
+      let payload
+      try {
+        payload = verifyApprovalToken(token, jwtSecret)
+      } catch {
+        return res.status(401).json({ data: null, error: { code: 'TOKEN_INVALID', message: 'This link has expired. Please contact your team for a new one.' } })
+      }
+
+      const approval = await db.selectFrom('approval_requests').select(['id', 'status'])
+        .where('id', '=', payload.aid)
+        .executeTakeFirst()
+      if (!approval) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Approval request not found' } })
+      if (approval.status !== 'PENDING') return res.status(409).json({ data: null, error: { code: 'ALREADY_RESPONDED', message: 'Already responded to this approval' } })
+
+      const note = typeof (req.body as { note?: unknown })?.note === 'string' ? (req.body as { note: string }).note : null
+      const updated = await respondToApproval(db, {
+        approvalId: approval.id,
+        status: payload.act === 'approve' ? 'APPROVED' : 'REJECTED',
+        note,
+      })
 
       return res.json({ data: updated, error: null })
     } catch (err) {

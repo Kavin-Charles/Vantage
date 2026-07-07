@@ -312,7 +312,7 @@ app.use('/api/projects/:projectId/recurring-rules', requireAuth, createRecurring
 app.use('/api/projects/:projectId/milestones', requireAuth, createMilestonesRouter(db));
 app.use('/api/projects/:projectId/sprints', requireAuth, createSprintsRouter(db));
 app.use('/api/projects/:projectId/members', requireAuth, createProjectMembersRouter(db));
-app.use('/api/projects/:projectId/portal', requireAuth, createPortalInternalRouter(db));
+app.use('/api/projects/:projectId/portal', requireAuth, createPortalInternalRouter(db, config.smtp, env.JWT_SECRET));
 app.use('/api/projects/:projectId/automations', requireAuth, createAutomationRouter(db));
 app.use('/api/projects/:projectId/automation-logs', requireAuth, createAutomationLogsRouter(db));
 app.use('/api/projects/:projectId/custom-fields', requireAuth, createCustomFieldsRouter(db));
@@ -326,7 +326,7 @@ app.use('/api/pm/search', requireAuth, createPmSearchRouter(db));
 app.use('/api/project-templates', requireAuth, createProjectTemplatesRouter(db));
 
 // Public portal — no requireAuth
-app.use('/api/portal', createPortalRouter(db));
+app.use('/api/portal', createPortalRouter(db, env.JWT_SECRET));
 app.use('/api/me/tasks', requireAuth, createMyTasksRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
 app.use('/api/analytics', requireAuth, requireModule('analytics'), createAnalyticsRouter(db, requirePermission));
