@@ -7,6 +7,7 @@ import { resolveHook } from '../lib/hooks-runtime'
 import { logActivity } from '../lib/log-activity'
 import { createAlert } from '../lib/alert-service'
 import { getCrossModuleSetting } from '../lib/cross-module-settings'
+import { maybeUpdateDealStageOnProjectComplete } from '../lib/deal-close-hooks'
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(255),
@@ -275,6 +276,9 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
           body: `Archived project "${project.name}"`,
           meta: { project_id: project.id },
         })
+        if (project.deal_id) {
+          void maybeUpdateDealStageOnProjectComplete({ db, workspaceId: workspace.id, userId: user.id, dealId: project.deal_id })
+        }
       }
 
       if (prior?.health !== project.health && (project.health === 'AT_RISK' || project.health === 'OFF_TRACK')) {
