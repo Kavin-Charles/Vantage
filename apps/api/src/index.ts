@@ -264,20 +264,28 @@ bridgeRegistry
     if (!name || !/^[a-z][a-z0-9_-]{0,63}$/i.test(name)) {
       throw { code: 'INVALID_REQUEST', message: 'Invalid cron job name' };
     }
-    const intervalMin = scheduleToMinutes(schedule ?? '');
+    const effectiveSchedule = schedule ?? 'every 60m';
+    const intervalMin = scheduleToMinutes(effectiveSchedule);
     const nextRunAt = new Date(Date.now() + intervalMin * 60_000);
     await (db as any).insertInto('plugin_cron_jobs')
       .values({
         workspace_id: ctx.workspaceId,
         plugin_id: ctx.pluginSlug,
         job_name: name,
-        schedule: schedule ?? 'every 60m',
+        schedule: effectiveSchedule,
         next_run_at: nextRunAt,
         enabled: true,
       })
       .onConflict((oc: any) =>
         oc.columns(['workspace_id', 'plugin_id', 'job_name'])
-          .doUpdateSet({ schedule: schedule ?? 'every 60m', enabled: true }),
+          .doUpdateSet({
+            schedule: effectiveSchedule,
+            enabled: true,
+            // Recompute next_run_at only when the schedule actually changed —
+            // re-registering on every sandbox boot must not keep pushing the
+            // next run into the future.
+            next_run_at: sqlTag`CASE WHEN plugin_cron_jobs.schedule <> ${effectiveSchedule} THEN ${nextRunAt} ELSE plugin_cron_jobs.next_run_at END`,
+          }),
       )
       .execute();
     return { registered: name, interval_minutes: intervalMin };

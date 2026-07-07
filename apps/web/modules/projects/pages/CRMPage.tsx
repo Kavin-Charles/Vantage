@@ -286,14 +286,23 @@ function LinkCRMForm({ projectId, current }: {
   });
 
   // Provider-aware search: routes through whichever CRM provider the hook is
-  // configured with (builtin or plugin). Falls back to core CRM search when
-  // the hook endpoint is unavailable (e.g. hook disabled).
+  // configured with (builtin or plugin). Falls back to legacy core search
+  // ONLY when the provider-aware endpoint is expectedly unavailable (hook
+  // disabled → 403 HOOK_DISABLED, or older API without the route → 404).
+  // Real failures (500s, network) rethrow so they surface instead of being
+  // masked by a silent fallback.
+  const isExpectedCrmSearchMiss = (e: unknown): boolean => {
+    const msg = e instanceof Error ? e.message : String(e);
+    return /hook is not enabled|HOOK_DISABLED|HTTP 40[34]|not found/i.test(msg);
+  };
+
   const fetchContacts = useCallback(async (q: string): Promise<ComboOption[]> => {
     const token = await getToken();
     try {
       const res = await pmApi.searchCrm(token, 'contact', q);
       return (res.data ?? []).map(c => ({ id: c.id, label: c.label, sublabel: c.sublabel ?? undefined }));
-    } catch {
+    } catch (e) {
+      if (!isExpectedCrmSearchMiss(e)) throw e;
       const res = await pmApi.searchContacts(token, q);
       return (res.data ?? []).map(c => ({ id: c.id, label: c.name, sublabel: c.email }));
     }
@@ -304,7 +313,8 @@ function LinkCRMForm({ projectId, current }: {
     try {
       const res = await pmApi.searchCrm(token, 'company', q);
       return (res.data ?? []).map(c => ({ id: c.id, label: c.label, sublabel: c.sublabel ?? undefined }));
-    } catch {
+    } catch (e) {
+      if (!isExpectedCrmSearchMiss(e)) throw e;
       const res = await pmApi.searchCompanies(token, q);
       return (res.data ?? []).map(c => ({ id: c.id, label: c.name, sublabel: c.industry ?? undefined }));
     }
@@ -315,7 +325,8 @@ function LinkCRMForm({ projectId, current }: {
     try {
       const res = await pmApi.searchCrm(token, 'deal', q);
       return (res.data ?? []).map(d => ({ id: d.id, label: d.label, sublabel: d.sublabel ?? undefined }));
-    } catch {
+    } catch (e) {
+      if (!isExpectedCrmSearchMiss(e)) throw e;
       const res = await pmApi.searchItems(token, q);
       return (res.data ?? []).map(i => ({
         id: i.id,

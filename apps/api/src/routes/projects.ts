@@ -7,6 +7,7 @@ import { resolveHook } from '../lib/hooks-runtime'
 import { getLinkedContact, getLinkedCompany, getLinkedDeal, getContactActivity, searchCrmRecords } from '../lib/crm-provider'
 import { logActivity } from '../lib/log-activity'
 import { createAlert } from '../lib/alert-service'
+import { logger } from '../lib/logger'
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(255),
@@ -62,7 +63,8 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
       const projects = await query.execute()
       return res.json({ data: projects, error: null })
     } catch (err) {
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+      logger.error({ err }, 'projects route error')
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
     }
   })
 
@@ -98,7 +100,8 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
       })
       return res.status(201).json({ data: project, error: null })
     } catch (err) {
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+      logger.error({ err }, 'projects route error')
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
     }
   })
 
@@ -120,7 +123,8 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
       const results = await searchCrmRecords(db, workspace.id, hook.providerStringId, kind, search)
       return res.json({ data: results, error: null })
     } catch (err) {
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+      logger.error({ err }, 'projects route error')
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
     }
   })
 
@@ -175,7 +179,8 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         error: null,
       })
     } catch (err) {
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+      logger.error({ err }, 'projects route error')
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
     }
   })
 
@@ -276,7 +281,8 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
 
       return res.json({ data: activities, error: null })
     } catch (err) {
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+      logger.error({ err }, 'projects route error')
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
     }
   })
 
@@ -344,7 +350,8 @@ export function createProjectLabelsRouter(db: Kysely<Database>): Router {
         .execute()
       return res.json({ data: labels, error: null })
     } catch (err) {
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+      logger.error({ err }, 'projects route error')
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
     }
   })
 
@@ -360,7 +367,8 @@ export function createProjectLabelsRouter(db: Kysely<Database>): Router {
         .returningAll().executeTakeFirstOrThrow()
       return res.status(201).json({ data: label, error: null })
     } catch (err) {
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
+      logger.error({ err }, 'projects route error')
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
     }
   })
 
