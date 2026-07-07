@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
+import { ApprovalsPanel } from '@/modules/projects/components/ApprovalsPanel';
 
 interface PortalLink {
   id: string;
@@ -186,7 +187,7 @@ export default function PortalSettingsPage() {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {portals.map(portal => (
+        {portals.map((portal: PortalLink) => (
           <div
             key={portal.id}
             style={{
@@ -253,6 +254,10 @@ export default function PortalSettingsPage() {
                 )}
               </div>
             </div>
+
+            {portal.is_active && (
+              <ApprovalsPanel projectId={projectId} portalId={portal.id} />
+            )}
           </div>
         ))}
       </div>
