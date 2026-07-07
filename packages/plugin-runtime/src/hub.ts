@@ -149,32 +149,34 @@ export function registerHubBridgeMethods(): void {
       }
 
       const now = new Date();
-      const externalIds: string[] = [];
-      for (const r of records as Array<Record<string, unknown>>) {
-        const externalId = String(r['external_id']);
-        externalIds.push(externalId);
-        const jsonb = sql`${JSON.stringify(r)}::jsonb`;
-        await db.insertInto('plugin_hub_records')
-          .values({
-            workspace_id: ctx.workspaceId,
-            contract,
-            provider_plugin_id: ctx.pluginSlug,
-            external_id: externalId,
-            data: jsonb,
-            updated_at: now,
-          })
-          .onConflict((oc: any) =>
-            oc.columns(['workspace_id', 'contract', 'provider_plugin_id', 'external_id'])
-              .doUpdateSet({ data: jsonb, updated_at: now }),
-          )
-          .execute();
-      }
+      const externalIds = (records as Array<Record<string, unknown>>).map((r) => String(r['external_id']));
 
+      // Single multi-row upsert — one round trip per batch, not per record
+      await db.insertInto('plugin_hub_records')
+        .values((records as Array<Record<string, unknown>>).map((r, i) => ({
+          workspace_id: ctx.workspaceId,
+          contract,
+          provider_plugin_id: ctx.pluginSlug,
+          external_id: externalIds[i]!,
+          data: sql`${JSON.stringify(r)}::jsonb`,
+          updated_at: now,
+        })))
+        .onConflict((oc: any) =>
+          oc.columns(['workspace_id', 'contract', 'provider_plugin_id', 'external_id'])
+            .doUpdateSet((eb: any) => ({
+              data: eb.ref('excluded.data'),
+              updated_at: eb.ref('excluded.updated_at'),
+            })),
+        )
+        .execute();
+
+      // Full id list — batches are capped at maxBatchSize, so payloads stay
+      // bounded, and listeners (e.g. auto_project_from_deal) must see every id.
       await pluginEventBus.forWorkspace(ctx.workspaceId).emit(`hub:${contract}:changed`, {
         provider: ctx.pluginSlug,
         contract,
         count: records.length,
-        external_ids: externalIds.slice(0, 100),
+        external_ids: externalIds,
       });
 
       return { published: records.length };
@@ -215,12 +217,16 @@ export function registerHubBridgeMethods(): void {
       const cursor = p['cursor'];
       if (typeof cursor === 'string' && cursor.length > 0) {
         const [ts, id] = cursor.split('|');
-        if (ts && id) {
-          q = q.where((eb: any) => eb.or([
-            eb('updated_at', '<', new Date(ts)),
-            eb.and([eb('updated_at', '=', new Date(ts)), eb('id', '<', id)]),
-          ]));
+        const tsDate = ts ? new Date(ts) : null;
+        const validTs = tsDate !== null && Number.isFinite(tsDate.getTime());
+        const validId = typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id);
+        if (!validTs || !validId) {
+          throw { code: 'INVALID_REQUEST', message: 'Malformed cursor — use the next_cursor value from a previous query' };
         }
+        q = q.where((eb: any) => eb.or([
+          eb('updated_at', '<', tsDate),
+          eb.and([eb('updated_at', '=', tsDate), eb('id', '<', id)]),
+        ]));
       }
 
       const rows = await q.execute() as Array<{
@@ -293,6 +299,12 @@ export function registerHubBridgeMethods(): void {
       if (!Array.isArray(externalIds) || externalIds.length === 0) {
         throw { code: 'INVALID_REQUEST', message: 'external_ids must be a non-empty array' };
       }
+      if (externalIds.length > HUB_LIMITS.maxBatchSize) {
+        throw {
+          code: 'LIMIT_EXCEEDED',
+          message: `Delete batch ${externalIds.length} exceeds limit of ${HUB_LIMITS.maxBatchSize} — split into multiple calls`,
+        };
+      }
 
       // Providers can only delete their own records
       const result = await db.deleteFrom('plugin_hub_records')
@@ -304,11 +316,12 @@ export function registerHubBridgeMethods(): void {
 
       const deleted = Number(result?.numDeletedRows ?? 0);
       if (deleted > 0) {
+        // Full id list — capped above, and consumers must see every deletion
         await pluginEventBus.forWorkspace(ctx.workspaceId).emit(`hub:${contract}:changed`, {
           provider: ctx.pluginSlug,
           contract,
           deleted,
-          external_ids: externalIds.slice(0, 100),
+          external_ids: externalIds.map(String),
         });
       }
       return { deleted };
