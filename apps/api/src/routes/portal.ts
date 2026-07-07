@@ -639,7 +639,7 @@ export function createPortalRouter(db: Kysely<Database>, jwtSecret: string): Rou
         note,
       })
 
-      return res.json({ data: updated, error: null })
+      return res.json({ data: { id: updated.id, status: updated.status, responded_at: updated.responded_at }, error: null })
     } catch (err) {
       return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
     }
