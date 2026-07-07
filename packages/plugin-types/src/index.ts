@@ -313,7 +313,56 @@ export type PluginPermission =
   | 'servers:read'
   | 'websites:read'
   | 'storage:read' | 'storage:write'
-  | 'http:fetch';
+  | 'http:fetch'
+  | `hub:read:${string}`
+  | `hub:write:${string}`;
+
+// ── Data hub (cross-plugin data sharing) ─────────────────────────────────────
+
+/** Declares that this plugin publishes records for a contract into the hub. */
+export interface PluginProvidesDef {
+  /** Versioned contract id, e.g. "crm.contact@v1". */
+  contract: string;
+  /** How records reach consumers. Only "synced" (materialized) is supported. */
+  mode?: 'synced';
+}
+
+/** Declares that this plugin reads records for a contract from the hub. */
+export interface PluginConsumesDef {
+  /** Versioned contract id, e.g. "crm.contact@v1". */
+  contract: string;
+  /** When true, the plugin works without any installed provider. */
+  optional?: boolean;
+}
+
+/** A record as stored in / returned by the hub. */
+export interface HubRecord<T = Record<string, unknown>> {
+  provider: string;
+  external_id: string;
+  data: T;
+  updated_at: string;
+}
+
+export interface HubQueryOptions {
+  /** Restrict to one provider plugin id. */
+  provider?: string;
+  /** Exact-match filters on top-level record fields. */
+  filter?: Record<string, string | number | boolean>;
+  cursor?: string;
+  limit?: number;
+}
+
+export interface HubQueryResult<T = Record<string, unknown>> {
+  records: Array<HubRecord<T>>;
+  next_cursor: string | null;
+}
+
+export interface HubProviderInfo {
+  plugin_id: string;
+  name: string;
+  record_count: number;
+  last_published_at: string | null;
+}
 
 // ── Hook events ──────────────────────────────────────────────────────────────
 
@@ -399,6 +448,10 @@ export interface PluginManifest {
   migrations?: PluginMigration[];
   hooks?: PluginHookEvent[];
   emits?: string[];
+  listens?: string[];
+  provides?: PluginProvidesDef[];
+  consumes?: PluginConsumesDef[];
+  endpoints?: string[];
   surfaces?: PluginSurfaces;
   settings_schema?: PluginSettingsField[];
   build?: { server?: string; client?: string };

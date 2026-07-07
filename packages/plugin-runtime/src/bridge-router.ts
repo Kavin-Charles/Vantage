@@ -1,5 +1,5 @@
 import type { Kysely } from 'kysely';
-import type { PluginPermission, BridgeCall, BridgeResult } from '@vencore/plugin-types';
+import type { PluginPermission, PluginManifest, BridgeCall, BridgeResult } from '@vencore/plugin-types';
 import { bridgeRegistry } from './bridge-registry';
 import { dispatchTableCall } from './table-client';
 
@@ -10,6 +10,8 @@ export interface BridgeContext {
   dataAccess: readonly PluginPermission[];
   /** Table names as declared in manifest (without prefix). */
   tables: string[];
+  /** Full manifest — used by handlers that need provides/consumes/emits. */
+  manifest?: PluginManifest;
 }
 
 type DB = Kysely<any>;

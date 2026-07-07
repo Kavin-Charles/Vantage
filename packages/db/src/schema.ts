@@ -9,6 +9,7 @@ export interface WorkspaceTable {
   contact_count: Generated<number>;
   server_count: Generated<number>;
   db_count: Generated<number>;
+  plugin_data_sharing: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }
@@ -726,6 +727,17 @@ export interface PluginCronJobTable {
   created_at: Generated<Date>;
 }
 
+export interface PluginHubRecordTable {
+  id: Generated<string>;
+  workspace_id: string;
+  contract: string;
+  provider_plugin_id: string;
+  external_id: string;
+  data: unknown;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface PluginNotificationTable {
   id: Generated<string>;
   workspace_id: string;
@@ -1265,6 +1277,7 @@ export interface Database {
   plugin_files: PluginFilesTable;
   plugin_settings: PluginSettingsTable;
   plugin_cron_jobs: PluginCronJobTable;
+  plugin_hub_records: PluginHubRecordTable;
   plugin_notifications: PluginNotificationTable;
   user_permissions: UserPermissionTable;
   groups: GroupTable;

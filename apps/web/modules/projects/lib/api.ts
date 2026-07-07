@@ -89,6 +89,8 @@ export const pmApi = {
     apiFetch<{ data: Project }>(`/api/projects/${id}`, { token, method: 'PATCH', body: JSON.stringify(body) }),
   getCRMActivity: (token: string, projectId: string, params?: { page?: number; limit?: number }) =>
     apiFetch<{ data: unknown[] }>(`/api/projects/${projectId}/crm-activity${params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])) : ''}`, { token }),
+  searchCrm: (token: string, kind: 'contact' | 'company' | 'deal', search: string) =>
+    apiFetch<{ data: { id: string; label: string; sublabel: string | null }[] }>(`/api/projects/crm-search?kind=${kind}&q=${encodeURIComponent(search)}`, { token }),
   searchContacts: (token: string, search: string) =>
     apiFetch<{ data: { id: string; name: string; email: string; status: string }[] }>(`/api/contacts?search=${encodeURIComponent(search)}&limit=10`, { token }),
   searchCompanies: (token: string, search: string) =>

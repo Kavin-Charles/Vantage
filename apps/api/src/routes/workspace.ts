@@ -7,6 +7,7 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 const patchWorkspaceSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   domain: z.string().min(1).max(255).nullable().optional(),
+  plugin_data_sharing: z.boolean().optional(),
 });
 
 export function createWorkspaceRouter(db: Kysely<Database>): ExpressRouter {
@@ -30,7 +31,7 @@ export function createWorkspaceRouter(db: Kysely<Database>): ExpressRouter {
         .updateTable('workspaces')
         .set(parsed.data)
         .where('id', '=', workspace.id)
-        .returning(['id', 'name', 'domain'])
+        .returning(['id', 'name', 'domain', 'plugin_data_sharing'])
         .executeTakeFirstOrThrow();
 
       res.json({ data: updated, error: null });
