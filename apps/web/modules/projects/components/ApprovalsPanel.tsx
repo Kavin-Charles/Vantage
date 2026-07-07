@@ -67,7 +67,7 @@ export function ApprovalsPanel({ projectId, portalId }: Props) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {approvals.map((a: ApprovalRequest, i: number) => {
-            const s = STATUS_STYLES[a.status];
+            const s = STATUS_STYLES[a.status] ?? STATUS_STYLES.PENDING;
             return (
               <div
                 key={a.id}

@@ -92,7 +92,9 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
   // List projects
   router.get('/', async (req, res) => {
     const { workspace } = req as unknown as AuthenticatedRequest
-    const { status, search } = req.query as { status?: string; search?: string }
+    const { status, search, deal_id, contact_id } = req.query as {
+      status?: string; search?: string; deal_id?: string; contact_id?: string
+    }
     try {
       let query = db.selectFrom('projects')
         .selectAll()
@@ -101,8 +103,24 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         .orderBy('created_at', 'desc')
       if (status) query = query.where('status', '=', status as 'ACTIVE' | 'ARCHIVED')
       if (search) query = query.where('name', 'ilike', `%${search}%`)
+      if (deal_id) query = query.where('deal_id', '=', deal_id)
+      if (contact_id) query = query.where('contact_id', '=', contact_id)
       const projects = await query.execute()
-      return res.json({ data: projects, error: null })
+
+      const withProgress = await Promise.all(projects.map(async (project) => {
+        const allTasks = await db.selectFrom('project_tasks as t')
+          .innerJoin('project_task_statuses as s', 's.id', 't.status_id')
+          .select(['s.is_done'])
+          .where('t.project_id', '=', project.id)
+          .where('t.parent_id', 'is', null)
+          .execute()
+        const total = allTasks.length
+        const done = allTasks.filter(t => t.is_done).length
+        const progress = total === 0 ? 0 : Math.round((done / total) * 100)
+        return { ...project, progress }
+      }))
+
+      return res.json({ data: withProgress, error: null })
     } catch (err) {
       return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
     }
