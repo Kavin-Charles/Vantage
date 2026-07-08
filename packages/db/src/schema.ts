@@ -9,7 +9,6 @@ export interface WorkspaceTable {
   contact_count: Generated<number>;
   server_count: Generated<number>;
   db_count: Generated<number>;
-  plugin_data_sharing: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }
@@ -93,7 +92,7 @@ export interface ActivityTable {
   user_id: string | null;
   contact_id: string | null;
   record_id: string | null;
-  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert' | 'contact_created' | 'task_done' | 'database_added' | 'database_removed' | 'database_settings_changed' | 'database_connection_tested' | 'project_created' | 'project_updated' | 'project_archived' | 'pm_task_created' | 'pm_task_assigned' | 'pm_task_status_changed' | 'pm_comment_added' | 'milestone_created' | 'milestone_completed' | 'sprint_started' | 'sprint_ended' | 'pm_time_logged';
+  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert' | 'contact_created' | 'task_done' | 'database_added' | 'database_removed' | 'database_settings_changed' | 'database_connection_tested' | 'project_created' | 'project_updated' | 'project_archived' | 'pm_task_created' | 'pm_task_assigned' | 'pm_task_status_changed' | 'pm_comment_added' | 'milestone_created' | 'milestone_completed' | 'sprint_started' | 'sprint_ended';
   body: string | null;
   meta: Record<string, unknown> | null;
   created_at: Generated<Date>;
@@ -727,17 +726,6 @@ export interface PluginCronJobTable {
   created_at: Generated<Date>;
 }
 
-export interface PluginHubRecordTable {
-  id: Generated<string>;
-  workspace_id: string;
-  contract: string;
-  provider_plugin_id: string;
-  external_id: string;
-  data: unknown;
-  created_at: Generated<Date>;
-  updated_at: Generated<Date>;
-}
-
 export interface PluginNotificationTable {
   id: Generated<string>;
   workspace_id: string;
@@ -1277,7 +1265,6 @@ export interface Database {
   plugin_files: PluginFilesTable;
   plugin_settings: PluginSettingsTable;
   plugin_cron_jobs: PluginCronJobTable;
-  plugin_hub_records: PluginHubRecordTable;
   plugin_notifications: PluginNotificationTable;
   user_permissions: UserPermissionTable;
   groups: GroupTable;

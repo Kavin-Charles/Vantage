@@ -92,8 +92,8 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         user_id: user.id,
         type: 'project_created',
         source_module_id: 'projects',
-        record_id: project.id,
         body: `Created project "${project.name}"`,
+        meta: { project_id: project.id },
       })
       return res.status(201).json({ data: project, error: null })
     } catch (err) {
@@ -209,8 +209,8 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         user_id: user.id,
         type: 'project_updated',
         source_module_id: 'projects',
-        record_id: project.id,
         body: `Updated project "${project.name}"`,
+        meta: { project_id: project.id },
       })
 
       if (prior?.status !== 'ARCHIVED' && project.status === 'ARCHIVED') {
@@ -219,8 +219,8 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
           user_id: user.id,
           type: 'project_archived',
           source_module_id: 'projects',
-          record_id: project.id,
           body: `Archived project "${project.name}"`,
+          meta: { project_id: project.id },
         })
       }
 

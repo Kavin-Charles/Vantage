@@ -484,6 +484,7 @@ startPluginCron(db);
 
 // Hook features reacting to hub data changes from plugin providers
 initHubHookListeners(db);
+
 startRecurringTaskGenerator(db);
 
 // Init messaging Redis pub/sub (optional — falls back to local broadcast without it)

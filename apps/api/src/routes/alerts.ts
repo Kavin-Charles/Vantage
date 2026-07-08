@@ -1,6 +1,6 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import type { Kysely } from 'kysely';
-import type { Database } from '@vencore/db';
+import type { Database, AlertTable } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
 import { queueWebhook } from '../lib/queue-webhook';
@@ -29,7 +29,7 @@ export function createAlertsRouter(db: Kysely<Database>): ExpressRouter {
       }
 
       if (resourceType) {
-        query = query.where('resource_type', '=', resourceType);
+        query = query.where('resource_type', '=', resourceType as AlertTable['resource_type']);
       }
       if (resourceId) {
         query = query.where('resource_id', '=', resourceId);
