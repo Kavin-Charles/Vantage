@@ -25,7 +25,8 @@ export type ActivityType =
   | 'milestone_created'
   | 'milestone_completed'
   | 'sprint_started'
-  | 'sprint_ended';
+  | 'sprint_ended'
+  | 'pm_time_logged';
 
 interface ActivityPayload {
   workspace_id: string;
