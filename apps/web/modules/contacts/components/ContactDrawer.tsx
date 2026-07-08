@@ -8,6 +8,8 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getContact, updateContact } from '@/modules/contacts/lib/contacts';
 import { listActivity, createActivity } from '@vencore/api-client';
 import { listTasks, createTask, updateTask, deleteTask } from '@vencore/api-client';
+import { pmApi } from '@/modules/projects/lib/api';
+import { LinkedProjectCard } from '@/modules/projects/components/LinkedProjectCard';
 import { ContactForm } from './ContactForm';
 import type { Contact, Activity, Task } from '@vencore/types';
 
@@ -111,9 +113,15 @@ export function ContactDrawer({ contactId, onClose }: Props) {
     },
   });
 
+  const { data: linkedProjectsData } = useQuery({
+    queryKey: ['contact-projects', contactId],
+    queryFn: async () => pmApi.listProjectsByContact(await getToken(), contactId),
+  });
+
   const contact = contactData?.data;
   const activities = activityData?.data ?? [];
   const tasks = tasksData?.data ?? [];
+  const linkedProjects = linkedProjectsData?.data ?? [];
 
   return (
     <>
@@ -298,6 +306,21 @@ export function ContactDrawer({ contactId, onClose }: Props) {
             </div>
           )}
         </div>
+
+        {/* Linked Projects */}
+        {linkedProjects.length > 0 && (
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+            <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1.2, display: 'block', marginBottom: 10 }}>
+              Projects
+            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {linkedProjects.map((p, i) => (
+                <LinkedProjectCard key={p.id} project={p} animationDelay={i * 30} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Activity timeline */}
         <div style={{ padding: '16px 20px', flex: 1 }}>

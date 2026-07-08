@@ -118,6 +118,39 @@ export interface CreateTaskBody {
   due_date?: string | null;
 }
 
+// ── Cross-module types ─────────────────────────────────────────────────────────
+
+export interface ApprovalRequest {
+  id: string;
+  project_id: string;
+  portal_id: string;
+  task_id: string | null;
+  milestone_id: string | null;
+  attachment_id: string | null;
+  recipient_email: string | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  note: string | null;
+  responded_at: string | null;
+  created_at: string;
+}
+
+export type CrossModuleSettingKey =
+  | 'pm.deal_link_enabled'
+  | 'pm.deal_close_auto_spawn'
+  | 'pm.project_complete_deal_stage'
+  | 'crm.project_health_on_record';
+
+export interface CrossModuleSetting {
+  key: CrossModuleSettingKey;
+  enabled: boolean;
+}
+
+export interface ApproveTokenInfo {
+  action: 'approve' | 'reject';
+  project_name: string;
+  already_responded: boolean;
+}
+
 export const pmApi = {
   listLabels: (token: string, projectId: string) =>
     apiFetch<{ data: TaskLabel[] }>(`/api/projects/${projectId}/labels`, { token }),
@@ -199,4 +232,44 @@ export const pmApi = {
     apiFetch<{ data: { success: boolean } }>(`/api/projects/${projectId}/automations/${ruleId}`, { token, method: 'DELETE' }),
   listAutomationLogs: (token: string, projectId: string) =>
     apiFetch<{ data: AutomationLog[] }>(`/api/projects/${projectId}/automation-logs`, { token }),
+
+  // Approvals (internal — PM manager view)
+  listApprovals: (token: string, projectId: string, portalId: string) =>
+    apiFetch<{ data: ApprovalRequest[] }>(`/api/projects/${projectId}/portal/${portalId}/approvals`, { token }),
+  listAllApprovals: (token: string, projectId: string) =>
+    apiFetch<{ data: ApprovalRequest[] }>(`/api/projects/${projectId}/portal/approvals`, { token }),
+  createApproval: (
+    token: string,
+    projectId: string,
+    body: { portal_id: string; task_id?: string; milestone_id?: string; attachment_id?: string; recipient_email?: string },
+  ) =>
+    apiFetch<{ data: ApprovalRequest }>(`/api/projects/${projectId}/portal/approvals`, { token, method: 'POST', body: JSON.stringify(body) }),
+
+  // CRM project links
+  listProjectsByContact: (token: string, contactId: string) =>
+    apiFetch<{ data: ProjectWithProgress[] }>(`/api/projects?contact_id=${encodeURIComponent(contactId)}`, { token }),
+  listProjectsByDeal: (token: string, dealId: string) =>
+    apiFetch<{ data: ProjectWithProgress[] }>(`/api/projects?deal_id=${encodeURIComponent(dealId)}`, { token }),
+};
+
+// ── crossModuleApi ─────────────────────────────────────────────────────────────
+
+export const crossModuleApi = {
+  list: (token: string) =>
+    apiFetch<{ data: Record<CrossModuleSettingKey, boolean> }>('/api/cross-module-settings', { token }),
+  patch: (token: string, key: CrossModuleSettingKey, enabled: boolean) =>
+    apiFetch<{ data: CrossModuleSetting }>('/api/cross-module-settings', { token, method: 'PATCH', body: JSON.stringify({ key, enabled }) }),
+};
+
+// ── portalApproveApi (public — no auth token) ──────────────────────────────────
+
+export const portalApproveApi = {
+  getInfo: async (jwtToken: string): Promise<{ data: ApproveTokenInfo | null; error: { code: string; message?: string } | null }> => {
+    const res = await fetch(`/api/portal/approve/${jwtToken}`);
+    return res.json() as Promise<{ data: ApproveTokenInfo | null; error: { code: string; message?: string } | null }>;
+  },
+  submit: async (jwtToken: string): Promise<{ data: { id: string; status: 'APPROVED' | 'REJECTED'; responded_at: string } | null; error: { code: string; message?: string } | null }> => {
+    const res = await fetch(`/api/portal/approve/${jwtToken}`, { method: 'POST' });
+    return res.json() as Promise<{ data: { id: string; status: 'APPROVED' | 'REJECTED'; responded_at: string } | null; error: { code: string; message?: string } | null }>;
+  },
 };

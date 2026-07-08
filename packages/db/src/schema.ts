@@ -92,7 +92,7 @@ export interface ActivityTable {
   user_id: string | null;
   contact_id: string | null;
   record_id: string | null;
-  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert' | 'contact_created' | 'task_done' | 'database_added' | 'database_removed' | 'database_settings_changed' | 'database_connection_tested' | 'project_created' | 'project_updated' | 'project_archived' | 'pm_task_created' | 'pm_task_assigned' | 'pm_task_status_changed' | 'pm_comment_added' | 'milestone_created' | 'milestone_completed' | 'sprint_started' | 'sprint_ended' | 'pm_time_logged';
+  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert' | 'contact_created' | 'task_done' | 'database_added' | 'database_removed' | 'database_settings_changed' | 'database_connection_tested' | 'project_created' | 'project_updated' | 'project_archived' | 'pm_task_created' | 'pm_task_assigned' | 'pm_task_status_changed' | 'pm_comment_added' | 'milestone_created' | 'milestone_completed' | 'sprint_started' | 'sprint_ended' | 'pm_time_logged' | 'pm_approval_responded';
   body: string | null;
   meta: Record<string, unknown> | null;
   created_at: Generated<Date>;
@@ -829,6 +829,7 @@ export interface ProjectTable {
   contact_id: string | null
   company_id: string | null
   source_item_id: string | null
+  deal_id: string | null
   created_at: Generated<Date>
   updated_at: Generated<Date>
 }
@@ -1023,10 +1024,21 @@ export interface ApprovalRequestTable {
   task_id: string | null
   milestone_id: string | null
   attachment_id: string | null
+  recipient_email: string | null
   status: Generated<string>
   note: string | null
   responded_at: Date | null
   created_at: Generated<Date>
+}
+
+export interface CrossModuleSettingTable {
+  id: Generated<string>
+  workspace_id: string
+  setting_key: string
+  enabled: Generated<boolean>
+  config: Record<string, unknown> | null
+  created_at: Generated<Date>
+  updated_at: Generated<Date>
 }
 
 export interface AutomationRuleTable {
@@ -1275,6 +1287,7 @@ export interface Database {
   dashboard_layouts: DashboardLayoutTable;
   dashboard_group_assignments: DashboardGroupAssignmentTable;
   projects: ProjectTable
+  cross_module_settings: CrossModuleSettingTable
   project_task_statuses: ProjectTaskStatusTable
   project_tasks: ProjectTaskTable
   project_task_assignees: ProjectTaskAssigneeTable
@@ -1523,6 +1536,9 @@ export type RecurringTaskRuleUpdate = Updateable<RecurringTaskRuleTable>
 export type PortalAccess = Selectable<PortalAccessTable>
 export type ClientPortalSession = Selectable<ClientPortalSessionTable>
 export type ApprovalRequest = Selectable<ApprovalRequestTable>
+export type CrossModuleSetting = Selectable<CrossModuleSettingTable>
+export type NewCrossModuleSetting = Insertable<CrossModuleSettingTable>
+export type CrossModuleSettingUpdate = Updateable<CrossModuleSettingTable>
 export type AutomationRule = Selectable<AutomationRuleTable>
 export type ProjectDoc = Selectable<ProjectDocTable>
 export type ProjectTemplate = Selectable<ProjectTemplateTable>

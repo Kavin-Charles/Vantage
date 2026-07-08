@@ -22,6 +22,7 @@ import { createWorkspaceRouter } from './routes/workspace';
 import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
 import { createGroupsRouter } from './routes/groups';
+import { createCrossModuleSettingsRouter } from './routes/cross-module-settings';
 import { createInvitesRouter } from './routes/invites';
 import { createUserPermissionsRouter } from './routes/user-permissions';
 import { createConfigRouter } from './routes/config';
@@ -393,7 +394,7 @@ app.use('/api/projects/:projectId/recurring-rules', requireAuth, createRecurring
 app.use('/api/projects/:projectId/milestones', requireAuth, createMilestonesRouter(db));
 app.use('/api/projects/:projectId/sprints', requireAuth, createSprintsRouter(db));
 app.use('/api/projects/:projectId/members', requireAuth, createProjectMembersRouter(db));
-app.use('/api/projects/:projectId/portal', requireAuth, createPortalInternalRouter(db));
+app.use('/api/projects/:projectId/portal', requireAuth, createPortalInternalRouter(db, config.smtp, env.JWT_SECRET));
 app.use('/api/projects/:projectId/automations', requireAuth, createAutomationRouter(db));
 app.use('/api/projects/:projectId/automation-logs', requireAuth, createAutomationLogsRouter(db));
 app.use('/api/projects/:projectId/custom-fields', requireAuth, createCustomFieldsRouter(db));
@@ -407,7 +408,7 @@ app.use('/api/pm/search', requireAuth, createPmSearchRouter(db));
 app.use('/api/project-templates', requireAuth, createProjectTemplatesRouter(db));
 
 // Public portal — no requireAuth
-app.use('/api/portal', createPortalRouter(db));
+app.use('/api/portal', createPortalRouter(db, env.JWT_SECRET));
 app.use('/api/me/tasks', requireAuth, createMyTasksRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
 app.use('/api/analytics', requireAuth, requireModule('analytics'), createAnalyticsRouter(db, requirePermission));
@@ -429,6 +430,7 @@ app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/workspace', requireAuth, requireAdmin, createWorkspaceRouter(db));
 app.use('/api/groups', requireAuth, requireAdmin, createGroupsRouter(db));
+app.use('/api/cross-module-settings', requireAuth, requireAdmin, createCrossModuleSettingsRouter(db));
 app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requireAdmin, env.APP_URL));
 app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
