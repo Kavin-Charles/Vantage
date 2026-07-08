@@ -10,6 +10,7 @@ const NAV = [
   { href: 'milestones', label: 'Milestones' },
   { href: 'members',    label: 'Members'    },
   { href: 'sprints',    label: 'Sprints'    },
+  { href: 'time',       label: 'Time'       },
   { href: 'analytics',  label: 'Analytics'  },
   { href: 'crm',        label: 'CRM'        },
   { href: 'portal',     label: 'Portal'     },
