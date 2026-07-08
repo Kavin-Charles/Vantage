@@ -79,7 +79,7 @@ describe('createMilestonesRouter activity + pmEvents wiring', () => {
     expect(res.status).toBe(201);
     expect(logActivity).toHaveBeenCalledWith(
       db,
-      expect.objectContaining({ type: 'milestone_created', record_id: 'milestone-1' }),
+      expect.objectContaining({ type: 'milestone_created', source_module_id: 'projects', meta: expect.objectContaining({ milestone_id: 'milestone-1' }) }),
     );
   });
 
@@ -107,7 +107,7 @@ describe('createMilestonesRouter activity + pmEvents wiring', () => {
     expect(pmEvents.emit).toHaveBeenCalledWith('pm', expect.objectContaining({ type: 'milestone_completed', milestoneId: MILESTONE_ID }));
     expect(logActivity).toHaveBeenCalledWith(
       db,
-      expect.objectContaining({ type: 'milestone_completed', record_id: MILESTONE_ID }),
+      expect.objectContaining({ type: 'milestone_completed', source_module_id: 'projects', meta: expect.objectContaining({ milestone_id: MILESTONE_ID }) }),
     );
   });
 

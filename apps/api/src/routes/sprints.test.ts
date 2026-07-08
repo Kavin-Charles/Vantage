@@ -69,7 +69,7 @@ describe('createSprintsRouter activity + pmEvents wiring', () => {
     expect(pmEvents.emit).toHaveBeenCalledWith('pm', expect.objectContaining({ type: 'sprint_started', sprintId: 'sprint-1' }));
     expect(logActivity).toHaveBeenCalledWith(
       db,
-      expect.objectContaining({ type: 'sprint_started', record_id: 'sprint-1' }),
+      expect.objectContaining({ type: 'sprint_started', source_module_id: 'projects', meta: expect.objectContaining({ sprint_id: 'sprint-1' }) }),
     );
   });
 
@@ -97,7 +97,7 @@ describe('createSprintsRouter activity + pmEvents wiring', () => {
     expect(pmEvents.emit).toHaveBeenCalledWith('pm', expect.objectContaining({ type: 'sprint_ended', sprintId: 'sprint-1' }));
     expect(logActivity).toHaveBeenCalledWith(
       db,
-      expect.objectContaining({ type: 'sprint_ended', record_id: 'sprint-1' }),
+      expect.objectContaining({ type: 'sprint_ended', source_module_id: 'projects', meta: expect.objectContaining({ sprint_id: 'sprint-1' }) }),
     );
   });
 

@@ -1,13 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 
 describe('isConfigured', () => {
-  it('returns false when system_settings row has configured=false', async () => {
+  it('returns false when no workspace exists', async () => {
     const mockDb = {
       selectFrom: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            executeTakeFirst: vi.fn().mockResolvedValue({ value: { configured: false } }),
-          }),
+        select: vi.fn().mockReturnValue({
+          executeTakeFirst: vi.fn().mockResolvedValue(undefined),
         }),
       }),
     } as any;
@@ -16,13 +14,11 @@ describe('isConfigured', () => {
     expect(await isConfigured(mockDb)).toBe(false);
   });
 
-  it('returns true when configured=true', async () => {
+  it('returns true when a workspace exists', async () => {
     const mockDb = {
       selectFrom: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            executeTakeFirst: vi.fn().mockResolvedValue({ value: { configured: true } }),
-          }),
+        select: vi.fn().mockReturnValue({
+          executeTakeFirst: vi.fn().mockResolvedValue({ id: 'ws-1' }),
         }),
       }),
     } as any;
@@ -31,13 +27,11 @@ describe('isConfigured', () => {
     expect(await isConfigured(mockDb)).toBe(true);
   });
 
-  it('returns false when row is missing (table exists, setup not run)', async () => {
+  it('returns false when DB throws (table does not exist)', async () => {
     const mockDb = {
       selectFrom: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            executeTakeFirst: vi.fn().mockResolvedValue(undefined),
-          }),
+        select: vi.fn().mockReturnValue({
+          executeTakeFirst: vi.fn().mockRejectedValue(new Error('relation "workspaces" does not exist')),
         }),
       }),
     } as any;
@@ -46,13 +40,11 @@ describe('isConfigured', () => {
     expect(await isConfigured(mockDb)).toBe(false);
   });
 
-  it('returns true when DB throws (legacy deploy, table does not exist)', async () => {
+  it('returns true when workspace row exists (multiple workspaces)', async () => {
     const mockDb = {
       selectFrom: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          select: vi.fn().mockReturnValue({
-            executeTakeFirst: vi.fn().mockRejectedValue(new Error('relation "system_settings" does not exist')),
-          }),
+        select: vi.fn().mockReturnValue({
+          executeTakeFirst: vi.fn().mockResolvedValue({ id: 'ws-abc' }),
         }),
       }),
     } as any;

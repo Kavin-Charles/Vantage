@@ -5,7 +5,7 @@ function buildMockDb() {
   for (const f of ['insertInto','values','execute']) {
     insertChain[f] = vi.fn().mockReturnValue(insertChain);
   }
-  insertChain['execute'] = vi.fn().mockResolvedValue({ numInsertedOrUpdatedRows: BigInt(2) });
+  insertChain['execute'] = vi.fn().mockResolvedValue([{ numInsertedOrUpdatedRows: BigInt(2) }]);
 
   const updateChain: Record<string, unknown> = {};
   for (const f of ['updateTable','set','where','execute']) {
@@ -13,7 +13,11 @@ function buildMockDb() {
   }
   updateChain['execute'] = vi.fn().mockResolvedValue(undefined);
 
-  // Mock for export route selectFrom call
+  const trx = {
+    insertInto: vi.fn().mockReturnValue(insertChain),
+    updateTable: vi.fn().mockReturnValue(updateChain),
+  };
+
   const selectChain: Record<string, unknown> = {};
   for (const f of ['selectFrom','where','select','orderBy','execute','executeTakeFirstOrThrow','selectAll','limit','offset']) {
     selectChain[f] = vi.fn().mockReturnValue(selectChain);
@@ -25,7 +29,11 @@ function buildMockDb() {
     insertInto: vi.fn().mockReturnValue(insertChain),
     updateTable: vi.fn().mockReturnValue(updateChain),
     selectFrom: vi.fn().mockReturnValue(selectChain),
+    transaction: vi.fn().mockReturnValue({
+      execute: vi.fn().mockImplementation(async (fn: Function) => fn(trx)),
+    }),
     fn: { countAll: vi.fn().mockReturnValue({ as: vi.fn().mockReturnValue('count') }) },
+    _trx: trx,
   };
 }
 
@@ -50,8 +58,7 @@ describe('POST /api/contacts/import — bulk insert', () => {
     const res = { json: vi.fn(), status: vi.fn().mockReturnThis() };
     await handler(req, res, vi.fn());
 
-    // insertInto called once total (not once per row)
-    expect(db.insertInto).toHaveBeenCalledTimes(1);
+    expect(db._trx.insertInto).toHaveBeenCalledTimes(1);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ errors: [] }) }),
     );
@@ -69,7 +76,7 @@ describe('POST /api/contacts/import — bulk insert', () => {
     const res = { json: vi.fn(), status: vi.fn().mockReturnThis() };
     await handler(req, res, vi.fn());
 
-    expect(db.insertInto).not.toHaveBeenCalled();
+    expect(db._trx.insertInto).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({

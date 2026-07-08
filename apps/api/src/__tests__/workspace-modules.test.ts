@@ -43,11 +43,20 @@ describe('GET /api/workspace/modules', () => {
 describe('PATCH /api/workspace/modules/:moduleId', () => {
   it('toggles module enabled status (admin)', async () => {
     const updateResult = { numUpdatedRows: BigInt(1) };
+    const providerUpdateChain = {
+      set: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      returning: vi.fn().mockReturnThis(),
+      executeTakeFirst: vi.fn().mockResolvedValue(undefined),
+    };
     const db: any = {
-      updateTable: vi.fn().mockReturnValue({
-        set: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        executeTakeFirst: vi.fn().mockResolvedValue(updateResult),
+      updateTable: vi.fn((table: string) => {
+        if (table === 'hook_providers') return providerUpdateChain;
+        return {
+          set: vi.fn().mockReturnThis(),
+          where: vi.fn().mockReturnThis(),
+          executeTakeFirst: vi.fn().mockResolvedValue(updateResult),
+        };
       }),
     };
     const res = await request(buildApp(db))

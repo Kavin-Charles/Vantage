@@ -15,6 +15,8 @@ const updatePipelineSchema = z.object({
   description: z.string().optional(),
   is_default: z.boolean().optional(),
   position: z.number().int().optional(),
+  view: z.enum(['kanban', 'table', 'list']).optional(),
+  table_columns: z.array(z.string()).nullable().optional(),
 });
 
 const createStageSchema = z.object({
