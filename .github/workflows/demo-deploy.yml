@@ -98,6 +98,7 @@ jobs:
             export WEB_IMAGE=ghcr.io/vencorehq/vencore-web:demo
             export API_IMAGE=ghcr.io/vencorehq/vencore-api:demo
             export WORKER_IMAGE=ghcr.io/vencorehq/vencore-worker:demo
+            export DB_IMAGE=timescale/timescaledb:latest-pg16
             docker compose down
             docker compose up -d
 
