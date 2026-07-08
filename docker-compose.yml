@@ -41,26 +41,20 @@ services:
     restart: unless-stopped
 
   web:
-    image: ${WEB_IMAGE:-vencore-web:local}
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.web
-      args:
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
-        API_URL: http://api:3001
+    image: ${WEB_IMAGE:-ghcr.io/vencorehq/vencore-web:latest}
     ports:
       - "80:3000"
     env_file: .env
+    environment:
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      API_URL: http://api:3001
     depends_on:
       api:
         condition: service_healthy
     restart: unless-stopped
 
   api:
-    image: ${API_IMAGE:-vencore-api:local}
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.api
+    image: ${API_IMAGE:-ghcr.io/vencorehq/vencore-api:latest}
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${DB_USER:-vencore}:${DB_PASSWORD:-vencore}@db:5432/${DB_NAME:-vencore}
@@ -79,10 +73,7 @@ services:
     restart: unless-stopped
 
   worker:
-    image: ${WORKER_IMAGE:-vencore-worker:local}
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.worker
+    image: ${WORKER_IMAGE:-ghcr.io/vencorehq/vencore-worker:latest}
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${DB_USER:-vencore}:${DB_PASSWORD:-vencore}@db:5432/${DB_NAME:-vencore}
