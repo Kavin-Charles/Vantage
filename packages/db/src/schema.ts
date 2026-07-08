@@ -9,6 +9,7 @@ export interface WorkspaceTable {
   contact_count: Generated<number>;
   server_count: Generated<number>;
   db_count: Generated<number>;
+  plugin_data_sharing: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }
@@ -1219,6 +1220,17 @@ export interface WorkspaceHookConfigTable {
   updated_at: Generated<Date>;
 }
 
+export interface PluginHubRecordTable {
+  id: Generated<string>;
+  workspace_id: string;
+  contract: string;
+  provider_plugin_id: string;
+  external_id: string;
+  data: unknown;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
@@ -1326,6 +1338,7 @@ export interface Database {
   hook_providers: HookProviderTable;
   workspace_hook_configs: WorkspaceHookConfigTable;
   instance_meta: InstanceMetaTable;
+  plugin_hub_records: PluginHubRecordTable;
 }
 
 // Convenience types
