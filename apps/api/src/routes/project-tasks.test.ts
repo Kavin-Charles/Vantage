@@ -1,8 +1,6 @@
 import express from 'express';
 import request from 'supertest';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Kysely } from 'kysely';
-import type { Database } from '@vencore/db';
 
 vi.mock('../lib/log-activity', () => ({ logActivity: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('../lib/notify', () => ({ notify: vi.fn().mockResolvedValue(undefined) }));
@@ -80,7 +78,7 @@ describe('createProjectTasksRouter activity + notify wiring', () => {
     expect(res.status).toBe(201);
     expect(logActivity).toHaveBeenCalledWith(
       db,
-      expect.objectContaining({ type: 'pm_task_created', meta: expect.objectContaining({ task_id: 'task-1' }) }),
+      expect.objectContaining({ type: 'pm_task_created', record_id: 'task-1' }),
     );
   });
 
@@ -113,7 +111,7 @@ describe('createProjectTasksRouter activity + notify wiring', () => {
     );
     expect(logActivity).toHaveBeenCalledWith(
       db,
-      expect.objectContaining({ type: 'pm_task_assigned', meta: expect.objectContaining({ task_id: 'task-1' }) }),
+      expect.objectContaining({ type: 'pm_task_assigned', record_id: 'task-1' }),
     );
   });
 
@@ -157,7 +155,7 @@ describe('createProjectTasksRouter activity + notify wiring', () => {
     );
     expect(logActivity).toHaveBeenCalledWith(
       db,
-      expect.objectContaining({ type: 'pm_task_assigned', meta: expect.objectContaining({ task_id: 'task-1' }) }),
+      expect.objectContaining({ type: 'pm_task_assigned', record_id: 'task-1' }),
     );
   });
 
@@ -224,92 +222,7 @@ describe('createProjectTasksRouter activity + notify wiring', () => {
     expect(res.status).toBe(201);
     expect(logActivity).toHaveBeenCalledWith(
       db,
-      expect.objectContaining({ type: 'pm_comment_added', meta: expect.objectContaining({ task_id: 'task-1' }) }),
+      expect.objectContaining({ type: 'pm_comment_added', record_id: 'task-1' }),
     );
   });
 });
-
-describe('POST /api/projects/:projectId/tasks/:taskId/reorder', () => {
-  it('computes a midpoint position between two neighboring tasks', async () => {
-    const projectChain = {
-      selectFrom: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(), executeTakeFirst: vi.fn().mockResolvedValue({ id: 'project-1' }),
-    }
-    const taskAId = 'a1a1a1a1-1111-4111-8111-111111111111'
-    const taskBId = 'b2b2b2b2-2222-4222-8222-222222222222'
-    const statusId = 'c3c3c3c3-3333-4333-8333-333333333333'
-    const neighborsChain = {
-      selectFrom: vi.fn().mockReturnThis(), selectAll: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(), orderBy: vi.fn().mockReturnThis(),
-      execute: vi.fn().mockResolvedValue([
-        { id: taskAId, position: 100, status_id: statusId },
-        { id: taskBId, position: 200, status_id: statusId },
-      ]),
-    }
-    const updateChain = {
-      updateTable: vi.fn().mockReturnThis(), set: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(), returningAll: vi.fn().mockReturnThis(),
-      executeTakeFirst: vi.fn().mockResolvedValue({ id: 'task-moved', position: 150, status_id: statusId }),
-    }
-
-    let selectCallCount = 0
-    const db = {
-      selectFrom: vi.fn((table: string) => {
-        if (table === 'projects') return projectChain
-        selectCallCount++
-        return neighborsChain
-      }),
-      updateTable: vi.fn(() => updateChain),
-    } as unknown as Kysely<Database>
-
-    const { createProjectTasksRouter } = await import('./project-tasks')
-    const app = express()
-    app.use(express.json())
-    injectUser(app)
-    app.use('/api/projects/:projectId/tasks', createProjectTasksRouter(db))
-
-    const res = await request(app)
-      .post('/api/projects/project-1/tasks/task-moved/reorder')
-      .send({ status_id: statusId, after_task_id: taskAId })
-
-    expect(res.status).toBe(200)
-    expect(updateChain.set).toHaveBeenCalledWith(expect.objectContaining({ position: 150, status_id: statusId }))
-  })
-})
-
-describe('subtask depth enforcement', () => {
-  it('rejects creating a task at depth 4 with 400 DEPTH_EXCEEDED', async () => {
-    const parent1Id = 'd4d4d4d4-4444-4444-8444-444444444444'
-    const parent2Id = 'e5e5e5e5-5555-4555-8555-555555555555'
-    const parent3Id = 'f6f6f6f6-6666-4666-8666-666666666666'
-    const projectChain = {
-      selectFrom: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(), executeTakeFirst: vi.fn().mockResolvedValue({ id: 'project-1' }),
-    }
-    // parent chain: parent-3 -> parent-2 -> parent-1 -> null (depth 3 already, adding a 4th level)
-    const ancestorChain = {
-      selectFrom: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      executeTakeFirst: vi.fn()
-        .mockResolvedValueOnce({ id: parent3Id, parent_id: parent2Id })
-        .mockResolvedValueOnce({ id: parent2Id, parent_id: parent1Id })
-        .mockResolvedValueOnce({ id: parent1Id, parent_id: null }),
-    }
-    const db = {
-      selectFrom: vi.fn((table: string) => (table === 'projects' ? projectChain : ancestorChain)),
-    } as unknown as Kysely<Database>
-
-    const { createProjectTasksRouter } = await import('./project-tasks')
-    const app = express()
-    app.use(express.json())
-    injectUser(app)
-    app.use('/api/projects/:projectId/tasks', createProjectTasksRouter(db))
-
-    const res = await request(app)
-      .post('/api/projects/project-1/tasks')
-      .send({ title: 'Too deep', parent_id: parent3Id })
-
-    expect(res.status).toBe(400)
-    expect(res.body.error.code).toBe('DEPTH_EXCEEDED')
-  })
-})

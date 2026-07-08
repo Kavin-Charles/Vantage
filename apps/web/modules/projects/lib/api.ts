@@ -37,22 +37,11 @@ export interface Milestone {
   due_date: string; status: string; client_visible: boolean; position: number;
 }
 
-export interface RecurringRule {
-  id: string; project_id: string; title: string; description: string | null;
-  status_id: string | null; priority: string; assignee_ids: string[] | null;
-  frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY'; interval: number;
-  next_run_at: string; is_active: boolean; created_by: string;
-  created_at: string; updated_at: string;
-}
-
-export interface CreateRecurringRuleBody {
-  title: string;
-  description?: string;
-  status_id?: string;
-  priority?: string;
-  assignee_ids?: string[];
-  frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY';
-  interval: number;
+export interface WidgetStats {
+  active_projects: number;
+  at_risk_projects: number;
+  overdue_tasks: number;
+  upcoming_milestones: { id: string; name: string; due_date: string; project_id: string }[];
 }
 
 export interface CreateTaskBody {
@@ -61,7 +50,6 @@ export interface CreateTaskBody {
   priority?: string;
   assignee_ids?: string[];
   due_date?: string | null;
-  parent_id?: string;
 }
 
 export const pmApi = {
@@ -89,8 +77,6 @@ export const pmApi = {
     apiFetch<{ data: Project }>(`/api/projects/${id}`, { token, method: 'PATCH', body: JSON.stringify(body) }),
   getCRMActivity: (token: string, projectId: string, params?: { page?: number; limit?: number }) =>
     apiFetch<{ data: unknown[] }>(`/api/projects/${projectId}/crm-activity${params ? '?' + new URLSearchParams(Object.entries(params).map(([k, v]) => [k, String(v)])) : ''}`, { token }),
-  searchCrm: (token: string, kind: 'contact' | 'company' | 'deal', search: string) =>
-    apiFetch<{ data: { id: string; label: string; sublabel: string | null }[] }>(`/api/projects/crm-search?kind=${kind}&q=${encodeURIComponent(search)}`, { token }),
   searchContacts: (token: string, search: string) =>
     apiFetch<{ data: { id: string; name: string; email: string; status: string }[] }>(`/api/contacts?search=${encodeURIComponent(search)}&limit=10`, { token }),
   searchCompanies: (token: string, search: string) =>
@@ -111,20 +97,12 @@ export const pmApi = {
     apiFetch<{ data: Task }>(`/api/projects/${projectId}/tasks/${taskId}`, { token, method: 'PATCH', body: JSON.stringify(body) }),
   deleteTask: (token: string, projectId: string, taskId: string) =>
     apiFetch<{ data: { success: boolean } }>(`/api/projects/${projectId}/tasks/${taskId}`, { token, method: 'DELETE' }),
-  reorderTask: (token: string, projectId: string, taskId: string, body: { status_id?: string; after_task_id?: string | null }) =>
-    apiFetch<{ data: Task }>(`/api/projects/${projectId}/tasks/${taskId}/reorder`, { token, method: 'POST', body: JSON.stringify(body) }),
-  listRecurringRules: (token: string, projectId: string) =>
-    apiFetch<{ data: RecurringRule[] }>(`/api/projects/${projectId}/recurring-rules`, { token }),
-  createRecurringRule: (token: string, projectId: string, body: CreateRecurringRuleBody) =>
-    apiFetch<{ data: RecurringRule }>(`/api/projects/${projectId}/recurring-rules`, { token, method: 'POST', body: JSON.stringify(body) }),
-  updateRecurringRule: (token: string, projectId: string, ruleId: string, body: Partial<CreateRecurringRuleBody & { is_active: boolean }>) =>
-    apiFetch<{ data: RecurringRule }>(`/api/projects/${projectId}/recurring-rules/${ruleId}`, { token, method: 'PATCH', body: JSON.stringify(body) }),
-  deleteRecurringRule: (token: string, projectId: string, ruleId: string) =>
-    apiFetch<{ data: { success: boolean } }>(`/api/projects/${projectId}/recurring-rules/${ruleId}`, { token, method: 'DELETE' }),
   listComments: (token: string, projectId: string, taskId: string) =>
     apiFetch<{ data: Comment[] }>(`/api/projects/${projectId}/tasks/${taskId}/comments`, { token }),
   createComment: (token: string, projectId: string, taskId: string, body: string) =>
     apiFetch<{ data: Comment }>(`/api/projects/${projectId}/tasks/${taskId}/comments`, { token, method: 'POST', body: JSON.stringify({ body }) }),
   listMembers: (token: string, projectId: string) =>
     apiFetch<{ data: ProjectMember[] }>(`/api/projects/${projectId}/members`, { token }),
+  getWidgetStats: (token: string) =>
+    apiFetch<{ data: WidgetStats }>('/api/projects/widget-stats', { token }),
 };

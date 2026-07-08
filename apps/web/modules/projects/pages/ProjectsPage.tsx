@@ -132,21 +132,35 @@ export default function ProjectsPage() {
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
-                {filtered.map(p => (
-                  <ProjectCard
+                {filtered.map((p, i) => (
+                  <div
                     key={p.id}
-                    project={p}
-                    onClick={() => router.push(`/projects/${p.id}/tasks`)}
-                    onToggleArchive={() => toggleArchiveMut.mutate(p)}
-                    onDelete={() => askConfirm({
-                      title: 'Delete project',
-                      message: `Delete "${p.name}"? This cannot be undone.`,
-                      confirmLabel: 'Delete',
-                      variant: 'danger',
-                      onConfirm: () => deleteMut.mutate(p.id),
-                    })}
-                  />
+                    style={{
+                      opacity: 0,
+                      transform: 'translateY(6px)',
+                      animation: 'projectCardFadeIn 0.2s ease forwards',
+                      animationDelay: `${Math.min(i * 30, 300)}ms`,
+                    }}
+                  >
+                    <ProjectCard
+                      project={p}
+                      onClick={() => router.push(`/projects/${p.id}/tasks`)}
+                      onToggleArchive={() => toggleArchiveMut.mutate(p)}
+                      onDelete={() => askConfirm({
+                        title: 'Delete project',
+                        message: `Delete "${p.name}"? This cannot be undone.`,
+                        confirmLabel: 'Delete',
+                        variant: 'danger',
+                        onConfirm: () => deleteMut.mutate(p.id),
+                      })}
+                    />
+                  </div>
                 ))}
+                <style>{`
+                  @keyframes projectCardFadeIn {
+                    to { opacity: 1; transform: translateY(0); }
+                  }
+                `}</style>
               </div>
             )}
           </>

@@ -112,10 +112,9 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
           workspace_id: workspace.id,
           user_id: user.id,
           type: 'sprint_started',
-          record_id: sprint.id,
           source_module_id: 'projects',
+          record_id: sprint.id,
           body: `Started sprint "${sprint.name}"`,
-          meta: { sprint_id: sprint.id, project_id: sprint.project_id },
         })
       }
 
@@ -125,10 +124,9 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
           workspace_id: workspace.id,
           user_id: user.id,
           type: 'sprint_ended',
-          record_id: sprint.id,
           source_module_id: 'projects',
+          record_id: sprint.id,
           body: `Ended sprint "${sprint.name}"`,
-          meta: { sprint_id: sprint.id, project_id: sprint.project_id },
         })
       }
 
