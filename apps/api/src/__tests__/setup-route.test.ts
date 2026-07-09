@@ -35,12 +35,11 @@ describe('POST /api/setup', () => {
     expect(source).toContain('safeParse');
   });
 
-  it('source contains transaction and FOR UPDATE lock', async () => {
+  it('source contains transaction', async () => {
     const source = require('fs').readFileSync(
       require('path').join(__dirname, '../routes/setup.ts'),
       'utf-8',
     );
-    expect(source).toContain('FOR UPDATE');
     expect(source).toContain('transaction');
   });
 

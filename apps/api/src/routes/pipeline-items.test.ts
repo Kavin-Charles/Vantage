@@ -8,8 +8,8 @@ import type { Database } from '@vencore/db';
 const WORKSPACE_ID = 'ws-test-1';
 const USER_ID = 'user-test-1';
 const PIPELINE_ID = 'pipeline-test-1';
-const STAGE_A = 'stage-a-uuid-0001';
-const STAGE_B = 'stage-b-uuid-0002';
+const STAGE_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const STAGE_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const ITEM_ID = 'item-test-uuid-001';
 
 function buildChain(overrides: Record<string, unknown> = {}) {
@@ -171,17 +171,21 @@ describe('PATCH /api/items/:id/move + GET /api/items/:id/activity', () => {
       created_at: new Date(),
     };
 
-    // selectFrom used in move (fetch current) and in activity feed
-    let selectCallCount = 0;
-    const selectCurrentChain = {
+    const genericChain = {
       select: vi.fn().mockReturnThis(),
       selectAll: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       orderBy: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
       offset: vi.fn().mockReturnThis(),
-      executeTakeFirst: vi.fn().mockResolvedValue(currentItem),
+      executeTakeFirst: vi.fn().mockResolvedValue(undefined),
       execute: vi.fn().mockResolvedValue([activityRow]),
+    };
+
+    const itemSelectChain = {
+      ...genericChain,
+      executeTakeFirst: vi.fn().mockResolvedValue(currentItem),
     };
 
     const updateChain = {
@@ -196,7 +200,11 @@ describe('PATCH /api/items/:id/move + GET /api/items/:id/activity', () => {
     };
 
     const db = {
-      selectFrom: vi.fn(() => selectCurrentChain),
+      selectFrom: vi.fn((table: string) => {
+        if (table === 'pipeline_items') return itemSelectChain;
+        if (table === 'pipeline_activity') return { ...genericChain, execute: vi.fn().mockResolvedValue([activityRow]) };
+        return genericChain;
+      }),
       updateTable: vi.fn(() => updateChain),
       insertInto: vi.fn(() => activityInsertChain),
     } as unknown as Kysely<Database>;

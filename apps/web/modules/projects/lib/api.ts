@@ -116,6 +116,7 @@ export interface CreateTaskBody {
   priority?: string;
   assignee_ids?: string[];
   due_date?: string | null;
+  parent_id?: string | null;
 }
 
 // ── Cross-module types ─────────────────────────────────────────────────────────
@@ -244,6 +245,24 @@ export const pmApi = {
     body: { portal_id: string; task_id?: string; milestone_id?: string; attachment_id?: string; recipient_email?: string },
   ) =>
     apiFetch<{ data: ApprovalRequest }>(`/api/projects/${projectId}/portal/approvals`, { token, method: 'POST', body: JSON.stringify(body) }),
+
+  // Recurring rules
+  listRecurringRules: (token: string, projectId: string) =>
+    apiFetch<{ data: RecurringRule[] }>(`/api/projects/${projectId}/recurring-rules`, { token }),
+  createRecurringRule: (token: string, projectId: string, body: CreateRecurringRuleBody) =>
+    apiFetch<{ data: RecurringRule }>(`/api/projects/${projectId}/recurring-rules`, { token, method: 'POST', body: JSON.stringify(body) }),
+  updateRecurringRule: (token: string, projectId: string, ruleId: string, body: Partial<CreateRecurringRuleBody & { is_active: boolean }>) =>
+    apiFetch<{ data: RecurringRule }>(`/api/projects/${projectId}/recurring-rules/${ruleId}`, { token, method: 'PATCH', body: JSON.stringify(body) }),
+  deleteRecurringRule: (token: string, projectId: string, ruleId: string) =>
+    apiFetch<{ data: { success: boolean } }>(`/api/projects/${projectId}/recurring-rules/${ruleId}`, { token, method: 'DELETE' }),
+
+  // Task reorder
+  reorderTask: (token: string, projectId: string, taskId: string, body: { status_id: string; after_task_id: string | null }) =>
+    apiFetch<{ data: { success: boolean } }>(`/api/projects/${projectId}/tasks/${taskId}/reorder`, { token, method: 'POST', body: JSON.stringify(body) }),
+
+  // CRM search (unified)
+  searchCrm: (token: string, kind: 'contact' | 'company' | 'deal', search: string) =>
+    apiFetch<{ data: { id: string; label: string; sublabel: string | null }[] }>(`/api/crm-search?kind=${encodeURIComponent(kind)}&search=${encodeURIComponent(search)}`, { token }),
 
   // CRM project links
   listProjectsByContact: (token: string, contactId: string) =>
