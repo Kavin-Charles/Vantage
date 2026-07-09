@@ -74,6 +74,30 @@ export default function PipelineConfigPage() {
         Configure stages, fields, and settings for this pipeline.
       </p>
 
+      {pipeline.stages.length === 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '12px 16px', borderRadius: 12, marginBottom: 20,
+          background: 'var(--amber-bg, #fef3c7)', border: '1px solid var(--amber, #92400e)',
+        }}>
+          <div style={{ flex: 1, fontSize: 13, color: 'var(--amber, #92400e)', fontFamily: 'var(--font-sans)' }}>
+            <strong>No stages configured.</strong> Records cannot be added until this pipeline has at least one stage. Create stages first, then add fields.
+          </div>
+          {tab !== 'stages' && (
+            <button
+              onClick={() => setTab('stages')}
+              style={{
+                padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                background: 'var(--amber, #92400e)', color: '#fff',
+                fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap',
+              }}
+            >
+              Create stages
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Tab bar */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 28 }}>
         {TABS.map(t => {

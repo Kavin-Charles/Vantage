@@ -19,6 +19,10 @@ const eyebrow: React.CSSProperties = {
   fontFamily: 'var(--font-sans)', marginBottom: 6, display: 'block',
 };
 
+function slugifyKey(s: string): string {
+  return s.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '').replace(/^[0-9_]+/, '');
+}
+
 function inputStyle(focused: boolean): React.CSSProperties {
   return {
     width: '100%', padding: '8px 12px',
@@ -56,6 +60,7 @@ export function FieldsTab({ pipeline }: { pipeline: Pipeline }) {
   const [labelFocused, setLabelFocused] = useState(false);
   const [keyFocused, setKeyFocused] = useState(false);
   const [addOptFocused, setAddOptFocused] = useState(false);
+  const [addFieldError, setAddFieldError] = useState<string | null>(null);
   const isAddOptionType = fieldType === 'select' || fieldType === 'multiselect';
 
   const invalidate = () => {
@@ -80,22 +85,35 @@ export function FieldsTab({ pipeline }: { pipeline: Pipeline }) {
   });
 
   const createMut = useMutation({
-    mutationFn: async () => {
-      const key = fieldKey.trim() ||
-        fieldLabel.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-      return createField(await getToken(), pipeline.id, {
+    mutationFn: async (key: string) =>
+      createField(await getToken(), pipeline.id, {
         label: fieldLabel.trim(), key,
         type: fieldType, position: pipeline.fields.length,
         required: fieldRequired,
         options: isAddOptionType ? fieldOptions : null,
-      });
-    },
+      }),
     onSuccess: () => {
       invalidate();
       setFieldLabel(''); setFieldKey(''); setFieldType('text');
       setFieldRequired(false); setFieldOptions([]); setAddOptionInput('');
+      setAddFieldError(null);
     },
+    onError: (e: Error) => setAddFieldError(e.message || 'Failed to add field'),
   });
+
+  function submitAddField() {
+    const key = slugifyKey(fieldKey.trim() || fieldLabel);
+    if (!key) {
+      setAddFieldError('Key must contain at least one letter (a–z)');
+      return;
+    }
+    if (pipeline.fields.some(f => f.key === key)) {
+      setAddFieldError(`A field with key "${key}" already exists`);
+      return;
+    }
+    setAddFieldError(null);
+    createMut.mutate(key);
+  }
 
   const sortedFields = [...pipeline.fields].sort((a, b) => a.position - b.position);
 
@@ -411,8 +429,8 @@ export function FieldsTab({ pipeline }: { pipeline: Pipeline }) {
               value={fieldLabel}
               onChange={e => {
                 setFieldLabel(e.target.value);
-                if (!fieldKey)
-                  setFieldKey(e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''));
+                setAddFieldError(null);
+                if (!fieldKey) setFieldKey(slugifyKey(e.target.value));
               }}
               onFocus={() => setLabelFocused(true)}
               onBlur={() => setLabelFocused(false)}
@@ -424,7 +442,7 @@ export function FieldsTab({ pipeline }: { pipeline: Pipeline }) {
             <label style={eyebrow}>Key</label>
             <input
               value={fieldKey}
-              onChange={e => setFieldKey(e.target.value)}
+              onChange={e => { setFieldKey(e.target.value); setAddFieldError(null); }}
               onFocus={() => setKeyFocused(true)}
               onBlur={() => setKeyFocused(false)}
               placeholder="field_key"
@@ -454,7 +472,7 @@ export function FieldsTab({ pipeline }: { pipeline: Pipeline }) {
             </label>
           </div>
           <button
-            onClick={() => createMut.mutate()}
+            onClick={submitAddField}
             disabled={!fieldLabel.trim() || createMut.isPending || (isAddOptionType && fieldOptions.length === 0)}
             style={{
               padding: '8px 18px',
@@ -468,6 +486,16 @@ export function FieldsTab({ pipeline }: { pipeline: Pipeline }) {
             {createMut.isPending ? 'Adding…' : 'Add field'}
           </button>
         </div>
+
+        {addFieldError && (
+          <div style={{
+            marginTop: 10, padding: '8px 12px', borderRadius: 8,
+            background: 'var(--red-bg, #fee2e2)', color: 'var(--red, #991b1b)',
+            fontSize: 12, fontFamily: 'var(--font-sans)',
+          }}>
+            {addFieldError}
+          </div>
+        )}
 
         {isAddOptionType && (
           <div>

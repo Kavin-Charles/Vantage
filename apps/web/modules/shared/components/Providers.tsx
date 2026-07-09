@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { store } from '@/store';
 import { PluginRuntimeProvider } from '@/modules/shared/contexts/PluginRuntimeContext';
 import { GlobalContextMenu } from '@/modules/shared/components/GlobalContextMenu';
+import { OfflineBanner } from '@/modules/shared/components/OfflineBanner';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -24,6 +25,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <PluginRuntimeProvider>
           {children}
           <GlobalContextMenu />
+          <OfflineBanner />
         </PluginRuntimeProvider>
       </QueryClientProvider>
     </Provider>

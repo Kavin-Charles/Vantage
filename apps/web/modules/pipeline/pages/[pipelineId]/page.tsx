@@ -43,6 +43,7 @@ export default function PipelineViewPage() {
     queryFn: async () => getPipeline(await getToken(), pipelineId),
   });
   const pipeline = data;
+  const noStages = !!pipeline && pipeline.stages.length === 0;
 
   useEffect(() => {
     if (pipeline?.view && ['kanban', 'table', 'list'].includes(pipeline.view)) {
@@ -73,10 +74,15 @@ export default function PipelineViewPage() {
           <ViewSwitcher current={view} onChange={setView} />
         )}
         <button
-          onClick={() => setAddTrigger(n => n + 1)}
+          onClick={() => { if (!noStages) setAddTrigger(n => n + 1); }}
+          disabled={noStages}
+          title={noStages ? 'No stages configured. Create a stage in Settings → Pipelines first.' : undefined}
           style={{
-            padding: '8px 16px', background: 'var(--text)', color: '#fff',
-            border: 'none', borderRadius: 8, cursor: 'pointer',
+            padding: '8px 16px',
+            background: noStages ? 'var(--text3)' : 'var(--text)',
+            color: '#fff',
+            border: 'none', borderRadius: 8,
+            cursor: noStages ? 'not-allowed' : 'pointer',
             fontSize: 13, fontFamily: 'var(--font-sans)',
           }}
         >+ Add record</button>
@@ -84,6 +90,19 @@ export default function PipelineViewPage() {
 
       {/* View content */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
+        {noStages && (
+          <div style={{
+            margin: '16px 24px', padding: '12px 16px', borderRadius: 12,
+            background: 'var(--amber-bg, #fef3c7)', border: '1px solid var(--amber, #92400e)',
+            fontSize: 13, color: 'var(--amber, #92400e)', fontFamily: 'var(--font-sans)',
+          }}>
+            <strong>No stages configured.</strong> Create at least one stage in{' '}
+            <a href={`/settings/pipelines/${pipelineId}`} style={{ color: 'inherit', fontWeight: 600 }}>
+              Settings → Pipelines
+            </a>{' '}
+            before adding records.
+          </div>
+        )}
         {!pipeline && (
           <div style={{ padding: 40, color: 'var(--text2)', fontFamily: 'var(--font-sans)' }}>Loading…</div>
         )}

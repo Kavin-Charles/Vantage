@@ -89,6 +89,11 @@ export function createPipelinesRouter(
   router.post('/', create, async (req, res, next) => {
     try {
       const body = createPipelineSchema.parse(req.body);
+      if (body.is_default) {
+        await db.updateTable('pipelines').set({ is_default: false })
+          .where('workspace_id', '=', ws(req as AuthenticatedRequest))
+          .execute();
+      }
       const p = await db.insertInto('pipelines')
         .values({ ...body, workspace_id: ws(req as AuthenticatedRequest) })
         .returningAll().executeTakeFirstOrThrow();
@@ -100,6 +105,12 @@ export function createPipelinesRouter(
   router.patch('/:id', config, async (req, res, next) => {
     try {
       const body = updatePipelineSchema.parse(req.body);
+      if (body.is_default) {
+        await db.updateTable('pipelines').set({ is_default: false })
+          .where('workspace_id', '=', ws(req as AuthenticatedRequest))
+          .where('id', '!=', req.params['id']!)
+          .execute();
+      }
       const p = await db.updateTable('pipelines').set({ ...body, updated_at: new Date() })
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', ws(req as AuthenticatedRequest))
