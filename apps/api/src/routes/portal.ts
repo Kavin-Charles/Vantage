@@ -103,6 +103,7 @@ export function createPortalInternalRouter(
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId)
         .where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -127,6 +128,7 @@ export function createPortalInternalRouter(
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId)
         .where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -164,6 +166,7 @@ export function createPortalInternalRouter(
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId)
         .where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -188,6 +191,7 @@ export function createPortalInternalRouter(
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId)
         .where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -219,6 +223,7 @@ export function createPortalInternalRouter(
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId)
         .where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -243,6 +248,7 @@ export function createPortalInternalRouter(
       const project = await db.selectFrom('projects').select(['id', 'name'])
         .where('id', '=', projectId)
         .where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -447,6 +453,7 @@ export function createPortalRouter(db: Kysely<Database>, jwtSecret: string): Rou
       const project = await db.selectFrom('projects')
         .select(['id', 'name', 'description', 'color', 'health', 'start_date', 'end_date', 'status'])
         .where('id', '=', portalReq.portal.project_id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
 
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })

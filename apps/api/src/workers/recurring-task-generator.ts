@@ -24,6 +24,12 @@ export async function runRecurringTaskGeneration(db: Kysely<Database>): Promise<
   for (const rule of dueRules) {
     try {
       await db.transaction().execute(async (trx) => {
+        const project = await trx.selectFrom('projects').select('workspace_id')
+          .where('id', '=', rule.project_id)
+          .where('status', '!=', 'DELETED')
+          .executeTakeFirst()
+        if (!project) return
+
         const statusId = rule.status_id ?? await getDefaultStatusId(trx, rule.project_id)
         if (!statusId) {
           logger.warn({ ruleId: rule.id }, '[recurring-task-generator] no status available — skipping')
@@ -58,7 +64,6 @@ export async function runRecurringTaskGeneration(db: Kysely<Database>): Promise<
           .where('id', '=', rule.id)
           .execute()
 
-        const project = await trx.selectFrom('projects').select('workspace_id').where('id', '=', rule.project_id).executeTakeFirst()
         if (project) {
           void logActivity(db, {
             workspace_id: project.workspace_id,

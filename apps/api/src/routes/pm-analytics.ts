@@ -14,6 +14,7 @@ export function createPmAnalyticsRouter(db: Kysely<Database>): Router {
     try {
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -60,6 +61,7 @@ export function createPmAnalyticsRouter(db: Kysely<Database>): Router {
     try {
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -89,6 +91,7 @@ export function createPmAnalyticsRouter(db: Kysely<Database>): Router {
     try {
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -114,6 +117,7 @@ export function createPmAnalyticsRouter(db: Kysely<Database>): Router {
     try {
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -168,6 +172,7 @@ export function createPmAnalyticsRouter(db: Kysely<Database>): Router {
     try {
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 

@@ -200,7 +200,9 @@ export function registerDealsBridgeMethods(): void {
   bridgeRegistry
     .register('deals.list', 'deals:read', async (ctx, p, db) => {
       const filter = (p.filter ?? {}) as Record<string, unknown>;
-      let q = db.selectFrom('deals').selectAll().where('workspace_id', '=', ctx.workspaceId);
+      let q = db.selectFrom('deals').selectAll()
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('deleted_at', 'is', null);
       if (filter.stage_id) q = q.where('stage_id', '=', filter.stage_id as string);
       if (filter.pipeline_id) q = q.where('pipeline_id', '=', filter.pipeline_id as string);
       if (filter.contact_id) q = q.where('contact_id', '=', filter.contact_id as string);
@@ -213,6 +215,7 @@ export function registerDealsBridgeMethods(): void {
       const row = await db.selectFrom('deals').selectAll()
         .where('workspace_id', '=', ctx.workspaceId)
         .where('id', '=', p.id as string)
+        .where('deleted_at', 'is', null)
         .executeTakeFirst();
       if (!row) throw { code: 'NOT_FOUND', message: 'Deal not found' };
       return row;
@@ -235,9 +238,11 @@ export function registerDealsBridgeMethods(): void {
       return row;
     })
     .register('deals.delete', 'deals:write', async (ctx, p, db) => {
-      await db.deleteFrom('deals')
+      await db.updateTable('deals')
+        .set({ deleted_at: new Date(), updated_at: new Date() })
         .where('workspace_id', '=', ctx.workspaceId)
         .where('id', '=', p.id as string)
+        .where('deleted_at', 'is', null)
         .execute();
       return null;
     });

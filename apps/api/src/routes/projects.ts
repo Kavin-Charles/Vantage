@@ -251,6 +251,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         .selectFrom('projects')
         .where('id', '=', req.params.id!)
         .where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED' as 'ACTIVE')
         .select(['status', 'health'])
         .executeTakeFirst()
 
@@ -271,6 +272,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         .set(updates)
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED' as 'ACTIVE')
         .returningAll()
         .executeTakeFirstOrThrow()
 
@@ -379,6 +381,7 @@ export function createProjectStatusesRouter(db: Kysely<Database>): Router {
     const project = await db.selectFrom('projects').select('id')
       .where('id', '=', (req.params as { projectId: string }).projectId)
       .where('workspace_id', '=', workspace.id)
+      .where('status', '!=', 'DELETED')
       .executeTakeFirst()
     if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
     const statuses = await db.selectFrom('project_task_statuses')
@@ -403,6 +406,7 @@ export function createProjectLabelsRouter(db: Kysely<Database>): Router {
     return db.selectFrom('projects').select('id')
       .where('id', '=', projectId)
       .where('workspace_id', '=', workspaceId)
+      .where('status', '!=', 'DELETED')
       .executeTakeFirst()
   }
 
