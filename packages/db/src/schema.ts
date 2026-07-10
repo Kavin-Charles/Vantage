@@ -1226,6 +1226,7 @@ export interface WorkspaceHookConfigTable {
   module_id: string;
   feature_id: string;
   provider_id: string | null;
+  config: Record<string, unknown> | null;
   enabled: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;

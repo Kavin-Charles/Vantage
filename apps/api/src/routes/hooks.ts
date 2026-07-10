@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { PluginManifest } from '@vencore/plugin-types';
 import { HOOK_REGISTRY } from '../modules/registry';
 import { getActiveProviderForContract, BUILTIN_CRM_PROVIDER_ID } from '@vencore/plugin-runtime';
+import { listPluginHookFeatures } from '../lib/hook-features';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 interface ProviderRef { id: string; name: string }
@@ -258,6 +260,109 @@ export function createHooksRouter(db: Kysely<Database>): Router {
         .execute();
 
       res.json({ data: { module_id: moduleId, feature_id: featureId, enabled }, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // GET /api/settings/plugin-hooks
+  // Hook features declared by installed plugins — admin can toggle + configure.
+  router.get('/plugin-hooks', async (req, res, next) => {
+    try {
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      if (user.role !== 'admin') {
+        res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
+        return;
+      }
+
+      const entries = await listPluginHookFeatures(db, workspace.id);
+      const configs = await db.selectFrom('workspace_hook_configs')
+        .select(['module_id', 'feature_id', 'enabled', 'config'])
+        .where('workspace_id', '=', workspace.id)
+        .execute();
+      const configMap = new Map(configs.map(c => [`${c.module_id}:${c.feature_id}`, c]));
+
+      const data = await Promise.all(entries.map(async ({ plugin_id, plugin_name, feature }) => {
+        const cfg = configMap.get(`${plugin_id}:${feature.id}`);
+        let available = true;
+        let powered_by: string | null = null;
+        if (feature.requires_contract) {
+          const active = await getActiveProviderForContract(db as Kysely<any>, workspace.id, feature.requires_contract);
+          available = !!active;
+          powered_by = active
+            ? (active.provider === BUILTIN_CRM_PROVIDER_ID ? 'Vencore CRM' : active.provider)
+            : null;
+        }
+        return {
+          plugin_id, plugin_name,
+          id: feature.id,
+          name: feature.name,
+          description: feature.description ?? null,
+          trigger: feature.trigger,
+          requires_contract: feature.requires_contract ?? null,
+          config_schema: feature.config_schema ?? [],
+          available,
+          powered_by,
+          enabled: cfg?.enabled ?? false,
+          config: cfg?.config ?? {},
+        };
+      }));
+
+      res.json({ data, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // PATCH /api/settings/plugin-hooks/:pluginId/:featureId
+  router.patch('/plugin-hooks/:pluginId/:featureId', async (req, res, next) => {
+    try {
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      if (user.role !== 'admin') {
+        res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
+        return;
+      }
+      const { pluginId, featureId } = req.params as { pluginId: string; featureId: string };
+
+      const entries = await listPluginHookFeatures(db, workspace.id);
+      const entry = entries.find(e => e.plugin_id === pluginId && e.feature.id === featureId);
+      if (!entry) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Hook feature not found' } });
+        return;
+      }
+
+      const parsed = z.object({
+        enabled: z.boolean(),
+        config: z.record(z.unknown()).optional(),
+      }).safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_BODY' } });
+        return;
+      }
+
+      const configJson = parsed.data.config
+        ? sql`${JSON.stringify(parsed.data.config)}::jsonb`
+        : null;
+
+      await db.insertInto('workspace_hook_configs')
+        .values({
+          workspace_id: workspace.id,
+          module_id: pluginId,
+          feature_id: featureId,
+          provider_id: null,
+          enabled: parsed.data.enabled,
+          config: configJson as never,
+        })
+        .onConflict(oc =>
+          oc.columns(['workspace_id', 'module_id', 'feature_id']).doUpdateSet({
+            enabled: parsed.data.enabled,
+            ...(parsed.data.config ? { config: configJson as never } : {}),
+            updated_at: new Date(),
+          }),
+        )
+        .execute();
+
+      res.json({ data: { plugin_id: pluginId, feature_id: featureId, enabled: parsed.data.enabled }, error: null });
     } catch (err) {
       next(err);
     }

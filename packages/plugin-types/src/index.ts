@@ -335,6 +335,24 @@ export interface PluginConsumesDef {
   optional?: boolean;
 }
 
+/**
+ * A hook feature declared by a plugin: an admin-toggleable behavior that runs
+ * in the plugin sandbox when a contract event fires. The host dispatches
+ * `hook:<id>` to the plugin with the event payload + saved config.
+ */
+export interface PluginHookFeatureDef {
+  /** Stable feature id, referenced by the dispatched `hook:<id>` bus event. */
+  id: string;
+  name: string;
+  description?: string;
+  /** Contract event that triggers this feature, e.g. "crm.deal@v1:stage_changed". */
+  trigger: string;
+  /** Contract that must have an active provider for the feature to be available. */
+  requires_contract?: string;
+  /** Admin-configurable parameters, rendered on the hooks settings page. */
+  config_schema?: PluginSettingsField[];
+}
+
 /** A record as stored in / returned by the hub. */
 export interface HubRecord<T = Record<string, unknown>> {
   provider: string;
@@ -451,6 +469,7 @@ export interface PluginManifest {
   listens?: string[];
   provides?: PluginProvidesDef[];
   consumes?: PluginConsumesDef[];
+  hook_features?: PluginHookFeatureDef[];
   endpoints?: string[];
   surfaces?: PluginSurfaces;
   settings_schema?: PluginSettingsField[];

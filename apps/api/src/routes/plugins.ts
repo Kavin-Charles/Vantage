@@ -132,6 +132,14 @@ const manifestSchema = z.object({
     contract: z.string().regex(CONTRACT_ID_RE, 'Contract id must look like namespace.name@vN'),
     optional: z.boolean().optional(),
   })).optional().default([]),
+  hook_features: z.array(z.object({
+    id: z.string().min(1).max(64).regex(/^[a-z][a-z0-9_]*$/, 'Feature id must be lowercase snake_case'),
+    name: z.string().min(1).max(120),
+    description: z.string().max(512).optional(),
+    trigger: z.string().min(1).max(120),
+    requires_contract: z.string().regex(CONTRACT_ID_RE).optional(),
+    config_schema: z.array(settingsFieldSchema).optional(),
+  })).optional().default([]),
   endpoints: z.array(z.string()).optional().default([]),
   surfaces: z.object({
     nav: z.array(z.object({ label: z.string(), path: z.string(), icon: z.string().optional(), group: z.enum(['crm', 'infra', 'general']).optional() })).optional(),

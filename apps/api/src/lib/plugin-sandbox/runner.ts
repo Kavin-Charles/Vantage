@@ -160,6 +160,15 @@ process.on('message', async (msg: InboundMsg) => {
               busHandlers.set(event, arr);
             },
           },
+          // Handler for an admin-enabled hook feature declared in the manifest.
+          // Fires with { feature, trigger, payload, config } when the host
+          // dispatches the feature's trigger event.
+          onHookFeature: (featureId: string, handler: (payload: unknown) => void | Promise<void>) => {
+            const event = `hook:${featureId}`;
+            const arr = busHandlers.get(event) ?? [];
+            arr.push(handler);
+            busHandlers.set(event, arr);
+          },
           on: (event: string, handler: (payload: unknown) => void | Promise<void>) => {
             const arr = busHandlers.get(event) ?? [];
             arr.push(handler);

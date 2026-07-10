@@ -86,6 +86,7 @@ import { bridgeRegistry, pluginEventBus, registerHubBridgeMethods } from '@venco
 import { startPluginCron, scheduleToMinutes } from './workers/plugin-cron';
 import { startHubRetention } from './workers/hub-retention';
 import { initHubHookListeners } from './lib/hub-hook-listeners';
+import { initHookFeatureDispatcher } from './lib/hook-features';
 import { registerContactsBridgeMethods } from './routes/contacts';
 import { registerCompaniesBridgeMethods } from './routes/companies';
 import { registerDealsBridgeMethods } from './routes/pipelines';
@@ -490,6 +491,9 @@ startHubRetention(db);
 
 // Hook features reacting to hub data changes from plugin providers
 initHubHookListeners(db);
+
+// Dispatch plugin-declared hook features on contract events
+initHookFeatureDispatcher(db);
 startRecurringTaskGenerator(db);
 
 // Init messaging Redis pub/sub (optional — falls back to local broadcast without it)
