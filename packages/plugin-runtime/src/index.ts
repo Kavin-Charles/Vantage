@@ -12,7 +12,10 @@ export {
   CONTRACT_GROUPS, getContractGroup, groupForContract, groupsServedBy, validateGroupCoverage,
 } from './contracts';
 export type { ContractDef, ContractViolation, ContractGroupDef } from './contracts';
-export { registerHubBridgeMethods, removeProviderHubData, hasHubPermission, HUB_LIMITS } from './hub';
+export {
+  registerHubBridgeMethods, removeProviderHubData, softDeleteProviderHubData,
+  restoreProviderHubData, purgeExpiredHubRecords, hasHubPermission, HUB_LIMITS,
+} from './hub';
 export {
   getActiveProvider, getActiveProviderForContract, setActiveProvider,
   detectProviderConflicts, deactivateProvider, getPendingSelections,

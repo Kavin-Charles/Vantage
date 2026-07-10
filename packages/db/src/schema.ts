@@ -734,6 +734,7 @@ export interface PluginHubRecordTable {
   provider_plugin_id: string;
   external_id: string;
   data: unknown;
+  deleted_at: Date | null;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }

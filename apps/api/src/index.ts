@@ -84,6 +84,7 @@ import { createPmSearchRouter } from './routes/pm-search';
 import { createProjectTemplatesRouter, createSaveAsTemplateRouter } from './routes/project-templates';
 import { bridgeRegistry, pluginEventBus, registerHubBridgeMethods } from '@vencore/plugin-runtime';
 import { startPluginCron, scheduleToMinutes } from './workers/plugin-cron';
+import { startHubRetention } from './workers/hub-retention';
 import { initHubHookListeners } from './lib/hub-hook-listeners';
 import { registerContactsBridgeMethods } from './routes/contacts';
 import { registerCompaniesBridgeMethods } from './routes/companies';
@@ -483,6 +484,9 @@ startMetricsRollup(db);
 
 // Start plugin cron worker (fires plugin-registered jobs, 60-s cycle)
 startPluginCron(db);
+
+// Purge tombstoned hub records past the retention window (daily)
+startHubRetention(db);
 
 // Hook features reacting to hub data changes from plugin providers
 initHubHookListeners(db);

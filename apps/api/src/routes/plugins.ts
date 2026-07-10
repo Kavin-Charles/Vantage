@@ -11,7 +11,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
-import { dispatchBridgeCall, runMigrations, dropPluginTables, isKnownContract, hasHubPermission, removeProviderHubData, CONTRACT_ID_RE, validateGroupCoverage, detectProviderConflicts, deactivateProvider } from '@vencore/plugin-runtime';
+import { dispatchBridgeCall, runMigrations, dropPluginTables, isKnownContract, hasHubPermission, softDeleteProviderHubData, restoreProviderHubData, CONTRACT_ID_RE, validateGroupCoverage, detectProviderConflicts, deactivateProvider } from '@vencore/plugin-runtime';
 import { savePluginFile, loadPluginBackend, invalidatePlugin } from '../lib/plugin-loader';
 import { encryptSettingValue, isEncryptedValue, decryptSettingValue } from '../lib/plugin-settings-crypto';
 import { logger } from '../lib/logger';
@@ -470,6 +470,8 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         .returningAll()
         .executeTakeFirstOrThrow();
 
+      // Reinstall within the retention window revives tombstoned hub data
+      await restoreProviderHubData(db as Kysely<any>, workspace.id, mf.id);
       await syncHookProvider(db, workspace.id, mf, true);
       const conflicts = await detectProviderConflicts(db as Kysely<any>, workspace.id, mf);
       if (conflicts.length > 0) {
@@ -789,6 +791,8 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         .returningAll()
         .executeTakeFirstOrThrow();
 
+      // Reinstall within the retention window revives tombstoned hub data
+      await restoreProviderHubData(db as Kysely<any>, workspace.id, mf.id);
       await syncHookProvider(db, workspace.id, mf, true);
       const uploadConflicts = await detectProviderConflicts(db as Kysely<any>, workspace.id, mf);
       if (uploadConflicts.length > 0) {
@@ -888,10 +892,11 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
 
       if (!enabled) {
         invalidatePlugin(plugin.plugin_id, workspace.id);
-        // Disabled providers must not serve stale data to consumers
-        await removeProviderHubData(db as Kysely<any>, workspace.id, plugin.plugin_id);
+        // Disable keeps hub data live but inactive — the group falls back to
+        // the builtin provider, so consumers never see the disabled plugin's
+        // rows. Re-enabling restores it as a selectable provider with its data
+        // intact.
         await syncHookProvider(db, workspace.id, { id: plugin.plugin_id, name: plugin.name, provides }, false);
-        // Groups it served fall back to the builtin provider
         const fellBack = await deactivateProvider(db as Kysely<any>, workspace.id, plugin.plugin_id);
         if (fellBack.length > 0) {
           await notifyAdmins(db, workspace.id, plugin.plugin_id,
@@ -899,6 +904,8 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
             `${fellBack.map((g) => g.label).join(', ')} data is now powered by Vencore CRM.`);
         }
       } else {
+        // Re-enable: revive any tombstoned rows from a prior uninstall window
+        await restoreProviderHubData(db as Kysely<any>, workspace.id, plugin.plugin_id);
         await syncHookProvider(db, workspace.id, { id: plugin.plugin_id, name: plugin.name, provides }, true);
         const enableConflicts = await detectProviderConflicts(db as Kysely<any>, workspace.id, { id: plugin.plugin_id, provides: (mfDecl.provides ?? []) });
         if (enableConflicts.length > 0) {
@@ -968,9 +975,10 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           .execute(),
       ]);
 
-      // Remove published hub data + hook provider registration
-      await removeProviderHubData(db as Kysely<any>, workspace.id, pluginId).catch((err) => {
-        logger.warn({ err, pluginId }, 'Failed to remove hub data during uninstall');
+      // Tombstone published hub data (retained for the restore window) +
+      // remove hook provider registration
+      await softDeleteProviderHubData(db as Kysely<any>, workspace.id, pluginId).catch((err) => {
+        logger.warn({ err, pluginId }, 'Failed to soft-delete hub data during uninstall');
       });
       // Groups it served fall back to the builtin provider
       const uninstallFellBack = await deactivateProvider(db as Kysely<any>, workspace.id, pluginId).catch((err) => {

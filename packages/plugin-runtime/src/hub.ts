@@ -168,6 +168,8 @@ export function registerHubBridgeMethods(): void {
             .doUpdateSet((eb: any) => ({
               data: eb.ref('excluded.data'),
               updated_at: eb.ref('excluded.updated_at'),
+              // Republishing an id revives a tombstoned row
+              deleted_at: null,
             })),
         )
         .execute();
@@ -223,6 +225,7 @@ export function registerHubBridgeMethods(): void {
         .select(['provider_plugin_id', 'external_id', 'data', 'updated_at', 'id'])
         .where('workspace_id', '=', ctx.workspaceId)
         .where('contract', '=', contract)
+        .where('deleted_at', 'is', null)
         .orderBy('updated_at', 'desc')
         .orderBy('id', 'desc')
         .limit(limit + 1);
@@ -299,6 +302,7 @@ export function registerHubBridgeMethods(): void {
         .select((eb: any) => eb.fn.max('updated_at').as('last_published_at'))
         .where('workspace_id', '=', ctx.workspaceId)
         .where('contract', '=', contract)
+        .where('deleted_at', 'is', null)
         .groupBy('provider_plugin_id')
         .execute() as Array<{ provider_plugin_id: string; record_count: unknown; last_published_at: Date | null }>;
 
@@ -375,32 +379,97 @@ export function registerHubBridgeMethods(): void {
     });
 }
 
+async function affectedContracts(
+  db: Kysely<any>,
+  workspaceId: string,
+  pluginId: string,
+  onlyLive: boolean,
+): Promise<string[]> {
+  let q = db.selectFrom('plugin_hub_records')
+    .select('contract')
+    .distinct()
+    .where('workspace_id', '=', workspaceId)
+    .where('provider_plugin_id', '=', pluginId);
+  if (onlyLive) q = q.where('deleted_at', 'is', null);
+  const rows = await q.execute() as Array<{ contract: string }>;
+  return rows.map((r) => r.contract);
+}
+
 /**
- * Deletes all hub records published by a plugin in a workspace and emits
- * provider_removed for each affected contract. Called on plugin uninstall
- * and disable.
+ * Hard-deletes all hub records published by a plugin in a workspace. Reserved
+ * for the retention worker and hard resets — normal uninstall soft-deletes.
  */
 export async function removeProviderHubData(
   db: Kysely<any>,
   workspaceId: string,
   pluginId: string,
 ): Promise<void> {
-  const affected = await db.selectFrom('plugin_hub_records')
-    .select('contract')
-    .distinct()
-    .where('workspace_id', '=', workspaceId)
-    .where('provider_plugin_id', '=', pluginId)
-    .execute() as Array<{ contract: string }>;
-
+  const contracts = await affectedContracts(db, workspaceId, pluginId, false);
   await db.deleteFrom('plugin_hub_records')
     .where('workspace_id', '=', workspaceId)
     .where('provider_plugin_id', '=', pluginId)
     .execute();
-
-  for (const { contract } of affected) {
+  for (const contract of contracts) {
     await pluginEventBus.forWorkspace(workspaceId).emit(`hub:${contract}:provider_removed`, {
-      provider: pluginId,
-      contract,
+      provider: pluginId, contract,
     });
   }
+}
+
+/**
+ * Tombstones a plugin's hub records (uninstall). Data is retained so a
+ * reinstall within the retention window can restore it; the retention worker
+ * hard-deletes tombstones past the window.
+ */
+export async function softDeleteProviderHubData(
+  db: Kysely<any>,
+  workspaceId: string,
+  pluginId: string,
+): Promise<void> {
+  const contracts = await affectedContracts(db, workspaceId, pluginId, true);
+  await db.updateTable('plugin_hub_records')
+    .set({ deleted_at: new Date() })
+    .where('workspace_id', '=', workspaceId)
+    .where('provider_plugin_id', '=', pluginId)
+    .where('deleted_at', 'is', null)
+    .execute();
+  for (const contract of contracts) {
+    await pluginEventBus.forWorkspace(workspaceId).emit(`hub:${contract}:provider_removed`, {
+      provider: pluginId, contract,
+    });
+  }
+}
+
+/**
+ * Clears tombstones for a plugin's records (reinstall within the window).
+ * Returns the number of rows restored.
+ */
+export async function restoreProviderHubData(
+  db: Kysely<any>,
+  workspaceId: string,
+  pluginId: string,
+): Promise<number> {
+  const res = await db.updateTable('plugin_hub_records')
+    .set({ deleted_at: null })
+    .where('workspace_id', '=', workspaceId)
+    .where('provider_plugin_id', '=', pluginId)
+    .where('deleted_at', 'is not', null)
+    .executeTakeFirst();
+  return Number(res?.numUpdatedRows ?? 0);
+}
+
+/**
+ * Hard-deletes tombstoned rows older than the retention window. Run by the
+ * daily retention worker. Returns the number of rows purged.
+ */
+export async function purgeExpiredHubRecords(
+  db: Kysely<any>,
+  retentionDays = 30,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+  const res = await db.deleteFrom('plugin_hub_records')
+    .where('deleted_at', 'is not', null)
+    .where('deleted_at', '<', cutoff)
+    .executeTakeFirst();
+  return Number(res?.numDeletedRows ?? 0);
 }
