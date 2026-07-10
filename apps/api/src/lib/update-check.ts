@@ -1,30 +1,12 @@
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
+import { isStableSemver, compareSemver, pickLatest } from './version';
 
 const GHCR_IMAGE = 'vencorehq/vencore-api';
 const RELEASES_BASE = 'https://github.com/vencorehq/Vencore/releases/tag';
 
 export function currentVersion(): string {
   return process.env['VENCORE_VERSION'] ?? '0.0.0-dev';
-}
-
-export function isSemver(v: string): boolean {
-  return /^\d+\.\d+\.\d+$/.test(v);
-}
-
-export function compareSemver(a: string, b: string): number {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < 3; i++) {
-    if (pa[i]! !== pb[i]!) return pa[i]! - pb[i]!;
-  }
-  return 0;
-}
-
-export function pickLatest(tags: string[]): string | null {
-  const semvers = tags.filter(isSemver);
-  if (semvers.length === 0) return null;
-  return semvers.sort(compareSemver).at(-1) ?? null;
 }
 
 export async function fetchLatestGhcrVersion(fetchFn: typeof fetch = fetch): Promise<string | null> {
@@ -67,7 +49,7 @@ export async function runUpdateCheck(
     .execute();
 
   const updateAvailable =
-    latest !== null && isSemver(running) && compareSemver(latest, running) > 0;
+    latest !== null && isStableSemver(running) && compareSemver(latest, running) > 0;
 
   if (updateAvailable && latest) {
     const meta = await db

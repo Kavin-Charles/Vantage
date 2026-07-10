@@ -26,29 +26,6 @@ beforeEach(() => {
   process.env['VENCORE_VERSION'] = '1.2.0';
 });
 
-describe('compareSemver / pickLatest / isSemver', () => {
-  it('orders semvers numerically, not lexically', async () => {
-    const { compareSemver } = await import('../lib/update-check');
-    expect(compareSemver('1.10.0', '1.9.0')).toBeGreaterThan(0);
-    expect(compareSemver('2.0.0', '1.99.99')).toBeGreaterThan(0);
-    expect(compareSemver('1.2.3', '1.2.3')).toBe(0);
-  });
-
-  it('picks the highest full-semver tag, ignoring aliases', async () => {
-    const { pickLatest } = await import('../lib/update-check');
-    expect(pickLatest(['latest', '1.2', '1.2.3', '1.10.0', '1.9.9'])).toBe('1.10.0');
-    expect(pickLatest(['latest', 'main'])).toBeNull();
-    expect(pickLatest([])).toBeNull();
-  });
-
-  it('rejects non-release version strings', async () => {
-    const { isSemver } = await import('../lib/update-check');
-    expect(isSemver('1.2.3')).toBe(true);
-    expect(isSemver('0.0.0-dev')).toBe(false);
-    expect(isSemver('latest')).toBe(false);
-  });
-});
-
 describe('fetchLatestGhcrVersion', () => {
   it('exchanges an anonymous token then lists tags', async () => {
     const { fetchLatestGhcrVersion } = await import('../lib/update-check');
