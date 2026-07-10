@@ -11,7 +11,8 @@ function mockDb(existingVersion: string | null) {
   chain['executeTakeFirst'] = vi
     .fn()
     .mockResolvedValue(existingVersion === null ? undefined : { version: existingVersion });
-  return { selectFrom: vi.fn().mockReturnValue(chain) } as unknown as Kysely<Database>;
+  const selectFromFn = vi.fn().mockReturnValue(chain);
+  return { selectFrom: selectFromFn } as unknown as Kysely<Database>;
 }
 
 const WS = 'ws-1';
@@ -58,6 +59,22 @@ describe('strict bump rule', () => {
   it('allows republish over an invalid stored version', async () => {
     const r = await checkVersionRules(mockDb('1.2.3.4'), WS, { id: 'p', version: '1.0.0' });
     expect(r.error).toBeNull();
+  });
+
+  it('rejects an invalid incoming version instead of throwing', async () => {
+    const r = await checkVersionRules(mockDb('1.0.0'), WS, { id: 'p', version: '1.2.3.4' });
+    expect(r.error?.code).toBe('INVALID_VERSION');
+    expect(r.error?.message).toContain('1.2.3.4');
+  });
+
+  it('queries workspace_plugins scoped by workspace_id and plugin_id', async () => {
+    const db = mockDb('1.0.0');
+    await checkVersionRules(db, WS, { id: 'my-plugin', version: '2.0.0' });
+    const dbAny = db as unknown as { selectFrom: ReturnType<typeof vi.fn> };
+    expect(dbAny.selectFrom).toHaveBeenCalledWith('workspace_plugins');
+    const chain = dbAny.selectFrom.mock.results[0]!.value as { where: ReturnType<typeof vi.fn> };
+    expect(chain.where).toHaveBeenCalledWith('workspace_id', '=', WS);
+    expect(chain.where).toHaveBeenCalledWith('plugin_id', '=', 'my-plugin');
   });
 });
 

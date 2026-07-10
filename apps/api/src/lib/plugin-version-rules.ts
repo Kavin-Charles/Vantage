@@ -17,7 +17,7 @@ export interface VersionRuleInput {
 }
 
 export interface VersionRuleResult {
-  error: { code: 'VERSION_NOT_BUMPED' | 'HOST_VERSION_UNSATISFIED'; message: string } | null;
+  error: { code: 'INVALID_VERSION' | 'VERSION_NOT_BUMPED' | 'HOST_VERSION_UNSATISFIED'; message: string } | null;
   warnings: string[];
 }
 
@@ -32,6 +32,16 @@ export async function checkVersionRules(
   mf: VersionRuleInput,
 ): Promise<VersionRuleResult> {
   const warnings: string[] = [];
+
+  if (semverValid(mf.version) === null) {
+    return {
+      error: {
+        code: 'INVALID_VERSION',
+        message: `Version ${mf.version} is not valid semver`,
+      },
+      warnings,
+    };
+  }
 
   const existing = await db
     .selectFrom('workspace_plugins')
