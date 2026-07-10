@@ -353,6 +353,59 @@ export interface PluginHookFeatureDef {
   config_schema?: PluginSettingsField[];
 }
 
+/**
+ * A UI section a plugin contributes to a named page slot. The plugin's client
+ * bundle registers a matching component via `vencore.registerSection(id, C)`.
+ */
+export interface PluginSectionDef {
+  /** Stable section id, also the registration key. */
+  id: string;
+  /** Target slot as `page:slotId`, e.g. "contact-detail:sidebar". */
+  slot: string;
+  label?: string;
+  /** Ordering weight within a slot — lower renders first. Default 100. */
+  priority?: number;
+  /** Only render when this contract has an active provider. */
+  requires_contract?: string;
+}
+
+/** Named UI insertion points a page exposes. */
+export interface SlotDef {
+  id: string;
+  layout: 'single' | 'stack' | 'grid' | 'inline';
+}
+
+/** v1 slot catalog — pages and the slots they expose. */
+export const SLOT_CATALOG: Record<string, SlotDef[]> = {
+  'dashboard': [
+    { id: 'stats', layout: 'grid' }, { id: 'main', layout: 'stack' },
+    { id: 'sidebar', layout: 'stack' }, { id: 'widgets', layout: 'grid' },
+    { id: 'extras', layout: 'stack' },
+  ],
+  'contact-detail': [
+    { id: 'header', layout: 'single' }, { id: 'main', layout: 'stack' },
+    { id: 'sidebar', layout: 'stack' }, { id: 'timeline', layout: 'stack' },
+    { id: 'extras', layout: 'stack' },
+  ],
+  'deal-detail': [
+    { id: 'header', layout: 'single' }, { id: 'main', layout: 'stack' },
+    { id: 'sidebar', layout: 'stack' }, { id: 'timeline', layout: 'stack' },
+    { id: 'extras', layout: 'stack' },
+  ],
+  'company-detail': [
+    { id: 'header', layout: 'single' }, { id: 'main', layout: 'stack' },
+    { id: 'sidebar', layout: 'stack' }, { id: 'extras', layout: 'stack' },
+  ],
+  'contact-list': [{ id: 'toolbar', layout: 'inline' }, { id: 'extras', layout: 'stack' }],
+  'deal-list': [{ id: 'toolbar', layout: 'inline' }, { id: 'extras', layout: 'stack' }],
+};
+
+export function isKnownSlot(slot: string): boolean {
+  const [page, slotId] = slot.split(':');
+  if (!page || !slotId) return false;
+  return (SLOT_CATALOG[page] ?? []).some((s) => s.id === slotId);
+}
+
 /** A record as stored in / returned by the hub. */
 export interface HubRecord<T = Record<string, unknown>> {
   provider: string;
@@ -470,6 +523,7 @@ export interface PluginManifest {
   provides?: PluginProvidesDef[];
   consumes?: PluginConsumesDef[];
   hook_features?: PluginHookFeatureDef[];
+  sections?: PluginSectionDef[];
   endpoints?: string[];
   surfaces?: PluginSurfaces;
   settings_schema?: PluginSettingsField[];

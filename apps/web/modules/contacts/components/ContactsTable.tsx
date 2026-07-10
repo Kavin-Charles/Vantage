@@ -18,6 +18,7 @@ import {
   listContactTags, attachContactTag, detachContactTag,
 } from '@/modules/contacts/lib/contacts';
 import { PluginPanelSlot } from '@/modules/shared/components/PluginPanelSlot';
+import { SlotOutlet } from '@/modules/shared/components/SlotOutlet';
 import type { Contact, ContactTag } from '@vencore/types';
 
 type SortField = 'name' | 'created_at' | 'last_contacted_at';
@@ -366,7 +367,10 @@ export function ContactsTable() {
             }}
           />
           {modal !== 'create' && (modal as Contact).id && (
-            <PluginPanelSlot recordType="contact" recordId={(modal as Contact).id} />
+            <>
+              <PluginPanelSlot recordType="contact" recordId={(modal as Contact).id} />
+              <SlotOutlet page="contact-detail" slot="sidebar" recordType="contact" recordId={(modal as Contact).id} />
+            </>
           )}
         </Modal>
       )}

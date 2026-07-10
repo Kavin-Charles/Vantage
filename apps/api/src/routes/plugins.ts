@@ -140,6 +140,13 @@ const manifestSchema = z.object({
     requires_contract: z.string().regex(CONTRACT_ID_RE).optional(),
     config_schema: z.array(settingsFieldSchema).optional(),
   })).optional().default([]),
+  sections: z.array(z.object({
+    id: z.string().min(1).max(64),
+    slot: z.string().min(1).max(80).regex(/^[a-z][a-z0-9-]*:[a-z][a-z0-9_-]*$/, 'slot must be "page:slotId"'),
+    label: z.string().max(120).optional(),
+    priority: z.number().int().min(0).max(1000).optional(),
+    requires_contract: z.string().regex(CONTRACT_ID_RE).optional(),
+  })).optional().default([]),
   endpoints: z.array(z.string()).optional().default([]),
   surfaces: z.object({
     nav: z.array(z.object({ label: z.string(), path: z.string(), icon: z.string().optional(), group: z.enum(['crm', 'infra', 'general']).optional() })).optional(),
