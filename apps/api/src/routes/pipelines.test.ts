@@ -83,6 +83,28 @@ describe('POST /', () => {
   });
 });
 
+describe('PATCH /:id', () => {
+  it('unsets is_default on other pipelines when setting default', async () => {
+    const db = buildDb([], { id: 'p-1', name: 'Sales', is_default: true });
+    const r = res();
+    await handler(createPipelinesRouter(db as any, noop), 'patch', '/:id')(
+      req({ params: { id: 'p-1' }, body: { is_default: true } }), r, vi.fn()
+    );
+    const chain = (db.updateTable as any).mock.results[0].value;
+    expect(chain.set).toHaveBeenCalledWith({ is_default: false });
+    expect(r.json).toHaveBeenCalledWith(expect.objectContaining({ error: null }));
+  });
+  it('does not touch other pipelines when is_default not set', async () => {
+    const db = buildDb([], { id: 'p-1', name: 'Sales' });
+    const r = res();
+    await handler(createPipelinesRouter(db as any, noop), 'patch', '/:id')(
+      req({ params: { id: 'p-1' }, body: { name: 'Sales' } }), r, vi.fn()
+    );
+    const chain = (db.updateTable as any).mock.results[0].value;
+    expect(chain.set).not.toHaveBeenCalledWith({ is_default: false });
+  });
+});
+
 describe('DELETE /:id', () => {
   it('returns 404 when pipeline not found', async () => {
     const db = buildDb([], undefined);
