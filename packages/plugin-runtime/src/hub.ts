@@ -420,6 +420,54 @@ export function registerHubBridgeMethods(): void {
     .register('hub.contracts', null, async (_ctx, _p, _db) => {
       const { listContracts } = await import('./contracts');
       return listContracts().map((c) => ({ id: c.id, label: c.label, description: c.description }));
+    })
+    .register('hub.getSetting', null, async (ctx, p, db) => {
+      const key = String(p['key'] ?? '');
+      if (!key) throw { code: 'INVALID_REQUEST', message: 'key is required' };
+      const row = await db.selectFrom('plugin_hub_settings')
+        .select('value')
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('plugin_id', '=', ctx.pluginSlug)
+        .where('key', '=', key)
+        .executeTakeFirst() as { value: unknown } | undefined;
+      return row ? row.value : null;
+    })
+    .register('hub.setSetting', null, async (ctx, p, db) => {
+      const key = String(p['key'] ?? '');
+      if (!key) throw { code: 'INVALID_REQUEST', message: 'key is required' };
+      // Domain + shared flag come from the manifest contribution declaring the key
+      const contributions = ctx.manifest?.settings_contributions ?? [];
+      let domain = 'general';
+      let shared = false;
+      let known = false;
+      for (const c of contributions) {
+        const field = c.fields.find((f) => f.key === key);
+        if (field) { domain = c.domain; shared = field.shared ?? false; known = true; break; }
+      }
+      if (!known) throw { code: 'UNKNOWN_SETTING', message: `Key '${key}' is not in settings_contributions` };
+      const jsonb = sql`${JSON.stringify(p['value'] ?? null)}::jsonb`;
+      await db.insertInto('plugin_hub_settings')
+        .values({
+          workspace_id: ctx.workspaceId, plugin_id: ctx.pluginSlug,
+          domain, key, value: jsonb, shared, updated_at: new Date(),
+        })
+        .onConflict((oc: any) => oc.columns(['workspace_id', 'plugin_id', 'key'])
+          .doUpdateSet({ value: jsonb, domain, shared, updated_at: new Date() }))
+        .execute();
+      return { ok: true };
+    })
+    .register('hub.getSharedSetting', null, async (ctx, p, db) => {
+      const pluginId = String(p['plugin_id'] ?? '');
+      const key = String(p['key'] ?? '');
+      if (!pluginId || !key) throw { code: 'INVALID_REQUEST', message: 'plugin_id and key are required' };
+      const row = await db.selectFrom('plugin_hub_settings')
+        .select('value')
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('plugin_id', '=', pluginId)
+        .where('key', '=', key)
+        .where('shared', '=', true)
+        .executeTakeFirst() as { value: unknown } | undefined;
+      return row ? row.value : null;
     });
 }
 

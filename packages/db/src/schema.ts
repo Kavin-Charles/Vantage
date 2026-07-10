@@ -750,6 +750,17 @@ export interface WorkspaceContractProviderTable {
   updated_at: Generated<Date>;
 }
 
+export interface PluginHubSettingTable {
+  id: Generated<string>;
+  workspace_id: string;
+  plugin_id: string;
+  domain: string;
+  key: string;
+  value: unknown;
+  shared: Generated<boolean>;
+  updated_at: Generated<Date>;
+}
+
 export interface PluginNotificationTable {
   id: Generated<string>;
   workspace_id: string;
@@ -1291,6 +1302,7 @@ export interface Database {
   plugin_settings: PluginSettingsTable;
   plugin_cron_jobs: PluginCronJobTable;
   plugin_hub_records: PluginHubRecordTable;
+  plugin_hub_settings: PluginHubSettingTable;
   workspace_contract_providers: WorkspaceContractProviderTable;
   plugin_notifications: PluginNotificationTable;
   user_permissions: UserPermissionTable;

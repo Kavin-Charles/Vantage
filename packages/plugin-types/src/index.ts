@@ -369,6 +369,34 @@ export interface PluginSectionDef {
   requires_contract?: string;
 }
 
+/** A settings field a plugin contributes to a domain settings page. */
+export interface ContributedSettingsField {
+  key: string;
+  type: PluginSettingsFieldType;
+  label: string;
+  default?: string | number | boolean;
+  options?: string[];
+  min?: number;
+  max?: number;
+  secret?: boolean;
+  /** When true, consumers may read this value via hub.getSharedSetting. */
+  shared?: boolean;
+}
+
+/**
+ * Feature settings a plugin contributes to a domain settings page (e.g. sync
+ * frequency under CRM settings). Auth/private config stays on the plugin's own
+ * settings page via settings_schema; these belong where users expect them.
+ */
+export interface PluginSettingsContributionDef {
+  /** Domain settings page: 'crm' | 'infra' | 'general'. */
+  domain: string;
+  /** Section id within the domain page. */
+  section: string;
+  label: string;
+  fields: ContributedSettingsField[];
+}
+
 /** Named UI insertion points a page exposes. */
 export interface SlotDef {
   id: string;
@@ -524,6 +552,7 @@ export interface PluginManifest {
   consumes?: PluginConsumesDef[];
   hook_features?: PluginHookFeatureDef[];
   sections?: PluginSectionDef[];
+  settings_contributions?: PluginSettingsContributionDef[];
   endpoints?: string[];
   surfaces?: PluginSurfaces;
   settings_schema?: PluginSettingsField[];

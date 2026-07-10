@@ -147,6 +147,22 @@ const manifestSchema = z.object({
     priority: z.number().int().min(0).max(1000).optional(),
     requires_contract: z.string().regex(CONTRACT_ID_RE).optional(),
   })).optional().default([]),
+  settings_contributions: z.array(z.object({
+    domain: z.enum(['crm', 'infra', 'general']),
+    section: z.string().min(1).max(64),
+    label: z.string().min(1).max(120),
+    fields: z.array(z.object({
+      key: z.string().min(1).max(64).regex(/^[a-z][a-z0-9_]*$/),
+      type: z.enum(['text', 'boolean', 'number', 'select']),
+      label: z.string().min(1).max(120),
+      default: z.union([z.string(), z.number(), z.boolean()]).optional(),
+      options: z.array(z.string()).optional(),
+      min: z.number().optional(),
+      max: z.number().optional(),
+      secret: z.boolean().optional(),
+      shared: z.boolean().optional(),
+    })).min(1),
+  })).optional().default([]),
   endpoints: z.array(z.string()).optional().default([]),
   surfaces: z.object({
     nav: z.array(z.object({ label: z.string(), path: z.string(), icon: z.string().optional(), group: z.enum(['crm', 'infra', 'general']).optional() })).optional(),
@@ -985,6 +1001,10 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           .where('plugin_id', '=', pluginId)
           .execute(),
         (db as any).deleteFrom('plugin_files')
+          .where('workspace_id', '=', workspace.id)
+          .where('plugin_id', '=', pluginId)
+          .execute(),
+        (db as any).deleteFrom('plugin_hub_settings')
           .where('workspace_id', '=', workspace.id)
           .where('plugin_id', '=', pluginId)
           .execute(),
