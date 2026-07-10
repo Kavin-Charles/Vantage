@@ -186,7 +186,9 @@ export function registerCompaniesBridgeMethods(): void {
   bridgeRegistry
     .register('companies.list', 'companies:read', async (ctx, p, db) => {
       const filter = (p.filter ?? {}) as Record<string, unknown>;
-      let q = db.selectFrom('companies').selectAll().where('workspace_id', '=', ctx.workspaceId);
+      let q = db.selectFrom('companies').selectAll()
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('deleted_at', 'is', null);
       if (filter.limit) q = q.limit(Number(filter.limit));
       if (filter.offset) q = q.offset(Number(filter.offset));
       return q.execute();
@@ -195,6 +197,7 @@ export function registerCompaniesBridgeMethods(): void {
       const row = await db.selectFrom('companies').selectAll()
         .where('workspace_id', '=', ctx.workspaceId)
         .where('id', '=', p.id as string)
+        .where('deleted_at', 'is', null)
         .executeTakeFirst();
       if (!row) throw { code: 'NOT_FOUND', message: 'Company not found' };
       return row;

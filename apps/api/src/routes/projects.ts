@@ -4,10 +4,10 @@ import type { Kysely } from 'kysely'
 import type { Database } from '@vencore/db'
 import type { AuthenticatedRequest } from '../middleware/auth'
 import { resolveHook } from '../lib/hooks-runtime'
-import { getLinkedContact, getLinkedCompany, getLinkedDeal, getContactActivity, searchCrmRecords } from '../lib/crm-provider'
 import { logActivity } from '../lib/log-activity'
 import { createAlert } from '../lib/alert-service'
-import { logger } from '../lib/logger'
+import { getCrossModuleSetting } from '../lib/cross-module-settings'
+import { maybeUpdateDealStageOnProjectComplete } from '../lib/deal-close-hooks'
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(255),
@@ -15,6 +15,7 @@ const createProjectSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
   start_date: z.string().optional(),
   end_date: z.string().optional(),
+  deal_id: z.string().uuid().optional(),
   contact_id: z.string().uuid().optional(),
   company_id: z.string().uuid().optional(),
   source_item_id: z.string().uuid().optional(),
@@ -28,6 +29,7 @@ const updateProjectSchema = z.object({
   health: z.enum(['ON_TRACK', 'AT_RISK', 'OFF_TRACK']).optional(),
   start_date: z.string().nullable().optional(),
   end_date: z.string().nullable().optional(),
+  deal_id: z.string().uuid().nullable().optional(),
   contact_id: z.string().uuid().nullable().optional(),
   company_id: z.string().uuid().nullable().optional(),
   source_item_id: z.string().uuid().nullable().optional(),
@@ -45,13 +47,54 @@ export async function seedDefaultStatuses(db: Kysely<Database>, projectId: strin
     .execute()
 }
 
+async function verifyLinkTargets(
+  db: Kysely<Database>,
+  workspaceId: string,
+  links: { deal_id?: string | null; contact_id?: string | null; company_id?: string | null },
+): Promise<string | null> {
+  if (links.deal_id === undefined && links.contact_id === undefined && links.company_id === undefined) return null
+
+  if (links.deal_id || links.contact_id || links.company_id) {
+    const linkingEnabled = await getCrossModuleSetting(db, workspaceId, 'pm.deal_link_enabled')
+    if (!linkingEnabled) return 'CRM linking is disabled for this workspace'
+  }
+
+  if (links.deal_id) {
+    const deal = await db.selectFrom('pipeline_items').select('id')
+      .where('id', '=', links.deal_id)
+      .where('workspace_id', '=', workspaceId)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst()
+    if (!deal) return 'Deal not found'
+  }
+  if (links.contact_id) {
+    const contact = await db.selectFrom('contacts').select('id')
+      .where('id', '=', links.contact_id)
+      .where('workspace_id', '=', workspaceId)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst()
+    if (!contact) return 'Contact not found'
+  }
+  if (links.company_id) {
+    const company = await db.selectFrom('companies').select('id')
+      .where('id', '=', links.company_id)
+      .where('workspace_id', '=', workspaceId)
+      .where('deleted_at', 'is', null)
+      .executeTakeFirst()
+    if (!company) return 'Company not found'
+  }
+  return null
+}
+
 export function createProjectsRouter(db: Kysely<Database>): Router {
   const router = Router()
 
   // List projects
   router.get('/', async (req, res) => {
     const { workspace } = req as unknown as AuthenticatedRequest
-    const { status, search } = req.query as { status?: string; search?: string }
+    const { status, search, deal_id, contact_id } = req.query as {
+      status?: string; search?: string; deal_id?: string; contact_id?: string
+    }
     try {
       let query = db.selectFrom('projects')
         .selectAll()
@@ -60,11 +103,26 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         .orderBy('created_at', 'desc')
       if (status) query = query.where('status', '=', status as 'ACTIVE' | 'ARCHIVED')
       if (search) query = query.where('name', 'ilike', `%${search}%`)
+      if (deal_id) query = query.where('deal_id', '=', deal_id)
+      if (contact_id) query = query.where('contact_id', '=', contact_id)
       const projects = await query.execute()
-      return res.json({ data: projects, error: null })
+
+      const withProgress = await Promise.all(projects.map(async (project) => {
+        const allTasks = await db.selectFrom('project_tasks as t')
+          .innerJoin('project_task_statuses as s', 's.id', 't.status_id')
+          .select(['s.is_done'])
+          .where('t.project_id', '=', project.id)
+          .where('t.parent_id', 'is', null)
+          .execute()
+        const total = allTasks.length
+        const done = allTasks.filter(t => t.is_done).length
+        const progress = total === 0 ? 0 : Math.round((done / total) * 100)
+        return { ...project, progress }
+      }))
+
+      return res.json({ data: withProgress, error: null })
     } catch (err) {
-      logger.error({ err }, 'projects route error')
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
     }
   })
 
@@ -74,6 +132,9 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
     const parsed = createProjectSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
+      const linkError = await verifyLinkTargets(db, workspace.id, parsed.data)
+      if (linkError) return res.status(400).json({ data: null, error: { code: 'INVALID_LINK', message: linkError } })
+
       const project = await db.insertInto('projects')
         .values({
           workspace_id: workspace.id,
@@ -83,6 +144,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
           color: parsed.data.color ?? null,
           start_date: parsed.data.start_date ? new Date(parsed.data.start_date) : null,
           end_date: parsed.data.end_date ? new Date(parsed.data.end_date) : null,
+          deal_id: parsed.data.deal_id ?? null,
           contact_id: parsed.data.contact_id ?? null,
           company_id: parsed.data.company_id ?? null,
           source_item_id: parsed.data.source_item_id ?? null,
@@ -94,38 +156,14 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         workspace_id: workspace.id,
         user_id: user.id,
         type: 'project_created',
-        record_id: project.id,
         source_module_id: 'projects',
+        record_id: project.id,
         body: `Created project "${project.name}"`,
         meta: { project_id: project.id },
       })
       return res.status(201).json({ data: project, error: null })
     } catch (err) {
-      logger.error({ err }, 'projects route error')
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
-    }
-  })
-
-  // Provider-aware CRM record search for the project link comboboxes.
-  // Uses whichever provider the customer_sync hook is configured with.
-  router.get('/crm-search', async (req, res) => {
-    const { workspace } = req as unknown as AuthenticatedRequest
-    try {
-      const kind = String(req.query['kind'] ?? 'contact') as 'contact' | 'company' | 'deal'
-      if (!['contact', 'company', 'deal'].includes(kind)) {
-        return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: 'kind must be contact|company|deal' } })
-      }
-      const search = String(req.query['q'] ?? '')
-      const featureId = kind === 'deal' ? 'revenue_attribution' : 'customer_sync'
-      const hook = await resolveHook(db, workspace.id, 'projects', featureId)
-      if (!hook) {
-        return res.status(403).json({ data: null, error: { code: 'HOOK_DISABLED', message: 'CRM hook is not enabled' } })
-      }
-      const results = await searchCrmRecords(db, workspace.id, hook.providerStringId, kind, search)
-      return res.json({ data: results, error: null })
-    } catch (err) {
-      logger.error({ err }, 'projects route error')
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
     }
   })
 
@@ -161,18 +199,34 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
       let crm_company: Record<string, unknown> | null = null
       let crm_item: Record<string, unknown> | null = null
 
-      // Reads go through the provider adapter — same code path whether the
-      // selected provider is the builtin CRM or a hub-backed plugin.
       if (customerHook && project.contact_id) {
-        crm_contact = await getLinkedContact(db, workspace.id, customerHook.providerStringId, project.contact_id)
+        const contact = await db.selectFrom('contacts')
+          .select(['id', 'name', 'email', 'phone', 'status', 'last_contacted_at'])
+          .where('id', '=', project.contact_id)
+          .where('workspace_id', '=', workspace.id)
+          .where('deleted_at', 'is', null)
+          .executeTakeFirst()
+        if (contact) crm_contact = contact as Record<string, unknown>
       }
 
       if (customerHook && project.company_id) {
-        crm_company = await getLinkedCompany(db, workspace.id, customerHook.providerStringId, project.company_id)
+        const company = await db.selectFrom('companies')
+          .select(['id', 'name', 'industry', 'location', 'website', 'employee_count'])
+          .where('id', '=', project.company_id)
+          .where('workspace_id', '=', workspace.id)
+          .where('deleted_at', 'is', null)
+          .executeTakeFirst()
+        if (company) crm_company = company as Record<string, unknown>
       }
 
       if (revenueHook && project.source_item_id) {
-        crm_item = await getLinkedDeal(db, workspace.id, revenueHook.providerStringId, project.source_item_id)
+        const item = await db.selectFrom('pipeline_items')
+          .select(['id', 'field_values', 'stage_id', 'pipeline_id'])
+          .where('id', '=', project.source_item_id)
+          .where('workspace_id', '=', workspace.id)
+          .where('deleted_at', 'is', null)
+          .executeTakeFirst()
+        if (item) crm_item = item as Record<string, unknown>
       }
 
       return res.json({
@@ -180,8 +234,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         error: null,
       })
     } catch (err) {
-      logger.error({ err }, 'projects route error')
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
     }
   })
 
@@ -191,10 +244,14 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
     const parsed = updateProjectSchema.safeParse(req.body)
     if (!parsed.success) return res.status(400).json({ data: null, error: { code: 'VALIDATION', message: parsed.error.message } })
     try {
+      const linkError = await verifyLinkTargets(db, workspace.id, parsed.data)
+      if (linkError) return res.status(400).json({ data: null, error: { code: 'INVALID_LINK', message: linkError } })
+
       const prior = await db
         .selectFrom('projects')
         .where('id', '=', req.params.id!)
         .where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED' as 'ACTIVE')
         .select(['status', 'health'])
         .executeTakeFirst()
 
@@ -206,6 +263,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
       if (parsed.data.health !== undefined) updates['health'] = parsed.data.health
       if (parsed.data.start_date !== undefined) updates['start_date'] = parsed.data.start_date ? new Date(parsed.data.start_date) : null
       if (parsed.data.end_date !== undefined) updates['end_date'] = parsed.data.end_date ? new Date(parsed.data.end_date) : null
+      if (parsed.data.deal_id !== undefined) updates['deal_id'] = parsed.data.deal_id
       if (parsed.data.contact_id !== undefined) updates['contact_id'] = parsed.data.contact_id
       if (parsed.data.company_id !== undefined) updates['company_id'] = parsed.data.company_id
       if (parsed.data.source_item_id !== undefined) updates['source_item_id'] = parsed.data.source_item_id
@@ -214,6 +272,7 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         .set(updates)
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED' as 'ACTIVE')
         .returningAll()
         .executeTakeFirstOrThrow()
 
@@ -221,8 +280,8 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
         workspace_id: workspace.id,
         user_id: user.id,
         type: 'project_updated',
-        record_id: project.id,
         source_module_id: 'projects',
+        record_id: project.id,
         body: `Updated project "${project.name}"`,
         meta: { project_id: project.id },
       })
@@ -232,14 +291,17 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
           workspace_id: workspace.id,
           user_id: user.id,
           type: 'project_archived',
-          record_id: project.id,
           source_module_id: 'projects',
+          record_id: project.id,
           body: `Archived project "${project.name}"`,
           meta: { project_id: project.id },
         })
+        if (project.deal_id) {
+          void maybeUpdateDealStageOnProjectComplete({ db, workspaceId: workspace.id, userId: user.id, dealId: project.deal_id })
+        }
       }
 
-      if (prior?.health !== project.health && (project.health === 'AT_RISK' || project.health === 'OFF_TRACK')) {
+      if (prior?.health !== 'OFF_TRACK' && project.health === 'OFF_TRACK') {
         void createAlert(db, {
           workspaceId: workspace.id,
           severity: 'warning',
@@ -278,14 +340,18 @@ export function createProjectsRouter(db: Kysely<Database>): Router {
       const page = Math.max(1, Number(req.query['page'] ?? 1))
       const limit = Math.min(50, Math.max(1, Number(req.query['limit'] ?? 20)))
 
-      const activities = await getContactActivity(
-        db, workspace.id, hook.providerStringId, project.contact_id, page, limit,
-      )
+      const activities = await db.selectFrom('activities')
+        .selectAll()
+        .where('workspace_id', '=', workspace.id)
+        .where('contact_id', '=', project.contact_id)
+        .orderBy('created_at', 'desc')
+        .limit(limit)
+        .offset((page - 1) * limit)
+        .execute()
 
       return res.json({ data: activities, error: null })
     } catch (err) {
-      logger.error({ err }, 'projects route error')
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
     }
   })
 
@@ -315,6 +381,7 @@ export function createProjectStatusesRouter(db: Kysely<Database>): Router {
     const project = await db.selectFrom('projects').select('id')
       .where('id', '=', (req.params as { projectId: string }).projectId)
       .where('workspace_id', '=', workspace.id)
+      .where('status', '!=', 'DELETED')
       .executeTakeFirst()
     if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
     const statuses = await db.selectFrom('project_task_statuses')
@@ -339,6 +406,7 @@ export function createProjectLabelsRouter(db: Kysely<Database>): Router {
     return db.selectFrom('projects').select('id')
       .where('id', '=', projectId)
       .where('workspace_id', '=', workspaceId)
+      .where('status', '!=', 'DELETED')
       .executeTakeFirst()
   }
 
@@ -353,8 +421,7 @@ export function createProjectLabelsRouter(db: Kysely<Database>): Router {
         .execute()
       return res.json({ data: labels, error: null })
     } catch (err) {
-      logger.error({ err }, 'projects route error')
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
     }
   })
 
@@ -370,8 +437,7 @@ export function createProjectLabelsRouter(db: Kysely<Database>): Router {
         .returningAll().executeTakeFirstOrThrow()
       return res.status(201).json({ data: label, error: null })
     } catch (err) {
-      logger.error({ err }, 'projects route error')
-      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: String(err) } })
     }
   })
 

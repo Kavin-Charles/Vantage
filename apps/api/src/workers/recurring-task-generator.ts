@@ -23,11 +23,17 @@ export async function runRecurringTaskGeneration(db: Kysely<Database>): Promise<
 
   for (const rule of dueRules) {
     try {
-      const result = await db.transaction().execute(async (trx) => {
+      await db.transaction().execute(async (trx) => {
+        const project = await trx.selectFrom('projects').select('workspace_id')
+          .where('id', '=', rule.project_id)
+          .where('status', '!=', 'DELETED')
+          .executeTakeFirst()
+        if (!project) return
+
         const statusId = rule.status_id ?? await getDefaultStatusId(trx, rule.project_id)
         if (!statusId) {
           logger.warn({ ruleId: rule.id }, '[recurring-task-generator] no status available — skipping')
-          return null
+          return
         }
 
         const task = await trx.insertInto('project_tasks')
@@ -58,22 +64,17 @@ export async function runRecurringTaskGeneration(db: Kysely<Database>): Promise<
           .where('id', '=', rule.id)
           .execute()
 
-        return { taskId: task.id, taskTitle: task.title }
-      })
-
-      if (result) {
-        const project = await db.selectFrom('projects').select('workspace_id').where('id', '=', rule.project_id).executeTakeFirst()
         if (project) {
           void logActivity(db, {
             workspace_id: project.workspace_id,
             user_id: rule.created_by,
             type: 'pm_task_created',
             source_module_id: 'projects',
-            body: `Recurring task "${result.taskTitle}" generated`,
-            meta: { task_id: result.taskId, project_id: rule.project_id, rule_id: rule.id },
+            body: `Recurring task "${task.title}" generated`,
+            meta: { task_id: task.id, project_id: rule.project_id, rule_id: rule.id },
           })
         }
-      }
+      })
     } catch (err) {
       logger.error({ err, ruleId: rule.id }, '[recurring-task-generator] failed to generate task')
     }

@@ -7,6 +7,7 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 import { logItemCreated, logStageChanged, logFieldChanged } from '../lib/pipeline-activity';
 import { resolveHook } from '../lib/hooks-runtime';
 import { emitCrmEvent } from '../lib/crm-events';
+import { maybeSpawnProjectOnDealWon } from '../lib/deal-close-hooks';
 
 async function seedDefaultStatuses(db: Kysely<Database>, projectId: string) {
   const statuses = [
@@ -234,6 +235,14 @@ export function createItemRouter(
         });
         await maybeAutoCreateProject(db, workspaceId, current.id, body.stage_id, userId);
         emitCrmEvent(db, workspaceId, 'crm.deal@v1', 'stage_changed', current.id, { stage_id: body.stage_id });
+
+        const newStage = await db.selectFrom('pipeline_stages')
+          .select('is_won')
+          .where('id', '=', body.stage_id)
+          .executeTakeFirst();
+        if (newStage?.is_won) {
+          void maybeSpawnProjectOnDealWon({ db, workspaceId, userId, dealId: current.id });
+        }
       }
       emitCrmEvent(db, workspaceId, 'crm.deal@v1', 'updated', current.id);
 
@@ -282,6 +291,14 @@ export function createItemRouter(
         });
         await maybeAutoCreateProject(db, workspaceId, current.id, stage_id, userId);
         emitCrmEvent(db, workspaceId, 'crm.deal@v1', 'stage_changed', current.id, { stage_id });
+
+        const newStage = await db.selectFrom('pipeline_stages')
+          .select('is_won')
+          .where('id', '=', stage_id)
+          .executeTakeFirst();
+        if (newStage?.is_won) {
+          void maybeSpawnProjectOnDealWon({ db, workspaceId, userId, dealId: current.id });
+        }
       }
 
       res.json({ data: { id: current.id, stage_id, position }, error: null });

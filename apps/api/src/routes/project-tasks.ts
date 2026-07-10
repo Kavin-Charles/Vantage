@@ -424,11 +424,8 @@ export function createProjectTasksRouter(db: Kysely<Database>): Router {
       newPosition = siblings.length > 0 ? siblings[0]!.position - 1000 : 0
     } else {
       const idx = siblings.findIndex(s => s.id === parsed.data.after_task_id)
-      if (idx < 0) {
-        return res.status(400).json({ data: null, error: { code: 'INVALID_AFTER_TASK', message: 'after_task_id not found among siblings' } })
-      }
-      const afterPos = siblings[idx]!.position
-      const nextPos = idx + 1 < siblings.length ? siblings[idx + 1]!.position : afterPos + 2000
+      const afterPos = idx >= 0 ? siblings[idx]!.position : 0
+      const nextPos = idx >= 0 && idx + 1 < siblings.length ? siblings[idx + 1]!.position : afterPos + 2000
       newPosition = (afterPos + nextPos) / 2
     }
 

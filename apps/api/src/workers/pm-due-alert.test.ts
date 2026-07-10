@@ -39,7 +39,7 @@ describe('runPmDueAlerts', () => {
     );
   });
 
-  it('creates an at-risk alert for each milestone due within 3 days that is not completed', async () => {
+  it('creates an at-risk alert for each milestone due within 2 days that is not completed', async () => {
     const milestoneRows = [{ id: 'milestone-1', name: 'Beta', workspace_id: 'ws-1', project_id: 'project-1' }];
     const taskChain = buildChain([]);
     const milestoneChain = buildChain(milestoneRows);

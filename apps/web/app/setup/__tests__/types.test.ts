@@ -5,13 +5,13 @@ import type { SetupState } from '../types';
 describe('getStepList', () => {
   it('returns the fixed step order', () => {
     const list = getStepList(INITIAL_STATE);
-    expect(list).toEqual(['branding', 'smtp', 'features', 'admin', 'review', 'complete']);
+    expect(list).toEqual(['branding', 'smtp', 'features', 'admin', 'review']);
   });
 
-  it('always ends with review then complete', () => {
+  it('always ends with review', () => {
     const list = getStepList(INITIAL_STATE);
-    expect(list.at(-1)).toBe('complete');
-    expect(list.at(-2)).toBe('review');
+    expect(list.at(-1)).toBe('review');
+    expect(list.at(-2)).toBe('admin');
   });
 });
 

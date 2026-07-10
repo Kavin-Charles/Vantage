@@ -36,6 +36,7 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
     try {
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -58,6 +59,7 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
     try {
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -85,6 +87,7 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
     try {
       const project = await db.selectFrom('projects').select('id')
         .where('id', '=', projectId).where('workspace_id', '=', workspace.id)
+        .where('status', '!=', 'DELETED')
         .executeTakeFirst()
       if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
 
@@ -112,7 +115,6 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
           workspace_id: workspace.id,
           user_id: user.id,
           type: 'sprint_started',
-          record_id: sprint.id,
           source_module_id: 'projects',
           body: `Started sprint "${sprint.name}"`,
           meta: { sprint_id: sprint.id, project_id: sprint.project_id },
@@ -125,7 +127,6 @@ export function createSprintsRouter(db: Kysely<Database>): Router {
           workspace_id: workspace.id,
           user_id: user.id,
           type: 'sprint_ended',
-          record_id: sprint.id,
           source_module_id: 'projects',
           body: `Ended sprint "${sprint.name}"`,
           meta: { sprint_id: sprint.id, project_id: sprint.project_id },

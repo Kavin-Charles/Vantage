@@ -322,6 +322,7 @@ export function createContactsRouter(
         .select('id')
         .where('id', '=', contactId)
         .where('workspace_id', '=', workspace.id)
+        .where('deleted_at', 'is', null)
         .executeTakeFirst();
       if (!contact) {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Contact not found' } });

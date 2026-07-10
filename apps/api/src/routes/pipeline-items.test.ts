@@ -8,8 +8,8 @@ import type { Database } from '@vencore/db';
 const WORKSPACE_ID = 'ws-test-1';
 const USER_ID = 'user-test-1';
 const PIPELINE_ID = 'pipeline-test-1';
-const STAGE_A = 'stage-a-uuid-0001';
-const STAGE_B = 'stage-b-uuid-0002';
+const STAGE_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const STAGE_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const ITEM_ID = 'item-test-uuid-001';
 
 function buildChain(overrides: Record<string, unknown> = {}) {
@@ -171,17 +171,21 @@ describe('PATCH /api/items/:id/move + GET /api/items/:id/activity', () => {
       created_at: new Date(),
     };
 
-    // selectFrom used in move (fetch current) and in activity feed
-    let selectCallCount = 0;
-    const selectCurrentChain = {
+    const genericChain = {
       select: vi.fn().mockReturnThis(),
       selectAll: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       orderBy: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
       offset: vi.fn().mockReturnThis(),
-      executeTakeFirst: vi.fn().mockResolvedValue(currentItem),
+      executeTakeFirst: vi.fn().mockResolvedValue(undefined),
       execute: vi.fn().mockResolvedValue([activityRow]),
+    };
+
+    const itemSelectChain = {
+      ...genericChain,
+      executeTakeFirst: vi.fn().mockResolvedValue(currentItem),
     };
 
     const updateChain = {
@@ -196,7 +200,11 @@ describe('PATCH /api/items/:id/move + GET /api/items/:id/activity', () => {
     };
 
     const db = {
-      selectFrom: vi.fn(() => selectCurrentChain),
+      selectFrom: vi.fn((table: string) => {
+        if (table === 'pipeline_items') return itemSelectChain;
+        if (table === 'pipeline_activity') return { ...genericChain, execute: vi.fn().mockResolvedValue([activityRow]) };
+        return genericChain;
+      }),
       updateTable: vi.fn(() => updateChain),
       insertInto: vi.fn(() => activityInsertChain),
     } as unknown as Kysely<Database>;
@@ -222,5 +230,74 @@ describe('PATCH /api/items/:id/move + GET /api/items/:id/activity', () => {
     const stageEvent = events.find((e) => e.event_type === 'stage_changed');
     expect(stageEvent).toBeDefined();
     expect(stageEvent?.payload.to_stage_id).toBe(STAGE_B);
+  });
+});
+
+describe('PATCH /api/items/:id — won-stage hook', () => {
+  it('triggers maybeSpawnProjectOnDealWon when the new stage is_won', async () => {
+    vi.mock('../lib/deal-close-hooks', () => ({
+      maybeSpawnProjectOnDealWon: vi.fn().mockResolvedValue(undefined),
+    }));
+    const { maybeSpawnProjectOnDealWon } = await import('../lib/deal-close-hooks');
+
+    // updateItemSchema validates stage_id as a UUID — use UUID-shaped local stage ids
+    const WON_STAGE_A = '11111111-1111-4111-8111-111111111111';
+    const WON_STAGE_B = '22222222-2222-4222-8222-222222222222';
+
+    const currentItem = { id: ITEM_ID, pipeline_id: PIPELINE_ID, stage_id: WON_STAGE_A, field_values: {} };
+    const updatedItem = { ...currentItem, stage_id: WON_STAGE_B };
+
+    const itemChain = {
+      selectFrom: vi.fn().mockReturnThis(),
+      selectAll: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      executeTakeFirst: vi.fn().mockResolvedValue(currentItem),
+    };
+    const updateChain = {
+      updateTable: vi.fn().mockReturnThis(),
+      set: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      returningAll: vi.fn().mockReturnThis(),
+      executeTakeFirstOrThrow: vi.fn().mockResolvedValue(updatedItem),
+    };
+    const activityChain = { insertInto: vi.fn().mockReturnThis(), values: vi.fn().mockReturnThis(), execute: vi.fn().mockResolvedValue([]) };
+    const stageChain = {
+      selectFrom: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      executeTakeFirst: vi.fn().mockResolvedValue({ is_won: true }),
+    };
+    // resolveHook() queries workspace_hook_configs — no hook configured in this test
+    const hookConfigChain = {
+      selectFrom: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      executeTakeFirst: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const db = {
+      selectFrom: vi.fn((table: string) => {
+        if (table === 'pipeline_items') return itemChain;
+        if (table === 'pipeline_stages') return stageChain;
+        if (table === 'workspace_hook_configs') return hookConfigChain;
+        return itemChain;
+      }),
+      updateTable: vi.fn(() => updateChain),
+      insertInto: vi.fn(() => activityChain),
+    } as unknown as Kysely<Database>;
+
+    const { createItemRouter } = await import('./pipeline-items');
+    const app = express();
+    app.use(express.json());
+    injectUser(app);
+    app.use('/api/items', createItemRouter(db, mockPermission()));
+
+    const res = await request(app).patch(`/api/items/${ITEM_ID}`).send({ stage_id: WON_STAGE_B });
+
+    expect(res.status).toBe(200);
+    expect(maybeSpawnProjectOnDealWon).toHaveBeenCalledWith(
+      expect.objectContaining({ dealId: ITEM_ID, workspaceId: WORKSPACE_ID }),
+    );
   });
 });

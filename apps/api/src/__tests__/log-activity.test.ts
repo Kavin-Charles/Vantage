@@ -98,4 +98,18 @@ describe('logActivity', () => {
     });
     expect(db.insertInto).toHaveBeenCalledWith('activities');
   });
+
+  it('accepts pm_approval_responded as a valid ActivityType', async () => {
+    const db = buildMockDb();
+    const { logActivity } = await import('../lib/log-activity');
+    await logActivity(db as never, {
+      workspace_id: 'ws-1',
+      user_id: null,
+      type: 'pm_approval_responded',
+      source_module_id: 'projects',
+      record_id: 'project-1',
+      meta: { approval_id: 'approval-1', status: 'APPROVED' },
+    });
+    expect(db.insertInto).toHaveBeenCalledWith('activities');
+  });
 });

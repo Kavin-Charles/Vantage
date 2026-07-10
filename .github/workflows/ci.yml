@@ -71,6 +71,7 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter "@vencore/api..." build
       - run: pnpm --filter "@vencore/api" test
         env:
           DATABASE_URL: postgresql://vencore:vencore@localhost:5432/vencore_test

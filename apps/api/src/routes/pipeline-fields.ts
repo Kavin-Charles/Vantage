@@ -63,6 +63,12 @@ export function createPipelineFieldsRouter(
       if (!pipeline) return fail(res, 404, 'NOT_FOUND', 'Pipeline not found');
 
       const body = createFieldSchema.parse(req.body);
+      const existing = await db.selectFrom('pipeline_fields').select('id')
+        .where('pipeline_id', '=', pipeline.id)
+        .where('key', '=', body.key)
+        .executeTakeFirst();
+      if (existing) return fail(res, 409, 'DUPLICATE_KEY', `A field with key "${body.key}" already exists in this pipeline`);
+
       const field = await db.insertInto('pipeline_fields')
         .values({ ...body, options: body.options ?? null, pipeline_id: pipeline.id })
         .returningAll().executeTakeFirstOrThrow();
