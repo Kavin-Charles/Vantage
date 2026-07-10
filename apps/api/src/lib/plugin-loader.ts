@@ -4,6 +4,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { PluginManifest, PluginPermission } from '@vencore/plugin-types';
 import { Router } from 'express';
+import { expandListenTopics } from '@vencore/plugin-runtime';
 import { spawnPluginSandbox, getSandboxRouter, killSandbox } from './plugin-sandbox/manager';
 
 export function pluginStorageDir(): string {
@@ -45,9 +46,10 @@ export function loadPluginBackend(pluginId: string, workspaceId: string, db: Kys
 
   // Bus topics forwarded into the sandbox: system hook events, declared
   // cross-plugin listens, and hub change topics for every consumed contract.
+  // Legacy hook/listen names (contact.created, …) are translated to their
+  // contract-based equivalents so old manifests keep working after the rename.
   const listens = [
-    ...(manifest?.hooks ?? []),
-    ...(manifest?.listens ?? []),
+    ...expandListenTopics([...(manifest?.hooks ?? []), ...(manifest?.listens ?? [])]),
     ...(manifest?.consumes ?? []).map((c) => `hub:${c.contract}:changed`),
     ...(manifest?.consumes ?? []).map((c) => `hub:${c.contract}:provider_removed`),
   ];

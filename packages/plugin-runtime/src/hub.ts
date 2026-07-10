@@ -13,6 +13,7 @@ import type { BridgeContext } from './bridge-router';
 import { pluginEventBus } from './bus';
 import { validateRecords, isKnownContract, groupForContract } from './contracts';
 import { getActiveProviderForContract } from './provider-selection';
+import { emitContractEvent } from './contract-events';
 import { queryBuiltinCrm, countBuiltinCrm, builtinAdapterSupports, BUILTIN_CRM_PROVIDER_ID } from './builtin-crm-adapter';
 
 export const HUB_LIMITS = {
@@ -151,7 +152,33 @@ export function registerHubBridgeMethods(): void {
       }
 
       const now = new Date();
-      const externalIds = (records as Array<Record<string, unknown>>).map((r) => String(r['external_id']));
+      const recs = records as Array<Record<string, unknown>>;
+      const externalIds = recs.map((r) => String(r['external_id']));
+
+      // Classify created vs updated (and detect deal stage changes) by reading
+      // the live rows for these ids before the upsert. Powers the granular
+      // contract events below.
+      const existing = await db.selectFrom('plugin_hub_records')
+        .select(['external_id', 'data'])
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('contract', '=', contract)
+        .where('provider_plugin_id', '=', ctx.pluginSlug)
+        .where('deleted_at', 'is', null)
+        .where('external_id', 'in', externalIds)
+        .execute() as Array<{ external_id: string; data: Record<string, unknown> }>;
+      const existingMap = new Map(existing.map((e) => [e.external_id, e.data]));
+      const createdIds: string[] = [];
+      const updatedIds: string[] = [];
+      const stageChangedIds: string[] = [];
+      for (const r of recs) {
+        const eid = String(r['external_id']);
+        const prev = existingMap.get(eid);
+        if (!prev) { createdIds.push(eid); continue; }
+        updatedIds.push(eid);
+        if (contract === 'crm.deal@v1' && prev['stage'] !== r['stage']) {
+          stageChangedIds.push(eid);
+        }
+      }
 
       // Single multi-row upsert — one round trip per batch, not per record
       await db.insertInto('plugin_hub_records')
@@ -174,14 +201,29 @@ export function registerHubBridgeMethods(): void {
         )
         .execute();
 
-      // Full id list — batches are capped at maxBatchSize, so payloads stay
-      // bounded, and listeners (e.g. auto_project_from_deal) must see every id.
+      // Legacy provider-scoped event — always fires (sync tracking,
+      // auto_project_from_deal which checks provider match itself).
       await pluginEventBus.forWorkspace(ctx.workspaceId).emit(`hub:${contract}:changed`, {
         provider: ctx.pluginSlug,
         contract,
         count: records.length,
         external_ids: externalIds,
       });
+
+      // Contract-based events — gated to the active provider so consumers see
+      // a single stream regardless of which provider is publishing.
+      if (createdIds.length > 0) {
+        await emitContractEvent(db, ctx.workspaceId, contract, 'created',
+          { external_ids: createdIds, count: createdIds.length }, ctx.pluginSlug);
+      }
+      if (updatedIds.length > 0) {
+        await emitContractEvent(db, ctx.workspaceId, contract, 'updated',
+          { external_ids: updatedIds, count: updatedIds.length }, ctx.pluginSlug);
+      }
+      if (stageChangedIds.length > 0) {
+        await emitContractEvent(db, ctx.workspaceId, contract, 'stage_changed',
+          { external_ids: stageChangedIds, count: stageChangedIds.length }, ctx.pluginSlug);
+      }
 
       return { published: records.length };
     })
@@ -370,6 +412,8 @@ export function registerHubBridgeMethods(): void {
           deleted,
           external_ids: externalIds.map(String),
         });
+        await emitContractEvent(db, ctx.workspaceId, contract, 'deleted',
+          { external_ids: externalIds.map(String), count: deleted }, ctx.pluginSlug);
       }
       return { deleted };
     })

@@ -4,6 +4,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { csvEscape, toCSV } from '../lib/csv';
+import { emitCrmEvent } from '../lib/crm-events';
 
 const createCompanySchema = z.object({
   name: z.string().min(1),
@@ -144,6 +145,7 @@ export function createCompaniesRouter(db: Kysely<Database>, requirePermission: (
         .returningAll()
         .executeTakeFirstOrThrow();
 
+      emitCrmEvent(db, workspace.id, 'crm.company@v1', 'created', company.id);
       res.status(201).json({ data: company, error: null });
     } catch (err) {
       next(err);
@@ -168,6 +170,7 @@ export function createCompaniesRouter(db: Kysely<Database>, requirePermission: (
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Company not found' } });
         return;
       }
+      emitCrmEvent(db, workspace.id, 'crm.company@v1', 'updated', company.id);
       res.json({ data: company, error: null });
     } catch (err) {
       next(err);

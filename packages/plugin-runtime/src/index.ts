@@ -22,3 +22,7 @@ export {
 } from './provider-selection';
 export type { ActiveProvider } from './provider-selection';
 export { queryBuiltinCrm, countBuiltinCrm, builtinAdapterSupports, BUILTIN_CRM_PROVIDER_ID } from './builtin-crm-adapter';
+export {
+  emitContractEvent, expandListenTopics, CONTRACT_EVENT_ALIASES,
+} from './contract-events';
+export type { ContractAction } from './contract-events';
