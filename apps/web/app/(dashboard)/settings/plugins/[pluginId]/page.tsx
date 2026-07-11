@@ -43,6 +43,7 @@ interface PluginDetail {
     icon?: string;
     author?: string;
     homepage?: string;
+    host_version?: string;
     permissions?: PluginPermDef[];
     settings_schema?: PluginSettingsField[];
     provides?: Array<{ contract: string }>;
@@ -227,6 +228,11 @@ export default function PluginSettingsPage() {
               <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text3)' }}>
                 v{plugin.version} · {plugin.plugin_id}
               </p>
+              {plugin.manifest?.host_version && (
+                <span style={{ color: 'var(--text3)', fontSize: 12 }}>
+                  Requires host {plugin.manifest.host_version}
+                </span>
+              )}
             </div>
           </div>
 

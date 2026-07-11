@@ -127,6 +127,7 @@ export default function PluginsSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [toggling, setToggling] = useState<string | null>(null);
   const [removing, setRemoving] = useState<string | null>(null);
   const [installing, setInstalling] = useState<string | null>(null);
@@ -169,6 +170,7 @@ export default function PluginsSettingsPage() {
 
     setUploading(true);
     setError(null);
+    setWarnings([]);
     try {
       const form = new FormData();
       form.append('plugin', file);
@@ -178,8 +180,9 @@ export default function PluginsSettingsPage() {
         credentials: 'include',
         body: form,
       });
-      const json = await res.json() as { data: WorkspacePlugin; error: null } | { data: null; error: { message: string } };
+      const json = await res.json() as { data: WorkspacePlugin; error: null; warnings?: string[] } | { data: null; error: { message: string } };
       if (json.error) throw new Error(json.error.message);
+      setWarnings(json.warnings ?? []);
       setPlugins(prev => {
         const idx = prev.findIndex(p => p.plugin_id === json.data.plugin_id);
         if (idx >= 0) { const next = [...prev]; next[idx] = json.data; return next; }
@@ -264,6 +267,7 @@ export default function PluginsSettingsPage() {
 
     setInstalling(mp.id);
     setError(null);
+    setWarnings([]);
     try {
       const body: Record<string, unknown> = {};
       if (licenseKey) body['license_key'] = licenseKey;
@@ -274,8 +278,9 @@ export default function PluginsSettingsPage() {
         credentials: 'include',
         body: JSON.stringify(body),
       });
-      const json = await res.json() as { data: WorkspacePlugin; error: null } | { data: null; error: { message: string } };
+      const json = await res.json() as { data: WorkspacePlugin; error: null; warnings?: string[] } | { data: null; error: { message: string } };
       if (json.error) throw new Error(json.error.message);
+      setWarnings(json.warnings ?? []);
       setPlugins(prev => {
         const idx = prev.findIndex(p => p.plugin_id === json.data.plugin_id);
         if (idx >= 0) { const next = [...prev]; next[idx] = json.data; return next; }
@@ -323,6 +328,16 @@ export default function PluginsSettingsPage() {
         }}>
           {error}
           <button onClick={() => setError(null)} style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)', fontWeight: 600 }}>×</button>
+        </div>
+      )}
+
+      {warnings.length > 0 && (
+        <div style={{
+          background: 'var(--amber-bg)', color: 'var(--amber)',
+          border: '1px solid var(--border)', borderRadius: 8,
+          padding: '10px 14px', fontSize: 13, marginBottom: 16,
+        }}>
+          {warnings.map((w, i) => <div key={i}>{w}</div>)}
         </div>
       )}
 
