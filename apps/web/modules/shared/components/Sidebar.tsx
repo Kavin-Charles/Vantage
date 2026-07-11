@@ -404,7 +404,7 @@ export function Sidebar() {
       background: 'var(--surface)',
       borderRight: '1px solid var(--border)',
       display: 'flex', flexDirection: 'column', flexShrink: 0,
-      height: '100vh', overflowY: 'auto',
+      height: '100vh',
     }}>
       {/* Logo lockup */}
       <div style={{
@@ -431,7 +431,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav items */}
-      <div style={{ padding: '12px 12px 4px' }}>
+      <div style={{ padding: '12px 12px 4px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {visiblePinnedKeys.length > 0 && (
           <>
             <div style={{
