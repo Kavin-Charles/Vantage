@@ -7,7 +7,12 @@ export async function GET(request: NextRequest) {
   // Only allow relative paths — prevent open redirect
   const target = from.startsWith('/') && !from.startsWith('//') ? from : '/';
 
-  const response = NextResponse.redirect(new URL(target, request.url));
+  // Relative Location: request.url reflects the container host (localhost:3000)
+  // behind the reverse proxy, so an absolute URL would leave the site
+  const response = new NextResponse(null, {
+    status: 307,
+    headers: { Location: target },
+  });
   response.cookies.set('vencore_setup_done', '1', {
     path: '/',
     sameSite: 'lax',
