@@ -88,6 +88,7 @@ const ICONS: Record<string, React.ReactNode> = {
   globe:        <><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a13.5 13.5 0 0 1 0 18 13.5 13.5 0 0 1 0-18"/></>,
   resize:       <><path d="M15 3h6v6M21 3l-7 7M9 21H3v-6M3 21l7-7"/></>,
   plug:         <><path d="M9 2v6M15 2v6"/><path d="M7 8h10v3a5 5 0 0 1-10 0Z"/><path d="M12 16v6"/></>,
+  pin:          <><path d="M12 17v5"/><path d="M8 3h8v3.5a2 2 0 0 0 .59 1.41l1.7 1.7A1 1 0 0 1 17.6 11H6.4a1 1 0 0 1-.7-1.7l1.71-1.7A2 2 0 0 0 8 6.2Z"/></>,
   'chevron-right': <path d="m9 6 6 6-6 6"/>,
   user:         <><circle cx="12" cy="8" r="3.5"/><path d="M4 20c1.5-3.5 4.5-5 8-5s6.5 1.5 8 5"/></>,
   'user-check': <><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="3.5"/><path d="m17 11 2 2 4-4"/></>,
