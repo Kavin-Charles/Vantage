@@ -305,6 +305,9 @@ Field variants:
 `PluginManifest` describes the plugin package:
 
 - `id`, `name`, and `version` are required.
+- `version` must be full semver (e.g. `1.2.3` or `1.2.3-dev.1`). On republish, it must be strictly greater than the version currently installed for the workspace.
+- `sdk_version` is optional and must be an exact semver version (no ranges). A mismatched major version against the host's supported SDK major logs a warning but does not block install.
+- `host_version` is an optional semver range (e.g. `">=1.2.0 <2"`) the host instance must satisfy. Install is blocked when the running host version falls outside the range.
 - `description`, `icon`, `author`, and `homepage` are optional metadata.
 - `permissions` are user-facing permission definitions.
 - `data_access` controls bridge access to CRM, infra, storage, and HTTP capabilities.
