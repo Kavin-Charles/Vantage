@@ -141,7 +141,7 @@ function NavLink({
 }
 
 function GroupHeader({
-  group, groupIdx, groups, collapsed, isAdmin, editing, onStartEdit, onCommitEdit, onCancelEdit, onToggleCollapse, applyLayout,
+  group, groupIdx, groups, collapsed, isAdmin, editing, onStartEdit, onNewGroupBelow, onCommitEdit, onCancelEdit, onToggleCollapse, applyLayout,
 }: {
   group: SidebarGroup;
   groupIdx: number;
@@ -150,6 +150,7 @@ function GroupHeader({
   isAdmin: boolean;
   editing: boolean;
   onStartEdit: () => void;
+  onNewGroupBelow: () => void;
   onCommitEdit: (value: string) => void;
   onCancelEdit: () => void;
   onToggleCollapse: () => void;
@@ -174,7 +175,7 @@ function GroupHeader({
         if (!isAdmin) return;
         const items: ContextMenuItem[] = [
           { icon: 'edit', label: 'Rename', onClick: onStartEdit },
-          { icon: 'plus', label: 'New group below', onClick: () => applyLayout(addGroupBelow(groups, groupIdx)) },
+          { icon: 'plus', label: 'New group below', onClick: onNewGroupBelow },
           { icon: 'chevron-up', label: 'Move up', disabled: groupIdx === 0, onClick: () => applyLayout(moveGroup(groups, groupIdx, -1)) },
           { icon: 'chevron', label: 'Move down', disabled: groupIdx === groups.length - 1, onClick: () => applyLayout(moveGroup(groups, groupIdx, 1)) },
           { type: 'separator' },
@@ -324,7 +325,7 @@ export function Sidebar() {
   const prefs = useSidebarPrefsQuery();
   const saveLayout = useSaveSidebarLayout();
   const { save: savePrefs } = useSaveSidebarPrefs();
-  const [editingGroupKey, setEditingGroupKey] = useState<string | null>(null);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
 
   function applyLayout(next: SidebarGroup[]) {
     saveLayout.mutate(next, {
@@ -380,7 +381,7 @@ export function Sidebar() {
             onClick: () => {
               const withNew = addGroupBelow(groups, groups.length - 1);
               applyLayout(moveItemToGroup(withNew, href, withNew.length - 1));
-              setEditingGroupKey('seed:New group');
+              setEditingIdx(withNew.length - 1);
             },
           },
         ],
@@ -462,7 +463,7 @@ export function Sidebar() {
           const visibleKeys = group.item_keys.filter(isVisible);
           const key = collapseKey(group);
           const collapsed = prefs.collapsed_group_keys.includes(key);
-          const editing = editingGroupKey === key;
+          const editing = editingIdx === groupIdx;
 
           if (visibleKeys.length === 0 && !isAdmin) return null;
 
@@ -475,12 +476,16 @@ export function Sidebar() {
                 collapsed={collapsed}
                 isAdmin={isAdmin}
                 editing={editing}
-                onStartEdit={() => setEditingGroupKey(key)}
+                onStartEdit={() => setEditingIdx(groupIdx)}
+                onNewGroupBelow={() => {
+                  applyLayout(addGroupBelow(groups, groupIdx));
+                  setEditingIdx(groupIdx + 1);
+                }}
                 onCommitEdit={(value) => {
                   applyLayout(renameGroup(groups, groupIdx, value.trim() || group.label));
-                  setEditingGroupKey(null);
+                  setEditingIdx(null);
                 }}
-                onCancelEdit={() => setEditingGroupKey(null)}
+                onCancelEdit={() => setEditingIdx(null)}
                 onToggleCollapse={() => toggleCollapse(group)}
                 applyLayout={applyLayout}
               />
