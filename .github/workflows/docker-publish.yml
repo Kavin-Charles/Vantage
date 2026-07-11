@@ -26,6 +26,8 @@ jobs:
             dockerfile: docker/Dockerfile.api
           - image: vencore-worker
             dockerfile: docker/Dockerfile.worker
+          - image: vencore-updater
+            dockerfile: docker/Dockerfile.updater
 
     steps:
       - name: Checkout
