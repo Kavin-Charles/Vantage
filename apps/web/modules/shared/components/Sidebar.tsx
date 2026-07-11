@@ -154,7 +154,6 @@ function GroupHeader({
   onCancelEdit: () => void;
   onToggleCollapse: () => void;
   applyLayout: (next: SidebarGroup[]) => void;
-  dimmed?: boolean;
 }) {
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
   const [value, setValue] = useState(group.label);
