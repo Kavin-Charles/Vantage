@@ -16,6 +16,7 @@ export async function migrate(db: any): Promise<{ error?: any; results?: any[] }
       path,
       migrationFolder,
     }),
+    allowUnorderedMigrations: true,
   });
 
   const { error, results } = await migrator.migrateToLatest();
