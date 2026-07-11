@@ -321,13 +321,18 @@ export function Sidebar() {
     return href === '/messaging' ? messagingUnread : undefined;
   }
 
-  const { groups } = useSidebarLayoutQuery();
+  const { groups, isFallback } = useSidebarLayoutQuery();
   const prefs = useSidebarPrefsQuery();
   const saveLayout = useSaveSidebarLayout();
   const { save: savePrefs } = useSaveSidebarPrefs();
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const canManage = isAdmin && !isFallback;
 
   function applyLayout(next: SidebarGroup[]) {
+    if (isFallback) {
+      showToast('error', 'Sidebar layout unavailable — try again later');
+      return;
+    }
     saveLayout.mutate(next, {
       onError: () => showToast('error', 'Failed to save sidebar layout'),
     });
@@ -363,7 +368,7 @@ export function Sidebar() {
   }
 
   function buildAdminMenu(href: string, groupIdx: number, visibleKeys: string[]): ContextMenuItem[] {
-    if (!isAdmin) return [];
+    if (!canManage) return [];
     const itemIdx = visibleKeys.indexOf(href);
     return [
       { type: 'separator' },
@@ -465,7 +470,7 @@ export function Sidebar() {
           const collapsed = prefs.collapsed_group_keys.includes(key);
           const editing = editingIdx === groupIdx;
 
-          if (visibleKeys.length === 0 && !isAdmin) return null;
+          if (visibleKeys.length === 0 && !canManage) return null;
 
           return (
             <div key={key} style={visibleKeys.length === 0 ? { opacity: 0.5 } : undefined}>
@@ -474,7 +479,7 @@ export function Sidebar() {
                 groupIdx={groupIdx}
                 groups={groups}
                 collapsed={collapsed}
-                isAdmin={isAdmin}
+                isAdmin={canManage}
                 editing={editing}
                 onStartEdit={() => setEditingIdx(groupIdx)}
                 onNewGroupBelow={() => {
