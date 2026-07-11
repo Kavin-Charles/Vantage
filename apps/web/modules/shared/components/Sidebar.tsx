@@ -465,7 +465,9 @@ export function Sidebar() {
         )}
 
         {groups.map((group, groupIdx) => {
-          const visibleKeys = group.item_keys.filter(isVisible);
+          const visibleKeys = group.item_keys.filter(
+            (k) => isVisible(k) && !prefs.pinned_keys.includes(k),
+          );
           const key = collapseKey(group);
           const collapsed = prefs.collapsed_group_keys.includes(key);
           const editing = editingIdx === groupIdx;

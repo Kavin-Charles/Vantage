@@ -95,7 +95,7 @@ Whole-layout PUT (not granular per-op endpoints): every admin operation (move up
 Top to bottom:
 
 1. Logo lockup (unchanged).
-2. **Pinned** section — rendered only when the user has pins. Items in `pinned_keys` order. A pinned item also remains in its group (pin = shortcut, not move).
+2. **Pinned** section — rendered only when the user has pins. Items in `pinned_keys` order. A pinned item stays in its group's `item_keys` (unpin restores its position) but is hidden from the group's rendered list while pinned, so the item — and its active highlight — appears exactly once.
 3. **Groups** in `position` order. Group headers now rendered (uppercase label style). Chevron on header toggles collapse; state persisted per-user. Empty groups: visible to admins (dimmed), hidden from members.
 4. Bottom row: **settings gear icon** (links `/settings`, active-state aware) + user avatar/name + logout.
 
