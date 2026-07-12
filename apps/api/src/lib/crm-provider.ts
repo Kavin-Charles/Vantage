@@ -30,6 +30,7 @@ function hubRow(db: Kysely<Database>, workspaceId: string, contract: string, pro
     .where('workspace_id', '=', workspaceId)
     .where('contract', '=', contract)
     .where('provider_plugin_id', '=', provider)
+    .where('deleted_at', 'is', null)
     .executeTakeFirst();
 }
 
@@ -130,6 +131,7 @@ export async function getContactActivity(
     .where('workspace_id', '=', workspaceId)
     .where('contract', '=', 'crm.activity@v1')
     .where('provider_plugin_id', '=', provider)
+    .where('deleted_at', 'is', null)
     .where(sql<string>`data->>'contact_external_id'`, '=', contact.external_id)
     .orderBy('updated_at', 'desc')
     .limit(limit)
@@ -203,6 +205,7 @@ export async function searchCrmRecords(
     .where('workspace_id', '=', workspaceId)
     .where('contract', '=', contract)
     .where('provider_plugin_id', '=', provider)
+    .where('deleted_at', 'is', null)
     .where(sql<string>`data->>'name'`, 'ilike', `%${search}%`)
     .limit(limit)
     .execute();

@@ -11,7 +11,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { requireAdmin } from '../middleware/auth';
-import { dispatchBridgeCall, runMigrations, dropPluginTables, isKnownContract, hasHubPermission, removeProviderHubData, CONTRACT_ID_RE } from '@vencore/plugin-runtime';
+import { dispatchBridgeCall, runMigrations, dropPluginTables, isKnownContract, hasHubPermission, softDeleteProviderHubData, restoreProviderHubData, CONTRACT_ID_RE, validateGroupCoverage, detectProviderConflicts, deactivateProvider } from '@vencore/plugin-runtime';
 import { savePluginFile, loadPluginBackend, invalidatePlugin } from '../lib/plugin-loader';
 import { encryptSettingValue, isEncryptedValue, decryptSettingValue } from '../lib/plugin-settings-crypto';
 import { logger } from '../lib/logger';
@@ -140,6 +140,37 @@ export const manifestSchema = z.object({
     contract: z.string().regex(CONTRACT_ID_RE, 'Contract id must look like namespace.name@vN'),
     optional: z.boolean().optional(),
   })).optional().default([]),
+  hook_features: z.array(z.object({
+    id: z.string().min(1).max(64).regex(/^[a-z][a-z0-9_]*$/, 'Feature id must be lowercase snake_case'),
+    name: z.string().min(1).max(120),
+    description: z.string().max(512).optional(),
+    trigger: z.string().min(1).max(120),
+    requires_contract: z.string().regex(CONTRACT_ID_RE).optional(),
+    config_schema: z.array(settingsFieldSchema).optional(),
+  })).optional().default([]),
+  sections: z.array(z.object({
+    id: z.string().min(1).max(64),
+    slot: z.string().min(1).max(80).regex(/^[a-z][a-z0-9-]*:[a-z][a-z0-9_-]*$/, 'slot must be "page:slotId"'),
+    label: z.string().max(120).optional(),
+    priority: z.number().int().min(0).max(1000).optional(),
+    requires_contract: z.string().regex(CONTRACT_ID_RE).optional(),
+  })).optional().default([]),
+  settings_contributions: z.array(z.object({
+    domain: z.enum(['crm', 'infra', 'general']),
+    section: z.string().min(1).max(64),
+    label: z.string().min(1).max(120),
+    fields: z.array(z.object({
+      key: z.string().min(1).max(64).regex(/^[a-z][a-z0-9_]*$/),
+      type: z.enum(['text', 'boolean', 'number', 'select']),
+      label: z.string().min(1).max(120),
+      default: z.union([z.string(), z.number(), z.boolean()]).optional(),
+      options: z.array(z.string()).optional(),
+      min: z.number().optional(),
+      max: z.number().optional(),
+      secret: z.boolean().optional(),
+      shared: z.boolean().optional(),
+    })).min(1),
+  })).optional().default([]),
   endpoints: z.array(z.string()).optional().default([]),
   surfaces: z.object({
     nav: z.array(z.object({ label: z.string(), path: z.string(), icon: z.string().optional(), group: z.enum(['crm', 'infra', 'general']).optional() })).optional(),
@@ -176,7 +207,37 @@ function validateHubDeclarations(mf: ParsedManifest): string | null {
       return `consumes '${c.contract}' requires data_access 'hub:read:${c.contract}'`;
     }
   }
+  // Group coverage is all-or-nothing: providing some but not all required
+  // contracts of a group would leave consumers with half a CRM
+  const groupError = validateGroupCoverage(mf.provides.map((p) => p.contract));
+  if (groupError) return groupError;
   return null;
+}
+
+/**
+ * Notifies all workspace admins about a provider event (conflict/fallback).
+ */
+async function notifyAdmins(
+  db: Kysely<Database>,
+  workspaceId: string,
+  pluginId: string,
+  title: string,
+  body: string,
+): Promise<void> {
+  const admins = await db.selectFrom('users').select('id')
+    .where('workspace_id', '=', workspaceId)
+    .where('role', '=', 'admin')
+    .execute();
+  await Promise.allSettled(admins.map((a) =>
+    (db as any).insertInto('plugin_notifications').values({
+      workspace_id: workspaceId,
+      user_id: a.id,
+      plugin_id: pluginId,
+      title,
+      body,
+      type: 'info',
+    }).execute(),
+  ));
 }
 
 /**
@@ -453,7 +514,15 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         .returningAll()
         .executeTakeFirstOrThrow();
 
+      // Reinstall within the retention window revives tombstoned hub data
+      await restoreProviderHubData(db as Kysely<any>, workspace.id, mf.id);
       await syncHookProvider(db, workspace.id, mf, true);
+      const conflicts = await detectProviderConflicts(db as Kysely<any>, workspace.id, mf);
+      if (conflicts.length > 0) {
+        await notifyAdmins(db, workspace.id, mf.id,
+          'Choose your data provider',
+          `${mf.name} can power ${conflicts.map((g) => g.label).join(', ')} data. Select the active provider in Settings → Data providers.`);
+      }
       loadPluginBackend(mf.id, workspace.id, db);
       return res.status(201).json({ data: plugin, error: null, warnings: versionCheck.warnings });
     } catch (err) {
@@ -771,7 +840,15 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         .returningAll()
         .executeTakeFirstOrThrow();
 
+      // Reinstall within the retention window revives tombstoned hub data
+      await restoreProviderHubData(db as Kysely<any>, workspace.id, mf.id);
       await syncHookProvider(db, workspace.id, mf, true);
+      const uploadConflicts = await detectProviderConflicts(db as Kysely<any>, workspace.id, mf);
+      if (uploadConflicts.length > 0) {
+        await notifyAdmins(db, workspace.id, mf.id,
+          'Choose your data provider',
+          `${mf.name} can power ${uploadConflicts.map((g) => g.label).join(', ')} data. Select the active provider in Settings → Data providers.`);
+      }
 
       // Load backend bundle
       loadPluginBackend(mf.id, workspace.id, db);
@@ -864,11 +941,27 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
 
       if (!enabled) {
         invalidatePlugin(plugin.plugin_id, workspace.id);
-        // Disabled providers must not serve stale data to consumers
-        await removeProviderHubData(db as Kysely<any>, workspace.id, plugin.plugin_id);
+        // Disable keeps hub data live but inactive — the group falls back to
+        // the builtin provider, so consumers never see the disabled plugin's
+        // rows. Re-enabling restores it as a selectable provider with its data
+        // intact.
         await syncHookProvider(db, workspace.id, { id: plugin.plugin_id, name: plugin.name, provides }, false);
+        const fellBack = await deactivateProvider(db as Kysely<any>, workspace.id, plugin.plugin_id);
+        if (fellBack.length > 0) {
+          await notifyAdmins(db, workspace.id, plugin.plugin_id,
+            `${plugin.name} was disabled`,
+            `${fellBack.map((g) => g.label).join(', ')} data is now powered by Vencore CRM.`);
+        }
       } else {
+        // Re-enable: revive any tombstoned rows from a prior uninstall window
+        await restoreProviderHubData(db as Kysely<any>, workspace.id, plugin.plugin_id);
         await syncHookProvider(db, workspace.id, { id: plugin.plugin_id, name: plugin.name, provides }, true);
+        const enableConflicts = await detectProviderConflicts(db as Kysely<any>, workspace.id, { id: plugin.plugin_id, provides: (mfDecl.provides ?? []) });
+        if (enableConflicts.length > 0) {
+          await notifyAdmins(db, workspace.id, plugin.plugin_id,
+            'Choose your data provider',
+            `${plugin.name} can power ${enableConflicts.map((g) => g.label).join(', ')} data. Select the active provider in Settings → Data providers.`);
+        }
         loadPluginBackend(plugin.plugin_id, workspace.id, db);
       }
 
@@ -929,12 +1022,27 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           .where('workspace_id', '=', workspace.id)
           .where('plugin_id', '=', pluginId)
           .execute(),
+        (db as any).deleteFrom('plugin_hub_settings')
+          .where('workspace_id', '=', workspace.id)
+          .where('plugin_id', '=', pluginId)
+          .execute(),
       ]);
 
-      // Remove published hub data + hook provider registration
-      await removeProviderHubData(db as Kysely<any>, workspace.id, pluginId).catch((err) => {
-        logger.warn({ err, pluginId }, 'Failed to remove hub data during uninstall');
+      // Tombstone published hub data (retained for the restore window) +
+      // remove hook provider registration
+      await softDeleteProviderHubData(db as Kysely<any>, workspace.id, pluginId).catch((err) => {
+        logger.warn({ err, pluginId }, 'Failed to soft-delete hub data during uninstall');
       });
+      // Groups it served fall back to the builtin provider
+      const uninstallFellBack = await deactivateProvider(db as Kysely<any>, workspace.id, pluginId).catch((err) => {
+        logger.warn({ err, pluginId }, 'Failed to deactivate provider during uninstall');
+        return [];
+      });
+      if (uninstallFellBack.length > 0) {
+        await notifyAdmins(db, workspace.id, pluginId,
+          `${existing.name} was uninstalled`,
+          `${uninstallFellBack.map((g) => g.label).join(', ')} data is now powered by Vencore CRM.`);
+      }
       const removedProvider = await db
         .deleteFrom('hook_providers')
         .where('workspace_id', '=', workspace.id)

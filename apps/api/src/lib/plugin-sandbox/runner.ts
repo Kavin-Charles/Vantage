@@ -159,6 +159,18 @@ process.on('message', async (msg: InboundMsg) => {
               arr.push(handler);
               busHandlers.set(event, arr);
             },
+            getSetting: (key: string) => bridge('hub.getSetting', { key }),
+            setSetting: (key: string, value: unknown) => bridge('hub.setSetting', { key, value }),
+            getSharedSetting: (pluginId: string, key: string) => bridge('hub.getSharedSetting', { plugin_id: pluginId, key }),
+          },
+          // Handler for an admin-enabled hook feature declared in the manifest.
+          // Fires with { feature, trigger, payload, config } when the host
+          // dispatches the feature's trigger event.
+          onHookFeature: (featureId: string, handler: (payload: unknown) => void | Promise<void>) => {
+            const event = `hook:${featureId}`;
+            const arr = busHandlers.get(event) ?? [];
+            arr.push(handler);
+            busHandlers.set(event, arr);
           },
           on: (event: string, handler: (payload: unknown) => void | Promise<void>) => {
             const arr = busHandlers.get(event) ?? [];
