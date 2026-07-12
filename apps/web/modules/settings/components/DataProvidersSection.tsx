@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
@@ -36,6 +37,8 @@ export function DataProvidersSection() {
   const [switching, setSwitching] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ group: ProviderGroup; candidate: Candidate } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const { data } = useQuery({
     queryKey: ['hub-providers'],
@@ -151,9 +154,12 @@ export function DataProvidersSection() {
         </div>
       ))}
 
-      {confirm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,24,20,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, width: '100%', maxWidth: 420 }}>
+      {confirm && mounted && createPortal(
+        <div
+          onClick={() => setConfirm(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(26,24,20,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 20, width: '100%', maxWidth: 420 }}>
             <p style={{ fontFamily: "'Instrument Serif', serif", fontSize: 20, margin: '0 0 6px' }}>
               Switch {confirm.group.label} provider?
             </p>
@@ -169,7 +175,8 @@ export function DataProvidersSection() {
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
