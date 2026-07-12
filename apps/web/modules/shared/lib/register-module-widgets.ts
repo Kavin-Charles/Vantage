@@ -1,6 +1,6 @@
 import { registerDashboardWidget } from './dashboard-registry';
-import { ContactsWidget } from '@/modules/contacts/components/ContactsWidget';
-import { PipelineWidget } from '@/modules/pipeline/components/PipelineWidget';
+import { ContactsWidget } from '@/modules/crm/contacts/components/ContactsWidget';
+import { PipelineWidget } from '@/modules/crm/pipeline/components/PipelineWidget';
 import { ServersWidget } from '@/modules/servers/components/ServersWidget';
 import { ProjectsWidget } from '@/modules/projects/components/ProjectsWidget';
 

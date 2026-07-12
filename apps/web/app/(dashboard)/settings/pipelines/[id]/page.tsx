@@ -4,10 +4,10 @@ import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { getPipeline } from '@/modules/pipeline/lib/pipelines';
-import { GeneralTab } from '@/modules/pipeline/components/settings/GeneralTab';
-import { StagesTab } from '@/modules/pipeline/components/settings/StagesTab';
-import { FieldsTab } from '@/modules/pipeline/components/settings/FieldsTab';
+import { getPipeline } from '@/modules/crm/pipeline/lib/pipelines';
+import { GeneralTab } from '@/modules/crm/pipeline/components/settings/GeneralTab';
+import { StagesTab } from '@/modules/crm/pipeline/components/settings/StagesTab';
+import { FieldsTab } from '@/modules/crm/pipeline/components/settings/FieldsTab';
 
 type Tab = 'general' | 'stages' | 'fields';
 

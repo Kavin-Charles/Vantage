@@ -1,1 +1,1 @@
-export { default } from '@/modules/pipeline/pages/page';
+export { default } from '@/modules/crm/pipeline/pages/page';

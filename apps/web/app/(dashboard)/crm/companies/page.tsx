@@ -1,1 +1,1 @@
-export { default } from '@/modules/companies/pages/page';
+export { default } from '@/modules/crm/companies/pages/page';
