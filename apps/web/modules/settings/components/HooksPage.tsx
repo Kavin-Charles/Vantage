@@ -136,7 +136,7 @@ function FeatureCard({ feature, moduleId }: { feature: HookFeatureResponse; modu
               Selection pending
             </span>
           )}
-          <Link href="/settings/data-providers" style={{ fontSize: 11.5, color: 'var(--blue)', textDecoration: 'none' }}>
+          <Link href="/settings/integrations" style={{ fontSize: 11.5, color: 'var(--blue)', textDecoration: 'none' }}>
             Change →
           </Link>
         </div>

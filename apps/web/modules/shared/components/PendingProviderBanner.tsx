@@ -58,7 +58,7 @@ export function PendingProviderBanner() {
         {' — choose which provider is active.'}
       </span>
       <Link
-        href="/settings/data-providers"
+        href="/settings/integrations"
         style={{
           flexShrink: 0, fontSize: 12, fontWeight: 600, color: 'var(--amber)',
           textDecoration: 'underline',
