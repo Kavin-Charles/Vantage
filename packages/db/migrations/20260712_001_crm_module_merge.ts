@@ -36,6 +36,21 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     on conflict (workspace_id, module_id) do nothing
   `.execute(db);
 
+  // 1b. Safety net: workspaces with none of the four old rows never match the
+  //     grouped insert above (no group is produced), so they'd end up with no
+  //     crm row at all — and a missing row reads as disabled. Missing rows
+  //     mean all four modules were at defaultEnabled: true, so crm must be
+  //     explicitly enabled here.
+  await sql`
+    insert into workspace_modules (workspace_id, module_id, enabled)
+    select id, 'crm', true from workspaces
+    where not exists (
+      select 1 from workspace_modules
+      where workspace_id = workspaces.id and module_id = 'crm'
+    )
+    on conflict (workspace_id, module_id) do nothing
+  `.execute(db);
+
   await sql`
     delete from workspace_modules
     where module_id in ('contacts', 'companies', 'pipelines', 'tasks')
