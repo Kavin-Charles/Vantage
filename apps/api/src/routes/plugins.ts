@@ -15,6 +15,8 @@ import { dispatchBridgeCall, runMigrations, dropPluginTables, isKnownContract, h
 import { savePluginFile, loadPluginBackend, invalidatePlugin } from '../lib/plugin-loader';
 import { encryptSettingValue, isEncryptedValue, decryptSettingValue } from '../lib/plugin-settings-crypto';
 import { logger } from '../lib/logger';
+import { semverValid, semverValidRange } from '../lib/version';
+import { checkVersionRules } from '../lib/plugin-version-rules';
 
 // ── Esbuild Global Shim Plugin ────────────────────────────────────────────────
 const globalExternalsPlugin: esbuild.Plugin = {
@@ -107,11 +109,17 @@ const tableSchema = z.object({
   drop_on_uninstall: z.boolean().optional(),
 });
 
-const manifestSchema = z.object({
+export const manifestSchema = z.object({
   id: z.string().min(1).max(128).regex(/^[a-z][a-z0-9-]*$/, 'Plugin ID must be lowercase kebab-case'),
   name: z.string().min(1).max(255),
-  version: z.string().min(1).max(32).regex(/^\d+\.\d+\.\d+/, 'Version must start with semver'),
-  sdk_version: z.string().max(32).optional(),
+  version: z.string().min(1).max(64)
+    .refine((v) => semverValid(v) !== null, 'Version must be valid semver (e.g. 1.2.3 or 1.2.3-dev.1)'),
+  sdk_version: z.string().max(64)
+    .refine((v) => semverValid(v) !== null, 'sdk_version must be an exact semver version')
+    .optional(),
+  host_version: z.string().max(128)
+    .refine((r) => semverValidRange(r) !== null, 'host_version must be a valid semver range (e.g. ">=1.2.0 <2")')
+    .optional(),
   description: z.string().max(512).optional(),
   icon: z.string().max(64).optional(),
   author: z.string().max(255).optional(),
@@ -437,6 +445,11 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         return res.status(400).json({ data: null, error: { code: 'INVALID_MANIFEST', message: hubError } });
       }
 
+      const versionCheck = await checkVersionRules(db, workspace.id, mf);
+      if (versionCheck.error) {
+        return res.status(409).json({ data: null, error: versionCheck.error });
+      }
+
       // Use pre-built bundles from the zip (marketplace stores built artifacts)
       const serverBundlePath = path.join(tmpDir, 'server.cjs');
       if (fs.existsSync(serverBundlePath)) {
@@ -511,7 +524,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           `${mf.name} can power ${conflicts.map((g) => g.label).join(', ')} data. Select the active provider in Settings → Data providers.`);
       }
       loadPluginBackend(mf.id, workspace.id, db);
-      return res.status(201).json({ data: plugin, error: null });
+      return res.status(201).json({ data: plugin, error: null, warnings: versionCheck.warnings });
     } catch (err) {
       return next(err);
     } finally {
@@ -750,6 +763,11 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         return res.status(400).json({ data: null, error: { code: 'INVALID_MANIFEST', message: hubError } });
       }
 
+      const versionCheck = await checkVersionRules(db, workspace.id, mf);
+      if (versionCheck.error) {
+        return res.status(409).json({ data: null, error: versionCheck.error });
+      }
+
       // Compile server bundle
       if (mf.build?.server) {
         const entryPath = path.join(tmpDir, mf.build.server);
@@ -835,7 +853,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       // Load backend bundle
       loadPluginBackend(mf.id, workspace.id, db);
 
-      return res.status(201).json({ data: plugin, error: null });
+      return res.status(201).json({ data: plugin, error: null, warnings: versionCheck.warnings });
     } catch (err) {
       return next(err);
     } finally {

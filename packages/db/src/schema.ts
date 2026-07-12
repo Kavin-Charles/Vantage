@@ -739,6 +739,17 @@ export interface PluginHubRecordTable {
   updated_at: Generated<Date>;
 }
 
+export interface WorkspaceSidebarGroupTable {
+  id: Generated<string>;
+  workspace_id: string;
+  label: string;
+  position: number;
+  is_default: Generated<boolean>;
+  item_keys: string[]; // jsonb
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface WorkspaceContractProviderTable {
   id: Generated<string>;
   workspace_id: string;
@@ -758,6 +769,14 @@ export interface PluginHubSettingTable {
   key: string;
   value: unknown;
   shared: Generated<boolean>;
+  updated_at: Generated<Date>;
+}
+
+export interface UserSidebarPrefsTable {
+  user_id: string;
+  workspace_id: string;
+  pinned_keys: string[]; // jsonb
+  collapsed_group_keys: string[]; // jsonb
   updated_at: Generated<Date>;
 }
 
@@ -1365,6 +1384,8 @@ export interface Database {
   hook_providers: HookProviderTable;
   workspace_hook_configs: WorkspaceHookConfigTable;
   instance_meta: InstanceMetaTable;
+  workspace_sidebar_groups: WorkspaceSidebarGroupTable;
+  user_sidebar_prefs: UserSidebarPrefsTable;
 }
 
 // Convenience types

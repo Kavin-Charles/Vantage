@@ -535,8 +535,10 @@ export interface PluginManifest {
   id: string;
   name: string;
   version: string;
-  /** SDK version this plugin was built with. Host validates major version compat. */
+  /** SDK version this plugin was built with. Host warns on major version mismatch. */
   sdk_version?: string;
+  /** Semver range the host instance must satisfy (e.g. ">=1.2.0 <2"). Host blocks install outside the range. */
+  host_version?: string;
   description?: string;
   icon?: string;
   author?: string;

@@ -2,7 +2,8 @@ import { Router, type RequestHandler } from 'express';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import { z } from 'zod';
-import { currentVersion, isSemver, compareSemver, runUpdateCheck } from '../lib/update-check';
+import { currentVersion, runUpdateCheck } from '../lib/update-check';
+import { isStableSemver, compareSemver } from '../lib/version';
 
 export interface SystemRouterEnv {
   CRON_SECRET: string;
@@ -44,7 +45,7 @@ export function createSystemRouter(
       const meta = await db.selectFrom('instance_meta').selectAll().where('id', '=', 1).executeTakeFirst();
       const latest = meta?.latest_version ?? null;
       const updateAvailable =
-        latest !== null && isSemver(running) && compareSemver(latest, running) > 0;
+        latest !== null && isStableSemver(running) && compareSemver(latest, running) > 0;
       return res.json({
         data: {
           currentVersion: running,
