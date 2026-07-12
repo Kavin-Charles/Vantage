@@ -9,13 +9,10 @@ import { invalidateModuleCache } from '../middleware/module';
 
 // Built-in modules that act as hook providers when enabled
 const MODULE_PROVIDER_MAP: Record<string, { providerId: string; name: string } | null> = {
-  'contacts':   { providerId: 'vencore-crm',       name: 'Vencore CRM' },
-  'companies':  { providerId: 'vencore-crm',        name: 'Vencore CRM' },
-  'messaging':  { providerId: 'vencore-messaging',  name: 'Vencore Messaging' },
-  'servers':    { providerId: 'vencore-infra',      name: 'Vencore Infra' },
-  'databases':  { providerId: 'vencore-infra',      name: 'Vencore Infra' },
-  'pipelines':  null,
-  'tasks':      null,
+  'crm':        { providerId: 'vencore-crm',       name: 'Vencore CRM' },
+  'messaging':  { providerId: 'vencore-messaging', name: 'Vencore Messaging' },
+  'servers':    { providerId: 'vencore-infra',     name: 'Vencore Infra' },
+  'databases':  { providerId: 'vencore-infra',     name: 'Vencore Infra' },
   'analytics':  null,
   'activity':   null,
   'websites':   null,

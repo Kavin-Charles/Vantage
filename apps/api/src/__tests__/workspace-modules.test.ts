@@ -19,9 +19,9 @@ function buildApp(db: Partial<Kysely<Database>>, role: 'admin' | 'member' = 'adm
 }
 
 const mockModuleRows = [
-  { module_id: 'contacts', enabled: true },
-  { module_id: 'companies', enabled: true },
-  { module_id: 'pipelines', enabled: false },
+  { module_id: 'crm', enabled: true },
+  { module_id: 'servers', enabled: true },
+  { module_id: 'messaging', enabled: false },
 ];
 
 describe('GET /api/workspace/modules', () => {
@@ -36,7 +36,7 @@ describe('GET /api/workspace/modules', () => {
     const res = await request(buildApp(db)).get('/api/workspace/modules');
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(3);
-    expect(res.body.data[0]).toMatchObject({ module_id: 'contacts', enabled: true });
+    expect(res.body.data[0]).toMatchObject({ module_id: 'crm', enabled: true });
   });
 });
 
@@ -60,10 +60,10 @@ describe('PATCH /api/workspace/modules/:moduleId', () => {
       }),
     };
     const res = await request(buildApp(db))
-      .patch('/api/workspace/modules/contacts')
+      .patch('/api/workspace/modules/crm')
       .send({ enabled: false });
     expect(res.status).toBe(200);
-    expect(res.body.data).toMatchObject({ module_id: 'contacts', enabled: false });
+    expect(res.body.data).toMatchObject({ module_id: 'crm', enabled: false });
   });
 
   it('returns 404 when module row does not exist for workspace', async () => {
@@ -76,7 +76,7 @@ describe('PATCH /api/workspace/modules/:moduleId', () => {
       }),
     };
     const res = await request(buildApp(db))
-      .patch('/api/workspace/modules/contacts')
+      .patch('/api/workspace/modules/crm')
       .send({ enabled: false });
     expect(res.status).toBe(404);
     expect(res.body.error.code).toBe('MODULE_NOT_FOUND');
@@ -85,7 +85,7 @@ describe('PATCH /api/workspace/modules/:moduleId', () => {
   it('returns 403 for non-admin', async () => {
     const db: any = {};
     const res = await request(buildApp(db, 'member'))
-      .patch('/api/workspace/modules/contacts')
+      .patch('/api/workspace/modules/crm')
       .send({ enabled: false });
     expect(res.status).toBe(403);
   });
@@ -101,7 +101,7 @@ describe('PATCH /api/workspace/modules/:moduleId', () => {
   it('returns 400 for invalid body (INVALID_BODY)', async () => {
     const db: any = {};
     const res = await request(buildApp(db))
-      .patch('/api/workspace/modules/contacts')
+      .patch('/api/workspace/modules/crm')
       .send({ enabled: 'yes' });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('INVALID_BODY');

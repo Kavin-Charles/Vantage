@@ -367,22 +367,22 @@ app.use('/api/setup', createSetupRouter(db));
 app.use('/api/me', requireAuth, createMeRouter(db));
 app.use('/api/me/push-token', requireAuth, createPushTokenRouter(db));
 app.use('/api/workspace/modules', requireAuth, createWorkspaceModulesRouter(db));
-app.use('/api/contacts', requireAuth, requireModule('contacts'), createContactsRouter(db, requirePermission));
-app.use('/api/companies', requireAuth, requireModule('companies'), createCompaniesRouter(db, requirePermission));
+app.use('/api/contacts', requireAuth, requireModule('crm'), createContactsRouter(db, requirePermission));
+app.use('/api/companies', requireAuth, requireModule('crm'), createCompaniesRouter(db, requirePermission));
 // Agent — must come before the broad /api catch below
 app.use('/api/agent', createAgentRouter(db, config.smtp));
-app.use('/api/pipelines', requireAuth, requireModule('pipelines'), createPipelinesRouter(db, requirePermission));
-app.use('/api/pipelines/:pipelineId/fields', requireAuth, requireModule('pipelines'), createPipelineFieldsRouter(db, requirePermission));
-app.use('/api/pipelines/:pipelineId/items', requireAuth, requireModule('pipelines'), createPipelineItemsRouter(db, requirePermission));
-app.use('/api/items', requireAuth, requireModule('pipelines'), createItemRouter(db, requirePermission));
+app.use('/api/pipelines', requireAuth, requireModule('crm'), createPipelinesRouter(db, requirePermission));
+app.use('/api/pipelines/:pipelineId/fields', requireAuth, requireModule('crm'), createPipelineFieldsRouter(db, requirePermission));
+app.use('/api/pipelines/:pipelineId/items', requireAuth, requireModule('crm'), createPipelineItemsRouter(db, requirePermission));
+app.use('/api/items', requireAuth, requireModule('crm'), createItemRouter(db, requirePermission));
 app.use(
   '/api/pipelines/:pipelineId/automations',
   requireAuth,
-  requireModule('pipelines'),
+  requireModule('crm'),
   createPipelineAutomationsRouter(db, requirePermission),
 );
-app.use('/api/tasks/unified', requireAuth, requireModule('tasks'), createUnifiedTasksRouter(db, requirePermission));
-app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db, requirePermission));
+app.use('/api/tasks/unified', requireAuth, requireModule('crm'), createUnifiedTasksRouter(db, requirePermission));
+app.use('/api/tasks', requireAuth, requireModule('crm'), createTasksRouter(db, requirePermission));
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
 app.use('/api/alerts', requireAuth, requireModule('alerts'), createAlertsRouter(db));
 app.use('/api/dashboards', requireAuth, createDashboardsRouter(db))
