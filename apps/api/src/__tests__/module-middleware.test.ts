@@ -33,7 +33,7 @@ describe('requireModule middleware', () => {
 
   it('calls next() when module is enabled', async () => {
     const requireModule = createRequireModule(db as Kysely<Database>);
-    const middleware = requireModule('contacts');
+    const middleware = requireModule('crm');
     const next = vi.fn();
     await middleware(mockReq('ws-1') as Request, mockRes() as Response, next);
     expect(next).toHaveBeenCalledOnce();
@@ -46,14 +46,14 @@ describe('requireModule middleware', () => {
       executeTakeFirst: vi.fn().mockResolvedValue({ enabled: false }),
     });
     const requireModule = createRequireModule(db as Kysely<Database>);
-    const middleware = requireModule('contacts');
+    const middleware = requireModule('crm');
     const next = vi.fn();
     const res = mockRes();
     await middleware(mockReq('ws-1') as Request, res as Response, next);
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json).toHaveBeenCalledWith({
       data: null,
-      error: { code: 'MODULE_DISABLED', message: 'contacts module is disabled for this workspace.' },
+      error: { code: 'MODULE_DISABLED', message: 'crm module is disabled for this workspace.' },
     });
     expect(next).not.toHaveBeenCalled();
   });
@@ -65,7 +65,7 @@ describe('requireModule middleware', () => {
       executeTakeFirst: vi.fn().mockResolvedValue(undefined),
     });
     const requireModule = createRequireModule(db as Kysely<Database>);
-    const middleware = requireModule('contacts');
+    const middleware = requireModule('crm');
     const next = vi.fn();
     const res = mockRes();
     await middleware(mockReq('ws-1') as Request, res as Response, next);
@@ -75,7 +75,7 @@ describe('requireModule middleware', () => {
 
   it('hits cache on second call and skips DB', async () => {
     const requireModule = createRequireModule(db as Kysely<Database>);
-    const middleware = requireModule('contacts');
+    const middleware = requireModule('crm');
     const next1 = vi.fn();
     const next2 = vi.fn();
     // First call — populates cache

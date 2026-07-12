@@ -56,6 +56,26 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     where module_id in ('contacts', 'companies', 'pipelines', 'tasks')
   `.execute(db);
 
+  // 1c. Consolidate module_event_settings: crm row aggregates activity_on and
+  //     alerts_on from the four old modules with bool_and (crm only stays on
+  //     when every old module was on). No safety-net insert here, unlike
+  //     workspace_modules above — a missing module_event_settings row already
+  //     defaults to enabled (`?? true` in log-activity.ts / alert-service.ts),
+  //     so workspaces with none of the four old rows correctly need no crm row.
+  await sql`
+    insert into module_event_settings (workspace_id, module_id, activity_on, alerts_on)
+    select workspace_id, 'crm', bool_and(activity_on), bool_and(alerts_on)
+    from module_event_settings
+    where module_id in ('contacts', 'companies', 'pipelines', 'tasks')
+    group by workspace_id
+    on conflict (workspace_id, module_id) do nothing
+  `.execute(db);
+
+  await sql`
+    delete from module_event_settings
+    where module_id in ('contacts', 'companies', 'pipelines', 'tasks')
+  `.execute(db);
+
   // 2. Rewrite sidebar group item keys.
   const groups = await sql<{ id: string; item_keys: string[] }>`
     select id, item_keys from workspace_sidebar_groups
@@ -99,6 +119,18 @@ export async function down(db: Kysely<unknown>): Promise<void> {
   `.execute(db);
 
   await sql`delete from workspace_modules where module_id = 'crm'`.execute(db);
+
+  // Re-expand crm module_event_settings into the four modules with crm's values.
+  await sql`
+    insert into module_event_settings (workspace_id, module_id, activity_on, alerts_on)
+    select mes.workspace_id, old.module_id, mes.activity_on, mes.alerts_on
+    from module_event_settings mes
+    cross join (values ('contacts'), ('companies'), ('pipelines'), ('tasks')) as old(module_id)
+    where mes.module_id = 'crm'
+    on conflict (workspace_id, module_id) do nothing
+  `.execute(db);
+
+  await sql`delete from module_event_settings where module_id = 'crm'`.execute(db);
 
   // Expand '/crm' back to the four keys in stored layouts and pins.
   const groups = await sql<{ id: string; item_keys: string[] }>`
