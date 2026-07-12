@@ -77,7 +77,7 @@ export default function CompaniesPage() {
                   { type: 'separator' },
                   { icon: 'copy', label: 'Copy name',    onClick: () => navigator.clipboard.writeText(c.name) },
                   { icon: 'globe', label: 'Copy website', disabled: !c.website, onClick: () => navigator.clipboard.writeText(c.website ?? '') },
-                  { icon: 'link',  label: 'Copy link',   onClick: () => navigator.clipboard.writeText(`${window.location.origin}/companies/${c.id}`) },
+                  { icon: 'link',  label: 'Copy link',   onClick: () => navigator.clipboard.writeText(`${window.location.origin}/crm/companies/${c.id}`) },
                 ];
                 openMenu(e, items);
               }}

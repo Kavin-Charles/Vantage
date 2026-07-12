@@ -313,7 +313,7 @@ export function ContactsTable() {
                 { type: 'separator' },
                 { icon: 'phone', label: 'Copy phone', disabled: !c.phone, onClick: () => navigator.clipboard.writeText(c.phone ?? '') },
                 { icon: 'mail', label: 'Copy email', onClick: () => navigator.clipboard.writeText(c.email) },
-                { icon: 'link', label: 'Copy link', onClick: () => navigator.clipboard.writeText(`${window.location.origin}/contacts/${c.id}`) },
+                { icon: 'link', label: 'Copy link', onClick: () => navigator.clipboard.writeText(`${window.location.origin}/crm/contacts/${c.id}`) },
                 { type: 'separator' },
                 ...(allTags.length > 0 ? [{
                   type: 'submenu' as const,

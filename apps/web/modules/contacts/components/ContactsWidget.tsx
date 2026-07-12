@@ -112,7 +112,7 @@ export function ContactsWidget() {
   const total = statCounts.reduce((sum, q) => sum + (q.data ?? 0), 0);
   const counts = Object.fromEntries(STATUSES.map((s, i) => [s, statCounts[i]?.data ?? 0])) as Record<ContactStatus, number>;
 
-  const openDrawer = useCallback((id: string) => router.push(`/contacts?contact=${id}`), [router]);
+  const openDrawer = useCallback((id: string) => router.push(`/crm/contacts?contact=${id}`), [router]);
 
   function buildMenu(c: Contact): ContextMenuItem[] {
     return [
@@ -171,9 +171,9 @@ export function ContactsWidget() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 12 }}>
       {/* Stat row — each stat navigates to the filtered contacts list */}
       <div style={{ display: 'flex', gap: 18 }}>
-        <StatButton label="Total" value={total} onClick={() => router.push('/contacts')} />
-        <StatButton label="Prospects" value={counts.prospect} color="var(--blue)" onClick={() => router.push('/contacts?status=prospect')} />
-        <StatButton label="Customers" value={counts.customer} color="var(--green)" onClick={() => router.push('/contacts?status=customer')} />
+        <StatButton label="Total" value={total} onClick={() => router.push('/crm/contacts')} />
+        <StatButton label="Prospects" value={counts.prospect} color="var(--blue)" onClick={() => router.push('/crm/contacts?status=prospect')} />
+        <StatButton label="Customers" value={counts.customer} color="var(--green)" onClick={() => router.push('/crm/contacts?status=customer')} />
       </div>
 
       {/* Filter tabs + stale toggle */}
@@ -275,7 +275,7 @@ export function ContactsWidget() {
       )}
 
       <button
-        onClick={() => router.push('/contacts')}
+        onClick={() => router.push('/crm/contacts')}
         style={{
           fontSize: 12, color: 'var(--text3)', background: 'none', border: 'none',
           cursor: 'pointer', marginTop: 'auto', textAlign: 'left', padding: '2px 0',

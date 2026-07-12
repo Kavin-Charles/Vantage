@@ -28,7 +28,7 @@ export function PipelineWidget() {
   const firstPipeline: Pipeline | undefined = pipelinesData?.[0];
 
   if (!firstPipeline) {
-    return <EmptyState href="/pipeline" label="Create your first pipeline" />;
+    return <EmptyState href="/crm/pipeline" label="Create your first pipeline" />;
   }
 
   return (
@@ -45,7 +45,7 @@ export function PipelineWidget() {
         </span>
       </div>
       <button
-        onClick={() => router.push(`/pipeline/${firstPipeline.id}`)}
+        onClick={() => router.push(`/crm/pipeline/${firstPipeline.id}`)}
         style={{
           padding: '8px 14px', background: 'var(--surface2)',
           border: '1px solid var(--border)', borderRadius: 8,

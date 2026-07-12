@@ -164,7 +164,7 @@ function TasksWidgetInner() {
       </div>
 
       <a
-        href="/tasks"
+        href="/crm/tasks"
         style={{
           fontSize: 11, fontWeight: 600, color: 'var(--text3)', textDecoration: 'none', display: 'flex',
           alignItems: 'center', gap: 4, paddingTop: 6, borderTop: '1px solid var(--border)',

@@ -102,7 +102,7 @@ export function PipelineSwitcher({ currentId }: Props) {
           return (
             <button
               key={p.id}
-              onClick={() => { router.push(`/pipeline/${p.id}`); setOpen(false); }}
+              onClick={() => { router.push(`/crm/pipeline/${p.id}`); setOpen(false); }}
               onMouseEnter={() => setHoveredId(p.id)}
               onMouseLeave={() => setHoveredId(null)}
               style={{

@@ -18,7 +18,7 @@ export default function PipelinePage() {
     if (!data) return;
     const pipelines = data;
     const def = pipelines.find(p => p.is_default) ?? pipelines[0];
-    if (def) router.replace(`/pipeline/${def.id}`);
+    if (def) router.replace(`/crm/pipeline/${def.id}`);
   }, [data, router]);
 
   if (isLoading) {

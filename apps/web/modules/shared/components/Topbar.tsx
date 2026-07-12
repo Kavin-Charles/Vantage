@@ -4,10 +4,10 @@ import { usePathname } from 'next/navigation';
 import { NotificationBell } from './NotificationBell';
 
 const PAGE_TITLES: Record<string, string> = {
-  '/pipeline': 'Pipeline',
-  '/contacts': 'Contacts',
-  '/companies': 'Companies',
-  '/tasks': 'Tasks',
+  '/crm/pipeline': 'Pipeline',
+  '/crm/contacts': 'Contacts',
+  '/crm/companies': 'Companies',
+  '/crm/tasks': 'Tasks',
   '/activity': 'Activity',
   '/servers': 'Servers',
   '/databases': 'Databases',
@@ -19,7 +19,8 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function Topbar({ action, left }: { action?: React.ReactNode; left?: React.ReactNode }) {
   const pathname = usePathname();
-  const segment = '/' + (pathname.split('/')[1] ?? '');
+  const parts = pathname.split('/').filter(Boolean);
+  const segment = parts[0] === 'crm' ? `/crm/${parts[1] ?? ''}` : '/' + (parts[0] ?? '');
   const title = PAGE_TITLES[segment] ?? 'Vencore';
 
   return (
