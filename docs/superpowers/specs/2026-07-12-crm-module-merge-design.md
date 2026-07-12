@@ -83,7 +83,7 @@ Both follow the existing widget component pattern (React Query fetch, `WidgetCar
 ### 7. Settings UI
 
 - Modules settings page shows a single "CRM" toggle in place of the four.
-- Permission management shows one CRM section containing all granular keys, visually grouped by sub-area (Contacts, Companies, Pipeline, Tasks).
+- Permission management shows one CRM section containing all granular keys (rendered automatically from the registry; labels already name their sub-area, e.g. "View contacts", "Delete stages").
 
 ### 8. Testing
 
