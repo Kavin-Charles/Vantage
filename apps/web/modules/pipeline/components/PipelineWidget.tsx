@@ -18,10 +18,10 @@ export function PipelineWidget() {
     queryKey: ['widget', 'pipelines'],
     queryFn: async () => listPipelines(await getToken()),
     staleTime: 60_000,
-    enabled: isEnabled('pipelines'),
+    enabled: isEnabled('crm'),
   });
 
-  if (!isEnabled('pipelines')) return null;
+  if (!isEnabled('crm')) return null;
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
 

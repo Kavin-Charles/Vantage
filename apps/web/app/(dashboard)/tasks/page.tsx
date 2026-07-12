@@ -93,7 +93,7 @@ export default function TasksPage() {
   )
 
   return (
-    <ModuleGuard moduleId="tasks">
+    <ModuleGuard moduleId="crm">
       <Topbar
         action={
           <Button variant="primary" onClick={() => setAddModal(true)}>

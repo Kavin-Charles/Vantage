@@ -9,10 +9,7 @@ import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/sha
 
 const MODULE_META = [
   { id: 'dashboard', name: 'Dashboard', description: 'Custom dashboards and widget layouts.', settingsHref: '/settings/dashboards' },
-  { id: 'contacts',  name: 'Contacts',  description: 'Contact management, profiles, and history.',        settingsHref: null },
-  { id: 'companies', name: 'Companies', description: 'Company records and relationships.',                  settingsHref: null },
-  { id: 'pipelines', name: 'Pipelines', description: 'Deals pipeline, items, and conversions.',             settingsHref: '/settings/pipelines' },
-  { id: 'tasks',     name: 'Tasks',     description: 'Task management and due date tracking.',              settingsHref: '/settings/tasks' },
+  { id: 'crm', name: 'CRM', description: 'Contacts, companies, deals pipeline, and tasks.', settingsHref: '/settings/pipelines' },
   { id: 'websites',   name: 'Websites',   description: 'Website uptime monitoring and SSL expiry.',         settingsHref: null },
   { id: 'servers',    name: 'Servers',    description: 'Server monitoring and agent heartbeats.',           settingsHref: null },
   { id: 'databases',  name: 'Databases',  description: 'Database health monitoring and connection management.', settingsHref: null },

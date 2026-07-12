@@ -35,7 +35,7 @@ export default function CompaniesPage() {
   const companies = data?.data ?? [];
 
   return (
-    <ModuleGuard moduleId="companies">
+    <ModuleGuard moduleId="crm">
       <Topbar
         action={
           <div style={{ display: 'flex', gap: 8 }}>

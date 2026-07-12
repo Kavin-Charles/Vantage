@@ -39,10 +39,7 @@ interface NavItemDef {
 }
 
 const NAV_ITEMS: Record<string, NavItemDef> = {
-  '/pipeline':  { label: 'Pipeline',  icon: 'pipeline',  moduleId: 'pipelines', feature: 'crm' },
-  '/contacts':  { label: 'Contacts',  icon: 'contacts',  moduleId: 'contacts',  feature: 'crm' },
-  '/companies': { label: 'Companies', icon: 'companies', moduleId: 'companies', feature: 'crm' },
-  '/tasks':     { label: 'Tasks',     icon: 'tasks',     moduleId: 'tasks',     feature: 'crm' },
+  '/crm':       { label: 'CRM',       icon: 'pipeline',  moduleId: 'crm',       feature: 'crm' },
   '/activity':  { label: 'Activity',  icon: 'activity',  moduleId: 'activity',  feature: 'crm' },
   '/servers':   { label: 'Servers',   icon: 'servers',   moduleId: 'servers',   feature: 'infra' },
   '/databases': { label: 'Databases', icon: 'databases', moduleId: 'databases', feature: 'infra' },

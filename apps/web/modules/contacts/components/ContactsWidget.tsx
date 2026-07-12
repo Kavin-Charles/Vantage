@@ -46,7 +46,7 @@ function relativeTime(value: Date | string | null): string {
 
 export function ContactsWidget() {
   const { isEnabled } = useModules();
-  const enabled = isEnabled('contacts');
+  const enabled = isEnabled('crm');
   const getToken = useApiToken();
   const router = useRouter();
   const qc = useQueryClient();

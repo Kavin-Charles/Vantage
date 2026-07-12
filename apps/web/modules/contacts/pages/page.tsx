@@ -10,7 +10,7 @@ export default function ContactsPage() {
   const qc = useQueryClient();
 
   return (
-    <ModuleGuard moduleId="contacts">
+    <ModuleGuard moduleId="crm">
       <Topbar
         action={
           <CsvImportExport
