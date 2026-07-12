@@ -64,6 +64,12 @@ describe('MODULE_REGISTRY', () => {
     expect(keys).toHaveLength(21);
   });
 
+  it('every module has at least one permission', () => {
+    for (const mod of MODULE_REGISTRY) {
+      expect(mod.permissions.length).toBeGreaterThan(0);
+    }
+  });
+
   it('projects module emits both activity and alerts', () => {
     const projects = MODULE_REGISTRY.find(m => m.id === 'projects');
     expect(projects?.emitsActivity).toBe(true);
