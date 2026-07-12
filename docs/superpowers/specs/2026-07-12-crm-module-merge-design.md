@@ -14,10 +14,11 @@ Merge the four CRM-related modules — `contacts`, `companies`, `pipelines`, `ta
 |---|---|
 | Merge depth | Full merge including web code directories |
 | Modules merged | contacts, companies, pipelines, tasks (activity excluded) |
-| Routes | `/crm/*` with permanent redirects from old paths, plus a `/crm` overview landing page |
+| Routes | `/crm/*` with permanent redirects from old paths; no landing page — `/crm` redirects to `/crm/pipeline` |
 | Toggle migration | `crm` enabled only if ALL four old modules were enabled |
 | Base branch | `development` (sidebar grouping already merged there, PR #76) |
 | Route approach | Real nested routes with shared CRM layout (approach A) |
+| Dashboard widgets | Add Alerts and Activity widgets to the dashboard widget registry (revision 2026-07-12) |
 
 ## Current state (on development)
 
@@ -61,7 +62,7 @@ Merge the four CRM-related modules — `contacts`, `companies`, `pipelines`, `ta
 
 - New `crm/layout.tsx`: tab bar — Overview | Pipeline | Contacts | Companies | Tasks. Tabs filtered by the user's permissions. Styling per `_design` tokens.
 - Move existing page directories under `crm/`: `crm/pipeline`, `crm/contacts`, `crm/companies`, `crm/tasks`, preserving dynamic segments (`[pipelineId]`, `[id]` etc.).
-- New `crm/page.tsx` overview: read-only compact cards — pipeline value by stage, tasks due this week, recently added contacts, recent CRM activity — each linking into its tab. Uses existing API endpoints only; no new API routes.
+- No landing page: `crm/page.tsx` is a server-side `redirect('/crm/pipeline')` only.
 - `next.config.ts` permanent redirects: `/pipeline → /crm/pipeline`, `/contacts → /crm/contacts`, `/companies → /crm/companies`, `/tasks → /crm/tasks`, plus `/:path*` variants for nested paths (e.g. `/contacts/:id → /crm/contacts/:id`, `/pipeline/:pipelineId → /crm/pipeline/:pipelineId`).
 
 ### 5. Web code merge (`apps/web/modules`)
@@ -70,15 +71,24 @@ Merge the four CRM-related modules — `contacts`, `companies`, `pipelines`, `ta
 - All `ModuleGuard` / `useModules().isEnabled` checks for `pipelines`, `contacts`, `companies`, `tasks` become checks for `crm`.
 - Internal `<Link>` hrefs pointing at old paths updated to `/crm/*`.
 
-### 6. Settings UI
+### 6. Dashboard widgets (new)
+
+The dashboard has a widget registry (`apps/web/modules/shared/lib/dashboard-registry.ts`) with core widgets registered in `apps/web/modules/shared/lib/register-module-widgets.ts` (contacts, pipeline, servers, projects; tasks registers itself in `TasksWidget.tsx`). Add two missing widgets:
+
+- **Alerts widget** (`core:alerts`, `apps/web/modules/alerts/components/AlertsWidget.tsx`): unresolved alerts from `GET /api/alerts?resolved=false&severity=critical,warning`, severity-colored rows (`--red-bg`/`--amber-bg` tokens), acknowledge action inline, links to `/alerts`. Default 4x3.
+- **Activity widget** (`core:activity`, `apps/web/modules/activity/components/ActivityWidget.tsx`): latest entries from `GET /api/activity` (existing unified feed), type icon + actor + relative time, links to `/activity`. Default 4x4.
+
+Both follow the existing widget component pattern (React Query fetch, `WidgetCard` chrome handled by the grid). Existing CRM widgets (`core:contacts`, `core:pipeline`, tasks) keep their ids; only their import paths change after the code move (section 5).
+
+### 7. Settings UI
 
 - Modules settings page shows a single "CRM" toggle in place of the four.
 - Permission management shows one CRM section containing all granular keys, visually grouped by sub-area (Contacts, Companies, Pipeline, Tasks).
 
-### 7. Testing
+### 8. Testing
 
 - API (vitest): migration helpers — AND-derivation of the toggle, `item_keys` rewrite (first-occurrence replace + dedupe); sidebar seed/merge with new keys; module middleware resolving `crm` for `/deals`, `/contacts`, `/tasks`.
-- Web: no component-test harness — verify via preview tools: sidebar shows single CRM item, tabs render and route, old URLs redirect, `/crm` overview loads, disabling `crm` hides nav and blocks API prefixes.
+- Web: no component-test harness — verify via preview tools: sidebar shows single CRM item, tabs render and route, old URLs redirect, `/crm` redirects to `/crm/pipeline`, Alerts and Activity widgets addable and render data, disabling `crm` hides nav and blocks API prefixes.
 
 ## Out of scope
 
@@ -86,4 +96,5 @@ Merge the four CRM-related modules — `contacts`, `companies`, `pipelines`, `ta
 - Permission key renames — keys stay as-is.
 - API URL changes — all endpoint paths unchanged.
 - Plugins — unaffected.
-- Any new CRM features beyond the `/crm` overview page.
+- Any new CRM features beyond the merge itself and the two new dashboard widgets.
+- New alert-generating rules (CRM alert sources) — widgets read existing alert/activity data only.
