@@ -135,6 +135,8 @@ export interface ContractGroupDef {
   label: string;
   /** Builtin provider id that serves this group by default. */
   builtin_provider: string;
+  /** Display name for the builtin provider (shown in the UI). */
+  builtin_provider_name: string;
   required: string[];
   optional: string[];
 }
@@ -144,6 +146,7 @@ export const CONTRACT_GROUPS: ContractGroupDef[] = [
     id: 'crm',
     label: 'CRM',
     builtin_provider: 'vencore-crm',
+    builtin_provider_name: 'Vencore CRM',
     required: ['crm.contact@v1', 'crm.company@v1', 'crm.deal@v1'],
     optional: ['crm.activity@v1'],
   },

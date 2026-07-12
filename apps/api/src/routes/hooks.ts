@@ -5,7 +5,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { PluginManifest } from '@vencore/plugin-types';
 import { HOOK_REGISTRY } from '../modules/registry';
-import { getActiveProviderForContract, BUILTIN_CRM_PROVIDER_ID } from '@vencore/plugin-runtime';
+import { getActiveProviderForContract, resolveProviderName } from '@vencore/plugin-runtime';
 import { listPluginHookFeatures } from '../lib/hook-features';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
@@ -97,9 +97,7 @@ export function createHooksRouter(db: Kysely<Database>): Router {
         if (feature.requires_contract) {
           const active = await getActiveProviderForContract(db as Kysely<any>, workspace.id, feature.requires_contract);
           if (active) {
-            const providerName = active.provider === BUILTIN_CRM_PROVIDER_ID
-              ? 'Vencore CRM'
-              : installedProviders.find(p => p.provider_id === active.provider)?.name ?? active.provider;
+            const providerName = await resolveProviderName(db as Kysely<any>, workspace.id, active.provider);
             const enabled = config?.enabled ?? false;
             return {
               id: feature.id,
@@ -290,7 +288,7 @@ export function createHooksRouter(db: Kysely<Database>): Router {
           const active = await getActiveProviderForContract(db as Kysely<any>, workspace.id, feature.requires_contract);
           available = !!active;
           powered_by = active
-            ? (active.provider === BUILTIN_CRM_PROVIDER_ID ? 'Vencore CRM' : active.provider)
+            ? await resolveProviderName(db as Kysely<any>, workspace.id, active.provider)
             : null;
         }
         return {

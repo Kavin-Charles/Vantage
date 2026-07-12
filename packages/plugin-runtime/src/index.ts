@@ -19,6 +19,7 @@ export {
 export {
   getActiveProvider, getActiveProviderForContract, setActiveProvider,
   detectProviderConflicts, deactivateProvider, getPendingSelections,
+  resolveProviderName,
 } from './provider-selection';
 export type { ActiveProvider } from './provider-selection';
 export { queryBuiltinCrm, countBuiltinCrm, builtinAdapterSupports, BUILTIN_CRM_PROVIDER_ID } from './builtin-crm-adapter';

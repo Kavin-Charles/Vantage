@@ -222,6 +222,27 @@ export async function deactivateProvider(
   return affected;
 }
 
+/**
+ * Resolves a provider id to its display name for a workspace. Builtin ids use
+ * the contract group's configured name; plugin ids use the installed plugin's
+ * own name. Never returns a hardcoded plugin name and never invents one — an
+ * unknown id falls back to the id itself.
+ */
+export async function resolveProviderName(
+  db: Kysely<any>,
+  workspaceId: string,
+  providerId: string,
+): Promise<string> {
+  const group = CONTRACT_GROUPS.find((g) => g.builtin_provider === providerId);
+  if (group) return group.builtin_provider_name;
+  const row = await db.selectFrom('workspace_plugins')
+    .select('name')
+    .where('workspace_id', '=', workspaceId)
+    .where('plugin_id', '=', providerId)
+    .executeTakeFirst() as { name: string } | undefined;
+  return row?.name ?? providerId;
+}
+
 /** Groups currently awaiting an admin decision in a workspace. */
 export async function getPendingSelections(
   db: Kysely<any>,

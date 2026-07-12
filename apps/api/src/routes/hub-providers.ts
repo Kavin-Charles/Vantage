@@ -40,7 +40,7 @@ async function candidatesForGroup(
 
   const builtinCount = await countBuiltinCrm(db as Kysely<any>, workspaceId, group.required[0] ?? '');
   const result: Candidate[] = [
-    { id: group.builtin_provider, name: 'Vencore CRM', builtin: true, record_count: builtinCount },
+    { id: group.builtin_provider, name: group.builtin_provider_name, builtin: true, record_count: builtinCount },
   ];
 
   const plugins = await db.selectFrom('workspace_plugins')

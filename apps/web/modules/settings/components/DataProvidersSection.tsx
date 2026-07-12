@@ -23,14 +23,21 @@ interface ProviderGroup {
   candidates: Candidate[];
 }
 
-export default function DataProvidersPage() {
+/**
+ * Provider selection, rendered inside Settings → Integrations. Renders nothing
+ * unless at least one group actually has a plugin provider available (a
+ * non-builtin candidate) or a pending selection — so with no provider plugin
+ * installed there is nothing to show. Everything is data-driven: group labels,
+ * provider names, and candidates all come from the API.
+ */
+export function DataProvidersSection() {
   const getToken = useApiToken();
   const queryClient = useQueryClient();
   const [switching, setSwitching] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ group: ProviderGroup; candidate: Candidate } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ['hub-providers'],
     queryFn: async () => {
       const res = await apiFetch<{ data: ProviderGroup[]; error: null }>(
@@ -40,6 +47,13 @@ export default function DataProvidersPage() {
       return res.data ?? [];
     },
   });
+
+  // Only surface groups that actually have a choice to make: a plugin provider
+  // is installed (non-builtin candidate), or a selection is pending.
+  const groups = (data ?? []).filter(
+    (g) => g.status === 'pending_selection' || g.candidates.some((c) => !c.builtin),
+  );
+  if (groups.length === 0) return null;
 
   async function selectProvider(group: ProviderGroup, candidate: Candidate) {
     setSwitching(group.group);
@@ -60,25 +74,27 @@ export default function DataProvidersPage() {
     }
   }
 
-  if (isLoading) return <div style={{ color: 'var(--text3)', fontSize: 13 }}>Loading…</div>;
-
   return (
-    <div style={{ maxWidth: 640 }}>
-      <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 600 }}>Data Providers</h2>
-      <p style={{ margin: '0 0 24px', fontSize: 13, color: 'var(--text2)', lineHeight: 1.6 }}>
+    <div style={{ marginBottom: 28 }}>
+      <p style={{
+        fontFamily: 'DM Sans', fontSize: 11, fontWeight: 700, color: 'var(--text3)',
+        textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 4px',
+      }}>
+        Data providers
+      </p>
+      <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--text2)', lineHeight: 1.55 }}>
         Each data category is powered by one provider at a time. Hooks, plugins, and cross-module
-        features read from the active provider. Switching keeps the other provider&apos;s data —
-        nothing is deleted.
+        features read from the active provider. Switching keeps the other provider&apos;s data — nothing is deleted.
       </p>
 
       {error && (
-        <div style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid var(--red)', borderRadius: 10, padding: '10px 14px', fontSize: 13, marginBottom: 16 }}>
+        <div style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid var(--red)', borderRadius: 10, padding: '10px 14px', fontSize: 13, marginBottom: 12 }}>
           {error}
         </div>
       )}
 
-      {(data ?? []).map((g) => (
-        <div key={g.group} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg, 12px)', padding: '20px 24px', marginBottom: 16 }}>
+      {groups.map((g) => (
+        <div key={g.group} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
             <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{g.label}</p>
             {g.status === 'pending_selection' && (
@@ -87,9 +103,6 @@ export default function DataProvidersPage() {
               </span>
             )}
           </div>
-          <p style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--text3)' }}>
-            {g.contracts.required.concat(g.contracts.optional).map(c => c.split('@')[0]?.split('.')[1]).filter(Boolean).join(', ')}
-          </p>
 
           {g.status === 'pending_selection' && g.pending_candidate && (
             <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--text2)', background: 'var(--surface2)', borderRadius: 8, padding: '8px 12px', lineHeight: 1.5 }}>
@@ -98,7 +111,7 @@ export default function DataProvidersPage() {
             </p>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
             {g.candidates.map((c) => {
               const isActive = g.status === 'active' && g.active_provider.id === c.id;
               return (

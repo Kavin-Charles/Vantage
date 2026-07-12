@@ -17,6 +17,52 @@ const DOMAINS = new Set(['crm', 'infra', 'general']);
 export function createHubSettingsRouter(db: Kysely<Database>): Router {
   const router = Router();
 
+  // GET /api/settings/domains — every contributed section across all domains.
+  // Powers the Integrations page without hardcoding any domain or plugin.
+  router.get('/', async (req, res, next) => {
+    try {
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      if (user.role !== 'admin') {
+        res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
+        return;
+      }
+
+      const plugins = await db.selectFrom('workspace_plugins')
+        .select(['plugin_id', 'name', 'manifest'])
+        .where('workspace_id', '=', workspace.id)
+        .where('enabled', '=', true)
+        .execute();
+
+      const values = await db.selectFrom('plugin_hub_settings')
+        .select(['plugin_id', 'domain', 'key', 'value'])
+        .where('workspace_id', '=', workspace.id)
+        .execute();
+      const valueMap = new Map(values.map(v => [`${v.plugin_id}:${v.domain}:${v.key}`, v.value]));
+
+      const sections = [];
+      for (const p of plugins) {
+        const mf = p.manifest as unknown as PluginManifest;
+        for (const contribution of mf.settings_contributions ?? []) {
+          sections.push({
+            plugin_id: p.plugin_id,
+            plugin_name: p.name,
+            domain: contribution.domain,
+            section: contribution.section,
+            label: contribution.label,
+            fields: contribution.fields.map((f) => ({
+              ...f,
+              value: valueMap.get(`${p.plugin_id}:${contribution.domain}:${f.key}`) ?? f.default ?? null,
+            })),
+          });
+        }
+      }
+
+      res.json({ data: { sections }, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // GET /api/settings/domain/:domain — contributed sections + current values
   router.get('/:domain', async (req, res, next) => {
     try {

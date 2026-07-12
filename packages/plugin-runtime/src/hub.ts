@@ -367,9 +367,10 @@ export function registerHubBridgeMethods(): void {
 
       // Builtin provider serves grouped CRM contracts live
       if (builtinAdapterSupports(contract)) {
+        const grp = groupForContract(contract);
         result.unshift({
           plugin_id: BUILTIN_CRM_PROVIDER_ID,
-          name: 'Vencore CRM',
+          name: grp?.builtin_provider_name ?? BUILTIN_CRM_PROVIDER_ID,
           builtin: true,
           active: active === null || active.provider === BUILTIN_CRM_PROVIDER_ID,
           record_count: await countBuiltinCrm(db, ctx.workspaceId, contract),
