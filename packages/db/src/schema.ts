@@ -727,6 +727,25 @@ export interface PluginCronJobTable {
   created_at: Generated<Date>;
 }
 
+export interface WorkspaceSidebarGroupTable {
+  id: Generated<string>;
+  workspace_id: string;
+  label: string;
+  position: number;
+  is_default: Generated<boolean>;
+  item_keys: string[]; // jsonb
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface UserSidebarPrefsTable {
+  user_id: string;
+  workspace_id: string;
+  pinned_keys: string[]; // jsonb
+  collapsed_group_keys: string[]; // jsonb
+  updated_at: Generated<Date>;
+}
+
 export interface PluginNotificationTable {
   id: Generated<string>;
   workspace_id: string;
@@ -1339,6 +1358,8 @@ export interface Database {
   workspace_hook_configs: WorkspaceHookConfigTable;
   instance_meta: InstanceMetaTable;
   plugin_hub_records: PluginHubRecordTable;
+  workspace_sidebar_groups: WorkspaceSidebarGroupTable;
+  user_sidebar_prefs: UserSidebarPrefsTable;
 }
 
 // Convenience types
