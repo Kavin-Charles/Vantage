@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useModules } from '@/modules/shared/contexts/modules';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+import { Icon } from '@/modules/shared/components/ui/Icon';
 
 interface SubModuleMeta { id: string; name: string }
 interface ModuleMeta {
@@ -41,7 +42,16 @@ export default function ModulesSettingsPage() {
   const getToken = useApiToken();
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+
+  function toggleExpanded(id: string) {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
 
   async function toggle(moduleId: string) {
     const next = !isEnabled(moduleId);
@@ -96,6 +106,22 @@ export default function ModulesSettingsPage() {
               <p style={{ margin: 0, fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{mod.description}</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              {mod.subModules && mod.subModules.length > 0 && (
+                <button
+                  onClick={() => toggleExpanded(mod.id)}
+                  title={expanded.has(mod.id) ? 'Hide pages' : 'Show pages'}
+                  style={{
+                    color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', padding: 2, transition: 'color .15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text3)')}
+                  aria-label={expanded.has(mod.id) ? `Hide ${mod.name} pages` : `Show ${mod.name} pages`}
+                  aria-expanded={expanded.has(mod.id)}
+                >
+                  <Icon name={expanded.has(mod.id) ? 'chevron' : 'chevron-right'} size={14} />
+                </button>
+              )}
               {mod.settingsHref && (
                 <Link
                   href={mod.settingsHref}
@@ -129,7 +155,7 @@ export default function ModulesSettingsPage() {
               </button>
             </div>
           </div>
-          {mod.subModules?.map(sub => {
+          {expanded.has(mod.id) && mod.subModules?.map(sub => {
             const parentOn = isEnabled(mod.id);
             const subOn = rawEnabled(sub.id);
             return (
