@@ -7,17 +7,17 @@ export interface SidebarGroupDto {
 
 export const BUILTIN_ITEM_KEYS: readonly string[] = [
   '/crm/pipeline', '/crm/contacts', '/crm/companies', '/crm/tasks', '/activity',
-  '/servers', '/databases', '/websites',
+  '/infra/servers', '/infra/databases', '/infra/websites', '/infra/alerts',
   '/messaging', '/projects',
-  '/analytics', '/alerts',
+  '/analytics',
   '/dashboard',
 ];
 
 const SEED: ReadonlyArray<Readonly<{ label: string; is_default: boolean; item_keys: readonly string[] }>> = [
   { label: 'Sales',    is_default: false, item_keys: ['/crm/pipeline', '/crm/contacts', '/crm/companies', '/crm/tasks', '/activity'] },
-  { label: 'Infra',    is_default: false, item_keys: ['/servers', '/databases', '/websites'] },
+  { label: 'Infra',    is_default: false, item_keys: ['/infra/servers', '/infra/databases', '/infra/websites', '/infra/alerts'] },
   { label: 'Projects', is_default: false, item_keys: ['/messaging', '/projects'] },
-  { label: 'Insights', is_default: false, item_keys: ['/analytics', '/alerts'] },
+  { label: 'Insights', is_default: false, item_keys: ['/analytics'] },
   { label: 'General',  is_default: true,  item_keys: ['/dashboard'] },
 ];
 

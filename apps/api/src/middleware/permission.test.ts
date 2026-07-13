@@ -29,7 +29,7 @@ describe('resolvePermissions', () => {
 
   it('returns role-default permissions for member', async () => {
     const db = buildMockDb([]);
-    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['crm', 'websites', 'servers', 'analytics', 'activity']);
+    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['crm', 'infra', 'analytics', 'activity']);
     expect(result.has('contacts:view')).toBe(true);
     expect(result.has('contacts:create')).toBe(true);
     expect(result.has('contacts:delete')).toBe(false);
@@ -37,20 +37,20 @@ describe('resolvePermissions', () => {
 
   it('applies granted override', async () => {
     const db = buildMockDb([{ permission: 'contacts:delete', granted: true }]);
-    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['crm', 'websites', 'servers', 'analytics', 'activity']);
+    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['crm', 'infra', 'analytics', 'activity']);
     expect(result.has('contacts:delete')).toBe(true);
   });
 
   it('applies denied override', async () => {
     const db = buildMockDb([{ permission: 'contacts:create', granted: false }]);
-    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['crm', 'websites', 'servers', 'analytics', 'activity']);
+    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['crm', 'infra', 'analytics', 'activity']);
     expect(result.has('contacts:create')).toBe(false);
   });
 
   it('blocks permissions from disabled modules', async () => {
     const db = buildMockDb([]);
-    // crm module disabled — only websites enabled
-    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['websites']);
+    // crm module disabled — only infra enabled
+    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['infra']);
     expect(result.has('contacts:view')).toBe(false);
     expect(result.has('websites:view')).toBe(true);
   });

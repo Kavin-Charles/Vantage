@@ -5,21 +5,18 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { MODULE_IDS } from '../modules/registry';
-import { CRM_SUBMODULE_IDS } from '@vencore/modules';
+import { CRM_SUBMODULE_IDS, INFRA_SUBMODULE_IDS } from '@vencore/modules';
 import { invalidateModuleCache } from '../middleware/module';
 
 // Built-in modules that act as hook providers when enabled
 const MODULE_PROVIDER_MAP: Record<string, { providerId: string; name: string } | null> = {
   'crm':        { providerId: 'vencore-crm',       name: 'Vencore CRM' },
   'messaging':  { providerId: 'vencore-messaging', name: 'Vencore Messaging' },
-  'servers':    { providerId: 'vencore-infra',     name: 'Vencore Infra' },
-  'databases':  { providerId: 'vencore-infra',     name: 'Vencore Infra' },
+  'infra':      { providerId: 'vencore-infra',     name: 'Vencore Infra' },
   'analytics':  null,
   'activity':   null,
-  'websites':   null,
   'dashboard':  null,
   'projects':   null,
-  'alerts':     null,
 };
 
 const patchSchema = z.object({
@@ -55,7 +52,11 @@ export function createWorkspaceModulesRouter(db: Kysely<Database>): Router {
       }
 
       const { moduleId } = req.params;
-      if (!MODULE_IDS.includes(moduleId) && !CRM_SUBMODULE_IDS.includes(moduleId)) {
+      if (
+        !MODULE_IDS.includes(moduleId) &&
+        !CRM_SUBMODULE_IDS.includes(moduleId) &&
+        !INFRA_SUBMODULE_IDS.includes(moduleId)
+      ) {
         res.status(400).json({
           data: null,
           error: { code: 'INVALID_MODULE', message: `Unknown module: ${moduleId}` },
