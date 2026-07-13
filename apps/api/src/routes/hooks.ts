@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { PluginManifest } from '@vencore/plugin-types';
 import { HOOK_REGISTRY } from '../modules/registry';
+import { getActiveProviderForContract, resolveProviderName } from '@vencore/plugin-runtime';
+import { listPluginHookFeatures } from '../lib/hook-features';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 interface ProviderRef { id: string; name: string }
@@ -86,12 +89,39 @@ export function createHooksRouter(db: Kysely<Database>): Router {
       const configMap = new Map(configs.map(c => [c.feature_id, c]));
 
       const data = await Promise.all(features.map(async feature => {
+        const config = configMap.get(feature.id);
+
+        // Switch model: contract-backed features are powered by the group's
+        // active provider (chosen once in Settings → Data providers), not a
+        // per-feature selection. Only the enable toggle remains per feature.
+        if (feature.requires_contract) {
+          const active = await getActiveProviderForContract(db as Kysely<any>, workspace.id, feature.requires_contract);
+          if (active) {
+            const providerName = await resolveProviderName(db as Kysely<any>, workspace.id, active.provider);
+            const enabled = config?.enabled ?? false;
+            return {
+              id: feature.id,
+              name: feature.name,
+              description: feature.description,
+              requires_contract: feature.requires_contract,
+              powered_by: { id: active.provider, name: providerName, pending_selection: active.status === 'pending_selection' },
+              compatible_providers: [],
+              installed_providers: [],
+              state: enabled ? 'enabled' as const : 'available' as const,
+              selected_provider_id: null,
+              selected_provider_name: providerName,
+              enabled,
+            };
+          }
+        }
+
+        // Legacy path — features without a grouped contract keep explicit
+        // provider selection from PR #48.
         const compatible = await computeCompatibleProviders(db, workspace.id, feature);
         const compatibleInstalled = compatible
           .map(cp => installedMap.get(cp.id))
           .filter((p): p is NonNullable<typeof p> => p !== undefined);
 
-        const config = configMap.get(feature.id);
         const selectedProvider = config?.provider_id
           ? installedProviders.find(p => p.id === config.provider_id) ?? null
           : null;
@@ -114,6 +144,7 @@ export function createHooksRouter(db: Kysely<Database>): Router {
           name: feature.name,
           description: feature.description,
           requires_contract: feature.requires_contract ?? null,
+          powered_by: null,
           compatible_providers: compatible.map(cp => ({
             ...cp,
             installed: installedMap.has(cp.id),
@@ -162,6 +193,29 @@ export function createHooksRouter(db: Kysely<Database>): Router {
 
       const { enabled, provider_id } = parsed.data;
 
+      // Contract-backed features: provider comes from group selection, only
+      // the enable toggle is stored (provider_id ignored)
+      if (feature.requires_contract) {
+        await db
+          .insertInto('workspace_hook_configs')
+          .values({
+            workspace_id: workspace.id,
+            module_id: moduleId,
+            feature_id: featureId,
+            provider_id: null,
+            enabled,
+          })
+          .onConflict(oc =>
+            oc.columns(['workspace_id', 'module_id', 'feature_id']).doUpdateSet({
+              enabled,
+              updated_at: new Date(),
+            }),
+          )
+          .execute();
+        res.json({ data: { module_id: moduleId, feature_id: featureId, enabled }, error: null });
+        return;
+      }
+
       // Validate provider_id is installed and compatible
       if (provider_id) {
         const installed = await db
@@ -204,6 +258,109 @@ export function createHooksRouter(db: Kysely<Database>): Router {
         .execute();
 
       res.json({ data: { module_id: moduleId, feature_id: featureId, enabled }, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // GET /api/settings/plugin-hooks
+  // Hook features declared by installed plugins — admin can toggle + configure.
+  router.get('/plugin-hooks', async (req, res, next) => {
+    try {
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      if (user.role !== 'admin') {
+        res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
+        return;
+      }
+
+      const entries = await listPluginHookFeatures(db, workspace.id);
+      const configs = await db.selectFrom('workspace_hook_configs')
+        .select(['module_id', 'feature_id', 'enabled', 'config'])
+        .where('workspace_id', '=', workspace.id)
+        .execute();
+      const configMap = new Map(configs.map(c => [`${c.module_id}:${c.feature_id}`, c]));
+
+      const data = await Promise.all(entries.map(async ({ plugin_id, plugin_name, feature }) => {
+        const cfg = configMap.get(`${plugin_id}:${feature.id}`);
+        let available = true;
+        let powered_by: string | null = null;
+        if (feature.requires_contract) {
+          const active = await getActiveProviderForContract(db as Kysely<any>, workspace.id, feature.requires_contract);
+          available = !!active;
+          powered_by = active
+            ? await resolveProviderName(db as Kysely<any>, workspace.id, active.provider)
+            : null;
+        }
+        return {
+          plugin_id, plugin_name,
+          id: feature.id,
+          name: feature.name,
+          description: feature.description ?? null,
+          trigger: feature.trigger,
+          requires_contract: feature.requires_contract ?? null,
+          config_schema: feature.config_schema ?? [],
+          available,
+          powered_by,
+          enabled: cfg?.enabled ?? false,
+          config: cfg?.config ?? {},
+        };
+      }));
+
+      res.json({ data, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // PATCH /api/settings/plugin-hooks/:pluginId/:featureId
+  router.patch('/plugin-hooks/:pluginId/:featureId', async (req, res, next) => {
+    try {
+      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      if (user.role !== 'admin') {
+        res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
+        return;
+      }
+      const { pluginId, featureId } = req.params as { pluginId: string; featureId: string };
+
+      const entries = await listPluginHookFeatures(db, workspace.id);
+      const entry = entries.find(e => e.plugin_id === pluginId && e.feature.id === featureId);
+      if (!entry) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Hook feature not found' } });
+        return;
+      }
+
+      const parsed = z.object({
+        enabled: z.boolean(),
+        config: z.record(z.unknown()).optional(),
+      }).safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_BODY' } });
+        return;
+      }
+
+      const configJson = parsed.data.config
+        ? sql`${JSON.stringify(parsed.data.config)}::jsonb`
+        : null;
+
+      await db.insertInto('workspace_hook_configs')
+        .values({
+          workspace_id: workspace.id,
+          module_id: pluginId,
+          feature_id: featureId,
+          provider_id: null,
+          enabled: parsed.data.enabled,
+          config: configJson as never,
+        })
+        .onConflict(oc =>
+          oc.columns(['workspace_id', 'module_id', 'feature_id']).doUpdateSet({
+            enabled: parsed.data.enabled,
+            ...(parsed.data.config ? { config: configJson as never } : {}),
+            updated_at: new Date(),
+          }),
+        )
+        .execute();
+
+      res.json({ data: { plugin_id: pluginId, feature_id: featureId, enabled: parsed.data.enabled }, error: null });
     } catch (err) {
       next(err);
     }

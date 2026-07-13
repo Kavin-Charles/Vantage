@@ -35,6 +35,7 @@ async function autoProjectFromHubDeals(
     .where('workspace_id', '=', workspaceId)
     .where('contract', '=', 'crm.deal@v1')
     .where('provider_plugin_id', '=', provider)
+    .where('deleted_at', 'is', null)
     .where('external_id', 'in', externalIds)
     .where(sql<string>`data->>'is_won'`, '=', 'true')
     .execute();

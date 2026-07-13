@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { crossModuleApi, type CrossModuleSettingKey } from '@/modules/projects/lib/api';
+import { DataProvidersSection } from '@/modules/settings/components/DataProvidersSection';
+import { PluginSettingsSections } from '@/modules/settings/components/PluginSettingsSections';
 
 interface SettingMeta {
   key: CrossModuleSettingKey;
@@ -75,8 +77,14 @@ export default function IntegrationsSettingsPage() {
       <style>{`@keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
       <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4, color: 'var(--text)' }}>Integrations</h2>
       <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 24, marginTop: 0 }}>
-        Configure how modules interact with each other. Changes apply workspace-wide.
+        Configure how modules and plugins interact with each other. Changes apply workspace-wide.
       </p>
+
+      {/* Provider selection — only renders when a plugin provider is installed */}
+      <DataProvidersSection />
+
+      {/* Plugin-contributed settings — only renders when a plugin contributes any */}
+      <PluginSettingsSections />
 
       {isLoading && (
         <div style={{ color: 'var(--text3)', fontSize: 13 }}>Loading…</div>

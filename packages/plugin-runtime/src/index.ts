@@ -9,6 +9,21 @@ export { runMigrations, dropPluginTables, ensureMigrationLog } from './migration
 export {
   getContract, isKnownContract, listContracts, validateRecords,
   CONTRACT_ID_RE, crmContactV1, crmCompanyV1, crmDealV1, crmActivityV1,
+  CONTRACT_GROUPS, getContractGroup, groupForContract, groupsServedBy, validateGroupCoverage,
 } from './contracts';
-export type { ContractDef, ContractViolation } from './contracts';
-export { registerHubBridgeMethods, removeProviderHubData, hasHubPermission, HUB_LIMITS } from './hub';
+export type { ContractDef, ContractViolation, ContractGroupDef } from './contracts';
+export {
+  registerHubBridgeMethods, removeProviderHubData, softDeleteProviderHubData,
+  restoreProviderHubData, purgeExpiredHubRecords, hasHubPermission, HUB_LIMITS,
+} from './hub';
+export {
+  getActiveProvider, getActiveProviderForContract, setActiveProvider,
+  detectProviderConflicts, deactivateProvider, getPendingSelections,
+  resolveProviderName,
+} from './provider-selection';
+export type { ActiveProvider } from './provider-selection';
+export { queryBuiltinCrm, countBuiltinCrm, builtinAdapterSupports, BUILTIN_CRM_PROVIDER_ID } from './builtin-crm-adapter';
+export {
+  emitContractEvent, expandListenTopics, CONTRACT_EVENT_ALIASES,
+} from './contract-events';
+export type { ContractAction } from './contract-events';

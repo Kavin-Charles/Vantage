@@ -727,6 +727,18 @@ export interface PluginCronJobTable {
   created_at: Generated<Date>;
 }
 
+export interface PluginHubRecordTable {
+  id: Generated<string>;
+  workspace_id: string;
+  contract: string;
+  provider_plugin_id: string;
+  external_id: string;
+  data: unknown;
+  deleted_at: Date | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
 export interface WorkspaceSidebarGroupTable {
   id: Generated<string>;
   workspace_id: string;
@@ -735,6 +747,28 @@ export interface WorkspaceSidebarGroupTable {
   is_default: Generated<boolean>;
   item_keys: string[]; // jsonb
   created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface WorkspaceContractProviderTable {
+  id: Generated<string>;
+  workspace_id: string;
+  contract_group: string;
+  active_provider_id: string;
+  status: Generated<'active' | 'pending_selection'>;
+  previous_provider_id: string | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface PluginHubSettingTable {
+  id: Generated<string>;
+  workspace_id: string;
+  plugin_id: string;
+  domain: string;
+  key: string;
+  value: unknown;
+  shared: Generated<boolean>;
   updated_at: Generated<Date>;
 }
 
@@ -1234,18 +1268,8 @@ export interface WorkspaceHookConfigTable {
   module_id: string;
   feature_id: string;
   provider_id: string | null;
+  config: Record<string, unknown> | null;
   enabled: Generated<boolean>;
-  created_at: Generated<Date>;
-  updated_at: Generated<Date>;
-}
-
-export interface PluginHubRecordTable {
-  id: Generated<string>;
-  workspace_id: string;
-  contract: string;
-  provider_plugin_id: string;
-  external_id: string;
-  data: unknown;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }
@@ -1308,6 +1332,9 @@ export interface Database {
   plugin_files: PluginFilesTable;
   plugin_settings: PluginSettingsTable;
   plugin_cron_jobs: PluginCronJobTable;
+  plugin_hub_records: PluginHubRecordTable;
+  plugin_hub_settings: PluginHubSettingTable;
+  workspace_contract_providers: WorkspaceContractProviderTable;
   plugin_notifications: PluginNotificationTable;
   user_permissions: UserPermissionTable;
   groups: GroupTable;
@@ -1357,7 +1384,6 @@ export interface Database {
   hook_providers: HookProviderTable;
   workspace_hook_configs: WorkspaceHookConfigTable;
   instance_meta: InstanceMetaTable;
-  plugin_hub_records: PluginHubRecordTable;
   workspace_sidebar_groups: WorkspaceSidebarGroupTable;
   user_sidebar_prefs: UserSidebarPrefsTable;
 }
