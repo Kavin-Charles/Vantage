@@ -2,10 +2,11 @@
 import type { Kysely, Transaction } from 'kysely';
 import type { Database } from '@vencore/db';
 import { MODULE_REGISTRY } from '../modules/registry';
+import { CRM_SUBMODULE_IDS } from '@vencore/modules';
 
 // Maps installer feature flags → module IDs they control
 const FEATURE_MODULE_MAP: Record<string, string[]> = {
-  crm:       ['contacts', 'companies', 'pipelines', 'tasks', 'activity'],
+  crm:       ['crm', 'activity', ...CRM_SUBMODULE_IDS],
   infra:     ['websites', 'servers', 'databases'],
   analytics: ['analytics'],
   alerts:    [],  // no module yet — handled by alerts system
@@ -26,13 +27,22 @@ export async function seedWorkspaceModules(
     }
   }
 
-  const rows = MODULE_REGISTRY.map(m => ({
-    workspace_id: workspaceId,
-    module_id: m.id,
-    enabled: disabledModules.has(m.id) ? false : m.defaultEnabled,
-  }));
+  const rows = [
+    ...MODULE_REGISTRY.map(m => ({
+      workspace_id: workspaceId,
+      module_id: m.id,
+      enabled: disabledModules.has(m.id) ? false : m.defaultEnabled,
+    })),
+    // CRM child modules (crm:pipeline/contacts/companies/tasks) — enabled by
+    // default, gated at runtime by the crm parent.
+    ...CRM_SUBMODULE_IDS.map(id => ({
+      workspace_id: workspaceId,
+      module_id: id,
+      enabled: !disabledModules.has(id),
+    })),
+  ];
 
-  // Insert all 8, skip conflicts (idempotent)
+  // Insert one row per registry module + CRM child, skip conflicts (idempotent)
   await db
     .insertInto('workspace_modules')
     .values(rows)

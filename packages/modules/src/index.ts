@@ -1,9 +1,6 @@
 export * from './types';
 export * from './hook-types';
-export * from './contacts';
-export * from './companies';
-export * from './pipelines';
-export * from './tasks';
+export * from './crm';
 export * from './websites';
 export * from './servers';
 export * from './databases';
@@ -14,10 +11,7 @@ export * from './projects';
 export * from './alerts';
 export * from './messaging';
 
-import { CONTACTS_MODULE } from './contacts';
-import { COMPANIES_MODULE } from './companies';
-import { PIPELINES_MODULE } from './pipelines';
-import { TASKS_MODULE } from './tasks';
+import { CRM_MODULE } from './crm';
 import { WEBSITES_MODULE } from './websites';
 import { SERVERS_MODULE } from './servers';
 import { DATABASES_MODULE } from './databases';
@@ -37,10 +31,7 @@ export const HOOK_REGISTRY: Record<string, HookFeature[]> = {
 
 export const MODULE_REGISTRY: ModuleDefinition[] = [
   DASHBOARD_MODULE,
-  CONTACTS_MODULE,
-  COMPANIES_MODULE,
-  PIPELINES_MODULE,
-  TASKS_MODULE,
+  CRM_MODULE,
   WEBSITES_MODULE,
   SERVERS_MODULE,
   DATABASES_MODULE,

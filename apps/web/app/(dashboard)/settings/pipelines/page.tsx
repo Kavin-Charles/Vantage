@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { listPipelines, createPipeline, deletePipeline, updatePipeline } from '@/modules/pipeline/lib/pipelines';
+import { listPipelines, createPipeline, deletePipeline, updatePipeline } from '@/modules/crm/pipeline/lib/pipelines';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
 import {
   useContextMenu, ContextMenu, type ContextMenuItem,

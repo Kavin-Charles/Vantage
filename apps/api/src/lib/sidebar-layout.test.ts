@@ -6,11 +6,10 @@ describe('seedGroups', () => {
     const groups = seedGroups()
     expect(groups.map(g => g.label)).toEqual(['Sales', 'Infra', 'Projects', 'Insights', 'General'])
     expect(groups.filter(g => g.is_default).map(g => g.label)).toEqual(['General'])
-    expect(groups.find(g => g.label === 'Sales')!.item_keys).toEqual([
-      '/pipeline', '/contacts', '/companies', '/tasks', '/activity',
-    ])
+    expect(groups.find(g => g.label === 'Sales')!.item_keys).toEqual(['/crm/pipeline', '/crm/contacts', '/crm/companies', '/crm/tasks', '/activity'])
     expect(groups.find(g => g.label === 'Insights')!.item_keys).toEqual(['/analytics', '/alerts'])
     expect(groups.flatMap(g => g.item_keys)).not.toContain('/settings')
+    expect(groups.flatMap(g => g.item_keys)).not.toContain('/pipeline')
   })
 
   it('returns a fresh copy each call', () => {

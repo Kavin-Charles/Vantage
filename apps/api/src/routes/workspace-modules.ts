@@ -5,17 +5,15 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { MODULE_IDS } from '../modules/registry';
+import { CRM_SUBMODULE_IDS } from '@vencore/modules';
 import { invalidateModuleCache } from '../middleware/module';
 
 // Built-in modules that act as hook providers when enabled
 const MODULE_PROVIDER_MAP: Record<string, { providerId: string; name: string } | null> = {
-  'contacts':   { providerId: 'vencore-crm',       name: 'Vencore CRM' },
-  'companies':  { providerId: 'vencore-crm',        name: 'Vencore CRM' },
-  'messaging':  { providerId: 'vencore-messaging',  name: 'Vencore Messaging' },
-  'servers':    { providerId: 'vencore-infra',      name: 'Vencore Infra' },
-  'databases':  { providerId: 'vencore-infra',      name: 'Vencore Infra' },
-  'pipelines':  null,
-  'tasks':      null,
+  'crm':        { providerId: 'vencore-crm',       name: 'Vencore CRM' },
+  'messaging':  { providerId: 'vencore-messaging', name: 'Vencore Messaging' },
+  'servers':    { providerId: 'vencore-infra',     name: 'Vencore Infra' },
+  'databases':  { providerId: 'vencore-infra',     name: 'Vencore Infra' },
   'analytics':  null,
   'activity':   null,
   'websites':   null,
@@ -57,7 +55,7 @@ export function createWorkspaceModulesRouter(db: Kysely<Database>): Router {
       }
 
       const { moduleId } = req.params;
-      if (!MODULE_IDS.includes(moduleId)) {
+      if (!MODULE_IDS.includes(moduleId) && !CRM_SUBMODULE_IDS.includes(moduleId)) {
         res.status(400).json({
           data: null,
           error: { code: 'INVALID_MODULE', message: `Unknown module: ${moduleId}` },
@@ -71,24 +69,24 @@ export function createWorkspaceModulesRouter(db: Kysely<Database>): Router {
         return;
       }
 
-      const result = await db
-        .updateTable('workspace_modules')
-        .set({
+      // Upsert: CRM child rows (crm:*) may not exist yet for legacy workspaces,
+      // and toggling one must create it rather than 404.
+      await db
+        .insertInto('workspace_modules')
+        .values({
+          workspace_id: workspace.id,
+          module_id: moduleId,
           enabled: parsed.data.enabled,
-          updated_at: new Date(),
           updated_by: user.id,
         })
-        .where('workspace_id', '=', workspace.id)
-        .where('module_id', '=', moduleId)
-        .executeTakeFirst();
-
-      if (result.numUpdatedRows === BigInt(0)) {
-        res.status(404).json({
-          data: null,
-          error: { code: 'MODULE_NOT_FOUND', message: `Module ${moduleId} not found for this workspace.` },
-        });
-        return;
-      }
+        .onConflict(oc =>
+          oc.columns(['workspace_id', 'module_id']).doUpdateSet({
+            enabled: parsed.data.enabled,
+            updated_at: new Date(),
+            updated_by: user.id,
+          }),
+        )
+        .execute();
 
       // Invalidate cache so next request re-reads from DB
       invalidateModuleCache(workspace.id, moduleId);

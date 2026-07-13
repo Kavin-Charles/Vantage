@@ -45,6 +45,14 @@ export function ModuleProvider({ children }: { children: React.ReactNode }) {
   }, [token]);
 
   function isEnabled(moduleId: string): boolean {
+    // CRM child modules (crm:*) are effective only when the crm parent is on;
+    // a missing child row defaults to enabled.
+    if (moduleId.startsWith('crm:')) {
+      const parent = modules.find(m => m.module_id === 'crm');
+      if (!(parent?.enabled ?? false)) return false;
+      const child = modules.find(m => m.module_id === moduleId);
+      return child?.enabled ?? true;
+    }
     const row = modules.find(m => m.module_id === moduleId);
     return row?.enabled ?? false;
   }

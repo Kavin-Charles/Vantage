@@ -44,7 +44,7 @@ function LoginForm() {
       }));
       const raw = searchParams.get('from') ?? '';
       // Prevent open redirect — only allow same-origin relative paths
-      const from = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/pipeline';
+      const from = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/crm/pipeline';
       window.location.href = from;
     } catch {
       setError('Invalid email or password');
