@@ -25,3 +25,14 @@ export interface ModuleDefinition {
   emitsActivity?: boolean;
   emitsAlerts?: boolean;
 }
+
+// A parent module's per-page child. Each child gates one sidebar entry, its
+// page, and its API routes; a child is only effective when the parent module
+// is also enabled.
+export interface SubModule {
+  id: string;
+  label: string;
+  path: string;
+  permission: string;
+  legacyModuleId: string;
+}

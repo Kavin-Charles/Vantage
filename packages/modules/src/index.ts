@@ -1,25 +1,19 @@
 export * from './types';
 export * from './hook-types';
 export * from './crm';
-export * from './websites';
-export * from './servers';
-export * from './databases';
+export * from './infra';
 export * from './analytics';
 export * from './activity';
 export * from './dashboard';
 export * from './projects';
-export * from './alerts';
 export * from './messaging';
 
 import { CRM_MODULE } from './crm';
-import { WEBSITES_MODULE } from './websites';
-import { SERVERS_MODULE } from './servers';
-import { DATABASES_MODULE } from './databases';
+import { INFRA_MODULE } from './infra';
 import { ANALYTICS_MODULE } from './analytics';
 import { ACTIVITY_MODULE } from './activity';
 import { DASHBOARD_MODULE } from './dashboard';
 import { PROJECTS_MODULE } from './projects';
-import { ALERTS_MODULE } from './alerts';
 import { MESSAGING_MODULE } from './messaging';
 import type { ModuleDefinition, PermissionDef, UserRole } from './types';
 import type { HookFeature } from './hook-types';
@@ -32,13 +26,10 @@ export const HOOK_REGISTRY: Record<string, HookFeature[]> = {
 export const MODULE_REGISTRY: ModuleDefinition[] = [
   DASHBOARD_MODULE,
   CRM_MODULE,
-  WEBSITES_MODULE,
-  SERVERS_MODULE,
-  DATABASES_MODULE,
+  INFRA_MODULE,
   ANALYTICS_MODULE,
   ACTIVITY_MODULE,
   PROJECTS_MODULE,
-  ALERTS_MODULE,
   MESSAGING_MODULE,
 ];
 

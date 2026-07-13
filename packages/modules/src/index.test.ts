@@ -4,6 +4,7 @@ import {
   getModuleForPermission,
   getAllPermissions,
   MODULE_REGISTRY,
+  INFRA_SUBMODULE_IDS,
 } from './index';
 
 describe('getDefaultPermissionsForRole', () => {
@@ -34,7 +35,9 @@ describe('getModuleForPermission', () => {
     expect(getModuleForPermission('contacts:create')).toBe('crm');
     expect(getModuleForPermission('pipelines:stage.edit')).toBe('crm');
     expect(getModuleForPermission('tasks:delete')).toBe('crm');
-    expect(getModuleForPermission('servers:delete')).toBe('servers');
+    expect(getModuleForPermission('servers:delete')).toBe('infra');
+    expect(getModuleForPermission('websites:view')).toBe('infra');
+    expect(getModuleForPermission('alerts:configure')).toBe('infra');
     expect(getModuleForPermission('analytics:view')).toBe('analytics');
   });
 
@@ -64,6 +67,26 @@ describe('MODULE_REGISTRY', () => {
     expect(keys).toHaveLength(21);
   });
 
+  it('contains infra and not the merged infra module ids', () => {
+    const ids = MODULE_REGISTRY.map(m => m.id);
+    expect(ids).toContain('infra');
+    for (const old of ['servers', 'databases', 'websites', 'alerts']) {
+      expect(ids).not.toContain(old);
+    }
+  });
+
+  it('infra module carries all merged permission keys', () => {
+    const infra = MODULE_REGISTRY.find(m => m.id === 'infra');
+    const keys = infra!.permissions.map(p => p.key);
+    expect(keys).toEqual(expect.arrayContaining([
+      'servers:view', 'servers:ssh', 'servers:delete',
+      'databases:view', 'databases:delete',
+      'websites:view', 'websites:delete',
+      'alerts:view', 'alerts:acknowledge', 'alerts:resolve', 'alerts:configure',
+    ]));
+    expect(keys).toHaveLength(17);
+  });
+
   it('every module has at least one permission', () => {
     for (const mod of MODULE_REGISTRY) {
       expect(mod.permissions.length).toBeGreaterThan(0);
@@ -74,5 +97,13 @@ describe('MODULE_REGISTRY', () => {
     const projects = MODULE_REGISTRY.find(m => m.id === 'projects');
     expect(projects?.emitsActivity).toBe(true);
     expect(projects?.emitsAlerts).toBe(true);
+  });
+});
+
+describe('INFRA_SUBMODULES', () => {
+  it('exposes the four child module ids', () => {
+    expect(INFRA_SUBMODULE_IDS).toEqual([
+      'infra:servers', 'infra:databases', 'infra:websites', 'infra:alerts',
+    ]);
   });
 });
