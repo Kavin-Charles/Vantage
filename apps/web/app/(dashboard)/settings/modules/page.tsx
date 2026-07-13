@@ -7,9 +7,25 @@ import { useModules } from '@/modules/shared/contexts/modules';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 
-const MODULE_META = [
+interface SubModuleMeta { id: string; name: string }
+interface ModuleMeta {
+  id: string;
+  name: string;
+  description: string;
+  settingsHref: string | null;
+  subModules?: SubModuleMeta[];
+}
+
+const CRM_SUBMODULES: SubModuleMeta[] = [
+  { id: 'crm:pipeline',  name: 'Pipeline' },
+  { id: 'crm:contacts',  name: 'Contacts' },
+  { id: 'crm:companies', name: 'Companies' },
+  { id: 'crm:tasks',     name: 'Tasks' },
+];
+
+const MODULE_META: ModuleMeta[] = [
   { id: 'dashboard', name: 'Dashboard', description: 'Custom dashboards and widget layouts.', settingsHref: '/settings/dashboards' },
-  { id: 'crm', name: 'CRM', description: 'Contacts, companies, deals pipeline, and tasks.', settingsHref: '/settings/pipelines' },
+  { id: 'crm', name: 'CRM', description: 'Contacts, companies, deals pipeline, and tasks.', settingsHref: '/settings/pipelines', subModules: CRM_SUBMODULES },
   { id: 'websites',   name: 'Websites',   description: 'Website uptime monitoring and SSL expiry.',         settingsHref: null },
   { id: 'servers',    name: 'Servers',    description: 'Server monitoring and agent heartbeats.',           settingsHref: null },
   { id: 'databases',  name: 'Databases',  description: 'Database health monitoring and connection management.', settingsHref: null },
@@ -20,7 +36,8 @@ const MODULE_META = [
 ];
 
 export default function ModulesSettingsPage() {
-  const { isEnabled, setEnabled } = useModules();
+  const { isEnabled, setEnabled, modules } = useModules();
+  const rawEnabled = (id: string): boolean => modules.find(m => m.module_id === id)?.enabled ?? true;
   const getToken = useApiToken();
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
@@ -57,8 +74,8 @@ export default function ModulesSettingsPage() {
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {MODULE_META.map(mod => (
+          <div key={mod.id} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div
-            key={mod.id}
             onContextMenu={e => {
               const items: ContextMenuItem[] = [
                 { icon: 'check', label: isEnabled(mod.id) ? 'Disable' : 'Enable', onClick: () => void toggle(mod.id) },
@@ -111,6 +128,47 @@ export default function ModulesSettingsPage() {
                 }} />
               </button>
             </div>
+          </div>
+          {mod.subModules?.map(sub => {
+            const parentOn = isEnabled(mod.id);
+            const subOn = rawEnabled(sub.id);
+            return (
+              <div
+                key={sub.id}
+                onContextMenu={e => {
+                  const items: ContextMenuItem[] = [
+                    { icon: 'check', label: subOn ? 'Disable' : 'Enable', onClick: () => { if (parentOn) void toggle(sub.id); } },
+                  ];
+                  openMenu(e, items);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '9px 16px', marginLeft: 24, borderRadius: 10,
+                  border: '1px solid var(--border)', background: 'var(--surface2)',
+                  opacity: parentOn ? 1 : 0.5,
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 12.5, fontWeight: 500, color: 'var(--text2)' }}>{sub.name}</p>
+                <button
+                  disabled={!parentOn || pending === sub.id}
+                  onClick={() => void toggle(sub.id)}
+                  style={{
+                    position: 'relative', width: 38, height: 21, borderRadius: 999,
+                    background: parentOn && subOn ? 'var(--green)' : 'var(--border)',
+                    border: 'none', cursor: !parentOn || pending === sub.id ? 'default' : 'pointer',
+                    transition: 'background .2s', flexShrink: 0, opacity: pending === sub.id ? 0.6 : 1,
+                  }}
+                  aria-label={`${subOn ? 'Disable' : 'Enable'} ${sub.name}`}
+                >
+                  <span style={{
+                    position: 'absolute', top: 3, left: parentOn && subOn ? 20 : 3,
+                    width: 15, height: 15, borderRadius: '50%', background: '#fff',
+                    transition: 'left .2s',
+                  }} />
+                </button>
+              </div>
+            );
+          })}
           </div>
         ))}
       </div>

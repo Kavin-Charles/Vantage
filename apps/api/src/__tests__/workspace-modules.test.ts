@@ -41,8 +41,12 @@ describe('GET /api/workspace/modules', () => {
 });
 
 describe('PATCH /api/workspace/modules/:moduleId', () => {
-  it('toggles module enabled status (admin)', async () => {
-    const updateResult = { numUpdatedRows: BigInt(1) };
+  it('upserts module enabled status (admin)', async () => {
+    const insertChain = {
+      values: vi.fn().mockReturnThis(),
+      onConflict: vi.fn().mockReturnThis(),
+      execute: vi.fn().mockResolvedValue(undefined),
+    };
     const providerUpdateChain = {
       set: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
@@ -50,36 +54,37 @@ describe('PATCH /api/workspace/modules/:moduleId', () => {
       executeTakeFirst: vi.fn().mockResolvedValue(undefined),
     };
     const db: any = {
-      updateTable: vi.fn((table: string) => {
-        if (table === 'hook_providers') return providerUpdateChain;
-        return {
-          set: vi.fn().mockReturnThis(),
-          where: vi.fn().mockReturnThis(),
-          executeTakeFirst: vi.fn().mockResolvedValue(updateResult),
-        };
-      }),
+      insertInto: vi.fn().mockReturnValue(insertChain),
+      updateTable: vi.fn(() => providerUpdateChain),
     };
     const res = await request(buildApp(db))
       .patch('/api/workspace/modules/crm')
       .send({ enabled: false });
     expect(res.status).toBe(200);
     expect(res.body.data).toMatchObject({ module_id: 'crm', enabled: false });
+    expect(db.insertInto).toHaveBeenCalledWith('workspace_modules');
   });
 
-  it('returns 404 when module row does not exist for workspace', async () => {
-    const updateResult = { numUpdatedRows: BigInt(0) };
+  it('upserts a crm sub-module row (crm:contacts) without a pre-existing row', async () => {
+    const insertChain = {
+      values: vi.fn().mockReturnThis(),
+      onConflict: vi.fn().mockReturnThis(),
+      execute: vi.fn().mockResolvedValue(undefined),
+    };
     const db: any = {
-      updateTable: vi.fn().mockReturnValue({
+      insertInto: vi.fn().mockReturnValue(insertChain),
+      updateTable: vi.fn(() => ({
         set: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
-        executeTakeFirst: vi.fn().mockResolvedValue(updateResult),
-      }),
+        returning: vi.fn().mockReturnThis(),
+        executeTakeFirst: vi.fn().mockResolvedValue(undefined),
+      })),
     };
     const res = await request(buildApp(db))
-      .patch('/api/workspace/modules/crm')
+      .patch('/api/workspace/modules/crm:contacts')
       .send({ enabled: false });
-    expect(res.status).toBe(404);
-    expect(res.body.error.code).toBe('MODULE_NOT_FOUND');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ module_id: 'crm:contacts', enabled: false });
   });
 
   it('returns 403 for non-admin', async () => {

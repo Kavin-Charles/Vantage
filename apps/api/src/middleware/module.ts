@@ -67,3 +67,36 @@ export function createRequireModule(db: Kysely<Database>) {
     };
   };
 }
+
+/**
+ * Gate a CRM sub-page: the request passes only when BOTH the `crm` parent
+ * module and the given child module (e.g. `crm:contacts`) are enabled.
+ */
+export function createRequireCrmFeature(db: Kysely<Database>) {
+  return function requireCrmFeature(subModuleId: string) {
+    return async function (
+      req: Request,
+      res: Response,
+      next: NextFunction,
+    ): Promise<void> {
+      try {
+        const { workspace } = req as AuthenticatedRequest;
+        const parentEnabled = await isModuleEnabled(db, workspace.id, 'crm');
+        const childEnabled = await isModuleEnabled(db, workspace.id, subModuleId);
+        if (!parentEnabled || !childEnabled) {
+          res.status(403).json({
+            data: null,
+            error: {
+              code: 'MODULE_DISABLED',
+              message: `${subModuleId} is disabled for this workspace.`,
+            },
+          });
+          return;
+        }
+        next();
+      } catch (err) {
+        next(err);
+      }
+    };
+  };
+}

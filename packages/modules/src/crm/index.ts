@@ -29,8 +29,33 @@ export const CRM_MODULE: ModuleDefinition = {
     { key: 'tasks:edit',   label: 'Edit tasks',   defaultRoles: ['admin', 'member'] },
     { key: 'tasks:delete', label: 'Delete tasks', defaultRoles: ['admin'] },
   ],
-  nav: [{ label: 'CRM', path: '/crm', icon: 'Kanban' }],
+  nav: [
+    { label: 'Pipeline',  path: '/crm/pipeline',  icon: 'Kanban' },
+    { label: 'Contacts',  path: '/crm/contacts',  icon: 'Users' },
+    { label: 'Companies', path: '/crm/companies', icon: 'Building2' },
+    { label: 'Tasks',     path: '/crm/tasks',     icon: 'CheckSquare' },
+  ],
   apiPrefixes: ['/contacts', '/companies', '/deals', '/pipelines', '/stages', '/items', '/item-groups', '/conversions', '/record-types', '/records', '/tasks'],
   workers: ['task-due-notifier'],
   emitsActivity: true,
 };
+
+// CRM is a parent module with per-page child modules. Each child gates one
+// sidebar entry, its page, and its API routes; a child is only effective when
+// the parent `crm` module is also enabled.
+export interface CrmSubModule {
+  id: string;
+  label: string;
+  path: string;
+  permission: string;
+  legacyModuleId: string;
+}
+
+export const CRM_SUBMODULES: readonly CrmSubModule[] = [
+  { id: 'crm:pipeline',  label: 'Pipeline',  path: '/crm/pipeline',  permission: 'pipelines:view', legacyModuleId: 'pipelines' },
+  { id: 'crm:contacts',  label: 'Contacts',  path: '/crm/contacts',  permission: 'contacts:view',  legacyModuleId: 'contacts'  },
+  { id: 'crm:companies', label: 'Companies', path: '/crm/companies', permission: 'companies:view', legacyModuleId: 'companies' },
+  { id: 'crm:tasks',     label: 'Tasks',     path: '/crm/tasks',     permission: 'tasks:view',     legacyModuleId: 'tasks'     },
+];
+
+export const CRM_SUBMODULE_IDS: readonly string[] = CRM_SUBMODULES.map(s => s.id);
