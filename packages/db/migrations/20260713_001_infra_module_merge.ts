@@ -30,10 +30,11 @@ export function rewriteKeysForInfra(keys: string[]): string[] {
 }
 
 export async function up(db: Kysely<unknown>): Promise<void> {
-  // 1. Split the four old infra modules into an `infra` parent plus per-page
-  //    child modules. Each child preserves the old module's exact enabled
-  //    state; the parent is enabled when ANY old module was enabled (missing
-  //    rows counted as enabled).
+  // 1. Split the four old infra modules into per-page child modules
+  //    (infra:servers/databases/websites/alerts). Each child preserves the
+  //    old module's exact enabled state. The `infra` parent is derived later
+  //    (1c) from these child rows once the safety net (1b) below has filled
+  //    in any that are missing.
   await sql`
     insert into workspace_modules (workspace_id, module_id, enabled)
     select workspace_id,
@@ -49,29 +50,49 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     on conflict (workspace_id, module_id) do nothing
   `.execute(db);
 
-  await sql`
-    insert into workspace_modules (workspace_id, module_id, enabled)
-    select workspace_id, 'infra', bool_or(enabled)
-    from workspace_modules
-    where module_id in ('servers', 'databases', 'websites', 'alerts')
-    group by workspace_id
-    on conflict (workspace_id, module_id) do nothing
-  `.execute(db);
-
-  // 1b. Safety net: give every workspace any infra parent/child row it still
-  //     lacks (defaulting to enabled). Covers workspaces that had none of the
-  //     four old rows, and legacy workspaces that only had some of them — a
-  //     missing old row meant that module was at defaultEnabled: true. The
-  //     child-split above ran first with DO NOTHING, so explicitly-disabled
-  //     children are never overwritten here.
+  // 1b. Safety net for CHILDREN only: give every workspace any infra:* child
+  //     row it still lacks (defaulting to enabled). A missing old row meant
+  //     that module was at defaultEnabled: true. The child-split above ran
+  //     first with DO NOTHING, so explicitly-disabled children are never
+  //     overwritten here. The parent is deliberately excluded — it is derived
+  //     below from these now-fully-materialized child rows.
   await sql`
     insert into workspace_modules (workspace_id, module_id, enabled)
     select w.id, m.mid, true
     from workspaces w
-    cross join (values ('infra'), ('infra:servers'), ('infra:databases'), ('infra:websites'), ('infra:alerts')) as m(mid)
+    cross join (values ('infra:servers'), ('infra:databases'), ('infra:websites'), ('infra:alerts')) as m(mid)
     where not exists (
       select 1 from workspace_modules wm
       where wm.workspace_id = w.id and wm.module_id = m.mid
+    )
+    on conflict (workspace_id, module_id) do nothing
+  `.execute(db);
+
+  // 1c. Derive the `infra` parent from the now-materialized infra:* child
+  //     rows (every workspace has all four at this point, each either the
+  //     old row's value or true from the safety net above). This makes a
+  //     missing old row count as enabled at the parent level too, matching
+  //     deriveInfraEnabled.
+  await sql`
+    insert into workspace_modules (workspace_id, module_id, enabled)
+    select workspace_id, 'infra', bool_or(enabled)
+    from workspace_modules
+    where module_id in ('infra:servers', 'infra:databases', 'infra:websites', 'infra:alerts')
+    group by workspace_id
+    on conflict (workspace_id, module_id) do nothing
+  `.execute(db);
+
+  // 1d. Safety net for the parent: covers a workspace that somehow still
+  //     lacks an `infra` row (belt-and-suspenders — 1c above already inserts
+  //     it for every workspace with any infra:* child, and 1b guarantees all
+  //     four children exist for every workspace).
+  await sql`
+    insert into workspace_modules (workspace_id, module_id, enabled)
+    select w.id, 'infra', true
+    from workspaces w
+    where not exists (
+      select 1 from workspace_modules wm
+      where wm.workspace_id = w.id and wm.module_id = 'infra'
     )
     on conflict (workspace_id, module_id) do nothing
   `.execute(db);
@@ -81,7 +102,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     where module_id in ('servers', 'databases', 'websites', 'alerts')
   `.execute(db);
 
-  // 1c. Consolidate module_event_settings: infra row aggregates activity_on
+  // 1e. Consolidate module_event_settings: infra row aggregates activity_on
   //     and alerts_on from the four old modules with bool_and (infra only
   //     stays on when every old module was on). No safety-net insert — a
   //     missing module_event_settings row already defaults to enabled
