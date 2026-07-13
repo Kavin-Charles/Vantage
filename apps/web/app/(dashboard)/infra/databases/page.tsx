@@ -1,11 +1,11 @@
 'use client';
 
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
-import DatabasesPage from '@/modules/databases/pages/page';
+import DatabasesPage from '@/modules/infra/databases/pages/page';
 
 export default function Page() {
   return (
-    <ModuleGuard moduleId="databases">
+    <ModuleGuard moduleId="infra:databases">
       <DatabasesPage />
     </ModuleGuard>
   );

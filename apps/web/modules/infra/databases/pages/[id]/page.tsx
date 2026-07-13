@@ -3,9 +3,9 @@
 import React, { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
-import { DatabaseHeader } from '@/modules/databases/components/detail/DatabaseHeader';
-import { DatabaseAlertsTab } from '@/modules/databases/components/detail/AlertsTab';
-import { DatabaseActivitiesTab } from '@/modules/databases/components/detail/ActivitiesTab';
+import { DatabaseHeader } from '@/modules/infra/databases/components/detail/DatabaseHeader';
+import { DatabaseAlertsTab } from '@/modules/infra/databases/components/detail/AlertsTab';
+import { DatabaseActivitiesTab } from '@/modules/infra/databases/components/detail/ActivitiesTab';
 import { Topbar } from '@/modules/shared/components/Topbar';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { FormField, Input, Select, Textarea } from '@/modules/shared/components/ui/FormField';
@@ -24,7 +24,7 @@ import {
   testInfraDatabaseConnection,
   updateInfraDatabase,
   updateInfraDatabaseRow,
-} from '@/modules/databases/lib/infra-databases';
+} from '@/modules/infra/databases/lib/infra-databases';
 import type { InfraDatabase, InfraDatabaseRows, InfraDatabaseSqlResult, InfraDatabaseTable } from '@vencore/types';
 
 const ENGINES = ['postgres', 'mysql', 'redis', 'clickhouse', 'mongo', 'other'] as const;

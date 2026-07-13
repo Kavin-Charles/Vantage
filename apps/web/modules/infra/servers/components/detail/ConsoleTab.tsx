@@ -1,6 +1,6 @@
 'use client';
 
-import { SshTerminal } from '@/modules/servers/components/SshTerminal';
+import { SshTerminal } from '@/modules/infra/servers/components/SshTerminal';
 
 export function ConsoleTab({ serverId }: { serverId: string }) {
   return (

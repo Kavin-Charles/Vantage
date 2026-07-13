@@ -20,7 +20,7 @@ export function DatabaseHeader({ database }: { database: InfraDatabase }) {
   return (
     <div style={{ marginBottom: 24 }}>
       <button
-        onClick={() => router.push('/databases')}
+        onClick={() => router.push('/infra/databases')}
         style={{
           background: 'none', border: 'none', padding: 0, cursor: 'pointer',
           fontSize: 12, color: 'var(--text3)', marginBottom: 8, display: 'block',

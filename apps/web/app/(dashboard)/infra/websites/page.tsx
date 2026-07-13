@@ -56,7 +56,7 @@ export default function WebsitesPage() {
   const sites: Website[] = data?.data ?? [];
 
   return (
-    <ModuleGuard moduleId="websites">
+    <ModuleGuard moduleId="infra:websites">
       <Topbar action={<Button variant="primary" onClick={() => setModal(true)}>+ Add Website</Button>} />
       <div style={{ padding: 24 }}>
         <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--text2)' }}>{sites.length} websites monitored</div>

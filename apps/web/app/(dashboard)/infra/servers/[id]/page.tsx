@@ -8,17 +8,17 @@ import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
-import { getServer } from '@/modules/servers/lib/servers';
+import { getServer } from '@/modules/infra/servers/lib/servers';
 import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
-import { OverviewTab } from '@/modules/servers/components/detail/OverviewTab';
-import { ConsoleTab } from '@/modules/servers/components/detail/ConsoleTab';
-import { TerminalTab } from '@/modules/servers/components/detail/TerminalTab';
-import { ServicesTab } from '@/modules/servers/components/detail/ServicesTab';
-import { LogsTab } from '@/modules/servers/components/detail/LogsTab';
-import { FilesTab } from '@/modules/servers/components/detail/FilesTab';
-import { DeploymentsTab } from '@/modules/servers/components/detail/DeploymentsTab';
-import { AlertsTab } from '@/modules/servers/components/detail/AlertsTab';
-import { EditServerModal } from '@/modules/servers/components/detail/EditServerModal';
+import { OverviewTab } from '@/modules/infra/servers/components/detail/OverviewTab';
+import { ConsoleTab } from '@/modules/infra/servers/components/detail/ConsoleTab';
+import { TerminalTab } from '@/modules/infra/servers/components/detail/TerminalTab';
+import { ServicesTab } from '@/modules/infra/servers/components/detail/ServicesTab';
+import { LogsTab } from '@/modules/infra/servers/components/detail/LogsTab';
+import { FilesTab } from '@/modules/infra/servers/components/detail/FilesTab';
+import { DeploymentsTab } from '@/modules/infra/servers/components/detail/DeploymentsTab';
+import { AlertsTab } from '@/modules/infra/servers/components/detail/AlertsTab';
+import { EditServerModal } from '@/modules/infra/servers/components/detail/EditServerModal';
 import type { Server } from '@vencore/types';
 
 type Tab = 'overview' | 'deployments' | 'alerts' | 'console' | 'terminal' | 'services' | 'logs' | 'files';
@@ -76,7 +76,7 @@ export default function ServerDetailPage({ params }: { params: Promise<{ id: str
     <>
       <Topbar action={
         <div style={{ display: 'flex', gap: 8 }}>
-          <Button onClick={() => router.push('/servers')}>← Servers</Button>
+          <Button onClick={() => router.push('/infra/servers')}>← Servers</Button>
           <Button onClick={() => setEditOpen(true)}>Edit</Button>
         </div>
       } />

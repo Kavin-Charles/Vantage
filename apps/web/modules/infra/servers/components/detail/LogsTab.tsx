@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { openSshStream } from '@/modules/servers/lib/ssh';
+import { openSshStream } from '@/modules/infra/servers/lib/ssh';
 
 export function LogsTab({ serverId }: { serverId: string }) {
   const getToken = useApiToken();

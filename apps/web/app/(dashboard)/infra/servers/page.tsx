@@ -10,7 +10,7 @@ import { Badge, statusColor } from '@/modules/shared/components/ui/Badge';
 import { FormField, Input } from '@/modules/shared/components/ui/FormField';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { AgentInstallInstructions } from '@/modules/shared/components/ui/AgentInstallInstructions';
-import { listServers, createServer, deleteServer } from '@/modules/servers/lib/servers';
+import { listServers, createServer, deleteServer } from '@/modules/infra/servers/lib/servers';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
@@ -119,7 +119,7 @@ export default function ServersPage() {
 
   function rowMenu(s: Server): ContextMenuItem[] {
     return [
-      { icon: 'open', label: 'Open server', onClick: () => router.push(`/servers/${s.id}`) },
+      { icon: 'open', label: 'Open server', onClick: () => router.push(`/infra/servers/${s.id}`) },
       { type: 'separator' },
       ...(s.ip_address ? [{ icon: 'copy', label: 'Copy IP address', onClick: () => navigator.clipboard.writeText(s.ip_address!) } as ContextMenuItem] : []),
       { type: 'separator' },
@@ -128,7 +128,7 @@ export default function ServersPage() {
   }
 
   return (
-    <ModuleGuard moduleId="servers">
+    <ModuleGuard moduleId="infra:servers">
       <Topbar action={<Button variant="primary" onClick={() => setModal('create')}>+ Add Server</Button>} />
       <div style={{ padding: 24 }}>
         {/* Toolbar */}
@@ -181,7 +181,7 @@ export default function ServersPage() {
               key={s.id}
               server={s}
               last={i === filtered.length - 1}
-              onClick={() => router.push(`/servers/${s.id}`)}
+              onClick={() => router.push(`/infra/servers/${s.id}`)}
               onMenu={(e) => { e.preventDefault(); openMenu(e, rowMenu(s)); }}
             />
           ))}

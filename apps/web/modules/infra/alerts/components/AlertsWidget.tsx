@@ -25,7 +25,7 @@ function relativeTime(value: Date | string): string {
 
 export function AlertsWidget() {
   const { isEnabled } = useModules();
-  const enabled = isEnabled('alerts');
+  const enabled = isEnabled('infra:alerts');
   const getToken = useApiToken();
   const qc = useQueryClient();
 
@@ -52,7 +52,7 @@ export function AlertsWidget() {
   if (query.isError) return <WidgetError onRetry={() => void query.refetch()} />;
 
   const alerts = query.data?.data ?? [];
-  if (alerts.length === 0) return <EmptyState href="/alerts" label="No unresolved alerts" />;
+  if (alerts.length === 0) return <EmptyState href="/infra/alerts" label="No unresolved alerts" />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, height: '100%' }}>
@@ -93,7 +93,7 @@ export function AlertsWidget() {
         );
       })}
       <Link
-        href="/alerts"
+        href="/infra/alerts"
         style={{
           marginTop: 'auto', fontSize: 12, color: 'var(--text3)', textDecoration: 'none',
           display: 'flex', alignItems: 'center', gap: 4, paddingTop: 6, borderTop: '1px solid var(--border)',

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { openSshStream, getSshHistory } from '@/modules/servers/lib/ssh';
+import { openSshStream, getSshHistory } from '@/modules/infra/servers/lib/ssh';
 import type { SshCommandLog } from '@vencore/types';
 
 export function TerminalTab({ serverId }: { serverId: string }) {

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { Button } from '@/modules/shared/components/ui/Button';
-import { regenToken } from '@/modules/servers/lib/servers';
+import { regenToken } from '@/modules/infra/servers/lib/servers';
 import { MetricsPanel } from './MetricsPanel';
 import type { Server } from '@vencore/types';
 

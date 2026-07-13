@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { getServerMetrics } from '@/modules/servers/lib/servers';
+import { getServerMetrics } from '@/modules/infra/servers/lib/servers';
 import { MetricChart, type ChartPoint } from './MetricChart';
 import type { MetricsRange, MetricsPoint } from '@vencore/types';
 

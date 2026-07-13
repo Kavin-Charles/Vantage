@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
-import { openSftpSession, SftpClient } from '@/modules/servers/lib/sftp';
-import type { SftpEntry } from '@/modules/servers/lib/sftp';
+import { openSftpSession, SftpClient } from '@/modules/infra/servers/lib/sftp';
+import type { SftpEntry } from '@/modules/infra/servers/lib/sftp';
 
 export function FilesTab({ serverId }: { serverId: string }) {
   const [connState, setConnState] = useState<'connecting' | 'ready' | 'error'>('connecting');

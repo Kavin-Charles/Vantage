@@ -70,7 +70,7 @@ export default function AlertsPage() {
   const TABS: FilterTab[] = ['all', 'unresolved', 'critical', 'warning', 'info'];
 
   return (
-    <ModuleGuard moduleId="alerts">
+    <ModuleGuard moduleId="infra:alerts">
       <Topbar />
       <div style={{ padding: 24 }}>
         <div style={{

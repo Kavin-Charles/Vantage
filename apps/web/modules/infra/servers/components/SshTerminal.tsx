@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import '@xterm/xterm/css/xterm.css';
 
-import { getWsUrl } from '../../shared/lib/api';
+import { getWsUrl } from '@/modules/shared/lib/api';
 
 interface Props {
   serverId: string;

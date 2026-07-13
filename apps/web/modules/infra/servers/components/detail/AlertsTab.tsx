@@ -9,7 +9,7 @@ import { Badge } from '@/modules/shared/components/ui/Badge';
 import {
   listServerAlerts, resolveAlert, getServerThresholds, setServerThresholds, clearServerThresholds,
   type ThresholdValues,
-} from '@/modules/servers/lib/servers';
+} from '@/modules/infra/servers/lib/servers';
 
 const eyebrow: React.CSSProperties = {
   fontSize: 10, fontWeight: 600, color: 'var(--text3)',

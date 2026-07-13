@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { Button } from '@/modules/shared/components/ui/Button';
-import { updateServer } from '@/modules/servers/lib/servers';
+import { updateServer } from '@/modules/infra/servers/lib/servers';
 import type { Server } from '@vencore/types';
 
 const labelStyle: React.CSSProperties = { fontSize: 12, fontWeight: 600, color: 'var(--text3)' };

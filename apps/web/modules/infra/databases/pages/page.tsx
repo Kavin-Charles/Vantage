@@ -13,10 +13,10 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import {
   listInfraDatabases, createInfraDatabase, deleteInfraDatabase,
   testInfraDatabaseConnection, getInfraDatabaseConnectionString,
-} from '@/modules/databases/lib/infra-databases';
-import { DatabaseRow, DB_TABLE_COLS } from '@/modules/databases/components/DatabaseRow';
-import { DatabaseCard } from '@/modules/databases/components/DatabaseCard';
-import { SkeletonRow } from '@/modules/databases/components/SkeletonRow';
+} from '@/modules/infra/databases/lib/infra-databases';
+import { DatabaseRow, DB_TABLE_COLS } from '@/modules/infra/databases/components/DatabaseRow';
+import { DatabaseCard } from '@/modules/infra/databases/components/DatabaseCard';
+import { SkeletonRow } from '@/modules/infra/databases/components/SkeletonRow';
 import type { InfraDatabase } from '@vencore/types';
 
 const ENGINES = ['postgres', 'mysql', 'redis', 'clickhouse', 'mongo', 'other'] as const;
@@ -143,7 +143,7 @@ export default function DatabasesPage() {
 
   function buildContextMenu(db: InfraDatabase): ContextMenuItem[] {
     return [
-      { icon: 'open',  label: 'Open database', onClick: () => router.push(`/databases/${db.id}`) },
+      { icon: 'open',  label: 'Open database', onClick: () => router.push(`/infra/databases/${db.id}`) },
       { type: 'separator' },
       { icon: 'check', label: 'Test connection', onClick: async () => {
         const token = await getToken();
@@ -162,7 +162,7 @@ export default function DatabasesPage() {
         setModal(true);
       }},
       { type: 'separator' },
-      { icon: 'alert', label: 'View alerts', onClick: () => router.push(`/databases/${db.id}?tab=alerts`) },
+      { icon: 'alert', label: 'View alerts', onClick: () => router.push(`/infra/databases/${db.id}?tab=alerts`) },
       { type: 'separator' },
       { icon: 'trash', label: 'Remove database', danger: true, onClick: () =>
         askConfirm({ title: 'Remove database', message: 'Remove this database from monitoring?', confirmLabel: 'Remove', variant: 'danger', onConfirm: () => deleteMut.mutate(db.id) })
@@ -272,7 +272,7 @@ export default function DatabasesPage() {
                 db={db}
                 last={i === filtered.length - 1}
                 index={i}
-                onClick={() => router.push(`/databases/${db.id}`)}
+                onClick={() => router.push(`/infra/databases/${db.id}`)}
                 onDelete={() => askConfirm({ title: 'Remove database', message: 'Remove this database from monitoring?', confirmLabel: 'Remove', variant: 'danger', onConfirm: () => deleteMut.mutate(db.id) })}
                 onContextMenu={e => openMenu(e, buildContextMenu(db))}
               />
@@ -296,7 +296,7 @@ export default function DatabasesPage() {
                   key={db.id}
                   db={db}
                   index={i}
-                  onClick={() => router.push(`/databases/${db.id}`)}
+                  onClick={() => router.push(`/infra/databases/${db.id}`)}
                   onContextMenu={e => openMenu(e, buildContextMenu(db))}
                 />
               ))}

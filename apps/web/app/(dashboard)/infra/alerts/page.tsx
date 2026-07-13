@@ -1,1 +1,1 @@
-export { default } from '@/modules/alerts/pages/page';
+export { default } from '@/modules/infra/alerts/pages/page';

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
-import { listServers } from '@/modules/servers/lib/servers';
+import { listServers } from '@/modules/infra/servers/lib/servers';
 import { Badge } from '@/modules/shared/components/ui/Badge';
 import { WidgetSkeleton, WidgetError, Stat, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
 import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
@@ -56,17 +56,17 @@ export function ServersWidget() {
     queryKey: ['widget', 'servers'],
     queryFn: async () => listServers(await getToken()),
     staleTime: 60_000,
-    enabled: isEnabled('servers'),
+    enabled: isEnabled('infra:servers'),
   });
 
-  if (!isEnabled('servers')) return null;
+  if (!isEnabled('infra:servers')) return null;
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
 
   const servers: Server[] = data?.data ?? [];
 
   if (servers.length === 0) {
-    return <EmptyState href="/servers" label="Connect your first server" />;
+    return <EmptyState href="/infra/servers" label="Connect your first server" />;
   }
 
   const online = servers.filter(s => s.status === 'online').length;
@@ -85,7 +85,7 @@ export function ServersWidget() {
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {top5.map((s: Server, i: number) => (
-          <WidgetRow key={s.id} server={s} last={i === top5.length - 1} onOpen={() => router.push(`/servers/${s.id}`)} />
+          <WidgetRow key={s.id} server={s} last={i === top5.length - 1} onOpen={() => router.push(`/infra/servers/${s.id}`)} />
         ))}
       </div>
     </div>

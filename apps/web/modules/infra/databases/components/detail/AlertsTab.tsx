@@ -12,7 +12,7 @@ import {
   setInfraDatabaseThresholds,
   clearInfraDatabaseThresholds,
   type DbThresholdValues,
-} from '@/modules/databases/lib/infra-databases';
+} from '@/modules/infra/databases/lib/infra-databases';
 
 const eyebrow: React.CSSProperties = {
   fontSize: 10, fontWeight: 600, color: 'var(--text3)',
