@@ -8,7 +8,7 @@ function makeChain(leafValues: Record<string, unknown> = {}): Record<string, unk
   const chain: Record<string, unknown> = {};
   const FLUENT = ['selectFrom', 'insertInto', 'updateTable', 'deleteFrom', 'where', 'selectAll', 'select',
                   'orderBy', 'limit', 'offset', 'values', 'set', 'returningAll', 'returning', 'fn', 'countAll', 'as',
-                  'innerJoin', 'leftJoin', 'groupBy'];
+                  'innerJoin', 'leftJoin', 'groupBy', 'onConflict', 'columns', 'doNothing', 'doUpdateSet'];
   for (const m of FLUENT) chain[m] = vi.fn().mockReturnValue(chain);
   chain['execute'] = vi.fn().mockResolvedValue(leafValues['execute'] ?? []);
   chain['executeTakeFirst'] = vi.fn().mockResolvedValue(leafValues['executeTakeFirst'] ?? undefined);
@@ -300,6 +300,268 @@ describe('DELETE /api/roles/:id', () => {
     await runStack(getFullStack(router, '/:id', 'delete'), buildReq({ params: { id: 'r1' } }), res);
 
     expect(db['deleteFrom']).toHaveBeenCalledWith('roles');
+    expect(res['json']).toHaveBeenCalledWith({ data: null, error: null });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/roles/:id
+// ---------------------------------------------------------------------------
+describe('GET /api/roles/:id', () => {
+  it('returns 404 when the role does not exist', async () => {
+    const { db } = buildDb({ selectResult: undefined });
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(getFullStack(router, '/:id', 'get'), buildReq({ params: { id: 'nope' } }), res);
+    expect(res['status']).toHaveBeenCalledWith(404);
+  });
+
+  it('returns a grouped permission matrix with own grants, inheritance and members', async () => {
+    const role = {
+      id: 'member-role', name: 'Member', description: null, color: '#2d6a4f',
+      is_system: true, grants_all: false, is_default: true, max_members: null,
+    };
+    const { db, chain } = buildDb({ selectResult: role });
+    // Query order inside GET /:id: own perms -> edges -> (no descendants) -> members -> parents -> children
+    chain['execute'] = vi.fn()
+      .mockResolvedValueOnce([{ permission: 'contacts:view' }])       // own role_permissions
+      .mockResolvedValueOnce([])                                       // role_inheritance edges (none)
+      .mockResolvedValueOnce([{ id: 'u1', name: 'Alice', email: 'alice@example.com' }]) // members
+      .mockResolvedValueOnce([])                                       // parents
+      .mockResolvedValueOnce([]);                                      // children
+
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(getFullStack(router, '/:id', 'get'), buildReq({ params: { id: 'member-role' } }), res);
+
+    const arg = (res['json'] as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
+    expect(arg.error).toBeNull();
+    expect(arg.data.id).toBe('member-role');
+    expect(arg.data.members).toEqual([{ id: 'u1', name: 'Alice', email: 'alice@example.com' }]);
+    expect(arg.data.inheritance).toEqual({ parents: [], children: [] });
+
+    const crm = arg.data.modules.find((m: { id: string }) => m.id === 'crm');
+    expect(crm.groups.length).toBeGreaterThan(0);
+    const contactsView = crm.groups.flatMap((g: { permissions: { key: string; granted: boolean }[] }) => g.permissions)
+      .find((p: { key: string }) => p.key === 'contacts:view');
+    expect(contactsView.granted).toBe(true);
+  });
+
+  it('marks descendant-only permissions as inherited, not granted', async () => {
+    const role = {
+      id: 'parent-role', name: 'Parent', description: null, color: '#2d6a4f',
+      is_system: false, grants_all: false, is_default: false, max_members: null,
+    };
+    const { db, chain } = buildDb({ selectResult: role });
+    chain['execute'] = vi.fn()
+      .mockResolvedValueOnce([])                                              // own role_permissions (none)
+      .mockResolvedValueOnce([{ parent_role_id: 'parent-role', child_role_id: 'child-role' }]) // edges
+      .mockResolvedValueOnce([{ permission: 'tasks:view' }])                   // descendant role_permissions
+      .mockResolvedValueOnce([])                                              // members
+      .mockResolvedValueOnce([])                                              // parents
+      .mockResolvedValueOnce([{ child_role_id: 'child-role' }]);               // children
+
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(getFullStack(router, '/:id', 'get'), buildReq({ params: { id: 'parent-role' } }), res);
+
+    const arg = (res['json'] as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
+    expect(arg.data.inheritance).toEqual({ parents: [], children: ['child-role'] });
+    const crm = arg.data.modules.find((m: { id: string }) => m.id === 'crm');
+    const tasksView = crm.groups.flatMap((g: { permissions: { key: string; granted: boolean; inherited: boolean }[] }) => g.permissions)
+      .find((p: { key: string }) => p.key === 'tasks:view');
+    expect(tasksView.granted).toBe(false);
+    expect(tasksView.inherited).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PUT /api/roles/:id/permissions
+// ---------------------------------------------------------------------------
+describe('PUT /api/roles/:id/permissions', () => {
+  it('returns 400 for an unknown permission key', async () => {
+    const { db } = buildDb({ selectResult: { id: 'r1' } });
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/permissions', 'put'),
+      buildReq({ params: { id: 'r1' }, body: { permission: 'bogus:key', granted: true } }),
+      res,
+    );
+    expect(res['status']).toHaveBeenCalledWith(400);
+    const arg = (res['json'] as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
+    expect(arg.error.code).toBe('INVALID_PERMISSION');
+  });
+
+  it('returns 400 for a malformed body', async () => {
+    const { db } = buildDb();
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/permissions', 'put'),
+      buildReq({ params: { id: 'r1' }, body: { nonsense: true } }),
+      res,
+    );
+    expect(res['status']).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 404 when the role does not exist', async () => {
+    const { db } = buildDb({ selectResult: undefined });
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/permissions', 'put'),
+      buildReq({ params: { id: 'nope' }, body: { permission: 'contacts:view', granted: true } }),
+      res,
+    );
+    expect(res['status']).toHaveBeenCalledWith(404);
+  });
+
+  it('grants a single permission', async () => {
+    const { db, chain } = buildDb({ selectResult: { id: 'r1' } });
+    chain['execute'] = vi.fn().mockResolvedValue([]); // insert + invalidateRoleMemberCaches lookup
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/permissions', 'put'),
+      buildReq({ params: { id: 'r1' }, body: { permission: 'projects:delete', granted: true } }),
+      res,
+    );
+
+    expect(db['insertInto']).toHaveBeenCalledWith('role_permissions');
+    expect(res['json']).toHaveBeenCalledWith({ data: null, error: null });
+  });
+
+  it('revokes a single permission (deletes the row)', async () => {
+    const { db, chain } = buildDb({ selectResult: { id: 'r1' } });
+    chain['execute'] = vi.fn().mockResolvedValue([]);
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/permissions', 'put'),
+      buildReq({ params: { id: 'r1' }, body: { permission: 'projects:delete', granted: false } }),
+      res,
+    );
+
+    expect(db['deleteFrom']).toHaveBeenCalledWith('role_permissions');
+    expect(res['json']).toHaveBeenCalledWith({ data: null, error: null });
+  });
+
+  it('rejects a full-set replace containing an unknown key before starting a transaction', async () => {
+    const { db, chain } = buildDb({ selectResult: { id: 'r1' } });
+    chain['execute'] = vi.fn().mockResolvedValue([]);
+    const txExecute = vi.fn();
+    (db as Record<string, unknown>)['transaction'] = vi.fn().mockReturnValue({ execute: txExecute });
+
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/permissions', 'put'),
+      buildReq({ params: { id: 'r1' }, body: { permissions: ['contacts:view', 'bogus:key'] } }),
+      res,
+    );
+
+    expect(res['status']).toHaveBeenCalledWith(400);
+    expect(txExecute).not.toHaveBeenCalled();
+  });
+
+  it('replaces the full permission set inside a transaction', async () => {
+    const { db, chain } = buildDb({ selectResult: { id: 'r1' } });
+    chain['execute'] = vi.fn().mockResolvedValue([]);
+    const trx = { ...chain };
+    const txExecute = vi.fn().mockImplementation(async (fn: (t: unknown) => Promise<void>) => fn(trx));
+    (db as Record<string, unknown>)['transaction'] = vi.fn().mockReturnValue({ execute: txExecute });
+
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/permissions', 'put'),
+      buildReq({ params: { id: 'r1' }, body: { permissions: ['contacts:view', 'contacts:edit'] } }),
+      res,
+    );
+
+    expect(txExecute).toHaveBeenCalled();
+    expect((trx['deleteFrom'] as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('role_permissions');
+    expect((trx['insertInto'] as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith('role_permissions');
+    expect(res['json']).toHaveBeenCalledWith({ data: null, error: null });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/roles/:id/members, DELETE /api/roles/:id/members/:userId
+// ---------------------------------------------------------------------------
+describe('POST /api/roles/:id/members', () => {
+  const validUserId = '11111111-1111-1111-1111-111111111111';
+
+  it('returns 400 for a non-uuid userId', async () => {
+    const { db } = buildDb();
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/members', 'post'),
+      buildReq({ params: { id: 'r1' }, body: { userId: 'not-a-uuid' } }),
+      res,
+    );
+    expect(res['status']).toHaveBeenCalledWith(400);
+  });
+
+  it('returns 404 when the role does not exist', async () => {
+    const { db } = buildDb({ selectResult: undefined });
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/members', 'post'),
+      buildReq({ params: { id: 'nope' }, body: { userId: validUserId } }),
+      res,
+    );
+    expect(res['status']).toHaveBeenCalledWith(404);
+  });
+
+  it('adds a user to the role', async () => {
+    const { db, chain } = buildDb({ selectResult: { id: 'r1' } });
+    chain['execute'] = vi.fn().mockResolvedValue([]);
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/members', 'post'),
+      buildReq({ params: { id: 'r1' }, body: { userId: validUserId } }),
+      res,
+    );
+
+    expect(db['insertInto']).toHaveBeenCalledWith('user_roles');
+    expect(db['insertInto']).toHaveBeenCalledWith('user_session_roles');
+    expect(res['status']).toHaveBeenCalledWith(201);
+    expect(res['json']).toHaveBeenCalledWith({ data: null, error: null });
+  });
+});
+
+describe('DELETE /api/roles/:id/members/:userId', () => {
+  it('returns 404 when the role does not exist', async () => {
+    const { db } = buildDb({ selectResult: undefined });
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/members/:userId', 'delete'),
+      buildReq({ params: { id: 'nope', userId: '11111111-1111-1111-1111-111111111111' } }),
+      res,
+    );
+    expect(res['status']).toHaveBeenCalledWith(404);
+    expect(db['deleteFrom']).not.toHaveBeenCalled();
+  });
+
+  it('removes a user from the role', async () => {
+    const { db, chain } = buildDb({ selectResult: { id: 'r1' } });
+    chain['execute'] = vi.fn().mockResolvedValue([]);
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/members/:userId', 'delete'),
+      buildReq({ params: { id: 'r1', userId: '11111111-1111-1111-1111-111111111111' } }),
+      res,
+    );
+
+    expect(db['deleteFrom']).toHaveBeenCalledWith('user_roles');
+    expect(db['deleteFrom']).toHaveBeenCalledWith('user_session_roles');
     expect(res['json']).toHaveBeenCalledWith({ data: null, error: null });
   });
 });
