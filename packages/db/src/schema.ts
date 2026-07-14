@@ -19,7 +19,6 @@ export interface UserTable {
   workspace_id: string;
   name: string;
   email: string;
-  role: Generated<'admin' | 'member'>;
   password_hash: string;
   password_reset_token: string | null;
   password_reset_expires_at: Date | null;
@@ -541,7 +540,7 @@ export interface RecordTypeFieldTable {
 export interface RecordTypePermissionTable {
   id: Generated<string>;
   record_type_id: string;
-  role: 'admin' | 'member';
+  role_id: string;
   can_view: Generated<boolean>;
   can_create: Generated<boolean>;
   can_edit: Generated<boolean>;
@@ -801,31 +800,83 @@ export interface UserPermissionTable {
   created_at: Generated<Date>;
 }
 
-export interface GroupTable {
+export interface RoleTable {
   id: Generated<string>;
   workspace_id: string;
   name: string;
   description: string | null;
   color: Generated<string>;
+  is_system: Generated<boolean>;
+  grants_all: Generated<boolean>;
+  is_default: Generated<boolean>;
+  max_members: number | null;
+  rank: Generated<number>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }
 
-export interface GroupMemberTable {
+export interface UserRoleTable {
   id: Generated<string>;
   workspace_id: string;
-  group_id: string;
+  role_id: string;
   user_id: string;
   created_at: Generated<Date>;
 }
 
-export interface GroupPermissionTable {
+export interface RolePermissionTable {
   id: Generated<string>;
   workspace_id: string;
-  group_id: string;
+  role_id: string;
   permission: string;
-  granted: Generated<boolean>;
   created_at: Generated<Date>;
+}
+
+export interface RoleInheritanceTable {
+  parent_role_id: string;
+  child_role_id: string;
+}
+
+export interface SsdSetTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  cardinality: number;
+}
+
+export interface SsdSetRoleTable {
+  set_id: string;
+  role_id: string;
+}
+
+export interface DsdSetTable {
+  id: Generated<string>;
+  workspace_id: string;
+  name: string;
+  cardinality: number;
+}
+
+export interface DsdSetRoleTable {
+  set_id: string;
+  role_id: string;
+}
+
+export interface UserSessionRoleTable {
+  user_id: string;
+  role_id: string;
+  active: Generated<boolean>;
+}
+
+export interface InviteRoleTable {
+  invite_id: string;
+  role_id: string;
+}
+
+export interface MigrationDiscardedGrantTable {
+  id: Generated<string>;
+  workspace_id: string;
+  user_id: string;
+  permission: string;
+  discarded_at: Generated<Date>;
 }
 
 export interface InviteTable {
@@ -865,7 +916,7 @@ export interface DashboardLayoutTable {
 
 export interface DashboardGroupAssignmentTable {
   dashboard_id: string;
-  group_id: string;
+  role_id: string;
 }
 
 export interface ProjectTable {
@@ -1337,9 +1388,17 @@ export interface Database {
   workspace_contract_providers: WorkspaceContractProviderTable;
   plugin_notifications: PluginNotificationTable;
   user_permissions: UserPermissionTable;
-  groups: GroupTable;
-  group_members: GroupMemberTable;
-  group_permissions: GroupPermissionTable;
+  roles: RoleTable;
+  user_roles: UserRoleTable;
+  role_permissions: RolePermissionTable;
+  role_inheritance: RoleInheritanceTable;
+  ssd_sets: SsdSetTable;
+  ssd_set_roles: SsdSetRoleTable;
+  dsd_sets: DsdSetTable;
+  dsd_set_roles: DsdSetRoleTable;
+  user_session_roles: UserSessionRoleTable;
+  invite_roles: InviteRoleTable;
+  migration_discarded_grants: MigrationDiscardedGrantTable;
   invites: InviteTable;
   dashboards: DashboardTable;
   dashboard_layouts: DashboardLayoutTable;
@@ -1570,15 +1629,37 @@ export type UserPermission = Selectable<UserPermissionTable>;
 export type NewUserPermission = Insertable<UserPermissionTable>;
 export type UserPermissionUpdate = Updateable<UserPermissionTable>;
 
-export type Group = Selectable<GroupTable>;
-export type NewGroup = Insertable<GroupTable>;
-export type GroupUpdate = Updateable<GroupTable>;
+export type Role = Selectable<RoleTable>;
+export type NewRole = Insertable<RoleTable>;
+export type RoleUpdate = Updateable<RoleTable>;
 
-export type GroupMember = Selectable<GroupMemberTable>;
-export type NewGroupMember = Insertable<GroupMemberTable>;
+export type UserRole = Selectable<UserRoleTable>;
+export type NewUserRole = Insertable<UserRoleTable>;
 
-export type GroupPermission = Selectable<GroupPermissionTable>;
-export type NewGroupPermission = Insertable<GroupPermissionTable>;
+export type RolePermission = Selectable<RolePermissionTable>;
+export type NewRolePermission = Insertable<RolePermissionTable>;
+
+export type RoleInheritance = Selectable<RoleInheritanceTable>;
+export type NewRoleInheritance = Insertable<RoleInheritanceTable>;
+
+export type SsdSet = Selectable<SsdSetTable>;
+export type NewSsdSet = Insertable<SsdSetTable>;
+export type SsdSetRole = Selectable<SsdSetRoleTable>;
+export type NewSsdSetRole = Insertable<SsdSetRoleTable>;
+
+export type DsdSet = Selectable<DsdSetTable>;
+export type NewDsdSet = Insertable<DsdSetTable>;
+export type DsdSetRole = Selectable<DsdSetRoleTable>;
+export type NewDsdSetRole = Insertable<DsdSetRoleTable>;
+
+export type UserSessionRole = Selectable<UserSessionRoleTable>;
+export type NewUserSessionRole = Insertable<UserSessionRoleTable>;
+
+export type InviteRole = Selectable<InviteRoleTable>;
+export type NewInviteRole = Insertable<InviteRoleTable>;
+
+export type MigrationDiscardedGrant = Selectable<MigrationDiscardedGrantTable>;
+export type NewMigrationDiscardedGrant = Insertable<MigrationDiscardedGrantTable>;
 
 export type Invite = Selectable<InviteTable>;
 export type NewInvite = Insertable<InviteTable>;
