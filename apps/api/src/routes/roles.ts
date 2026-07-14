@@ -69,6 +69,17 @@ export function createRolesRouter(
         return;
       }
 
+      const duplicate = await db
+        .selectFrom('roles')
+        .where('workspace_id', '=', workspace.id)
+        .where('name', '=', parsed.data.name)
+        .select('id')
+        .executeTakeFirst();
+      if (duplicate) {
+        res.status(409).json({ data: null, error: { code: 'DUPLICATE_NAME', message: 'A role with this name already exists.' } });
+        return;
+      }
+
       const role = await db
         .insertInto('roles')
         .values({
@@ -121,10 +132,25 @@ export function createRolesRouter(
         return;
       }
 
+      if (parsed.data.name !== undefined) {
+        const duplicate = await db
+          .selectFrom('roles')
+          .where('workspace_id', '=', workspace.id)
+          .where('name', '=', parsed.data.name)
+          .where('id', '!=', existing.id)
+          .select('id')
+          .executeTakeFirst();
+        if (duplicate) {
+          res.status(409).json({ data: null, error: { code: 'DUPLICATE_NAME', message: 'A role with this name already exists.' } });
+          return;
+        }
+      }
+
       const updated = await db
         .updateTable('roles')
         .set({ ...parsed.data, updated_at: new Date() })
         .where('id', '=', existing.id)
+        .where('workspace_id', '=', workspace.id)
         .returning(['id', 'name', 'description', 'color', 'is_system', 'grants_all', 'is_default', 'max_members', 'rank'])
         .executeTakeFirst();
 
@@ -165,7 +191,7 @@ export function createRolesRouter(
       }
 
       await invalidateRoleMemberCaches(db, workspace.id, existing.id);
-      await db.deleteFrom('roles').where('id', '=', existing.id).execute();
+      await db.deleteFrom('roles').where('id', '=', existing.id).where('workspace_id', '=', workspace.id).execute();
 
       res.json({ data: null, error: null });
     } catch (err) {

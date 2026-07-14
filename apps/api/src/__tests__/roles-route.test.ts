@@ -166,6 +166,21 @@ describe('POST /api/roles', () => {
     expect(res['status']).toHaveBeenCalledWith(201);
     expect(db['insertInto']).toHaveBeenCalledWith('role_permissions');
   });
+
+  it('returns 409 when a role with the same name already exists', async () => {
+    const { db, chain } = buildDb();
+    // duplicate pre-check → an existing role is found
+    chain['executeTakeFirst'] = vi.fn().mockResolvedValueOnce({ id: 'existing' });
+
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(getFullStack(router, '/', 'post'), buildReq({ body: { name: 'Member' } }), res);
+
+    expect(res['status']).toHaveBeenCalledWith(409);
+    const arg = (res['json'] as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
+    expect(arg.error.code).toBe('DUPLICATE_NAME');
+    expect(db['insertInto']).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -197,14 +212,31 @@ describe('PATCH /api/roles/:id', () => {
     const updated = { id: 'r1', name: 'Renamed', description: null, color: '#6b665c', max_members: null };
     const { db, chain } = buildDb();
     chain['executeTakeFirst'] = vi.fn()
-      .mockResolvedValueOnce({ id: 'r1', is_system: false })
-      .mockResolvedValueOnce(updated);
+      .mockResolvedValueOnce({ id: 'r1', is_system: false }) // existing lookup
+      .mockResolvedValueOnce(undefined)                       // duplicate-name pre-check → none
+      .mockResolvedValueOnce(updated);                        // update result
 
     const router = createRolesRouter(db as never, allowPermission() as never);
     const res = buildRes();
     await runStack(getFullStack(router, '/:id', 'patch'), buildReq({ params: { id: 'r1' }, body: { name: 'Renamed' } }), res);
 
     expect(res['json']).toHaveBeenCalledWith({ data: updated, error: null });
+  });
+
+  it('returns 409 when renaming to a name already taken by another role', async () => {
+    const { db, chain } = buildDb();
+    chain['executeTakeFirst'] = vi.fn()
+      .mockResolvedValueOnce({ id: 'r1', is_system: false }) // existing lookup
+      .mockResolvedValueOnce({ id: 'other' });                // duplicate-name pre-check → collision
+
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(getFullStack(router, '/:id', 'patch'), buildReq({ params: { id: 'r1' }, body: { name: 'Administrator' } }), res);
+
+    expect(res['status']).toHaveBeenCalledWith(409);
+    const arg = (res['json'] as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
+    expect(arg.error.code).toBe('DUPLICATE_NAME');
+    expect(db['updateTable']).not.toHaveBeenCalled();
   });
 
   it('returns 400 for an empty update body', async () => {
