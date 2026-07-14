@@ -52,3 +52,19 @@ export function getModuleForPermission(key: string): string | null {
   const mod = MODULE_REGISTRY.find(m => m.permissions.some(p => p.key === key));
   return mod?.id ?? null;
 }
+
+// 'projects:view' is intentionally absent here: it survives the rewrite as its
+// own granular permission (see PROJECTS_MODULE), so it is not legacy and must
+// pass through expandLegacyPermission() unchanged.
+export const LEGACY_PERMISSION_MAP: Record<string, string[]> = {
+  'projects:manage': [
+    'projects:create', 'projects:edit', 'projects:archive',
+    'pm.tasks:assign', 'pm.tasks:delete',
+    'pm.sprints:manage', 'pm.milestones:manage',
+    'pm.automations:manage', 'pm.portal:manage', 'pm.docs:edit',
+  ],
+};
+
+export function expandLegacyPermission(key: string): string[] {
+  return LEGACY_PERMISSION_MAP[key] ?? [key];
+}

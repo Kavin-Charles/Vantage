@@ -5,6 +5,7 @@ import {
   getAllPermissions,
   MODULE_REGISTRY,
   INFRA_SUBMODULE_IDS,
+  expandLegacyPermission,
 } from './index';
 
 describe('getDefaultPermissionsForRole', () => {
@@ -115,5 +116,22 @@ describe('admin namespace', () => {
   });
   it('admin module is in the registry', () => {
     expect(MODULE_REGISTRY.some(m => m.id === 'admin')).toBe(true);
+  });
+});
+
+describe('PM fine-graining', () => {
+  it('maps legacy projects:manage to granular write keys', () => {
+    const out = expandLegacyPermission('projects:manage');
+    expect(out).toContain('projects:create');
+    expect(out).toContain('pm.sprints:manage');
+    expect(out).not.toContain('projects:view'); // view is separate
+  });
+  it('passes through non-legacy keys unchanged', () => {
+    expect(expandLegacyPermission('projects:view')).toEqual(['projects:view']);
+    expect(expandLegacyPermission('contacts:delete')).toEqual(['contacts:delete']);
+  });
+  it('registers new granular PM keys under projects', () => {
+    expect(getModuleForPermission('pm.sprints:manage')).toBe('projects');
+    expect(getModuleForPermission('pm.time:log')).toBe('projects');
   });
 });
