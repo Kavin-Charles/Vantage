@@ -2,10 +2,13 @@ import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
 import type { Kysely } from 'kysely';
 import type { Database, User, Workspace } from '@vencore/db';
+import { getEnabledModuleIds, resolveUserPermissions } from './permission';
 
 export interface AuthenticatedRequest extends Request {
   user: User;
   workspace: Workspace;
+  isAdmin: boolean;
+  permissions: Set<string>;
 }
 
 interface JwtPayload {
@@ -66,8 +69,13 @@ export function createRequireAuth(db: Kysely<Database>, jwtSecret: string) {
       return;
     }
 
+    const enabled = await getEnabledModuleIds(db, workspace.id);
+    const resolved = await resolveUserPermissions(db, user.id, workspace.id, enabled);
+
     (req as AuthenticatedRequest).user = user;
     (req as AuthenticatedRequest).workspace = workspace;
+    (req as AuthenticatedRequest).isAdmin = resolved.superuser;
+    (req as AuthenticatedRequest).permissions = resolved.permissions;
     next();
   };
 }
@@ -77,8 +85,8 @@ export function requireAdmin(
   res: Response,
   next: NextFunction,
 ): void {
-  const { user } = req as AuthenticatedRequest;
-  if (!user || user.role !== 'admin') {
+  const { user, isAdmin } = req as AuthenticatedRequest;
+  if (!user || !isAdmin) {
     res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
     return;
   }
