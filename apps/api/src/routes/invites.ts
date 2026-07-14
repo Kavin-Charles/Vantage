@@ -7,6 +7,7 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { SmtpConfig } from '@vencore/config';
 import type { AuthenticatedRequest } from '../middleware/auth';
+import { assignRole, getDefaultRoleId } from '../lib/role-assignment';
 
 const createInviteSchema = z.object({
   email: z.string().email(),
@@ -17,7 +18,6 @@ const directCreateSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(8),
-  role: z.enum(['admin', 'member']).default('member'),
 });
 
 const acceptInviteSchema = z.object({
@@ -29,14 +29,14 @@ export function createInvitesRouter(
   db: Kysely<Database>,
   smtp: SmtpConfig | null | undefined,
   requireAuth: RequestHandler,
-  requireAdmin: RequestHandler,
+  requireUsersManage: RequestHandler,
   appUrl: string,
 ): Router {
   const router = Router();
 
-  // POST /api/invites — create invite or direct-create (admin only)
-  // requireAuth + requireAdmin applied here so the accept routes below remain public
-  router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
+  // POST /api/invites — create invite or direct-create (users:manage only)
+  // requireAuth + requireUsersManage applied here so the accept routes below remain public
+  router.post('/', requireAuth, requireUsersManage, async (req, res, next) => {
     try {
       const { workspace, user: inviter } = req as unknown as AuthenticatedRequest;
 
@@ -119,6 +119,12 @@ export function createInvitesRouter(
           return;
         }
 
+        const defaultRoleId = await getDefaultRoleId(db, workspace.id);
+        if (!defaultRoleId) {
+          res.status(500).json({ data: null, error: { code: 'NO_DEFAULT_ROLE' } });
+          return;
+        }
+
         const hash = await bcrypt.hash(parsed.data.password, 12);
         const user = await db
           .insertInto('users')
@@ -127,10 +133,11 @@ export function createInvitesRouter(
             name: parsed.data.name,
             email: parsed.data.email,
             password_hash: hash,
-            role: parsed.data.role,
           })
-          .returning(['id', 'name', 'email', 'role', 'created_at'])
+          .returning(['id', 'name', 'email', 'created_at'])
           .executeTakeFirstOrThrow();
+
+        await assignRole(db, workspace.id, user.id, defaultRoleId);
 
         res.status(201).json({ data: { user }, error: null });
       }
@@ -192,17 +199,25 @@ export function createInvitesRouter(
         return;
       }
 
+      const defaultRoleId = await getDefaultRoleId(db, invite.workspace_id);
+      if (!defaultRoleId) {
+        res.status(500).json({ data: null, error: { code: 'NO_DEFAULT_ROLE' } });
+        return;
+      }
+
       const hash = await bcrypt.hash(parsed.data.password, 12);
-      await db
+      const newUser = await db
         .insertInto('users')
         .values({
           workspace_id: invite.workspace_id,
           name: parsed.data.name,
           email: invite.email,
           password_hash: hash,
-          role: invite.role as 'admin' | 'member',
         })
-        .execute();
+        .returning(['id'])
+        .executeTakeFirstOrThrow();
+
+      await assignRole(db, invite.workspace_id, newUser.id, defaultRoleId);
 
       await db
         .updateTable('invites')
