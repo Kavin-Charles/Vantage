@@ -172,6 +172,10 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     join roles r on r.workspace_id = rt.workspace_id and r.is_system = true
     where rtp.record_type_id = rt.id
       and ((rtp.role = 'admin' and r.grants_all = true) or (rtp.role <> 'admin' and r.is_default = true))`.execute(db);
+  // Every workspace is seeded with both system roles (step 5) and the old
+  // `role` was NOT NULL CHECK IN('admin','member'), so every row is backfilled
+  // — enforce NOT NULL so the RolePermission role_id type is honest.
+  await sql`alter table record_type_permissions alter column role_id set not null`.execute(db);
   await sql`alter table record_type_permissions drop column role`.execute(db);
 
   // 8. Move per-user overrides to the discarded-grants report, then drop them.
