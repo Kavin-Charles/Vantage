@@ -107,3 +107,13 @@ describe('INFRA_SUBMODULES', () => {
     ]);
   });
 });
+
+describe('admin namespace', () => {
+  it('registers roles:manage under the admin module', () => {
+    expect(getModuleForPermission('roles:manage')).toBe('admin');
+    expect(getModuleForPermission('users:manage')).toBe('admin');
+  });
+  it('admin module is in the registry', () => {
+    expect(MODULE_REGISTRY.some(m => m.id === 'admin')).toBe(true);
+  });
+});

@@ -7,6 +7,7 @@ export * from './activity';
 export * from './dashboard';
 export * from './projects';
 export * from './messaging';
+export * from './admin';
 
 import { CRM_MODULE } from './crm';
 import { INFRA_MODULE } from './infra';
@@ -15,6 +16,7 @@ import { ACTIVITY_MODULE } from './activity';
 import { DASHBOARD_MODULE } from './dashboard';
 import { PROJECTS_MODULE } from './projects';
 import { MESSAGING_MODULE } from './messaging';
+import { ADMIN_MODULE } from './admin';
 import type { ModuleDefinition, PermissionDef, UserRole } from './types';
 import type { HookFeature } from './hook-types';
 import { PROJECT_MANAGEMENT_HOOKS } from './projects/hooks';
@@ -31,6 +33,7 @@ export const MODULE_REGISTRY: ModuleDefinition[] = [
   ACTIVITY_MODULE,
   PROJECTS_MODULE,
   MESSAGING_MODULE,
+  ADMIN_MODULE,
 ];
 
 export const MODULE_IDS: string[] = MODULE_REGISTRY.map(m => m.id);
