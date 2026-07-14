@@ -58,7 +58,7 @@ export function getModuleForPermission(key: string): string | null {
 // pass through expandLegacyPermission() unchanged.
 export const LEGACY_PERMISSION_MAP: Record<string, string[]> = {
   'projects:manage': [
-    'projects:create', 'projects:edit', 'projects:archive',
+    'projects:create', 'projects:edit', 'projects:archive', 'projects:delete',
     'pm.tasks:assign', 'pm.tasks:delete',
     'pm.sprints:manage', 'pm.milestones:manage',
     'pm.automations:manage', 'pm.portal:manage', 'pm.docs:edit',

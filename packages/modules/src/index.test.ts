@@ -124,6 +124,7 @@ describe('PM fine-graining', () => {
     const out = expandLegacyPermission('projects:manage');
     expect(out).toContain('projects:create');
     expect(out).toContain('pm.sprints:manage');
+    expect(out).toContain('projects:delete'); // broad admin write retains delete
     expect(out).not.toContain('projects:view'); // view is separate
   });
   it('passes through non-legacy keys unchanged', () => {
