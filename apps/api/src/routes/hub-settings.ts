@@ -21,8 +21,8 @@ export function createHubSettingsRouter(db: Kysely<Database>): Router {
   // Powers the Integrations page without hardcoding any domain or plugin.
   router.get('/', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
         return;
       }
@@ -66,8 +66,8 @@ export function createHubSettingsRouter(db: Kysely<Database>): Router {
   // GET /api/settings/domain/:domain — contributed sections + current values
   router.get('/:domain', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
         return;
       }
@@ -117,8 +117,8 @@ export function createHubSettingsRouter(db: Kysely<Database>): Router {
   // PUT /api/settings/domain/:domain — save contributed values
   router.put('/:domain', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
         return;
       }

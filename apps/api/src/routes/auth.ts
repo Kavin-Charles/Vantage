@@ -64,7 +64,7 @@ export function createAuthRouter(
         .execute();
 
       const token = jwt.sign(
-        { sub: user.id, role: user.role, workspaceId: user.workspace_id },
+        { sub: user.id, workspaceId: user.workspace_id },
         jwtSecret,
         { expiresIn: '24h' },
       );
@@ -77,7 +77,7 @@ export function createAuthRouter(
         path: '/',
       });
 
-      res.json({ data: { id: user.id, name: user.name, email: user.email, role: user.role, token }, error: null });
+      res.json({ data: { id: user.id, name: user.name, email: user.email, token }, error: null });
     } catch (err) {
       logger.error({ err }, 'POST /login error');
       res.status(500).json({ data: null, error: { code: 'INTERNAL_ERROR' } });
@@ -138,7 +138,7 @@ export function createAuthRouter(
       const user = await db
         .selectFrom('users')
         .where('id', '=', payload.sub)
-        .select(['id', 'name', 'email', 'role', 'workspace_id'])
+        .select(['id', 'name', 'email', 'workspace_id'])
         .executeTakeFirst();
 
       if (!user) {

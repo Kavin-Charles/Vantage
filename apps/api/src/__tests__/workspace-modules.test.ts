@@ -11,7 +11,9 @@ function buildApp(db: Partial<Kysely<Database>>, role: 'admin' | 'member' = 'adm
   app.use(express.json());
   app.use((req, _res, next) => {
     (req as any).workspace = { id: 'ws-1' };
-    (req as any).user = { id: 'user-1', role };
+    (req as any).user = { id: 'user-1' };
+    (req as any).isAdmin = role === 'admin';
+    (req as any).permissions = new Set<string>();
     next();
   });
   app.use('/api/workspace/modules', createWorkspaceModulesRouter(db as Kysely<Database>));

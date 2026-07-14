@@ -77,14 +77,14 @@ export function createUnifiedTasksRouter(db: Kysely<Database>, requirePermission
 
   router.get('/', requirePermission('tasks:view'), async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest
+      const { workspace, user, isAdmin } = req as unknown as AuthenticatedRequest
       const parsed = querySchema.safeParse(req.query)
       if (!parsed.success) {
         res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } })
         return
       }
       const { status, source, priority, show_all, q } = parsed.data
-      const showAll = show_all && user.role === 'admin'
+      const showAll = show_all && isAdmin
 
       // ── 1. CRM tasks ────────────────────────────────────────────────────────
       let crmQ = db

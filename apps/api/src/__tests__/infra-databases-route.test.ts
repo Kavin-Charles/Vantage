@@ -8,7 +8,7 @@ describe('infra databases router safety wiring', () => {
 
     expect(source).toContain('redactInfraDatabase');
     expect(source).toContain('runTargetDatabaseSql');
-    expect(source).toContain("user.role !== 'admin'");
+    expect(source).toContain('return req.isAdmin;');
     expect(source).toContain("{ code: 'FORBIDDEN'");
     expect(source).toContain("db_password: body.db_password");
   });

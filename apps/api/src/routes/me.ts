@@ -4,7 +4,6 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
-import { resolvePermissions, getEnabledModuleIds } from '../middleware/permission';
 
 const patchMeSchema = z.object({
   name: z.string().min(1).max(255).optional(),
@@ -21,16 +20,17 @@ export function createMeRouter(db: Kysely<Database>): ExpressRouter {
 
   router.get('/', async (req, res, next) => {
     try {
-      const { user, workspace } = req as unknown as AuthenticatedRequest;
+      const { user, workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
 
-      let permissions: string[] = [];
-      if (user.role === 'member') {
-        const enabledModuleIds = await getEnabledModuleIds(db, workspace.id);
-        const perms = await resolvePermissions(db, user.id, workspace.id, user.role, enabledModuleIds);
-        permissions = [...perms];
-      }
-
-      res.json({ data: { user: { ...user, permissions }, workspace }, error: null });
+      res.json({
+        data: {
+          user: { id: user.id, name: user.name, email: user.email },
+          workspace,
+          isAdmin,
+          permissions: [...permissions],
+        },
+        error: null,
+      });
     } catch (e) {
       next(e);
     }
@@ -54,7 +54,7 @@ export function createMeRouter(db: Kysely<Database>): ExpressRouter {
         .updateTable('users')
         .set(parsed.data)
         .where('id', '=', user.id)
-        .returning(['id', 'name', 'email', 'role', 'theme'])
+        .returning(['id', 'name', 'email', 'theme'])
         .executeTakeFirstOrThrow();
 
       res.json({ data: updated, error: null });

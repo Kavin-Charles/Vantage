@@ -46,9 +46,9 @@ export function createModuleEventSettingsRouter(db: Kysely<Database>): ExpressRo
 
   router.patch('/:moduleId', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
 
-      if (user.role !== 'admin') {
+      if (!isAdmin && !permissions.has('workspace:manage')) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN', message: 'Admin only' } });
         return;
       }

@@ -54,7 +54,7 @@ const dbThresholdSchema = z.object({
 });
 
 function isAdmin(req: AuthenticatedRequest): boolean {
-  return req.user.role === 'admin';
+  return req.isAdmin;
 }
 
 function forbidden(res: Response): void {
@@ -417,8 +417,8 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
   router.patch('/:id/tables/:table/rows', async (req, res, next) => {
     try {
       const auth = req as unknown as AuthenticatedRequest;
-      const { workspace, user } = auth;
-      if (user.role !== 'admin') { forbidden(res); return; }
+      const { workspace } = auth;
+      if (!isAdmin(auth)) { forbidden(res); return; }
       const body = updateRowSchema.parse(req.body);
       const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
       if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
@@ -476,7 +476,7 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
         return;
       }
       if (classification.kind === 'dml') {
-        if (user.role !== 'admin') { forbidden(res); return; }
+        if (!isAdmin(auth)) { forbidden(res); return; }
         if (!body.confirmed) {
           res.status(400).json({ data: null, error: { code: 'CONFIRMATION_REQUIRED', message: 'Confirm before running write SQL' } });
           return;
@@ -639,11 +639,12 @@ export function createInfraDatabasesRouter(db: Kysely<Database>): ExpressRouter 
   // GET /:id/connection-string
   router.get('/:id/connection-string', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      const auth = req as unknown as AuthenticatedRequest;
+      const { workspace } = auth;
       const infraDb = await getWorkspaceDatabase(db, workspace.id, req.params['id'] as string);
       if (!infraDb) { res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Database not found' } }); return; }
       const reveal = req.query['reveal'] === 'true';
-      if (reveal && user.role !== 'admin') {
+      if (reveal && !isAdmin(auth)) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN', message: 'Admin role required to reveal credentials' } });
         return;
       }

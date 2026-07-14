@@ -59,7 +59,7 @@ export async function handleTerminalUpgrade(
   const user = await db
     .selectFrom('users')
     .where('id', '=', payload.sub)
-    .select(['id', 'workspace_id', 'role'])
+    .select(['id', 'workspace_id'])
     .executeTakeFirst();
   if (!user) { ws.close(4001, 'Unauthorized'); return; }
 
