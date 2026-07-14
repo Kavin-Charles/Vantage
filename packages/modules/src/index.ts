@@ -42,6 +42,7 @@ export function getAllPermissions(): PermissionDef[] {
   return MODULE_REGISTRY.flatMap(m => m.permissions);
 }
 
+/** @deprecated Roles are explicit DB permission sets now. Use only for seeding/templates. */
 export function getDefaultPermissionsForRole(role: UserRole): string[] {
   return getAllPermissions()
     .filter(p => p.defaultRoles.includes(role))
