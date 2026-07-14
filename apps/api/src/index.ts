@@ -21,6 +21,7 @@ import { createWorkspaceModulesRouter } from './routes/workspace-modules';
 import { createWorkspaceRouter } from './routes/workspace';
 import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
+import { createRolesRouter } from './routes/roles';
 import { createCrossModuleSettingsRouter } from './routes/cross-module-settings';
 import { createSidebarRouter } from './routes/sidebar';
 import { createInvitesRouter } from './routes/invites';
@@ -439,6 +440,7 @@ app.use('/api/workspace', requireAuth, requireAdmin, createWorkspaceRouter(db));
 app.use('/api/cross-module-settings', requireAuth, requireAdmin, createCrossModuleSettingsRouter(db));
 app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requirePermission('users:manage'), env.APP_URL));
 app.use('/api/users', requireAuth, requirePermission('users:manage'), createUsersRouter(db));
+app.use('/api/roles', requireAuth, createRolesRouter(db, requirePermission));
 
 // Sidebar layout — GET open to all members, PUT /layout self-guards with requireAdmin
 app.use('/api/sidebar', requireAuth, createSidebarRouter(db));
