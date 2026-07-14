@@ -108,6 +108,16 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     )`.execute(db);
 
   // 5. Seed system roles per workspace.
+  // First free the canonical system-role names. At this point no system roles
+  // exist yet, so any role already named 'Administrator'/'Member' is a user's
+  // custom group. Renaming it (rather than upserting onto it) preserves its
+  // members/permissions and, critically, avoids silently granting grants_all
+  // to a custom group's members. The `(workspace_id, name)` unique index would
+  // otherwise make the seed INSERT below abort the whole migration transaction.
+  await sql`
+    update roles set name = name || ' (legacy)', updated_at = now()
+    where name in ('Administrator', 'Member')`.execute(db);
+
   const seedPerms = memberSeedPermissions();
   const workspaces = await sql<{ id: string }>`select id from workspaces`.execute(db);
   for (const ws of workspaces.rows) {
