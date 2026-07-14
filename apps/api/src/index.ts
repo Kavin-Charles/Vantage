@@ -21,11 +21,9 @@ import { createWorkspaceModulesRouter } from './routes/workspace-modules';
 import { createWorkspaceRouter } from './routes/workspace';
 import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
-import { createGroupsRouter } from './routes/groups';
 import { createCrossModuleSettingsRouter } from './routes/cross-module-settings';
 import { createSidebarRouter } from './routes/sidebar';
 import { createInvitesRouter } from './routes/invites';
-import { createUserPermissionsRouter } from './routes/user-permissions';
 import { createConfigRouter } from './routes/config';
 import { createSetupRouter } from './routes/setup';
 import { createMeRouter } from './routes/me';
@@ -438,11 +436,9 @@ app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
 
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/workspace', requireAuth, requireAdmin, createWorkspaceRouter(db));
-app.use('/api/groups', requireAuth, requireAdmin, createGroupsRouter(db));
 app.use('/api/cross-module-settings', requireAuth, requireAdmin, createCrossModuleSettingsRouter(db));
-app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requireAdmin, env.APP_URL));
-app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
-app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
+app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requirePermission('users:manage'), env.APP_URL));
+app.use('/api/users', requireAuth, requirePermission('users:manage'), createUsersRouter(db));
 
 // Sidebar layout — GET open to all members, PUT /layout self-guards with requireAdmin
 app.use('/api/sidebar', requireAuth, createSidebarRouter(db));
