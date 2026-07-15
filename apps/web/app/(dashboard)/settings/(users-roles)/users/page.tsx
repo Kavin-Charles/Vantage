@@ -112,10 +112,10 @@ export default function UsersPage() {
                     <span style={badgeStyle('var(--amber)', 'var(--amber-bg)')}>Inactive</span>
                   )}
                   <a
-                    href={`/settings/users/${u.id}/permissions`}
+                    href={`/settings/users/${u.id}`}
                     style={{ fontSize: 12, color: 'var(--blue)', textDecoration: 'none' }}
                   >
-                    Permissions
+                    Roles
                   </a>
                   <button
                     onClick={() => patchUser.mutate({ id: u.id, body: { is_active: !u.is_active } })}

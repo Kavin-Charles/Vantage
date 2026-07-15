@@ -119,10 +119,10 @@ export default function TeamPage() {
                       <span style={{ fontSize: 12, color: 'var(--text3)', textTransform: 'capitalize' }}>{u.role}</span>
                       {currentUser?.role === 'admin' && (
                         <a
-                          href={`/settings/team/${u.id}/permissions`}
+                          href={`/settings/users/${u.id}`}
                           style={{ fontSize: 12, color: 'var(--blue)', textDecoration: 'none' }}
                         >
-                          Permissions
+                          Roles
                         </a>
                       )}
                     </div>
