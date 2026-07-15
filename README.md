@@ -6,7 +6,7 @@
 
 **One Platform to Run Your Entire Business**
 
-Vencore is a modular company management solution. Bring together your CRM, infrastructure monitoring, team tasks, analytics, and billing — all in one self-hosted platform. Add the modules your business needs, skip the ones you don't.
+Vencore is a modular company management solution. Bring together your CRM, HR, infrastructure monitoring, team tasks, analytics, and billing — all in one self-hosted platform. Add the modules your business needs, skip the ones you don't.
 
 Self-hosted, config-file driven, no external service dependencies beyond Postgres and Redis.
 
