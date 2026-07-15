@@ -7,8 +7,9 @@ import { invalidateRoleMemberCaches, invalidatePermissionCache } from '../middle
 // getDefaultPermissionsForRole is @deprecated for general use but explicitly allowed
 // here as the seed template for POST /api/roles { copyDefaults: true }.
 import { getDefaultPermissionsForRole, getModuleForPermission } from '@vencore/modules';
-import { buildGroupedPermissions, loadInheritanceEdges } from '../lib/rbac/db';
-import { authorizedRoleClosure } from '../lib/rbac/closure';
+import { buildGroupedPermissions, loadInheritanceEdges, loadSsdSets } from '../lib/rbac/db';
+import { authorizedRoleClosure, wouldCreateCycle } from '../lib/rbac/closure';
+import { checkSSD } from '../lib/rbac/constraints';
 
 const createRoleSchema = z.object({
   name: z.string().min(1).max(100),
@@ -32,6 +33,8 @@ const permissionsBodySchema = z.union([
 ]);
 
 const memberBodySchema = z.object({ userId: z.string().uuid() });
+
+const inheritBodySchema = z.object({ childRoleId: z.string().uuid() });
 
 export function createRolesRouter(
   db: Kysely<Database>,
@@ -411,6 +414,86 @@ export function createRolesRouter(
       await db.deleteFrom('user_session_roles').where('role_id', '=', roleId).where('user_id', '=', userId).execute();
 
       invalidatePermissionCache(workspace.id, userId);
+      res.json({ data: null, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // POST /api/roles/:id/inherit — parent (:id) inherits child; rejects cycles and SSD conflicts
+  router.post('/:id/inherit', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const parsed = inheritBodySchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', details: parsed.error.flatten() } });
+        return;
+      }
+      const parent = req.params['id']!;
+      const child = parsed.data.childRoleId;
+      if (parent === child) {
+        res.status(400).json({ data: null, error: { code: 'CYCLE' } });
+        return;
+      }
+
+      const edges = await loadInheritanceEdges(db);
+      if (wouldCreateCycle(edges, { parent, child })) {
+        res.status(400).json({ data: null, error: { code: 'CYCLE' } });
+        return;
+      }
+
+      // SSD: with the new edge in place, re-check every member of `parent`'s authorized closure.
+      const newEdges = [...edges, { parent, child }];
+      const ssdSets = await loadSsdSets(db, workspace.id);
+      const members = await db
+        .selectFrom('user_roles')
+        .where('role_id', '=', parent)
+        .where('workspace_id', '=', workspace.id)
+        .select('user_id')
+        .execute();
+
+      const conflicts: { userId: string; sets: { setId: string; name: string }[] }[] = [];
+      for (const m of members) {
+        const assigned = await db
+          .selectFrom('user_roles')
+          .where('user_id', '=', m.user_id)
+          .where('workspace_id', '=', workspace.id)
+          .select('role_id')
+          .execute();
+        const closure = authorizedRoleClosure(assigned.map(r => r.role_id), newEdges);
+        const violations = checkSSD(closure, ssdSets);
+        if (violations.length > 0) conflicts.push({ userId: m.user_id, sets: violations });
+      }
+      if (conflicts.length > 0) {
+        res.status(409).json({ data: null, error: { code: 'SSD_CONFLICT', conflicts } });
+        return;
+      }
+
+      await db
+        .insertInto('role_inheritance')
+        .values({ parent_role_id: parent, child_role_id: child })
+        .onConflict(oc => oc.columns(['parent_role_id', 'child_role_id']).doNothing())
+        .execute();
+      await invalidateRoleMemberCaches(db, workspace.id, parent);
+      res.status(201).json({ data: null, error: null });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // DELETE /api/roles/:id/inherit/:childId — remove an inheritance edge
+  router.delete('/:id/inherit/:childId', async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const parent = req.params['id']!;
+      const child = req.params['childId']!;
+
+      await db
+        .deleteFrom('role_inheritance')
+        .where('parent_role_id', '=', parent)
+        .where('child_role_id', '=', child)
+        .execute();
+      await invalidateRoleMemberCaches(db, workspace.id, parent);
       res.json({ data: null, error: null });
     } catch (err) {
       next(err);
