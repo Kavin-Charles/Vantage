@@ -24,6 +24,7 @@ import { createUsersRouter } from './routes/users';
 import { createRolesRouter } from './routes/roles';
 import { createRbacConstraintsRouter } from './routes/rbac-constraints';
 import { createUserRolesRouter } from './routes/user-roles';
+import { createSessionRolesRouter } from './routes/session-roles';
 import { createCrossModuleSettingsRouter } from './routes/cross-module-settings';
 import { createSidebarRouter } from './routes/sidebar';
 import { createInvitesRouter } from './routes/invites';
@@ -420,6 +421,8 @@ app.use('/api/project-templates', requireAuth, createProjectTemplatesRouter(db))
 // Public portal — no requireAuth
 app.use('/api/portal', createPortalRouter(db, env.JWT_SECRET));
 app.use('/api/me/tasks', requireAuth, createMyTasksRouter(db));
+// Self-service session-role activation — any authenticated user manages their own active roles.
+app.use('/api/me/active-roles', requireAuth, createSessionRolesRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
 app.use('/api/analytics', requireAuth, requireModule('analytics'), createAnalyticsRouter(db, requirePermission));
 app.use('/api/webhooks', requireAuth, createWebhooksRouter(db));
