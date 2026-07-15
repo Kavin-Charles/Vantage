@@ -4,10 +4,8 @@ export interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'member';
-  workspace_id: string;
+  isAdmin: boolean;
   permissions: string[];
-  theme: 'light' | 'dark';
 }
 
 interface AuthState {
