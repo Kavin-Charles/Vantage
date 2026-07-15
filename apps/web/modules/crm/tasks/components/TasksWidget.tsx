@@ -1,6 +1,7 @@
 'use client'
 
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry'
+import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry'
 import { useUnifiedTasks } from '../lib/useUnifiedTasks'
 import { useToggleTask } from '../lib/taskMutations'
 import type { UnifiedTask } from '../lib/types'
@@ -105,7 +106,7 @@ function WidgetTaskRow({ task, isOverdue, onToggle }: { task: UnifiedTask; isOve
   )
 }
 
-function TasksWidgetInner() {
+function TasksWidgetInner({ config: _config }: { config: WidgetConfig }) {
   const { data, isLoading } = useUnifiedTasks({ status: 'todo' })
   const toggleMut = useToggleTask()
 
@@ -181,12 +182,18 @@ function TasksWidgetInner() {
 
 registerDashboardWidget({
   id: 'tasks-overview',
-  label: 'Tasks Overview',
+  label: 'My Tasks',
   description: 'Overdue, due today, and open task counts with a quick task list',
+  icon: 'tasks',
+  category: 'projects',
+  sizeOptions: ['medium', 'large'],
+  defaultSize: 'medium',
   defaultW: 4,
   defaultH: 4,
   minW: 3,
   minH: 3,
+  supportedFilters: [],
+  defaultConfig: {},
   component: TasksWidgetInner,
 })
 

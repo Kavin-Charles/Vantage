@@ -7,6 +7,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { WidgetSkeleton, WidgetError, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
+import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
 
 const TYPE_ICON: Record<string, string> = {
   email: 'message-square',
@@ -26,7 +27,7 @@ function relativeTime(value: Date | string): string {
   return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function ActivityWidget() {
+export function ActivityWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const enabled = isEnabled('activity');
   const getToken = useApiToken();
@@ -34,7 +35,8 @@ export function ActivityWidget() {
   const query = useQuery({
     queryKey: ['widget', 'activity'],
     queryFn: async () => listActivity(await getToken(), { limit: 8 }),
-    refetchInterval: 60_000,
+    refetchInterval: config.refreshInterval ?? 120_000,
+    refetchIntervalInBackground: false,
     staleTime: 30_000,
     enabled,
   });

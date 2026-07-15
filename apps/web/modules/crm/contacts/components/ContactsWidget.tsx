@@ -12,6 +12,7 @@ import { Icon } from '@/modules/shared/components/ui/Icon';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { WidgetSkeleton, WidgetError } from '@/modules/shared/components/ui/WidgetHelpers';
 import type { Contact, ContactStatus } from '@vencore/types';
+import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
 
 const STATUSES: ContactStatus[] = ['prospect', 'customer', 'cold', 'churned'];
 
@@ -44,7 +45,7 @@ function relativeTime(value: Date | string | null): string {
   return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function ContactsWidget() {
+export function ContactsWidget({ config: _config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const enabled = isEnabled('crm');
   const getToken = useApiToken();

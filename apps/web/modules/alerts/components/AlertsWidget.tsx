@@ -7,6 +7,8 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { WidgetSkeleton, WidgetError, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
+import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
 import type { Alert } from '@vencore/types';
 
 const SEVERITY_STYLE: Record<string, { fg: string; bg: string }> = {
@@ -23,7 +25,7 @@ function relativeTime(value: Date | string): string {
   return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function AlertsWidget() {
+export function AlertsWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const enabled = isEnabled('alerts');
   const getToken = useApiToken();
@@ -36,7 +38,8 @@ export function AlertsWidget() {
         '/api/alerts?resolved=false&severity=critical,warning&limit=6',
         { token: await getToken() },
       ),
-    refetchInterval: 60_000,
+    refetchInterval: config.refreshInterval ?? 60_000,
+    refetchIntervalInBackground: false,
     staleTime: 30_000,
     enabled,
   });
@@ -105,3 +108,20 @@ export function AlertsWidget() {
     </div>
   );
 }
+
+registerDashboardWidget({
+  id: 'core:alerts',
+  label: 'Alerts',
+  description: 'Unresolved critical and warning alerts with quick acknowledge',
+  icon: 'warning',
+  category: 'insights',
+  sizeOptions: ['medium', 'large'],
+  defaultSize: 'medium',
+  defaultW: 4,
+  defaultH: 3,
+  minW: 3,
+  minH: 2,
+  supportedFilters: ['refreshInterval'],
+  defaultConfig: { refreshInterval: 60_000 },
+  component: AlertsWidget,
+});
