@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
@@ -20,11 +20,12 @@ import {
 } from '../../lib/dashboard-api';
 import { DashboardHeader } from '../../components/DashboardHeader';
 import { DashboardGrid } from '../../components/DashboardGrid';
-import { AddWidgetPanel } from '../../components/AddWidgetPanel';
+import { WidgetMarketplaceModal } from '../../components/WidgetMarketplaceModal';
 import { GroupAssignModal } from '../../components/GroupAssignModal';
 import { DashboardTabs } from '../../components/DashboardTabs';
 import { CreateDashboardModal } from '../../components/CreateDashboardModal';
-import type { DashboardWidgetDef } from '@/modules/shared/lib/dashboard-registry';
+import type { DashboardWidgetDef, WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import '@/modules/shared/lib/register-all-widgets';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
 import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
@@ -62,6 +63,26 @@ export function DashboardPage({ dashboardId }: Props) {
 
   const currentLayout = pendingLayout ?? dashboard?.layout ?? [];
   const currentWidgetIds = new Set(currentLayout.map(r => r.widget_id));
+
+  const configSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const layoutRowsRef = useRef(currentLayout);
+  useEffect(() => { layoutRowsRef.current = currentLayout; }, [currentLayout]);
+
+  function handleConfigChange(widgetId: string, config: WidgetConfig) {
+    setPendingLayout(prev =>
+      (prev ?? currentLayout).map(r => r.widget_id === widgetId ? { ...r, config } : r)
+    );
+    if (configSaveTimer.current) clearTimeout(configSaveTimer.current);
+    configSaveTimer.current = setTimeout(async () => {
+      const token = await getToken();
+      const rows = layoutRowsRef.current;
+      await saveLayout(dashboardId, rows.map(r => ({
+        widget_id: r.widget_id, x: r.x, y: r.y, w: r.w, h: r.h,
+        min_w: r.min_w, min_h: r.min_h, permission_key: r.permission_key,
+        config: r.config,
+      })), token);
+    }, 800);
+  }
 
   function handleToggleEdit() {
     setIsEditMode(true);
@@ -241,11 +262,12 @@ export function DashboardPage({ dashboardId }: Props) {
           isEditMode={isEditMode}
           pluginWidgets={pluginWidgets}
           onLayoutChange={rows => setPendingLayout(rows)}
+          onConfigChange={handleConfigChange}
           onRemoveWidget={handleRemoveWidget}
         />
       </div>
 
-      <AddWidgetPanel
+      <WidgetMarketplaceModal
         open={showAddWidget}
         onClose={() => setShowAddWidget(false)}
         currentWidgetIds={currentWidgetIds}
