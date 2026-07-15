@@ -84,11 +84,6 @@ export function relativeTime(value: Date | string): string {
   return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function StatusDot({ status }: { status: 'online' | 'healthy' | 'degraded' | 'offline' | 'stopped' | string }) {
-  const color = (status === 'online' || status === 'healthy')
-    ? 'var(--green)'
-    : (status === 'degraded')
-      ? 'var(--amber)'
-      : 'var(--red)';
+export function StatusDot({ color }: { color: string }) {
   return <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, display: 'inline-block' }} />;
 }
