@@ -22,6 +22,7 @@ import { createWorkspaceRouter } from './routes/workspace';
 import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
 import { createRolesRouter } from './routes/roles';
+import { createRbacConstraintsRouter } from './routes/rbac-constraints';
 import { createUserRolesRouter } from './routes/user-roles';
 import { createCrossModuleSettingsRouter } from './routes/cross-module-settings';
 import { createSidebarRouter } from './routes/sidebar';
@@ -443,6 +444,7 @@ app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requir
 app.use('/api/users', requireAuth, requirePermission('users:manage'), createUsersRouter(db));
 app.use('/api/users/:id/roles', requireAuth, createUserRolesRouter(db, requirePermission));
 app.use('/api/roles', requireAuth, createRolesRouter(db, requirePermission));
+app.use('/api/rbac', requireAuth, createRbacConstraintsRouter(db, requirePermission));
 
 // Sidebar layout — GET open to all members, PUT /layout self-guards with requireAdmin
 app.use('/api/sidebar', requireAuth, createSidebarRouter(db));
