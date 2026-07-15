@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
@@ -15,6 +16,7 @@ interface UserWithActive extends User {
 
 export default function UsersPage() {
   const getToken = useApiToken();
+  const router = useRouter();
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const [showInvite, setShowInvite] = useState(false);
@@ -89,7 +91,11 @@ export default function UsersPage() {
             const cantRemove = isSelf || (u.role === 'admin' && adminCount <= 1);
 
             return (
-              <div key={u.id} style={{ ...rowStyle, opacity: u.is_active ? 1 : 0.5 }}>
+              <div
+                key={u.id}
+                onClick={() => router.push(`/settings/users/${u.id}`)}
+                style={{ ...rowStyle, opacity: u.is_active ? 1 : 0.5, cursor: 'pointer' }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
                     width: 32, height: 32, borderRadius: '50%', background: 'var(--surface2)',
@@ -111,21 +117,15 @@ export default function UsersPage() {
                   {!u.is_active && (
                     <span style={badgeStyle('var(--amber)', 'var(--amber-bg)')}>Inactive</span>
                   )}
-                  <a
-                    href={`/settings/users/${u.id}`}
-                    style={{ fontSize: 12, color: 'var(--blue)', textDecoration: 'none' }}
-                  >
-                    Roles
-                  </a>
                   <button
-                    onClick={() => patchUser.mutate({ id: u.id, body: { is_active: !u.is_active } })}
+                    onClick={e => { e.stopPropagation(); patchUser.mutate({ id: u.id, body: { is_active: !u.is_active } }); }}
                     disabled={isSelf}
                     style={{ fontSize: 12, color: 'var(--text2)', background: 'none', border: 'none', cursor: isSelf ? 'not-allowed' : 'pointer', opacity: isSelf ? 0.4 : 1 }}
                   >
                     {u.is_active ? 'Deactivate' : 'Reactivate'}
                   </button>
                   <button
-                    onClick={() => askConfirm({ title: 'Remove member', message: `Remove ${u.name} from this workspace?`, confirmLabel: 'Remove', variant: 'danger', onConfirm: () => deleteUser.mutate(u.id) })}
+                    onClick={e => { e.stopPropagation(); askConfirm({ title: 'Remove member', message: `Remove ${u.name} from this workspace?`, confirmLabel: 'Remove', variant: 'danger', onConfirm: () => deleteUser.mutate(u.id) }); }}
                     disabled={cantRemove}
                     style={{ fontSize: 12, color: 'var(--red)', background: 'none', border: 'none', cursor: cantRemove ? 'not-allowed' : 'pointer', opacity: cantRemove ? 0.4 : 1 }}
                     title={cantRemove ? (isSelf ? "Can't remove yourself" : "Can't remove last admin") : undefined}
