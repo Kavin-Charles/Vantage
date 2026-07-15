@@ -17,7 +17,7 @@ const widgetConfigSchema = z.object({
   chartType: z.enum(['line', 'bar', 'pie', 'area']).optional(),
   refreshInterval: z.number().int().min(1).optional(),
   filters: z.record(z.string(), z.string()).optional(),
-});
+}).passthrough();
 
 const layoutWidgetSchema = z.object({
   widget_id: z.string().min(1),
