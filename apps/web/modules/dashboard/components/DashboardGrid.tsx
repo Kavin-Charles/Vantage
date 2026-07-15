@@ -70,6 +70,7 @@ export function DashboardGrid({ layoutRows, isEditMode, pluginWidgets, onLayoutC
         min_w: l.minW ?? null,
         min_h: l.minH ?? null,
         permission_key: original?.permission_key ?? null,
+        config: original?.config ?? {},
       };
     });
     onLayoutChange(updated);

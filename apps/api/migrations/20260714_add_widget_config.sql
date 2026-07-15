@@ -1,0 +1,1 @@
+ALTER TABLE dashboard_layouts ADD COLUMN IF NOT EXISTS config JSONB NOT NULL DEFAULT '{}';

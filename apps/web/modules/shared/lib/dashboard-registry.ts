@@ -1,5 +1,14 @@
 import type React from 'react';
 
+export interface WidgetConfig {
+  timeRange?: '1d' | '7d' | '30d';
+  limit?: number;
+  compactMode?: boolean;
+  chartType?: 'line' | 'bar' | 'pie' | 'area';
+  refreshInterval?: number;
+  filters?: Record<string, string>;
+}
+
 export interface DashboardWidgetDef {
   id: string;
   label: string;

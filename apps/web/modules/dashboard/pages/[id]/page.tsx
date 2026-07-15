@@ -109,6 +109,7 @@ export function DashboardPage({ dashboardId }: Props) {
       min_w: def.minW ?? null,
       min_h: def.minH ?? null,
       permission_key: def.permission ?? null,
+      config: {},
     };
     setPendingLayout(prev => [...(prev ?? currentLayout), newRow]);
     setShowAddWidget(false);
