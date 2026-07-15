@@ -1,0 +1,1 @@
+export { default } from '@/modules/infra/alerts/pages/page';

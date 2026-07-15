@@ -2,15 +2,17 @@
 import type { Kysely, Transaction } from 'kysely';
 import type { Database } from '@vencore/db';
 import { MODULE_REGISTRY } from '../modules/registry';
-import { CRM_SUBMODULE_IDS } from '@vencore/modules';
+import { CRM_SUBMODULE_IDS, INFRA_SUBMODULE_IDS } from '@vencore/modules';
 
 // Maps installer feature flags → module IDs they control
 const FEATURE_MODULE_MAP: Record<string, string[]> = {
   crm:       ['crm', 'activity', ...CRM_SUBMODULE_IDS],
-  infra:     ['websites', 'servers', 'databases'],
+  infra:     ['infra:servers', 'infra:databases', 'infra:websites'],
   analytics: ['analytics'],
-  alerts:    [],  // no module yet — handled by alerts system
+  alerts:    ['infra:alerts'],
 };
+
+const ALL_SUBMODULE_IDS = [...CRM_SUBMODULE_IDS, ...INFRA_SUBMODULE_IDS];
 
 export async function seedWorkspaceModules(
   db: Kysely<Database> | Transaction<Database>,
@@ -31,18 +33,23 @@ export async function seedWorkspaceModules(
     ...MODULE_REGISTRY.map(m => ({
       workspace_id: workspaceId,
       module_id: m.id,
-      enabled: disabledModules.has(m.id) ? false : m.defaultEnabled,
+      // The infra parent stays enabled unless every one of its children is
+      // disabled by installer features (infra + alerts both deselected).
+      enabled:
+        m.id === 'infra'
+          ? INFRA_SUBMODULE_IDS.some(id => !disabledModules.has(id))
+          : disabledModules.has(m.id) ? false : m.defaultEnabled,
     })),
-    // CRM child modules (crm:pipeline/contacts/companies/tasks) — enabled by
-    // default, gated at runtime by the crm parent.
-    ...CRM_SUBMODULE_IDS.map(id => ({
+    // Parent-module children (crm:*/infra:*) — enabled by default, gated at
+    // runtime by their parent.
+    ...ALL_SUBMODULE_IDS.map(id => ({
       workspace_id: workspaceId,
       module_id: id,
       enabled: !disabledModules.has(id),
     })),
   ];
 
-  // Insert one row per registry module + CRM child, skip conflicts (idempotent)
+  // Insert one row per registry module + CRM/infra child, skip conflicts (idempotent)
   await db
     .insertInto('workspace_modules')
     .values(rows)

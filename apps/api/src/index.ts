@@ -15,7 +15,7 @@ import type { Database } from '@vencore/db';
 import { errorHandler } from './middleware/errors';
 import { createRequireAuth, requireAdmin, type AuthenticatedRequest } from './middleware/auth';
 import { decryptSettingValue, isEncryptedValue, encryptSettingValue } from './lib/plugin-settings-crypto';
-import { createRequireModule, createRequireCrmFeature } from './middleware/module';
+import { createRequireModule, createRequireModuleFeature } from './middleware/module';
 import { createRequirePermission } from './middleware/permission';
 import { createWorkspaceModulesRouter } from './routes/workspace-modules';
 import { createWorkspaceRouter } from './routes/workspace';
@@ -351,7 +351,9 @@ bridgeRegistry
 
 const requireAuth = createRequireAuth(db, env.JWT_SECRET);
 const requireModule = createRequireModule(db);
-const requireCrmFeature = createRequireCrmFeature(db);
+const requireModuleFeature = createRequireModuleFeature(db);
+const requireCrmFeature = requireModuleFeature('crm');
+const requireInfraFeature = requireModuleFeature('infra');
 const requirePermission = createRequirePermission(db);
 
 const app = express();
@@ -390,7 +392,7 @@ app.use(
 app.use('/api/tasks/unified', requireAuth, requireCrmFeature('crm:tasks'), createUnifiedTasksRouter(db, requirePermission));
 app.use('/api/tasks', requireAuth, requireCrmFeature('crm:tasks'), createTasksRouter(db, requirePermission));
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
-app.use('/api/alerts', requireAuth, requireModule('alerts'), createAlertsRouter(db));
+app.use('/api/alerts', requireAuth, requireInfraFeature('infra:alerts'), createAlertsRouter(db));
 app.use('/api/dashboards', requireAuth, createDashboardsRouter(db))
 app.use('/api/projects/widget-stats', requireAuth, createProjectWidgetStatsRouter(db));
 app.use('/api/projects', requireAuth, createProjectsRouter(db))
@@ -449,11 +451,11 @@ app.use('/api/sidebar', requireAuth, createSidebarRouter(db));
 app.use('/api/messaging', requireAuth, requireModule('messaging'), createMessagingRouter(db, requirePermission));
 
 // Infra routes
-app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db, requirePermission));
+app.use('/api/servers', requireAuth, requireInfraFeature('infra:servers'), createServersRouter(db, requirePermission));
 app.use('/api/sse', requireAuth, createSseRouter(db));
-app.use('/api/databases', requireAuth, requireModule('databases'), createInfraDatabasesRouter(db));
-app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesRouter(db, env.CRON_SECRET, requirePermission));
-app.use('/api/alert-thresholds', requireAuth, requireModule('alerts'), createAlertThresholdsRouter(db));
+app.use('/api/databases', requireAuth, requireInfraFeature('infra:databases'), createInfraDatabasesRouter(db));
+app.use('/api/websites', requireAuth, requireInfraFeature('infra:websites'), createWebsitesRouter(db, env.CRON_SECRET, requirePermission));
+app.use('/api/alert-thresholds', requireAuth, requireInfraFeature('infra:alerts'), createAlertThresholdsRouter(db));
 app.use('/api/settings/module-events', requireAuth, createModuleEventSettingsRouter(db));
 app.use('/api/settings/notifications', requireAuth, createNotificationPreferencesRouter(db));
 app.use('/api/settings', requireAuth, createHubProvidersRouter(db));
@@ -466,7 +468,7 @@ app.use('/api/system', createSystemRouter(db, env, requireAuth, requireAdmin));
 
 // SSH management
 app.use('/api/ssh', requireAuth, createSshKeypairRouter(db));
-app.use('/api/servers/:id/ssh', requireAuth, requireModule('servers'), requirePermission('servers:ssh'), createSshActionsRouter(db));
+app.use('/api/servers/:id/ssh', requireAuth, requireInfraFeature('infra:servers'), requirePermission('servers:ssh'), createSshActionsRouter(db));
 
 // Internal (cron) — protected by CRON_SECRET, no auth cookie
 app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));

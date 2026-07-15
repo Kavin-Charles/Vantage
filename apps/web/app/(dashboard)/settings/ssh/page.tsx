@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/modules/shared/components/ui/Button';
 import { FormField, Input } from '@/modules/shared/components/ui/FormField';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { getSshKeypair, regenerateSshKeypair, updateSshUser } from '@/modules/servers/lib/ssh';
+import { getSshKeypair, regenerateSshKeypair, updateSshUser } from '@/modules/infra/servers/lib/ssh';
 
 export default function SshSettingsPage() {
   const getToken = useApiToken();

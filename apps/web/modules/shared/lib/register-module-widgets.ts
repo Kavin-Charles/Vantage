@@ -1,9 +1,9 @@
 import { registerDashboardWidget } from './dashboard-registry';
 import { ContactsWidget } from '@/modules/crm/contacts/components/ContactsWidget';
 import { PipelineWidget } from '@/modules/crm/pipeline/components/PipelineWidget';
-import { ServersWidget } from '@/modules/servers/components/ServersWidget';
+import { ServersWidget } from '@/modules/infra/servers/components/ServersWidget';
 import { ProjectsWidget } from '@/modules/projects/components/ProjectsWidget';
-import { AlertsWidget } from '@/modules/alerts/components/AlertsWidget';
+import { AlertsWidget } from '@/modules/infra/alerts/components/AlertsWidget';
 import { ActivityWidget } from '@/modules/activity/components/ActivityWidget';
 
 registerDashboardWidget({

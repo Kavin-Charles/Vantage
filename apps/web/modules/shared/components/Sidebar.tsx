@@ -44,13 +44,13 @@ const NAV_ITEMS: Record<string, NavItemDef> = {
   '/crm/companies': { label: 'Companies', icon: 'companies', moduleId: 'crm:companies', feature: 'crm' },
   '/crm/tasks':     { label: 'Tasks',     icon: 'tasks',     moduleId: 'crm:tasks',     feature: 'crm' },
   '/activity':  { label: 'Activity',  icon: 'activity',  moduleId: 'activity',  feature: 'crm' },
-  '/servers':   { label: 'Servers',   icon: 'servers',   moduleId: 'servers',   feature: 'infra' },
-  '/databases': { label: 'Databases', icon: 'databases', moduleId: 'databases', feature: 'infra' },
-  '/websites':  { label: 'Websites',  icon: 'websites',  moduleId: 'websites',  feature: 'infra' },
+  '/infra/servers':   { label: 'Servers',   icon: 'servers',   moduleId: 'infra:servers',   feature: 'infra' },
+  '/infra/databases': { label: 'Databases', icon: 'databases', moduleId: 'infra:databases', feature: 'infra' },
+  '/infra/websites':  { label: 'Websites',  icon: 'websites',  moduleId: 'infra:websites',  feature: 'infra' },
   '/messaging': { label: 'Messaging', icon: 'message-square', moduleId: 'messaging' },
   '/projects':  { label: 'Projects',  icon: 'tasks',     moduleId: 'projects' },
   '/analytics': { label: 'Analytics', icon: 'analytics', moduleId: 'analytics', featureKey: 'analytics' },
-  '/alerts':    { label: 'Alerts',    icon: 'alerts',    moduleId: 'alerts', dot: true },
+  '/infra/alerts':    { label: 'Alerts',    icon: 'alerts',    moduleId: 'infra:alerts', dot: true },
   '/dashboard': { label: 'Dashboard', icon: 'dashboard', moduleId: 'dashboard' },
 };
 
@@ -315,7 +315,7 @@ export function Sidebar() {
   });
 
   function dotFor(href: string): boolean | undefined {
-    return href === '/alerts' && hasCritical ? true : undefined;
+    return href === '/infra/alerts' && hasCritical ? true : undefined;
   }
   function badgeFor(href: string): number | undefined {
     return href === '/messaging' ? messagingUnread : undefined;

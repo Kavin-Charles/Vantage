@@ -9,18 +9,21 @@ const PAGE_TITLES: Record<string, string> = {
   '/crm/companies': 'Companies',
   '/crm/tasks': 'Tasks',
   '/activity': 'Activity',
-  '/servers': 'Servers',
-  '/databases': 'Databases',
-  '/websites': 'Websites',
+  '/infra/servers': 'Servers',
+  '/infra/databases': 'Databases',
+  '/infra/websites': 'Websites',
   '/analytics': 'Analytics',
-  '/alerts': 'Alerts',
+  '/infra/alerts': 'Alerts',
   '/settings': 'Settings',
 };
 
 export function Topbar({ action, left }: { action?: React.ReactNode; left?: React.ReactNode }) {
   const pathname = usePathname();
   const parts = pathname.split('/').filter(Boolean);
-  const segment = parts[0] === 'crm' ? `/crm/${parts[1] ?? ''}` : '/' + (parts[0] ?? '');
+  const segment =
+    parts[0] === 'crm' || parts[0] === 'infra'
+      ? `/${parts[0]}/${parts[1] ?? ''}`
+      : '/' + (parts[0] ?? '');
   const title = PAGE_TITLES[segment] ?? 'Vencore';
 
   return (

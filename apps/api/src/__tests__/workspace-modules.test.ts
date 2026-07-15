@@ -20,7 +20,7 @@ function buildApp(db: Partial<Kysely<Database>>, role: 'admin' | 'member' = 'adm
 
 const mockModuleRows = [
   { module_id: 'crm', enabled: true },
-  { module_id: 'servers', enabled: true },
+  { module_id: 'infra', enabled: true },
   { module_id: 'messaging', enabled: false },
 ];
 
@@ -85,6 +85,29 @@ describe('PATCH /api/workspace/modules/:moduleId', () => {
       .send({ enabled: false });
     expect(res.status).toBe(200);
     expect(res.body.data).toMatchObject({ module_id: 'crm:contacts', enabled: false });
+  });
+
+  it('PATCH accepts an infra child module id and upserts the row', async () => {
+    const insertChain = {
+      values: vi.fn().mockReturnThis(),
+      onConflict: vi.fn().mockReturnThis(),
+      execute: vi.fn().mockResolvedValue(undefined),
+    };
+    const db: any = {
+      insertInto: vi.fn().mockReturnValue(insertChain),
+      updateTable: vi.fn(() => ({
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockReturnThis(),
+        executeTakeFirst: vi.fn().mockResolvedValue(undefined),
+      })),
+    };
+    const res = await request(buildApp(db))
+      .patch('/api/workspace/modules/infra:servers')
+      .send({ enabled: false });
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ module_id: 'infra:servers', enabled: false });
+    expect(insertChain.onConflict).toHaveBeenCalled();
   });
 
   it('returns 403 for non-admin', async () => {
