@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { NotificationBell } from './NotificationBell';
+import { ActiveRoleSwitcher } from './ActiveRoleSwitcher';
 
 const PAGE_TITLES: Record<string, string> = {
   '/crm/pipeline': 'Pipeline',
@@ -45,6 +46,7 @@ export function Topbar({ action, left }: { action?: React.ReactNode; left?: Reac
       </div>
 
       <div suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <ActiveRoleSwitcher />
         <NotificationBell />
         {action}
       </div>
