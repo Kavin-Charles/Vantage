@@ -28,7 +28,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) return;
     try {
       const res = await apiFetch<{
-        data: { user: { id: string; name: string; email: string }; isAdmin: boolean; permissions: string[] };
+        data: {
+          user: { id: string; name: string; email: string; theme: 'light' | 'dark' };
+          isAdmin: boolean;
+          permissions: string[];
+        };
       }>('/api/me', { token });
       dispatch(setUser({ ...res.data.user, isAdmin: res.data.isAdmin, permissions: res.data.permissions }));
     } catch {

@@ -24,7 +24,7 @@ export function createMeRouter(db: Kysely<Database>): ExpressRouter {
 
       res.json({
         data: {
-          user: { id: user.id, name: user.name, email: user.email },
+          user: { id: user.id, name: user.name, email: user.email, theme: user.theme },
           workspace,
           isAdmin,
           permissions: [...permissions],

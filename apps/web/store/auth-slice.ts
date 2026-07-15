@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   isAdmin: boolean;
   permissions: string[];
+  theme: 'light' | 'dark';
 }
 
 interface AuthState {
