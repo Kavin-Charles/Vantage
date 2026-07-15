@@ -1,0 +1,66 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { useModules } from '@/modules/shared/contexts/modules';
+import { getRevenue } from '@/modules/analytics/lib/analytics';
+import type { Period } from '@/modules/analytics/lib/analytics';
+import { WidgetSkeleton, WidgetError } from '@/modules/shared/components/ui/WidgetHelpers';
+import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+
+function WinRateWidget({ config }: { config: WidgetConfig }) {
+  const { isEnabled } = useModules();
+  const getToken = useApiToken();
+  const period: Period = config.timeRange === '30d' ? '30d' : config.timeRange === '1d' ? '30d' : '90d';
+
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['widget', 'win-rate', period],
+    queryFn: async () => getRevenue(await getToken(), period),
+    staleTime: 60_000,
+    enabled: isEnabled('crm'),
+  });
+
+  if (!isEnabled('crm')) return null;
+  if (isLoading) return <WidgetSkeleton />;
+  if (isError) return <WidgetError onRetry={() => void refetch()} />;
+
+  const rev = data?.data;
+  const winRate = rev?.win_rate ?? 0;
+  const pct = Math.round(winRate * 100);
+  const circumference = 2 * Math.PI * 36;
+  const offset = circumference - (pct / 100) * circumference;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 8 }}>
+      <svg width={96} height={96} viewBox="0 0 96 96">
+        <circle cx={48} cy={48} r={36} fill="none" stroke="var(--surface2)" strokeWidth={8} />
+        <circle cx={48} cy={48} r={36} fill="none" stroke={pct >= 50 ? '#2d6a4f' : '#92400e'} strokeWidth={8}
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          strokeLinecap="round" transform="rotate(-90 48 48)" style={{ transition: 'stroke-dashoffset 0.5s' }} />
+        <text x={48} y={53} textAnchor="middle" fontSize={18} fontWeight={700} fill="var(--text)" fontFamily="var(--font-display)">{pct}%</text>
+      </svg>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Win Rate</div>
+        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{rev?.deals_won ?? 0} deals won</div>
+      </div>
+    </div>
+  );
+}
+
+registerDashboardWidget({
+  id: 'sales:pipeline-win-rate',
+  label: 'Win Rate',
+  description: 'Percentage of deals won vs lost with a visual ring chart',
+  icon: 'trophy',
+  category: 'sales',
+  sizeOptions: ['small', 'medium'],
+  defaultSize: 'small',
+  defaultW: 3,
+  defaultH: 3,
+  minW: 2,
+  minH: 2,
+  supportedFilters: ['timeRange'],
+  defaultConfig: { timeRange: '30d' },
+  component: WinRateWidget,
+});
