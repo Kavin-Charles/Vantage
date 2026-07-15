@@ -32,10 +32,10 @@ export interface DashboardWidgetDef {
   id: string;
   label: string;
   description: string;
-  icon?: string;
-  category?: WidgetCategory;
-  sizeOptions?: WidgetSize[];
-  defaultSize?: WidgetSize;
+  icon: string;
+  category: WidgetCategory;
+  sizeOptions: WidgetSize[];
+  defaultSize: WidgetSize;
   defaultW: number;
   defaultH: number;
   minW?: number;
@@ -43,7 +43,7 @@ export interface DashboardWidgetDef {
   permission?: string;
   supportedFilters?: WidgetFilterKey[];
   defaultConfig?: WidgetConfig;
-  component: React.ComponentType<{ config?: WidgetConfig }>;
+  component: React.ComponentType<{ config: WidgetConfig }>;
 }
 
 const _registry: DashboardWidgetDef[] = [];
@@ -61,13 +61,6 @@ export function getDashboardWidgetById(id: string): DashboardWidgetDef | undefin
   return _registry.find(d => d.id === id);
 }
 
-export function getDashboardWidgetsByCategory(): Map<WidgetCategory, DashboardWidgetDef[]> {
-  const map = new Map<WidgetCategory, DashboardWidgetDef[]>();
-  for (const category of CATEGORY_ORDER) {
-    const widgets = _registry.filter(d => d.category === category);
-    if (widgets.length > 0) {
-      map.set(category, widgets);
-    }
-  }
-  return map;
+export function getDashboardWidgetsByCategory(category: WidgetCategory): DashboardWidgetDef[] {
+  return _registry.filter(d => d.category === category);
 }

@@ -113,7 +113,7 @@ export function DashboardGrid({ layoutRows, isEditMode, pluginWidgets, onLayoutC
             return (
               <div key={row.widget_id}>
                 <WidgetCard widgetId={row.widget_id} label={def.label} isEditMode={isEditMode} onRemove={onRemoveWidget}>
-                  <def.component />
+                  <def.component config={row.config} />
                 </WidgetCard>
               </div>
             );
