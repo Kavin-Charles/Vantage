@@ -335,6 +335,105 @@ export interface PluginConsumesDef {
   optional?: boolean;
 }
 
+/**
+ * A hook feature declared by a plugin: an admin-toggleable behavior that runs
+ * in the plugin sandbox when a contract event fires. The host dispatches
+ * `hook:<id>` to the plugin with the event payload + saved config.
+ */
+export interface PluginHookFeatureDef {
+  /** Stable feature id, referenced by the dispatched `hook:<id>` bus event. */
+  id: string;
+  name: string;
+  description?: string;
+  /** Contract event that triggers this feature, e.g. "crm.deal@v1:stage_changed". */
+  trigger: string;
+  /** Contract that must have an active provider for the feature to be available. */
+  requires_contract?: string;
+  /** Admin-configurable parameters, rendered on the hooks settings page. */
+  config_schema?: PluginSettingsField[];
+}
+
+/**
+ * A UI section a plugin contributes to a named page slot. The plugin's client
+ * bundle registers a matching component via `vencore.registerSection(id, C)`.
+ */
+export interface PluginSectionDef {
+  /** Stable section id, also the registration key. */
+  id: string;
+  /** Target slot as `page:slotId`, e.g. "contact-detail:sidebar". */
+  slot: string;
+  label?: string;
+  /** Ordering weight within a slot — lower renders first. Default 100. */
+  priority?: number;
+  /** Only render when this contract has an active provider. */
+  requires_contract?: string;
+}
+
+/** A settings field a plugin contributes to a domain settings page. */
+export interface ContributedSettingsField {
+  key: string;
+  type: PluginSettingsFieldType;
+  label: string;
+  default?: string | number | boolean;
+  options?: string[];
+  min?: number;
+  max?: number;
+  secret?: boolean;
+  /** When true, consumers may read this value via hub.getSharedSetting. */
+  shared?: boolean;
+}
+
+/**
+ * Feature settings a plugin contributes to a domain settings page (e.g. sync
+ * frequency under CRM settings). Auth/private config stays on the plugin's own
+ * settings page via settings_schema; these belong where users expect them.
+ */
+export interface PluginSettingsContributionDef {
+  /** Domain settings page: 'crm' | 'infra' | 'general'. */
+  domain: string;
+  /** Section id within the domain page. */
+  section: string;
+  label: string;
+  fields: ContributedSettingsField[];
+}
+
+/** Named UI insertion points a page exposes. */
+export interface SlotDef {
+  id: string;
+  layout: 'single' | 'stack' | 'grid' | 'inline';
+}
+
+/** v1 slot catalog — pages and the slots they expose. */
+export const SLOT_CATALOG: Record<string, SlotDef[]> = {
+  'dashboard': [
+    { id: 'stats', layout: 'grid' }, { id: 'main', layout: 'stack' },
+    { id: 'sidebar', layout: 'stack' }, { id: 'widgets', layout: 'grid' },
+    { id: 'extras', layout: 'stack' },
+  ],
+  'contact-detail': [
+    { id: 'header', layout: 'single' }, { id: 'main', layout: 'stack' },
+    { id: 'sidebar', layout: 'stack' }, { id: 'timeline', layout: 'stack' },
+    { id: 'extras', layout: 'stack' },
+  ],
+  'deal-detail': [
+    { id: 'header', layout: 'single' }, { id: 'main', layout: 'stack' },
+    { id: 'sidebar', layout: 'stack' }, { id: 'timeline', layout: 'stack' },
+    { id: 'extras', layout: 'stack' },
+  ],
+  'company-detail': [
+    { id: 'header', layout: 'single' }, { id: 'main', layout: 'stack' },
+    { id: 'sidebar', layout: 'stack' }, { id: 'extras', layout: 'stack' },
+  ],
+  'contact-list': [{ id: 'toolbar', layout: 'inline' }, { id: 'extras', layout: 'stack' }],
+  'deal-list': [{ id: 'toolbar', layout: 'inline' }, { id: 'extras', layout: 'stack' }],
+};
+
+export function isKnownSlot(slot: string): boolean {
+  const [page, slotId] = slot.split(':');
+  if (!page || !slotId) return false;
+  return (SLOT_CATALOG[page] ?? []).some((s) => s.id === slotId);
+}
+
 /** A record as stored in / returned by the hub. */
 export interface HubRecord<T = Record<string, unknown>> {
   provider: string;
@@ -453,6 +552,9 @@ export interface PluginManifest {
   listens?: string[];
   provides?: PluginProvidesDef[];
   consumes?: PluginConsumesDef[];
+  hook_features?: PluginHookFeatureDef[];
+  sections?: PluginSectionDef[];
+  settings_contributions?: PluginSettingsContributionDef[];
   endpoints?: string[];
   surfaces?: PluginSurfaces;
   settings_schema?: PluginSettingsField[];

@@ -8,5 +8,6 @@
     "declarationMap": false,
     "sourceMap": false
   },
-  "include": ["migrations"]
+  "include": ["migrations"],
+  "exclude": ["migrations/**/*.test.ts"]
 }

@@ -124,6 +124,67 @@ export function listContracts(): ContractDef[] {
 /** Valid contract id shape: namespace.name@vN */
 export const CONTRACT_ID_RE = /^[a-z][a-z0-9_-]*(\.[a-z][a-z0-9_-]*)+@v\d+$/;
 
+// ── Contract groups ───────────────────────────────────────────────────────────
+// Contracts in a group switch providers together (you wouldn't use Zoho
+// contacts with Vencore deals). A provider must provide every `required`
+// member to serve the group; `optional` members are served when available and
+// features that need a missing optional contract simply stay unavailable.
+
+export interface ContractGroupDef {
+  id: string;
+  label: string;
+  /** Builtin provider id that serves this group by default. */
+  builtin_provider: string;
+  /** Display name for the builtin provider (shown in the UI). */
+  builtin_provider_name: string;
+  required: string[];
+  optional: string[];
+}
+
+export const CONTRACT_GROUPS: ContractGroupDef[] = [
+  {
+    id: 'crm',
+    label: 'CRM',
+    builtin_provider: 'vencore-crm',
+    builtin_provider_name: 'Vencore CRM',
+    required: ['crm.contact@v1', 'crm.company@v1', 'crm.deal@v1'],
+    optional: ['crm.activity@v1'],
+  },
+];
+
+export function getContractGroup(groupId: string): ContractGroupDef | undefined {
+  return CONTRACT_GROUPS.find((g) => g.id === groupId);
+}
+
+export function groupForContract(contractId: string): ContractGroupDef | undefined {
+  return CONTRACT_GROUPS.find(
+    (g) => g.required.includes(contractId) || g.optional.includes(contractId),
+  );
+}
+
+/**
+ * Groups this manifest fully serves: the plugin provides every required
+ * member. Partial coverage of a group's required set is rejected at upload.
+ */
+export function groupsServedBy(providedContracts: readonly string[]): ContractGroupDef[] {
+  return CONTRACT_GROUPS.filter((g) => g.required.every((c) => providedContracts.includes(c)));
+}
+
+/**
+ * Returns an error when the manifest partially covers a group's required
+ * contracts — all-or-nothing per group.
+ */
+export function validateGroupCoverage(providedContracts: readonly string[]): string | null {
+  for (const g of CONTRACT_GROUPS) {
+    const covered = g.required.filter((c) => providedContracts.includes(c));
+    if (covered.length > 0 && covered.length < g.required.length) {
+      const missing = g.required.filter((c) => !providedContracts.includes(c));
+      return `Contract group '${g.id}' requires all of: ${g.required.join(', ')}. Missing: ${missing.join(', ')}`;
+    }
+  }
+  return null;
+}
+
 export interface ContractViolation {
   index: number;
   path: string;

@@ -6,16 +6,35 @@ import Link from 'next/link';
 import { useModules } from '@/modules/shared/contexts/modules';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+import { Icon } from '@/modules/shared/components/ui/Icon';
 
-const MODULE_META = [
+interface SubModuleMeta { id: string; name: string }
+interface ModuleMeta {
+  id: string;
+  name: string;
+  description: string;
+  settingsHref: string | null;
+  subModules?: SubModuleMeta[];
+}
+
+const CRM_SUBMODULES: SubModuleMeta[] = [
+  { id: 'crm:pipeline',  name: 'Pipeline' },
+  { id: 'crm:contacts',  name: 'Contacts' },
+  { id: 'crm:companies', name: 'Companies' },
+  { id: 'crm:tasks',     name: 'Tasks' },
+];
+
+const INFRA_SUBMODULES: SubModuleMeta[] = [
+  { id: 'infra:servers',   name: 'Servers' },
+  { id: 'infra:databases', name: 'Databases' },
+  { id: 'infra:websites',  name: 'Websites' },
+  { id: 'infra:alerts',    name: 'Alerts' },
+];
+
+const MODULE_META: ModuleMeta[] = [
   { id: 'dashboard', name: 'Dashboard', description: 'Custom dashboards and widget layouts.', settingsHref: '/settings/dashboards' },
-  { id: 'contacts',  name: 'Contacts',  description: 'Contact management, profiles, and history.',        settingsHref: null },
-  { id: 'companies', name: 'Companies', description: 'Company records and relationships.',                  settingsHref: null },
-  { id: 'pipelines', name: 'Pipelines', description: 'Deals pipeline, items, and conversions.',             settingsHref: '/settings/pipelines' },
-  { id: 'tasks',     name: 'Tasks',     description: 'Task management and due date tracking.',              settingsHref: '/settings/tasks' },
-  { id: 'websites',   name: 'Websites',   description: 'Website uptime monitoring and SSL expiry.',         settingsHref: null },
-  { id: 'servers',    name: 'Servers',    description: 'Server monitoring and agent heartbeats.',           settingsHref: null },
-  { id: 'databases',  name: 'Databases',  description: 'Database health monitoring and connection management.', settingsHref: null },
+  { id: 'crm', name: 'CRM', description: 'Contacts, companies, deals pipeline, and tasks.', settingsHref: '/settings/pipelines', subModules: CRM_SUBMODULES },
+  { id: 'infra', name: 'Infrastructure', description: 'Servers, databases, website uptime, and alerting.', settingsHref: null, subModules: INFRA_SUBMODULES },
   { id: 'analytics', name: 'Analytics', description: 'Revenue, pipeline stats, and team leaderboard.',     settingsHref: null },
   { id: 'activity',  name: 'Activity',  description: 'Unified activity feed across all workspace records.', settingsHref: null },
   { id: 'projects',  name: 'Project Management', description: 'Projects, tasks, sprints, automations, and client portals.', settingsHref: '/settings/project-management/hooks' },
@@ -23,11 +42,21 @@ const MODULE_META = [
 ];
 
 export default function ModulesSettingsPage() {
-  const { isEnabled, setEnabled } = useModules();
+  const { isEnabled, setEnabled, modules } = useModules();
+  const rawEnabled = (id: string): boolean => modules.find(m => m.module_id === id)?.enabled ?? true;
   const getToken = useApiToken();
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
+
+  function toggleExpanded(id: string) {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
 
   async function toggle(moduleId: string) {
     const next = !isEnabled(moduleId);
@@ -60,8 +89,8 @@ export default function ModulesSettingsPage() {
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {MODULE_META.map(mod => (
+          <div key={mod.id} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div
-            key={mod.id}
             onContextMenu={e => {
               const items: ContextMenuItem[] = [
                 { icon: 'check', label: isEnabled(mod.id) ? 'Disable' : 'Enable', onClick: () => void toggle(mod.id) },
@@ -82,6 +111,22 @@ export default function ModulesSettingsPage() {
               <p style={{ margin: 0, fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>{mod.description}</p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              {mod.subModules && mod.subModules.length > 0 && (
+                <button
+                  onClick={() => toggleExpanded(mod.id)}
+                  title={expanded.has(mod.id) ? 'Hide pages' : 'Show pages'}
+                  style={{
+                    color: 'var(--text3)', background: 'none', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', padding: 2, transition: 'color .15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--text3)')}
+                  aria-label={expanded.has(mod.id) ? `Hide ${mod.name} pages` : `Show ${mod.name} pages`}
+                  aria-expanded={expanded.has(mod.id)}
+                >
+                  <Icon name={expanded.has(mod.id) ? 'chevron' : 'chevron-right'} size={14} />
+                </button>
+              )}
               {mod.settingsHref && (
                 <Link
                   href={mod.settingsHref}
@@ -114,6 +159,47 @@ export default function ModulesSettingsPage() {
                 }} />
               </button>
             </div>
+          </div>
+          {expanded.has(mod.id) && mod.subModules?.map(sub => {
+            const parentOn = isEnabled(mod.id);
+            const subOn = rawEnabled(sub.id);
+            return (
+              <div
+                key={sub.id}
+                onContextMenu={e => {
+                  const items: ContextMenuItem[] = [
+                    { icon: 'check', label: subOn ? 'Disable' : 'Enable', onClick: () => { if (parentOn) void toggle(sub.id); } },
+                  ];
+                  openMenu(e, items);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '9px 16px', marginLeft: 24, borderRadius: 10,
+                  border: '1px solid var(--border)', background: 'var(--surface2)',
+                  opacity: parentOn ? 1 : 0.5,
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 12.5, fontWeight: 500, color: 'var(--text2)' }}>{sub.name}</p>
+                <button
+                  disabled={!parentOn || pending === sub.id}
+                  onClick={() => void toggle(sub.id)}
+                  style={{
+                    position: 'relative', width: 38, height: 21, borderRadius: 999,
+                    background: parentOn && subOn ? 'var(--green)' : 'var(--border)',
+                    border: 'none', cursor: !parentOn || pending === sub.id ? 'default' : 'pointer',
+                    transition: 'background .2s', flexShrink: 0, opacity: pending === sub.id ? 0.6 : 1,
+                  }}
+                  aria-label={`${subOn ? 'Disable' : 'Enable'} ${sub.name}`}
+                >
+                  <span style={{
+                    position: 'absolute', top: 3, left: parentOn && subOn ? 20 : 3,
+                    width: 15, height: 15, borderRadius: '50%', background: '#fff',
+                    transition: 'left .2s',
+                  }} />
+                </button>
+              </div>
+            );
+          })}
           </div>
         ))}
       </div>

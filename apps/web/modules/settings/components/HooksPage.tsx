@@ -24,6 +24,9 @@ interface HookFeatureResponse {
   id: string;
   name: string;
   description: string;
+  /** Switch model: set when the feature is powered by the workspace's active
+   * contract provider (chosen in Settings → Data Providers). */
+  powered_by: { id: string; name: string; pending_selection: boolean } | null;
   compatible_providers: CompatibleProvider[];
   installed_providers: InstalledProvider[];
   state: HookState;
@@ -75,6 +78,11 @@ function FeatureCard({ feature, moduleId }: { feature: HookFeatureResponse; modu
   function handleToggle() {
     if (!canToggle) return;
     const nextEnabled = !feature.enabled;
+    if (feature.powered_by) {
+      // Switch model — provider comes from group selection, toggle only
+      patchMut.mutate({ enabled: nextEnabled });
+      return;
+    }
     const providerId = feature.selected_provider_id ?? feature.installed_providers[0]?.id ?? undefined;
     patchMut.mutate({ enabled: nextEnabled, provider_id: providerId });
   }
@@ -119,8 +127,23 @@ function FeatureCard({ feature, moduleId }: { feature: HookFeatureResponse; modu
         </button>
       </div>
 
-      {/* Provider selector */}
-      {feature.installed_providers.length > 0 && (
+      {/* Switch model: powered by the workspace's active data provider */}
+      {feature.powered_by && (
+        <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text3)' }}>
+          Powered by <span style={{ color: 'var(--text)', fontWeight: 500 }}>{feature.powered_by.name}</span>
+          {feature.powered_by.pending_selection && (
+            <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 999, background: 'var(--amber-bg)', color: 'var(--amber)' }}>
+              Selection pending
+            </span>
+          )}
+          <Link href="/settings/integrations" style={{ fontSize: 11.5, color: 'var(--blue)', textDecoration: 'none' }}>
+            Change →
+          </Link>
+        </div>
+      )}
+
+      {/* Provider selector (legacy — features without a contract group) */}
+      {!feature.powered_by && feature.installed_providers.length > 0 && (
         <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 12, color: 'var(--text3)', flexShrink: 0 }}>Provider</span>
           <select

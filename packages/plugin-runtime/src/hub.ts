@@ -11,7 +11,10 @@ import type { PluginManifest } from '@vencore/plugin-types';
 import { bridgeRegistry } from './bridge-registry';
 import type { BridgeContext } from './bridge-router';
 import { pluginEventBus } from './bus';
-import { getContract, validateRecords, isKnownContract } from './contracts';
+import { validateRecords, isKnownContract, groupForContract } from './contracts';
+import { getActiveProviderForContract } from './provider-selection';
+import { emitContractEvent } from './contract-events';
+import { queryBuiltinCrm, countBuiltinCrm, builtinAdapterSupports, BUILTIN_CRM_PROVIDER_ID } from './builtin-crm-adapter';
 
 export const HUB_LIMITS = {
   maxBatchSize: 500,
@@ -149,7 +152,33 @@ export function registerHubBridgeMethods(): void {
       }
 
       const now = new Date();
-      const externalIds = (records as Array<Record<string, unknown>>).map((r) => String(r['external_id']));
+      const recs = records as Array<Record<string, unknown>>;
+      const externalIds = recs.map((r) => String(r['external_id']));
+
+      // Classify created vs updated (and detect deal stage changes) by reading
+      // the live rows for these ids before the upsert. Powers the granular
+      // contract events below.
+      const existing = await db.selectFrom('plugin_hub_records')
+        .select(['external_id', 'data'])
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('contract', '=', contract)
+        .where('provider_plugin_id', '=', ctx.pluginSlug)
+        .where('deleted_at', 'is', null)
+        .where('external_id', 'in', externalIds)
+        .execute() as Array<{ external_id: string; data: Record<string, unknown> }>;
+      const existingMap = new Map(existing.map((e) => [e.external_id, e.data]));
+      const createdIds: string[] = [];
+      const updatedIds: string[] = [];
+      const stageChangedIds: string[] = [];
+      for (const r of recs) {
+        const eid = String(r['external_id']);
+        const prev = existingMap.get(eid);
+        if (!prev) { createdIds.push(eid); continue; }
+        updatedIds.push(eid);
+        if (contract === 'crm.deal@v1' && prev['stage'] !== r['stage']) {
+          stageChangedIds.push(eid);
+        }
+      }
 
       // Single multi-row upsert — one round trip per batch, not per record
       await db.insertInto('plugin_hub_records')
@@ -166,18 +195,35 @@ export function registerHubBridgeMethods(): void {
             .doUpdateSet((eb: any) => ({
               data: eb.ref('excluded.data'),
               updated_at: eb.ref('excluded.updated_at'),
+              // Republishing an id revives a tombstoned row
+              deleted_at: null,
             })),
         )
         .execute();
 
-      // Full id list — batches are capped at maxBatchSize, so payloads stay
-      // bounded, and listeners (e.g. auto_project_from_deal) must see every id.
+      // Legacy provider-scoped event — always fires (sync tracking,
+      // auto_project_from_deal which checks provider match itself).
       await pluginEventBus.forWorkspace(ctx.workspaceId).emit(`hub:${contract}:changed`, {
         provider: ctx.pluginSlug,
         contract,
         count: records.length,
         external_ids: externalIds,
       });
+
+      // Contract-based events — gated to the active provider so consumers see
+      // a single stream regardless of which provider is publishing.
+      if (createdIds.length > 0) {
+        await emitContractEvent(db, ctx.workspaceId, contract, 'created',
+          { external_ids: createdIds, count: createdIds.length }, ctx.pluginSlug);
+      }
+      if (updatedIds.length > 0) {
+        await emitContractEvent(db, ctx.workspaceId, contract, 'updated',
+          { external_ids: updatedIds, count: updatedIds.length }, ctx.pluginSlug);
+      }
+      if (stageChangedIds.length > 0) {
+        await emitContractEvent(db, ctx.workspaceId, contract, 'stage_changed',
+          { external_ids: stageChangedIds, count: stageChangedIds.length }, ctx.pluginSlug);
+      }
 
       return { published: records.length };
     })
@@ -192,16 +238,42 @@ export function registerHubBridgeMethods(): void {
         HUB_LIMITS.maxQueryLimit,
       );
 
+      // Switch model: grouped contracts serve the workspace's active provider
+      // only. An explicit `provider` param bypasses selection (a plugin
+      // browsing its own published data, admin/audit tooling). Standalone
+      // contracts keep the merge model.
+      const explicitProvider = typeof p['provider'] === 'string' && p['provider'].length > 0
+        ? p['provider'] as string
+        : null;
+      let effectiveProvider = explicitProvider;
+      if (!effectiveProvider && groupForContract(contract)) {
+        const active = await getActiveProviderForContract(db, ctx.workspaceId, contract);
+        effectiveProvider = active?.provider ?? null;
+      }
+
+      // Builtin provider serves live from core tables — no hub rows to read
+      if (effectiveProvider === BUILTIN_CRM_PROVIDER_ID && builtinAdapterSupports(contract)) {
+        const filter = p['filter'] && typeof p['filter'] === 'object' && !Array.isArray(p['filter'])
+          ? p['filter'] as Record<string, unknown>
+          : undefined;
+        return queryBuiltinCrm(db, ctx.workspaceId, contract, {
+          cursor: typeof p['cursor'] === 'string' ? p['cursor'] : undefined,
+          limit,
+          filter,
+        });
+      }
+
       let q = db.selectFrom('plugin_hub_records')
         .select(['provider_plugin_id', 'external_id', 'data', 'updated_at', 'id'])
         .where('workspace_id', '=', ctx.workspaceId)
         .where('contract', '=', contract)
+        .where('deleted_at', 'is', null)
         .orderBy('updated_at', 'desc')
         .orderBy('id', 'desc')
         .limit(limit + 1);
 
-      if (typeof p['provider'] === 'string' && p['provider'].length > 0) {
-        q = q.where('provider_plugin_id', '=', p['provider']);
+      if (effectiveProvider) {
+        q = q.where('provider_plugin_id', '=', effectiveProvider);
       }
 
       const filter = p['filter'];
@@ -272,22 +344,40 @@ export function registerHubBridgeMethods(): void {
         .select((eb: any) => eb.fn.max('updated_at').as('last_published_at'))
         .where('workspace_id', '=', ctx.workspaceId)
         .where('contract', '=', contract)
+        .where('deleted_at', 'is', null)
         .groupBy('provider_plugin_id')
         .execute() as Array<{ provider_plugin_id: string; record_count: unknown; last_published_at: Date | null }>;
 
       const statMap = new Map(stats.map((s) => [s.provider_plugin_id, s]));
+      const active = await getActiveProviderForContract(db, ctx.workspaceId, contract);
 
-      return providers.map((pl) => {
+      const result = providers.map((pl) => {
         const s = statMap.get(pl.plugin_id);
         return {
           plugin_id: pl.plugin_id,
           name: pl.name,
+          builtin: false,
+          active: active?.provider === pl.plugin_id,
           record_count: s ? Number(s.record_count) : 0,
           last_published_at: s?.last_published_at
             ? (s.last_published_at instanceof Date ? s.last_published_at.toISOString() : String(s.last_published_at))
             : null,
         };
       });
+
+      // Builtin provider serves grouped CRM contracts live
+      if (builtinAdapterSupports(contract)) {
+        const grp = groupForContract(contract);
+        result.unshift({
+          plugin_id: BUILTIN_CRM_PROVIDER_ID,
+          name: grp?.builtin_provider_name ?? BUILTIN_CRM_PROVIDER_ID,
+          builtin: true,
+          active: active === null || active.provider === BUILTIN_CRM_PROVIDER_ID,
+          record_count: await countBuiltinCrm(db, ctx.workspaceId, contract),
+          last_published_at: null,
+        });
+      }
+      return result;
     })
     .register('hub.delete', null, async (ctx, p, db) => {
       const contractId = p['contract'];
@@ -323,41 +413,156 @@ export function registerHubBridgeMethods(): void {
           deleted,
           external_ids: externalIds.map(String),
         });
+        await emitContractEvent(db, ctx.workspaceId, contract, 'deleted',
+          { external_ids: externalIds.map(String), count: deleted }, ctx.pluginSlug);
       }
       return { deleted };
     })
     .register('hub.contracts', null, async (_ctx, _p, _db) => {
       const { listContracts } = await import('./contracts');
       return listContracts().map((c) => ({ id: c.id, label: c.label, description: c.description }));
+    })
+    .register('hub.getSetting', null, async (ctx, p, db) => {
+      const key = String(p['key'] ?? '');
+      if (!key) throw { code: 'INVALID_REQUEST', message: 'key is required' };
+      const row = await db.selectFrom('plugin_hub_settings')
+        .select('value')
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('plugin_id', '=', ctx.pluginSlug)
+        .where('key', '=', key)
+        .executeTakeFirst() as { value: unknown } | undefined;
+      return row ? row.value : null;
+    })
+    .register('hub.setSetting', null, async (ctx, p, db) => {
+      const key = String(p['key'] ?? '');
+      if (!key) throw { code: 'INVALID_REQUEST', message: 'key is required' };
+      // Domain + shared flag come from the manifest contribution declaring the key
+      const contributions = ctx.manifest?.settings_contributions ?? [];
+      let domain = 'general';
+      let shared = false;
+      let known = false;
+      for (const c of contributions) {
+        const field = c.fields.find((f) => f.key === key);
+        if (field) { domain = c.domain; shared = field.shared ?? false; known = true; break; }
+      }
+      if (!known) throw { code: 'UNKNOWN_SETTING', message: `Key '${key}' is not in settings_contributions` };
+      const jsonb = sql`${JSON.stringify(p['value'] ?? null)}::jsonb`;
+      await db.insertInto('plugin_hub_settings')
+        .values({
+          workspace_id: ctx.workspaceId, plugin_id: ctx.pluginSlug,
+          domain, key, value: jsonb, shared, updated_at: new Date(),
+        })
+        .onConflict((oc: any) => oc.columns(['workspace_id', 'plugin_id', 'key'])
+          .doUpdateSet({ value: jsonb, domain, shared, updated_at: new Date() }))
+        .execute();
+      return { ok: true };
+    })
+    .register('hub.getSharedSetting', null, async (ctx, p, db) => {
+      const pluginId = String(p['plugin_id'] ?? '');
+      const key = String(p['key'] ?? '');
+      if (!pluginId || !key) throw { code: 'INVALID_REQUEST', message: 'plugin_id and key are required' };
+      const row = await db.selectFrom('plugin_hub_settings')
+        .select('value')
+        .where('workspace_id', '=', ctx.workspaceId)
+        .where('plugin_id', '=', pluginId)
+        .where('key', '=', key)
+        .where('shared', '=', true)
+        .executeTakeFirst() as { value: unknown } | undefined;
+      return row ? row.value : null;
     });
 }
 
+async function affectedContracts(
+  db: Kysely<any>,
+  workspaceId: string,
+  pluginId: string,
+  onlyLive: boolean,
+): Promise<string[]> {
+  let q = db.selectFrom('plugin_hub_records')
+    .select('contract')
+    .distinct()
+    .where('workspace_id', '=', workspaceId)
+    .where('provider_plugin_id', '=', pluginId);
+  if (onlyLive) q = q.where('deleted_at', 'is', null);
+  const rows = await q.execute() as Array<{ contract: string }>;
+  return rows.map((r) => r.contract);
+}
+
 /**
- * Deletes all hub records published by a plugin in a workspace and emits
- * provider_removed for each affected contract. Called on plugin uninstall
- * and disable.
+ * Hard-deletes all hub records published by a plugin in a workspace. Reserved
+ * for the retention worker and hard resets — normal uninstall soft-deletes.
  */
 export async function removeProviderHubData(
   db: Kysely<any>,
   workspaceId: string,
   pluginId: string,
 ): Promise<void> {
-  const affected = await db.selectFrom('plugin_hub_records')
-    .select('contract')
-    .distinct()
-    .where('workspace_id', '=', workspaceId)
-    .where('provider_plugin_id', '=', pluginId)
-    .execute() as Array<{ contract: string }>;
-
+  const contracts = await affectedContracts(db, workspaceId, pluginId, false);
   await db.deleteFrom('plugin_hub_records')
     .where('workspace_id', '=', workspaceId)
     .where('provider_plugin_id', '=', pluginId)
     .execute();
-
-  for (const { contract } of affected) {
+  for (const contract of contracts) {
     await pluginEventBus.forWorkspace(workspaceId).emit(`hub:${contract}:provider_removed`, {
-      provider: pluginId,
-      contract,
+      provider: pluginId, contract,
     });
   }
+}
+
+/**
+ * Tombstones a plugin's hub records (uninstall). Data is retained so a
+ * reinstall within the retention window can restore it; the retention worker
+ * hard-deletes tombstones past the window.
+ */
+export async function softDeleteProviderHubData(
+  db: Kysely<any>,
+  workspaceId: string,
+  pluginId: string,
+): Promise<void> {
+  const contracts = await affectedContracts(db, workspaceId, pluginId, true);
+  await db.updateTable('plugin_hub_records')
+    .set({ deleted_at: new Date() })
+    .where('workspace_id', '=', workspaceId)
+    .where('provider_plugin_id', '=', pluginId)
+    .where('deleted_at', 'is', null)
+    .execute();
+  for (const contract of contracts) {
+    await pluginEventBus.forWorkspace(workspaceId).emit(`hub:${contract}:provider_removed`, {
+      provider: pluginId, contract,
+    });
+  }
+}
+
+/**
+ * Clears tombstones for a plugin's records (reinstall within the window).
+ * Returns the number of rows restored.
+ */
+export async function restoreProviderHubData(
+  db: Kysely<any>,
+  workspaceId: string,
+  pluginId: string,
+): Promise<number> {
+  const res = await db.updateTable('plugin_hub_records')
+    .set({ deleted_at: null })
+    .where('workspace_id', '=', workspaceId)
+    .where('provider_plugin_id', '=', pluginId)
+    .where('deleted_at', 'is not', null)
+    .executeTakeFirst();
+  return Number(res?.numUpdatedRows ?? 0);
+}
+
+/**
+ * Hard-deletes tombstoned rows older than the retention window. Run by the
+ * daily retention worker. Returns the number of rows purged.
+ */
+export async function purgeExpiredHubRecords(
+  db: Kysely<any>,
+  retentionDays = 30,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+  const res = await db.deleteFrom('plugin_hub_records')
+    .where('deleted_at', 'is not', null)
+    .where('deleted_at', '<', cutoff)
+    .executeTakeFirst();
+  return Number(res?.numDeletedRows ?? 0);
 }

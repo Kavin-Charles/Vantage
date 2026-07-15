@@ -4,6 +4,7 @@ import {
   getModuleForPermission,
   getAllPermissions,
   MODULE_REGISTRY,
+  INFRA_SUBMODULE_IDS,
 } from './index';
 
 describe('getDefaultPermissionsForRole', () => {
@@ -31,8 +32,12 @@ describe('getDefaultPermissionsForRole', () => {
 
 describe('getModuleForPermission', () => {
   it('returns correct moduleId for known permission', () => {
-    expect(getModuleForPermission('contacts:create')).toBe('contacts');
-    expect(getModuleForPermission('servers:delete')).toBe('servers');
+    expect(getModuleForPermission('contacts:create')).toBe('crm');
+    expect(getModuleForPermission('pipelines:stage.edit')).toBe('crm');
+    expect(getModuleForPermission('tasks:delete')).toBe('crm');
+    expect(getModuleForPermission('servers:delete')).toBe('infra');
+    expect(getModuleForPermission('websites:view')).toBe('infra');
+    expect(getModuleForPermission('alerts:configure')).toBe('infra');
     expect(getModuleForPermission('analytics:view')).toBe('analytics');
   });
 
@@ -42,8 +47,44 @@ describe('getModuleForPermission', () => {
 });
 
 describe('MODULE_REGISTRY', () => {
-  it('has 8 modules', () => {
-    expect(MODULE_REGISTRY).toHaveLength(8);
+  it('contains crm and not the merged module ids', () => {
+    const ids = MODULE_REGISTRY.map(m => m.id);
+    expect(ids).toContain('crm');
+    for (const old of ['contacts', 'companies', 'pipelines', 'tasks']) {
+      expect(ids).not.toContain(old);
+    }
+  });
+
+  it('crm module carries all merged permission keys', () => {
+    const crm = MODULE_REGISTRY.find(m => m.id === 'crm');
+    const keys = crm!.permissions.map(p => p.key);
+    expect(keys).toEqual(expect.arrayContaining([
+      'contacts:view', 'contacts:delete',
+      'companies:view', 'companies:delete',
+      'pipelines:view', 'pipelines:config', 'pipelines:field.delete',
+      'tasks:view', 'tasks:delete',
+    ]));
+    expect(keys).toHaveLength(21);
+  });
+
+  it('contains infra and not the merged infra module ids', () => {
+    const ids = MODULE_REGISTRY.map(m => m.id);
+    expect(ids).toContain('infra');
+    for (const old of ['servers', 'databases', 'websites', 'alerts']) {
+      expect(ids).not.toContain(old);
+    }
+  });
+
+  it('infra module carries all merged permission keys', () => {
+    const infra = MODULE_REGISTRY.find(m => m.id === 'infra');
+    const keys = infra!.permissions.map(p => p.key);
+    expect(keys).toEqual(expect.arrayContaining([
+      'servers:view', 'servers:ssh', 'servers:delete',
+      'databases:view', 'databases:delete',
+      'websites:view', 'websites:delete',
+      'alerts:view', 'alerts:acknowledge', 'alerts:resolve', 'alerts:configure',
+    ]));
+    expect(keys).toHaveLength(17);
   });
 
   it('every module has at least one permission', () => {
@@ -56,5 +97,13 @@ describe('MODULE_REGISTRY', () => {
     const projects = MODULE_REGISTRY.find(m => m.id === 'projects');
     expect(projects?.emitsActivity).toBe(true);
     expect(projects?.emitsAlerts).toBe(true);
+  });
+});
+
+describe('INFRA_SUBMODULES', () => {
+  it('exposes the four child module ids', () => {
+    expect(INFRA_SUBMODULE_IDS).toEqual([
+      'infra:servers', 'infra:databases', 'infra:websites', 'infra:alerts',
+    ]);
   });
 });

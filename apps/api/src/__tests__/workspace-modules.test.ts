@@ -19,9 +19,9 @@ function buildApp(db: Partial<Kysely<Database>>, role: 'admin' | 'member' = 'adm
 }
 
 const mockModuleRows = [
-  { module_id: 'contacts', enabled: true },
-  { module_id: 'companies', enabled: true },
-  { module_id: 'pipelines', enabled: false },
+  { module_id: 'crm', enabled: true },
+  { module_id: 'infra', enabled: true },
+  { module_id: 'messaging', enabled: false },
 ];
 
 describe('GET /api/workspace/modules', () => {
@@ -36,13 +36,17 @@ describe('GET /api/workspace/modules', () => {
     const res = await request(buildApp(db)).get('/api/workspace/modules');
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(3);
-    expect(res.body.data[0]).toMatchObject({ module_id: 'contacts', enabled: true });
+    expect(res.body.data[0]).toMatchObject({ module_id: 'crm', enabled: true });
   });
 });
 
 describe('PATCH /api/workspace/modules/:moduleId', () => {
-  it('toggles module enabled status (admin)', async () => {
-    const updateResult = { numUpdatedRows: BigInt(1) };
+  it('upserts module enabled status (admin)', async () => {
+    const insertChain = {
+      values: vi.fn().mockReturnThis(),
+      onConflict: vi.fn().mockReturnThis(),
+      execute: vi.fn().mockResolvedValue(undefined),
+    };
     const providerUpdateChain = {
       set: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
@@ -50,42 +54,66 @@ describe('PATCH /api/workspace/modules/:moduleId', () => {
       executeTakeFirst: vi.fn().mockResolvedValue(undefined),
     };
     const db: any = {
-      updateTable: vi.fn((table: string) => {
-        if (table === 'hook_providers') return providerUpdateChain;
-        return {
-          set: vi.fn().mockReturnThis(),
-          where: vi.fn().mockReturnThis(),
-          executeTakeFirst: vi.fn().mockResolvedValue(updateResult),
-        };
-      }),
+      insertInto: vi.fn().mockReturnValue(insertChain),
+      updateTable: vi.fn(() => providerUpdateChain),
     };
     const res = await request(buildApp(db))
-      .patch('/api/workspace/modules/contacts')
+      .patch('/api/workspace/modules/crm')
       .send({ enabled: false });
     expect(res.status).toBe(200);
-    expect(res.body.data).toMatchObject({ module_id: 'contacts', enabled: false });
+    expect(res.body.data).toMatchObject({ module_id: 'crm', enabled: false });
+    expect(db.insertInto).toHaveBeenCalledWith('workspace_modules');
   });
 
-  it('returns 404 when module row does not exist for workspace', async () => {
-    const updateResult = { numUpdatedRows: BigInt(0) };
+  it('upserts a crm sub-module row (crm:contacts) without a pre-existing row', async () => {
+    const insertChain = {
+      values: vi.fn().mockReturnThis(),
+      onConflict: vi.fn().mockReturnThis(),
+      execute: vi.fn().mockResolvedValue(undefined),
+    };
     const db: any = {
-      updateTable: vi.fn().mockReturnValue({
+      insertInto: vi.fn().mockReturnValue(insertChain),
+      updateTable: vi.fn(() => ({
         set: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
-        executeTakeFirst: vi.fn().mockResolvedValue(updateResult),
-      }),
+        returning: vi.fn().mockReturnThis(),
+        executeTakeFirst: vi.fn().mockResolvedValue(undefined),
+      })),
     };
     const res = await request(buildApp(db))
-      .patch('/api/workspace/modules/contacts')
+      .patch('/api/workspace/modules/crm:contacts')
       .send({ enabled: false });
-    expect(res.status).toBe(404);
-    expect(res.body.error.code).toBe('MODULE_NOT_FOUND');
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ module_id: 'crm:contacts', enabled: false });
+  });
+
+  it('PATCH accepts an infra child module id and upserts the row', async () => {
+    const insertChain = {
+      values: vi.fn().mockReturnThis(),
+      onConflict: vi.fn().mockReturnThis(),
+      execute: vi.fn().mockResolvedValue(undefined),
+    };
+    const db: any = {
+      insertInto: vi.fn().mockReturnValue(insertChain),
+      updateTable: vi.fn(() => ({
+        set: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockReturnThis(),
+        executeTakeFirst: vi.fn().mockResolvedValue(undefined),
+      })),
+    };
+    const res = await request(buildApp(db))
+      .patch('/api/workspace/modules/infra:servers')
+      .send({ enabled: false });
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({ module_id: 'infra:servers', enabled: false });
+    expect(insertChain.onConflict).toHaveBeenCalled();
   });
 
   it('returns 403 for non-admin', async () => {
     const db: any = {};
     const res = await request(buildApp(db, 'member'))
-      .patch('/api/workspace/modules/contacts')
+      .patch('/api/workspace/modules/crm')
       .send({ enabled: false });
     expect(res.status).toBe(403);
   });
@@ -101,7 +129,7 @@ describe('PATCH /api/workspace/modules/:moduleId', () => {
   it('returns 400 for invalid body (INVALID_BODY)', async () => {
     const db: any = {};
     const res = await request(buildApp(db))
-      .patch('/api/workspace/modules/contacts')
+      .patch('/api/workspace/modules/crm')
       .send({ enabled: 'yes' });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('INVALID_BODY');

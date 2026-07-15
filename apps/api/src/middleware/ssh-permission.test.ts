@@ -16,7 +16,7 @@ function buildDb(rowsByTable: Record<string, unknown[]>): Kysely<Database> {
   } as unknown as Kysely<Database>;
 }
 
-const ENABLED = [{ module_id: 'servers' }, { module_id: 'contacts' }];
+const ENABLED = [{ module_id: 'infra' }, { module_id: 'crm' }];
 
 beforeEach(() => __clearPermCacheForTesting());
 

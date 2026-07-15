@@ -15,7 +15,7 @@ import type { Database } from '@vencore/db';
 import { errorHandler } from './middleware/errors';
 import { createRequireAuth, requireAdmin, type AuthenticatedRequest } from './middleware/auth';
 import { decryptSettingValue, isEncryptedValue, encryptSettingValue } from './lib/plugin-settings-crypto';
-import { createRequireModule } from './middleware/module';
+import { createRequireModule, createRequireModuleFeature } from './middleware/module';
 import { createRequirePermission } from './middleware/permission';
 import { createWorkspaceModulesRouter } from './routes/workspace-modules';
 import { createWorkspaceRouter } from './routes/workspace';
@@ -23,6 +23,7 @@ import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
 import { createGroupsRouter } from './routes/groups';
 import { createCrossModuleSettingsRouter } from './routes/cross-module-settings';
+import { createSidebarRouter } from './routes/sidebar';
 import { createInvitesRouter } from './routes/invites';
 import { createUserPermissionsRouter } from './routes/user-permissions';
 import { createConfigRouter } from './routes/config';
@@ -66,6 +67,9 @@ import { createProjectMembersRouter } from './routes/project-members';
 import { createPortalRouter, createPortalInternalRouter } from './routes/portal';
 import { createModuleEventSettingsRouter } from './routes/module-event-settings';
 import { createHooksRouter } from './routes/hooks';
+import { createHubProvidersRouter } from './routes/hub-providers';
+import { createHubSectionsRouter } from './routes/hub-sections';
+import { createHubSettingsRouter } from './routes/hub-settings';
 import { createSystemRouter } from './routes/system';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
@@ -84,7 +88,9 @@ import { createPmSearchRouter } from './routes/pm-search';
 import { createProjectTemplatesRouter, createSaveAsTemplateRouter } from './routes/project-templates';
 import { bridgeRegistry, pluginEventBus, registerHubBridgeMethods } from '@vencore/plugin-runtime';
 import { startPluginCron, scheduleToMinutes } from './workers/plugin-cron';
+import { startHubRetention } from './workers/hub-retention';
 import { initHubHookListeners } from './lib/hub-hook-listeners';
+import { initHookFeatureDispatcher } from './lib/hook-features';
 import { registerContactsBridgeMethods } from './routes/contacts';
 import { registerCompaniesBridgeMethods } from './routes/companies';
 import { registerDealsBridgeMethods } from './routes/pipelines';
@@ -345,6 +351,9 @@ bridgeRegistry
 
 const requireAuth = createRequireAuth(db, env.JWT_SECRET);
 const requireModule = createRequireModule(db);
+const requireModuleFeature = createRequireModuleFeature(db);
+const requireCrmFeature = requireModuleFeature('crm');
+const requireInfraFeature = requireModuleFeature('infra');
 const requirePermission = createRequirePermission(db);
 
 const app = express();
@@ -366,24 +375,24 @@ app.use('/api/setup', createSetupRouter(db));
 app.use('/api/me', requireAuth, createMeRouter(db));
 app.use('/api/me/push-token', requireAuth, createPushTokenRouter(db));
 app.use('/api/workspace/modules', requireAuth, createWorkspaceModulesRouter(db));
-app.use('/api/contacts', requireAuth, requireModule('contacts'), createContactsRouter(db, requirePermission));
-app.use('/api/companies', requireAuth, requireModule('companies'), createCompaniesRouter(db, requirePermission));
+app.use('/api/contacts', requireAuth, requireCrmFeature('crm:contacts'), createContactsRouter(db, requirePermission));
+app.use('/api/companies', requireAuth, requireCrmFeature('crm:companies'), createCompaniesRouter(db, requirePermission));
 // Agent — must come before the broad /api catch below
 app.use('/api/agent', createAgentRouter(db, config.smtp));
-app.use('/api/pipelines', requireAuth, requireModule('pipelines'), createPipelinesRouter(db, requirePermission));
-app.use('/api/pipelines/:pipelineId/fields', requireAuth, requireModule('pipelines'), createPipelineFieldsRouter(db, requirePermission));
-app.use('/api/pipelines/:pipelineId/items', requireAuth, requireModule('pipelines'), createPipelineItemsRouter(db, requirePermission));
-app.use('/api/items', requireAuth, requireModule('pipelines'), createItemRouter(db, requirePermission));
+app.use('/api/pipelines', requireAuth, requireCrmFeature('crm:pipeline'), createPipelinesRouter(db, requirePermission));
+app.use('/api/pipelines/:pipelineId/fields', requireAuth, requireCrmFeature('crm:pipeline'), createPipelineFieldsRouter(db, requirePermission));
+app.use('/api/pipelines/:pipelineId/items', requireAuth, requireCrmFeature('crm:pipeline'), createPipelineItemsRouter(db, requirePermission));
+app.use('/api/items', requireAuth, requireCrmFeature('crm:pipeline'), createItemRouter(db, requirePermission));
 app.use(
   '/api/pipelines/:pipelineId/automations',
   requireAuth,
-  requireModule('pipelines'),
+  requireCrmFeature('crm:pipeline'),
   createPipelineAutomationsRouter(db, requirePermission),
 );
-app.use('/api/tasks/unified', requireAuth, requireModule('tasks'), createUnifiedTasksRouter(db, requirePermission));
-app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db, requirePermission));
+app.use('/api/tasks/unified', requireAuth, requireCrmFeature('crm:tasks'), createUnifiedTasksRouter(db, requirePermission));
+app.use('/api/tasks', requireAuth, requireCrmFeature('crm:tasks'), createTasksRouter(db, requirePermission));
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
-app.use('/api/alerts', requireAuth, requireModule('alerts'), createAlertsRouter(db));
+app.use('/api/alerts', requireAuth, requireInfraFeature('infra:alerts'), createAlertsRouter(db));
 app.use('/api/dashboards', requireAuth, createDashboardsRouter(db))
 app.use('/api/projects/widget-stats', requireAuth, createProjectWidgetStatsRouter(db));
 app.use('/api/projects', requireAuth, createProjectsRouter(db))
@@ -435,25 +444,31 @@ app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requir
 app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
 
+// Sidebar layout — GET open to all members, PUT /layout self-guards with requireAdmin
+app.use('/api/sidebar', requireAuth, createSidebarRouter(db));
+
 // Messaging
 app.use('/api/messaging', requireAuth, requireModule('messaging'), createMessagingRouter(db, requirePermission));
 
 // Infra routes
-app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db, requirePermission));
+app.use('/api/servers', requireAuth, requireInfraFeature('infra:servers'), createServersRouter(db, requirePermission));
 app.use('/api/sse', requireAuth, createSseRouter(db));
-app.use('/api/databases', requireAuth, requireModule('databases'), createInfraDatabasesRouter(db));
-app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesRouter(db, env.CRON_SECRET, requirePermission));
-app.use('/api/alert-thresholds', requireAuth, requireModule('alerts'), createAlertThresholdsRouter(db));
+app.use('/api/databases', requireAuth, requireInfraFeature('infra:databases'), createInfraDatabasesRouter(db));
+app.use('/api/websites', requireAuth, requireInfraFeature('infra:websites'), createWebsitesRouter(db, env.CRON_SECRET, requirePermission));
+app.use('/api/alert-thresholds', requireAuth, requireInfraFeature('infra:alerts'), createAlertThresholdsRouter(db));
 app.use('/api/settings/module-events', requireAuth, createModuleEventSettingsRouter(db));
 app.use('/api/settings/notifications', requireAuth, createNotificationPreferencesRouter(db));
+app.use('/api/settings', requireAuth, createHubProvidersRouter(db));
 app.use('/api/settings', requireAuth, createHooksRouter(db));
+app.use('/api/hub/sections', requireAuth, createHubSectionsRouter(db));
+app.use('/api/settings/domain', requireAuth, createHubSettingsRouter(db));
 
 // System — version + updates. Mixed auth handled inside the router.
 app.use('/api/system', createSystemRouter(db, env, requireAuth, requireAdmin));
 
 // SSH management
 app.use('/api/ssh', requireAuth, createSshKeypairRouter(db));
-app.use('/api/servers/:id/ssh', requireAuth, requireModule('servers'), requirePermission('servers:ssh'), createSshActionsRouter(db));
+app.use('/api/servers/:id/ssh', requireAuth, requireInfraFeature('infra:servers'), requirePermission('servers:ssh'), createSshActionsRouter(db));
 
 // Internal (cron) — protected by CRON_SECRET, no auth cookie
 app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));
@@ -484,9 +499,14 @@ startMetricsRollup(db);
 // Start plugin cron worker (fires plugin-registered jobs, 60-s cycle)
 startPluginCron(db);
 
+// Purge tombstoned hub records past the retention window (daily)
+startHubRetention(db);
+
 // Hook features reacting to hub data changes from plugin providers
 initHubHookListeners(db);
 
+// Dispatch plugin-declared hook features on contract events
+initHookFeatureDispatcher(db);
 startRecurringTaskGenerator(db);
 
 // Init messaging Redis pub/sub (optional — falls back to local broadcast without it)

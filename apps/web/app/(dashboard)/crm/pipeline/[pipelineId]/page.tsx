@@ -1,0 +1,1 @@
+export { default } from '@/modules/crm/pipeline/pages/[pipelineId]/page';

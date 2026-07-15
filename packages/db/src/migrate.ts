@@ -3,16 +3,27 @@ import * as path from 'path';
 import { promises as fs } from 'fs';
 import { createDb } from './client';
 
+// FileMigrationProvider requires every .ts/.js file it finds in the migrations
+// folder, including colocated *.test.ts files. Those import test-only deps
+// (e.g. vitest) that aren't available at runtime, so filter them out first.
+const migrationFs = {
+  ...fs,
+  readdir: async (dir: string) => {
+    const entries = await fs.readdir(dir);
+    return entries.filter(name => !name.endsWith('.test.ts'));
+  },
+};
+
 export async function migrate(db: any): Promise<{ error?: any; results?: any[] }> {
   const isTsNode = __filename.endsWith('.ts');
-  const migrationFolder = isTsNode 
-    ? path.join(__dirname, '../migrations') 
+  const migrationFolder = isTsNode
+    ? path.join(__dirname, '../migrations')
     : path.join(__dirname, 'migrations');
 
   const migrator = new Migrator({
     db,
     provider: new FileMigrationProvider({
-      fs,
+      fs: migrationFs,
       path,
       migrationFolder,
     }),

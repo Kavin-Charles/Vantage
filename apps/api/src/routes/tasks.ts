@@ -171,7 +171,7 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
           workspace_id: workspace.id,
           user_id: task.assignee_id ?? null,
           type: 'task_done',
-          source_module_id: 'tasks',
+          source_module_id: 'crm',
           body: `Task completed: "${task.title}"`,
           contact_id: task.contact_id ?? undefined,
           record_id: task.record_id ?? undefined,
