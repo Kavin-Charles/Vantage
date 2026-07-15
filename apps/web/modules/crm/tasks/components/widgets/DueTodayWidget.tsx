@@ -23,7 +23,7 @@ function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => voi
         alignItems: 'center',
         justifyContent: 'center',
         padding: 0,
-        color: '#fff',
+        color: 'var(--surface)',
         fontSize: 9,
         lineHeight: 1,
       }}
