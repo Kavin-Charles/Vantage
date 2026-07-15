@@ -22,3 +22,8 @@ import '@/modules/crm/tasks/components/widgets/UpcomingDeadlinesWidget';
 import '@/modules/crm/tasks/components/widgets/CompletedThisWeekWidget';
 import '@/modules/crm/tasks/components/widgets/TeamTaskProgressWidget';
 import '@/modules/crm/tasks/components/widgets/TaskPriorityWidget';
+import '@/modules/projects/components/widgets/ActiveProjectsWidget';
+import '@/modules/projects/components/widgets/DelayedProjectsWidget';
+import '@/modules/projects/components/widgets/MilestonesDueWidget';
+import '@/modules/projects/components/widgets/TeamWorkloadWidget';
+import '@/modules/projects/components/widgets/ProjectActivityWidget';
