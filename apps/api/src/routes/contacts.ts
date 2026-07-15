@@ -6,6 +6,7 @@ import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { csvEscape, toCSV } from '../lib/csv';
 import { logActivity } from '../lib/log-activity';
+import { emitCrmEvent } from '../lib/crm-events';
 import { logger } from '../lib/logger';
 import { queueWebhook } from '../lib/queue-webhook';
 
@@ -321,6 +322,7 @@ export function createContactsRouter(
         .select('id')
         .where('id', '=', contactId)
         .where('workspace_id', '=', workspace.id)
+        .where('deleted_at', 'is', null)
         .executeTakeFirst();
       if (!contact) {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Contact not found' } });
@@ -395,7 +397,7 @@ export function createContactsRouter(
         workspace_id: workspace.id,
         user_id: user.id,
         type: 'contact_created',
-        source_module_id: 'contacts',
+        source_module_id: 'crm',
         body: `Contact ${contact.name} created`,
         contact_id: contact.id,
       });
@@ -408,6 +410,8 @@ export function createContactsRouter(
         workspace_id: workspace.id,
         timestamp: new Date().toISOString(),
       }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
+
+      emitCrmEvent(db, workspace.id, 'crm.contact@v1', 'created', contact.id);
 
       res.status(201).json({ data: contact, error: null });
     } catch (err) {
@@ -486,6 +490,8 @@ export function createContactsRouter(
         timestamp: new Date().toISOString(),
       }).catch((err: unknown) => logger.error({ err }, 'queueWebhook failed'));
 
+      emitCrmEvent(db, workspace.id, 'crm.contact@v1', 'updated', contact.id);
+
       res.json({ data: contact, error: null });
     } catch (err) {
       next(err);
@@ -525,6 +531,7 @@ export function createContactsRouter(
       }
 
       logger.info({ workspace_id: workspace.id, contact_id: contact.id }, 'contacts.delete');
+      emitCrmEvent(db, workspace.id, 'crm.contact@v1', 'deleted', contact.id);
       res.json({ data: { success: true }, error: null });
     } catch (err) {
       next(err);

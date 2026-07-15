@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@vencore/plugin-types": "workspace:*",
-    "kysely": "^0.27.0"
+    "kysely": "^0.27.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

@@ -14,7 +14,20 @@ export type ActivityType =
   | 'database_added'
   | 'database_removed'
   | 'database_settings_changed'
-  | 'database_connection_tested';
+  | 'database_connection_tested'
+  | 'project_created'
+  | 'project_updated'
+  | 'project_archived'
+  | 'pm_task_created'
+  | 'pm_task_assigned'
+  | 'pm_task_status_changed'
+  | 'pm_comment_added'
+  | 'milestone_created'
+  | 'milestone_completed'
+  | 'sprint_started'
+  | 'sprint_ended'
+  | 'pm_time_logged'
+  | 'pm_approval_responded';
 
 interface ActivityPayload {
   workspace_id: string;

@@ -6,6 +6,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { pmApi, type TaskLabel } from '@/modules/projects/lib/api';
 import { Icon } from '@/modules/shared/components/ui/Icon';
+import { RecurringRulesPanel } from '@/modules/projects/components/RecurringRulesPanel';
+import { CustomFieldsManager } from '@/modules/projects/components/CustomFieldsManager';
 
 const HEALTH_OPTIONS = [
   { value: 'ON_TRACK',  label: 'On Track'  },
@@ -246,8 +248,9 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Right: Labels */}
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20 }}>
+        {/* Right: Labels + Custom Fields */}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 20 }}>
           <p style={{ fontFamily: 'DM Sans', fontSize: 11, fontWeight: 700, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>
             Labels
           </p>
@@ -349,8 +352,12 @@ export default function SettingsPage() {
           {createLabelMutation.isError && (
             <p style={{ fontFamily: 'DM Sans', fontSize: 12, color: 'var(--red)', margin: '8px 0 0' }}>Failed to create label.</p>
           )}
+          </div>
+          <CustomFieldsManager projectId={projectId} />
         </div>
       </div>
+
+      <RecurringRulesPanel projectId={projectId} />
     </div>
   );
 }

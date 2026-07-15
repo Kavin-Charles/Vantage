@@ -2,7 +2,10 @@
   "app": {
     "name": "AcmeCo",
     "logoUrl": "/logo.png",
-    "domain": "app.acmeco.com"
+    "domain": "app.acmeco.com",
+    "faviconUrl": "/favicon.ico",
+    "tagline": "One platform to run your business.",
+    "primaryColor": "#0b1330"
   },
   "features": {
     "crm": true,

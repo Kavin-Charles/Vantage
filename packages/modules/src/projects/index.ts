@@ -15,4 +15,5 @@ export const PROJECTS_MODULE: ModuleDefinition = {
   apiPrefixes: ['/projects', '/pm'],
   workers: ['due-date-alerts', 'overdue-scan', 'health-recalc', 'sprint-rollover'],
   emitsActivity: true,
+  emitsAlerts: true,
 };

@@ -40,7 +40,7 @@ describe('createRequireAuth', () => {
       JWT_SECRET,
       { expiresIn: '24h' },
     );
-    const fakeUser = { id: 'user-1', role: 'admin', workspace_id: 'ws-1' };
+    const fakeUser = { id: 'user-1', role: 'admin', workspace_id: 'ws-1', is_active: true };
     const fakeWorkspace = { id: 'ws-1', name: 'Test' };
     const chainMock = {
       where: vi.fn().mockReturnThis(),

@@ -23,6 +23,7 @@ export function createPmSearchRouter(db: Kysely<Database>): Router {
       const tasks = await db.selectFrom('project_tasks as t')
         .innerJoin('projects as p', 'p.id', 't.project_id')
         .where('p.workspace_id', '=', workspace.id)
+        .where('p.status', '!=', 'DELETED' as never)
         .where(sql`to_tsvector('english', t.title)`, '@@', sql`to_tsquery('english', ${tsQuery})`)
         .select(['t.id', 't.title', 't.project_id', 't.priority', 't.due_date'])
         .limit(10)
@@ -30,6 +31,7 @@ export function createPmSearchRouter(db: Kysely<Database>): Router {
 
       const projects = await db.selectFrom('projects as p')
         .where('p.workspace_id', '=', workspace.id)
+        .where('p.status', '!=', 'DELETED' as never)
         .where(sql`to_tsvector('english', p.name)`, '@@', sql`to_tsquery('english', ${tsQuery})`)
         .select(['p.id', 'p.name', 'p.color', 'p.status'])
         .limit(5)
@@ -38,6 +40,7 @@ export function createPmSearchRouter(db: Kysely<Database>): Router {
       const docs = await db.selectFrom('project_docs as d')
         .innerJoin('projects as p', 'p.id', 'd.project_id')
         .where('p.workspace_id', '=', workspace.id)
+        .where('p.status', '!=', 'DELETED' as never)
         .where(sql`to_tsvector('english', d.title)`, '@@', sql`to_tsquery('english', ${tsQuery})`)
         .select(['d.id', 'd.title', 'd.project_id', 'd.updated_at'])
         .limit(5)

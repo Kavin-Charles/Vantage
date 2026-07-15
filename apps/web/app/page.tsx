@@ -1,18 +1,8 @@
 import { redirect } from 'next/navigation';
-
-async function getSetupConfigured(): Promise<boolean> {
-  const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
-  try {
-    const res = await fetch(`${apiUrl}/api/setup/status`, { cache: 'no-store', signal: AbortSignal.timeout(3000) });
-    const json = await res.json();
-    return json.data?.configured === true;
-  } catch {
-    return false;
-  }
-}
+import { getSetupStatus } from './setup/status';
 
 export default async function Home() {
-  const configured = await getSetupConfigured();
-  if (!configured) redirect('/setup');
-  redirect('/dashboard');
+  const status = await getSetupStatus();
+  if (status === 'configured') redirect('/dashboard');
+  redirect('/setup');
 }

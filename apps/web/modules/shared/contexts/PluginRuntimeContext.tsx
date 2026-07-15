@@ -27,10 +27,17 @@ export interface PanelDef {
   component: AnyComponent;
 }
 
+export interface SectionDef {
+  id: string;
+  pluginId: string;
+  component: AnyComponent;
+}
+
 export interface FrontendSurfaceRegistry {
   pages: Map<string, AnyComponent>;
   widgets: Map<string, WidgetDef>;
   panels: Map<string, PanelDef>;
+  sections: Map<string, SectionDef>;
 }
 
 interface PluginRuntimeContextValue {
@@ -43,6 +50,7 @@ const defaultRegistry: FrontendSurfaceRegistry = {
   pages: new Map(),
   widgets: new Map(),
   panels: new Map(),
+  sections: new Map(),
 };
 
 const PluginRuntimeCtx = createContext<PluginRuntimeContextValue>({
@@ -68,6 +76,7 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
     pages: new Map(),
     widgets: new Map(),
     panels: new Map(),
+    sections: new Map(),
   });
   const [loading, setLoading] = useState(true);
   const loadedRef = useRef(new Set<string>());
@@ -119,6 +128,12 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
               },
               registerPanel: (recordType: string, id: string, component: AnyComponent) => {
                 registry.panels.set(`${recordType}:${id}`, { recordType, id, label: id, pluginId: plugin.plugin_id, component });
+              },
+              registerSection: (id: string, component: AnyComponent) => {
+                registry.sections.set(`${plugin.plugin_id}:${id}`, { id, pluginId: plugin.plugin_id, component });
+                if (typeof window !== 'undefined') {
+                  window.dispatchEvent(new CustomEvent('vencore:section:registered'));
+                }
               },
               toast: (message: string, type?: string) => {
                 window.dispatchEvent(new CustomEvent('vencore:toast', { detail: { message, type } }));

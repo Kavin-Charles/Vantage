@@ -9,6 +9,7 @@ export interface WorkspaceTable {
   contact_count: Generated<number>;
   server_count: Generated<number>;
   db_count: Generated<number>;
+  plugin_data_sharing: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
 }
@@ -92,7 +93,7 @@ export interface ActivityTable {
   user_id: string | null;
   contact_id: string | null;
   record_id: string | null;
-  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert' | 'contact_created' | 'task_done' | 'database_added' | 'database_removed' | 'database_settings_changed' | 'database_connection_tested';
+  type: 'email' | 'call' | 'note' | 'meeting' | 'deal_change' | 'infra_alert' | 'contact_created' | 'task_done' | 'database_added' | 'database_removed' | 'database_settings_changed' | 'database_connection_tested' | 'project_created' | 'project_updated' | 'project_archived' | 'pm_task_created' | 'pm_task_assigned' | 'pm_task_status_changed' | 'pm_comment_added' | 'milestone_created' | 'milestone_completed' | 'sprint_started' | 'sprint_ended' | 'pm_time_logged' | 'pm_approval_responded';
   body: string | null;
   meta: Record<string, unknown> | null;
   created_at: Generated<Date>;
@@ -101,7 +102,7 @@ export interface ActivityTable {
 export interface AlertTable {
   id: Generated<string>;
   workspace_id: string;
-  resource_type: 'server' | 'database' | 'website' | 'crm';
+  resource_type: 'server' | 'database' | 'website' | 'crm' | 'projects';
   resource_id: string | null;
   severity: 'critical' | 'warning' | 'info';
   message: string;
@@ -442,6 +443,14 @@ export interface NotificationTable {
   created_at: Generated<Date>;
 }
 
+export interface InstanceMetaTable {
+  id: Generated<number>;
+  latest_version: string | null;
+  release_url: string | null;
+  last_checked_at: Date | null;
+  notified_version: string | null;
+}
+
 export interface EmailAccountTable {
   id: Generated<string>;
   user_id: string;
@@ -718,6 +727,59 @@ export interface PluginCronJobTable {
   created_at: Generated<Date>;
 }
 
+export interface PluginHubRecordTable {
+  id: Generated<string>;
+  workspace_id: string;
+  contract: string;
+  provider_plugin_id: string;
+  external_id: string;
+  data: unknown;
+  deleted_at: Date | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface WorkspaceSidebarGroupTable {
+  id: Generated<string>;
+  workspace_id: string;
+  label: string;
+  position: number;
+  is_default: Generated<boolean>;
+  item_keys: string[]; // jsonb
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface WorkspaceContractProviderTable {
+  id: Generated<string>;
+  workspace_id: string;
+  contract_group: string;
+  active_provider_id: string;
+  status: Generated<'active' | 'pending_selection'>;
+  previous_provider_id: string | null;
+  created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+export interface PluginHubSettingTable {
+  id: Generated<string>;
+  workspace_id: string;
+  plugin_id: string;
+  domain: string;
+  key: string;
+  value: unknown;
+  shared: Generated<boolean>;
+  updated_at: Generated<Date>;
+}
+
+export interface UserSidebarPrefsTable {
+  user_id: string;
+  workspace_id: string;
+  pinned_keys: string[]; // jsonb
+  collapsed_group_keys: string[]; // jsonb
+  updated_at: Generated<Date>;
+}
+
 export interface PluginNotificationTable {
   id: Generated<string>;
   workspace_id: string;
@@ -821,6 +883,7 @@ export interface ProjectTable {
   contact_id: string | null
   company_id: string | null
   source_item_id: string | null
+  deal_id: string | null
   created_at: Generated<Date>
   updated_at: Generated<Date>
 }
@@ -962,6 +1025,23 @@ export interface SprintTaskTable {
   points: number | null
 }
 
+export interface RecurringTaskRuleTable {
+  id: Generated<string>
+  project_id: string
+  title: string
+  description: string | null
+  status_id: string | null
+  priority: Generated<string>
+  assignee_ids: string[] | null
+  frequency: string
+  interval: Generated<number>
+  next_run_at: Date
+  is_active: Generated<boolean>
+  created_by: string
+  created_at: Generated<Date>
+  updated_at: Generated<Date>
+}
+
 export interface ProjectMemberTable {
   id: Generated<string>
   project_id: string
@@ -998,10 +1078,21 @@ export interface ApprovalRequestTable {
   task_id: string | null
   milestone_id: string | null
   attachment_id: string | null
+  recipient_email: string | null
   status: Generated<string>
   note: string | null
   responded_at: Date | null
   created_at: Generated<Date>
+}
+
+export interface CrossModuleSettingTable {
+  id: Generated<string>
+  workspace_id: string
+  setting_key: string
+  enabled: Generated<boolean>
+  config: Record<string, unknown> | null
+  created_at: Generated<Date>
+  updated_at: Generated<Date>
 }
 
 export interface AutomationRuleTable {
@@ -1177,6 +1268,7 @@ export interface WorkspaceHookConfigTable {
   module_id: string;
   feature_id: string;
   provider_id: string | null;
+  config: Record<string, unknown> | null;
   enabled: Generated<boolean>;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
@@ -1240,6 +1332,9 @@ export interface Database {
   plugin_files: PluginFilesTable;
   plugin_settings: PluginSettingsTable;
   plugin_cron_jobs: PluginCronJobTable;
+  plugin_hub_records: PluginHubRecordTable;
+  plugin_hub_settings: PluginHubSettingTable;
+  workspace_contract_providers: WorkspaceContractProviderTable;
   plugin_notifications: PluginNotificationTable;
   user_permissions: UserPermissionTable;
   groups: GroupTable;
@@ -1250,6 +1345,7 @@ export interface Database {
   dashboard_layouts: DashboardLayoutTable;
   dashboard_group_assignments: DashboardGroupAssignmentTable;
   projects: ProjectTable
+  cross_module_settings: CrossModuleSettingTable
   project_task_statuses: ProjectTaskStatusTable
   project_tasks: ProjectTaskTable
   project_task_assignees: ProjectTaskAssigneeTable
@@ -1266,6 +1362,7 @@ export interface Database {
   milestone_tasks: MilestoneTaskTable
   sprints: SprintTable
   sprint_tasks: SprintTaskTable
+  recurring_task_rules: RecurringTaskRuleTable
   project_members: ProjectMemberTable
   portal_access: PortalAccessTable
   client_portal_sessions: ClientPortalSessionTable
@@ -1286,6 +1383,9 @@ export interface Database {
   channel_read_state: ChannelReadStateTable
   hook_providers: HookProviderTable;
   workspace_hook_configs: WorkspaceHookConfigTable;
+  instance_meta: InstanceMetaTable;
+  workspace_sidebar_groups: WorkspaceSidebarGroupTable;
+  user_sidebar_prefs: UserSidebarPrefsTable;
 }
 
 // Convenience types
@@ -1489,9 +1589,16 @@ export type ProjectTask = Selectable<ProjectTaskTable>
 export type ProjectMember = Selectable<ProjectMemberTable>
 export type Milestone = Selectable<MilestoneTable>
 export type Sprint = Selectable<SprintTable>
+export type RecurringTaskRule = Selectable<RecurringTaskRuleTable>
+export type NewRecurringTaskRule = Insertable<RecurringTaskRuleTable>
+export type RecurringTaskRuleUpdate = Updateable<RecurringTaskRuleTable>
+
 export type PortalAccess = Selectable<PortalAccessTable>
 export type ClientPortalSession = Selectable<ClientPortalSessionTable>
 export type ApprovalRequest = Selectable<ApprovalRequestTable>
+export type CrossModuleSetting = Selectable<CrossModuleSettingTable>
+export type NewCrossModuleSetting = Insertable<CrossModuleSettingTable>
+export type CrossModuleSettingUpdate = Updateable<CrossModuleSettingTable>
 export type AutomationRule = Selectable<AutomationRuleTable>
 export type ProjectDoc = Selectable<ProjectDocTable>
 export type ProjectTemplate = Selectable<ProjectTemplateTable>

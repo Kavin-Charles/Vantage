@@ -26,7 +26,7 @@ export async function logStageChanged(p: LogStageChangedParams) {
     workspace_id: p.workspaceId,
     user_id: p.userId ?? null,
     type: 'deal_change',
-    source_module_id: 'pipelines',
+    source_module_id: 'crm',
     record_id: p.itemId,
     meta: { from_stage_id: p.fromStageId, to_stage_id: p.toStageId },
   });

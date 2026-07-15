@@ -1,0 +1,18 @@
+FROM node:20-alpine AS build
+RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
+WORKDIR /app
+COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json turbo.json ./
+COPY apps/updater/package.json ./apps/updater/package.json
+RUN pnpm install --frozen-lockfile --filter @vencore/updater
+COPY apps/updater/ ./apps/updater/
+RUN pnpm --filter @vencore/updater build
+
+FROM node:20-alpine
+RUN apk add --no-cache docker-cli docker-cli-compose
+WORKDIR /vencore
+COPY --from=build /app/apps/updater/dist /updater/dist
+ARG VENCORE_VERSION=0.0.0-dev
+ENV VENCORE_VERSION=$VENCORE_VERSION
+ENV NODE_ENV=production
+EXPOSE 9500
+CMD ["node", "/updater/dist/index.js"]

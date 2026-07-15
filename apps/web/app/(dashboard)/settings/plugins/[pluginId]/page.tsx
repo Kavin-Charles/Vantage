@@ -24,6 +24,12 @@ interface PluginSettingsField {
   max?: number;
 }
 
+interface HubStat {
+  contract: string;
+  record_count: number;
+  last_published_at: string | null;
+}
+
 interface PluginDetail {
   id: string;
   plugin_id: string;
@@ -31,14 +37,29 @@ interface PluginDetail {
   version: string;
   enabled: boolean;
   installed_at: string;
+  hub_stats?: HubStat[];
   manifest: {
     description?: string;
     icon?: string;
     author?: string;
     homepage?: string;
+    host_version?: string;
     permissions?: PluginPermDef[];
     settings_schema?: PluginSettingsField[];
+    provides?: Array<{ contract: string }>;
+    consumes?: Array<{ contract: string; optional?: boolean }>;
   };
+}
+
+const CONTRACT_LABELS: Record<string, string> = {
+  'crm.contact@v1': 'CRM contacts',
+  'crm.company@v1': 'CRM companies',
+  'crm.deal@v1': 'CRM deals',
+  'crm.activity@v1': 'CRM activity',
+};
+
+function contractLabel(id: string): string {
+  return CONTRACT_LABELS[id] ?? id;
 }
 
 export default function PluginSettingsPage() {
@@ -207,6 +228,11 @@ export default function PluginSettingsPage() {
               <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text3)' }}>
                 v{plugin.version} · {plugin.plugin_id}
               </p>
+              {plugin.manifest?.host_version && (
+                <span style={{ color: 'var(--text3)', fontSize: 12 }}>
+                  Requires host {plugin.manifest.host_version}
+                </span>
+              )}
             </div>
           </div>
 
@@ -253,6 +279,61 @@ export default function PluginSettingsPage() {
                       }}
                     />
                     {perm.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {((plugin.manifest?.provides?.length ?? 0) > 0 || (plugin.manifest?.consumes?.length ?? 0) > 0) && (
+            <div style={{ marginTop: 16 }}>
+              <p
+                style={{
+                  fontSize: 12, fontWeight: 600, color: 'var(--text2)', margin: '0 0 8px',
+                  textTransform: 'uppercase', letterSpacing: '0.05em',
+                }}
+              >
+                Shares data
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {(plugin.manifest?.provides ?? []).map((p) => {
+                  const stat = (plugin.hub_stats ?? []).find((s) => s.contract === p.contract);
+                  return (
+                    <div key={`prov-${p.contract}`} style={{ fontSize: 12, color: 'var(--text2)' }}>
+                      <span
+                        style={{
+                          display: 'inline-block', padding: '1px 7px', marginRight: 6,
+                          borderRadius: 999, fontSize: 11, fontWeight: 600,
+                          background: 'var(--green-bg)', color: 'var(--green)',
+                        }}
+                      >
+                        Publishes
+                      </span>
+                      {contractLabel(p.contract)}
+                      {stat && (
+                        <span style={{ color: 'var(--text3)' }}>
+                          {' · '}{stat.record_count.toLocaleString()} records
+                          {stat.last_published_at
+                            ? ` · last sync ${new Date(stat.last_published_at).toLocaleString()}`
+                            : ' · never synced'}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                {(plugin.manifest?.consumes ?? []).map((c) => (
+                  <div key={`cons-${c.contract}`} style={{ fontSize: 12, color: 'var(--text2)' }}>
+                    <span
+                      style={{
+                        display: 'inline-block', padding: '1px 7px', marginRight: 6,
+                        borderRadius: 999, fontSize: 11, fontWeight: 600,
+                        background: 'var(--blue-bg)', color: 'var(--blue)',
+                      }}
+                    >
+                      Reads
+                    </span>
+                    {contractLabel(c.contract)} from other plugins
+                    {c.optional ? ' (optional)' : ''}
                   </div>
                 ))}
               </div>

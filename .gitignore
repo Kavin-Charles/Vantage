@@ -174,3 +174,4 @@ scripts/list-workspaces.ts
 # Generated planning docs (local only)
 docs/gen-messaging-plan.js
 docs/messaging-plan.docx
+plugin-storage

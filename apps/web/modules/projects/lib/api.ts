@@ -37,12 +37,119 @@ export interface Milestone {
   due_date: string; status: string; client_visible: boolean; position: number;
 }
 
+export interface WidgetStats {
+  active_projects: number;
+  at_risk_projects: number;
+  overdue_tasks: number;
+  upcoming_milestones: { id: string; name: string; due_date: string; project_id: string }[];
+}
+
+export interface CustomField {
+  id: string; project_id: string; name: string;
+  field_type: 'TEXT' | 'NUMBER' | 'DATE' | 'SELECT' | 'CHECKBOX' | 'URL';
+  options: string[] | null; created_at: string;
+}
+
+export interface CustomFieldValue {
+  task_id: string; custom_field_id: string; value: string | null;
+  name: string; field_type: CustomField['field_type'];
+}
+
+export interface TimeLog {
+  id: string; task_id: string; user_id: string; minutes: number;
+  logged_at: string; note: string | null; user_name: string | null;
+}
+
+export interface TimeSummary {
+  total_minutes: number;
+  by_task: { task_id: string; title: string; total_minutes: number }[];
+  by_user: { user_id: string; user_name: string | null; total_minutes: number }[];
+}
+
+export interface AutomationTrigger {
+  type: 'task_status_changed' | 'task_overdue' | 'task_assigned' | 'milestone_completed' |
+    'client_approved' | 'client_rejected' | 'sprint_started' | 'sprint_ended';
+  to_status_id?: string;
+}
+
+export type AutomationAction =
+  | { type: 'send_notification'; user_ids: string[]; message: string }
+  | { type: 'change_task_status'; status_id: string }
+  | { type: 'assign_task'; user_id: string }
+  | { type: 'mark_milestone_complete'; milestone_id: string }
+  | { type: 'send_webhook'; url: string; payload?: Record<string, unknown> }
+  | { type: 'create_task'; title: string; status_id?: string; assignee_ids?: string[] }
+  | { type: 'set_custom_field'; custom_field_id: string; value: string };
+
+export interface AutomationRule {
+  id: string; project_id: string; name: string; is_active: boolean;
+  trigger: AutomationTrigger; actions: AutomationAction[];
+  created_by: string; created_at: string;
+}
+
+export interface AutomationLog {
+  id: string; rule_id: string; rule_name: string;
+  triggered_at: string; success: boolean; detail: string | null;
+}
+
+export interface RecurringRule {
+  id: string; project_id: string; title: string; description: string | null;
+  status_id: string | null; priority: string; assignee_ids: string[] | null;
+  frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY'; interval: number;
+  next_run_at: string; is_active: boolean; created_by: string;
+  created_at: string; updated_at: string;
+}
+
+export interface CreateRecurringRuleBody {
+  title: string;
+  description?: string;
+  status_id?: string;
+  priority?: string;
+  assignee_ids?: string[];
+  frequency: 'DAILY' | 'WEEKLY' | 'MONTHLY';
+  interval: number;
+}
+
 export interface CreateTaskBody {
   title: string;
   status_id?: string;
   priority?: string;
   assignee_ids?: string[];
   due_date?: string | null;
+  parent_id?: string | null;
+}
+
+// ── Cross-module types ─────────────────────────────────────────────────────────
+
+export interface ApprovalRequest {
+  id: string;
+  project_id: string;
+  portal_id: string;
+  task_id: string | null;
+  milestone_id: string | null;
+  attachment_id: string | null;
+  recipient_email: string | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  note: string | null;
+  responded_at: string | null;
+  created_at: string;
+}
+
+export type CrossModuleSettingKey =
+  | 'pm.deal_link_enabled'
+  | 'pm.deal_close_auto_spawn'
+  | 'pm.project_complete_deal_stage'
+  | 'crm.project_health_on_record';
+
+export interface CrossModuleSetting {
+  key: CrossModuleSettingKey;
+  enabled: boolean;
+}
+
+export interface ApproveTokenInfo {
+  action: 'approve' | 'reject';
+  project_name: string;
+  already_responded: boolean;
 }
 
 export const pmApi = {
@@ -96,4 +203,92 @@ export const pmApi = {
     apiFetch<{ data: Comment }>(`/api/projects/${projectId}/tasks/${taskId}/comments`, { token, method: 'POST', body: JSON.stringify({ body }) }),
   listMembers: (token: string, projectId: string) =>
     apiFetch<{ data: ProjectMember[] }>(`/api/projects/${projectId}/members`, { token }),
+  getWidgetStats: (token: string) =>
+    apiFetch<{ data: WidgetStats }>('/api/projects/widget-stats', { token }),
+  listCustomFields: (token: string, projectId: string) =>
+    apiFetch<{ data: CustomField[] }>(`/api/projects/${projectId}/custom-fields`, { token }),
+  createCustomField: (token: string, projectId: string, body: { name: string; field_type: CustomField['field_type']; options?: string[] }) =>
+    apiFetch<{ data: CustomField }>(`/api/projects/${projectId}/custom-fields`, { token, method: 'POST', body: JSON.stringify(body) }),
+  deleteCustomField: (token: string, projectId: string, fieldId: string) =>
+    apiFetch<{ data: { success: boolean } }>(`/api/projects/${projectId}/custom-fields/${fieldId}`, { token, method: 'DELETE' }),
+  listTaskFieldValues: (token: string, projectId: string, taskId: string) =>
+    apiFetch<{ data: CustomFieldValue[] }>(`/api/projects/${projectId}/tasks/${taskId}/field-values`, { token }),
+  upsertTaskFieldValue: (token: string, projectId: string, taskId: string, body: { custom_field_id: string; value: string | number | boolean | null }) =>
+    apiFetch<{ data: { task_id: string; custom_field_id: string; value: string | null } }>(`/api/projects/${projectId}/tasks/${taskId}/field-values`, { token, method: 'POST', body: JSON.stringify(body) }),
+  listTimeLogs: (token: string, projectId: string, taskId: string) =>
+    apiFetch<{ data: TimeLog[] }>(`/api/projects/${projectId}/tasks/${taskId}/time-logs`, { token }),
+  createTimeLog: (token: string, projectId: string, taskId: string, body: { minutes: number; logged_at?: string; note?: string }) =>
+    apiFetch<{ data: TimeLog }>(`/api/projects/${projectId}/tasks/${taskId}/time-logs`, { token, method: 'POST', body: JSON.stringify(body) }),
+  deleteTimeLog: (token: string, projectId: string, taskId: string, logId: string) =>
+    apiFetch<{ data: { success: boolean } }>(`/api/projects/${projectId}/tasks/${taskId}/time-logs/${logId}`, { token, method: 'DELETE' }),
+  getTimeSummary: (token: string, projectId: string) =>
+    apiFetch<{ data: TimeSummary }>(`/api/projects/${projectId}/time-summary`, { token }),
+  listAutomationRules: (token: string, projectId: string) =>
+    apiFetch<{ data: AutomationRule[] }>(`/api/projects/${projectId}/automations`, { token }),
+  createAutomationRule: (token: string, projectId: string, body: { name: string; trigger: AutomationTrigger; actions: AutomationAction[]; is_active?: boolean }) =>
+    apiFetch<{ data: AutomationRule }>(`/api/projects/${projectId}/automations`, { token, method: 'POST', body: JSON.stringify(body) }),
+  updateAutomationRule: (token: string, projectId: string, ruleId: string, body: Partial<{ name: string; trigger: AutomationTrigger; actions: AutomationAction[]; is_active: boolean }>) =>
+    apiFetch<{ data: AutomationRule }>(`/api/projects/${projectId}/automations/${ruleId}`, { token, method: 'PATCH', body: JSON.stringify(body) }),
+  deleteAutomationRule: (token: string, projectId: string, ruleId: string) =>
+    apiFetch<{ data: { success: boolean } }>(`/api/projects/${projectId}/automations/${ruleId}`, { token, method: 'DELETE' }),
+  listAutomationLogs: (token: string, projectId: string) =>
+    apiFetch<{ data: AutomationLog[] }>(`/api/projects/${projectId}/automation-logs`, { token }),
+
+  // Approvals (internal — PM manager view)
+  listApprovals: (token: string, projectId: string, portalId: string) =>
+    apiFetch<{ data: ApprovalRequest[] }>(`/api/projects/${projectId}/portal/${portalId}/approvals`, { token }),
+  listAllApprovals: (token: string, projectId: string) =>
+    apiFetch<{ data: ApprovalRequest[] }>(`/api/projects/${projectId}/portal/approvals`, { token }),
+  createApproval: (
+    token: string,
+    projectId: string,
+    body: { portal_id: string; task_id?: string; milestone_id?: string; attachment_id?: string; recipient_email?: string },
+  ) =>
+    apiFetch<{ data: ApprovalRequest }>(`/api/projects/${projectId}/portal/approvals`, { token, method: 'POST', body: JSON.stringify(body) }),
+
+  // Recurring rules
+  listRecurringRules: (token: string, projectId: string) =>
+    apiFetch<{ data: RecurringRule[] }>(`/api/projects/${projectId}/recurring-rules`, { token }),
+  createRecurringRule: (token: string, projectId: string, body: CreateRecurringRuleBody) =>
+    apiFetch<{ data: RecurringRule }>(`/api/projects/${projectId}/recurring-rules`, { token, method: 'POST', body: JSON.stringify(body) }),
+  updateRecurringRule: (token: string, projectId: string, ruleId: string, body: Partial<CreateRecurringRuleBody & { is_active: boolean }>) =>
+    apiFetch<{ data: RecurringRule }>(`/api/projects/${projectId}/recurring-rules/${ruleId}`, { token, method: 'PATCH', body: JSON.stringify(body) }),
+  deleteRecurringRule: (token: string, projectId: string, ruleId: string) =>
+    apiFetch<{ data: { success: boolean } }>(`/api/projects/${projectId}/recurring-rules/${ruleId}`, { token, method: 'DELETE' }),
+
+  // Task reorder
+  reorderTask: (token: string, projectId: string, taskId: string, body: { status_id: string; after_task_id: string | null }) =>
+    apiFetch<{ data: { success: boolean } }>(`/api/projects/${projectId}/tasks/${taskId}/reorder`, { token, method: 'POST', body: JSON.stringify(body) }),
+
+  // CRM search (unified)
+  searchCrm: (token: string, kind: 'contact' | 'company' | 'deal', search: string) =>
+    apiFetch<{ data: { id: string; label: string; sublabel: string | null }[] }>(`/api/crm-search?kind=${encodeURIComponent(kind)}&search=${encodeURIComponent(search)}`, { token }),
+
+  // CRM project links
+  listProjectsByContact: (token: string, contactId: string) =>
+    apiFetch<{ data: ProjectWithProgress[] }>(`/api/projects?contact_id=${encodeURIComponent(contactId)}`, { token }),
+  listProjectsByDeal: (token: string, dealId: string) =>
+    apiFetch<{ data: ProjectWithProgress[] }>(`/api/projects?deal_id=${encodeURIComponent(dealId)}`, { token }),
+};
+
+// ── crossModuleApi ─────────────────────────────────────────────────────────────
+
+export const crossModuleApi = {
+  list: (token: string) =>
+    apiFetch<{ data: Record<CrossModuleSettingKey, boolean> }>('/api/cross-module-settings', { token }),
+  patch: (token: string, key: CrossModuleSettingKey, enabled: boolean) =>
+    apiFetch<{ data: CrossModuleSetting }>('/api/cross-module-settings', { token, method: 'PATCH', body: JSON.stringify({ key, enabled }) }),
+};
+
+// ── portalApproveApi (public — no auth token) ──────────────────────────────────
+
+export const portalApproveApi = {
+  getInfo: async (jwtToken: string): Promise<{ data: ApproveTokenInfo | null; error: { code: string; message?: string } | null }> => {
+    const res = await fetch(`/api/portal/approve/${jwtToken}`);
+    return res.json() as Promise<{ data: ApproveTokenInfo | null; error: { code: string; message?: string } | null }>;
+  },
+  submit: async (jwtToken: string): Promise<{ data: { id: string; status: 'APPROVED' | 'REJECTED'; responded_at: string } | null; error: { code: string; message?: string } | null }> => {
+    const res = await fetch(`/api/portal/approve/${jwtToken}`, { method: 'POST' });
+    return res.json() as Promise<{ data: { id: string; status: 'APPROVED' | 'REJECTED'; responded_at: string } | null; error: { code: string; message?: string } | null }>;
+  },
 };

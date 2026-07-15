@@ -147,6 +147,31 @@ process.on('message', async (msg: InboundMsg) => {
             },
             emit: (event: string, payload: unknown) => bridge('bus.emit', { event, payload }),
           },
+          hub: {
+            publish: (contract: string, records: unknown[]) => bridge('hub.publish', { contract, records }),
+            query: (contract: string, opts?: unknown) => bridge('hub.query', { contract, ...(opts as object ?? {}) }),
+            providers: (contract: string) => bridge('hub.providers', { contract }),
+            delete: (contract: string, externalIds: string[]) => bridge('hub.delete', { contract, external_ids: externalIds }),
+            contracts: () => bridge('hub.contracts', {}),
+            subscribe: (contract: string, handler: (payload: unknown) => void | Promise<void>) => {
+              const event = `hub:${contract}:changed`;
+              const arr = busHandlers.get(event) ?? [];
+              arr.push(handler);
+              busHandlers.set(event, arr);
+            },
+            getSetting: (key: string) => bridge('hub.getSetting', { key }),
+            setSetting: (key: string, value: unknown) => bridge('hub.setSetting', { key, value }),
+            getSharedSetting: (pluginId: string, key: string) => bridge('hub.getSharedSetting', { plugin_id: pluginId, key }),
+          },
+          // Handler for an admin-enabled hook feature declared in the manifest.
+          // Fires with { feature, trigger, payload, config } when the host
+          // dispatches the feature's trigger event.
+          onHookFeature: (featureId: string, handler: (payload: unknown) => void | Promise<void>) => {
+            const event = `hook:${featureId}`;
+            const arr = busHandlers.get(event) ?? [];
+            arr.push(handler);
+            busHandlers.set(event, arr);
+          },
           on: (event: string, handler: (payload: unknown) => void | Promise<void>) => {
             const arr = busHandlers.get(event) ?? [];
             arr.push(handler);

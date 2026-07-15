@@ -4,10 +4,10 @@ import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { getPipeline } from '@/modules/pipeline/lib/pipelines';
-import { GeneralTab } from '@/modules/pipeline/components/settings/GeneralTab';
-import { StagesTab } from '@/modules/pipeline/components/settings/StagesTab';
-import { FieldsTab } from '@/modules/pipeline/components/settings/FieldsTab';
+import { getPipeline } from '@/modules/crm/pipeline/lib/pipelines';
+import { GeneralTab } from '@/modules/crm/pipeline/components/settings/GeneralTab';
+import { StagesTab } from '@/modules/crm/pipeline/components/settings/StagesTab';
+import { FieldsTab } from '@/modules/crm/pipeline/components/settings/FieldsTab';
 
 type Tab = 'general' | 'stages' | 'fields';
 
@@ -73,6 +73,30 @@ export default function PipelineConfigPage() {
       <p style={{ fontSize: 13, color: 'var(--text3)', fontFamily: 'var(--font-sans)', margin: '0 0 28px' }}>
         Configure stages, fields, and settings for this pipeline.
       </p>
+
+      {pipeline.stages.length === 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '12px 16px', borderRadius: 12, marginBottom: 20,
+          background: 'var(--amber-bg, #fef3c7)', border: '1px solid var(--amber, #92400e)',
+        }}>
+          <div style={{ flex: 1, fontSize: 13, color: 'var(--amber, #92400e)', fontFamily: 'var(--font-sans)' }}>
+            <strong>No stages configured.</strong> Records cannot be added until this pipeline has at least one stage. Create stages first, then add fields.
+          </div>
+          {tab !== 'stages' && (
+            <button
+              onClick={() => setTab('stages')}
+              style={{
+                padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                background: 'var(--amber, #92400e)', color: '#fff',
+                fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-sans)', whiteSpace: 'nowrap',
+              }}
+            >
+              Create stages
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Tab bar */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 28 }}>

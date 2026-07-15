@@ -21,11 +21,14 @@ export default function WorkspacePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [dataSharing, setDataSharing] = useState(true);
+  const [togglingSharing, setTogglingSharing] = useState(false);
 
   useEffect(() => {
     if (data?.data.workspace) {
       setName(data.data.workspace.name);
       setDomain(data.data.workspace.domain ?? '');
+      setDataSharing(data.data.workspace.plugin_data_sharing ?? true);
     }
   }, [data?.data.workspace]);
 
@@ -52,6 +55,26 @@ export default function WorkspacePage() {
     }
   }
 
+  async function toggleDataSharing() {
+    const next = !dataSharing;
+    setTogglingSharing(true);
+    setDataSharing(next);
+    try {
+      const token = await getToken();
+      await apiFetch('/api/workspace', {
+        method: 'PATCH',
+        body: JSON.stringify({ plugin_data_sharing: next }),
+        token,
+      });
+      await queryClient.invalidateQueries({ queryKey: ['me'] });
+    } catch {
+      setDataSharing(!next);
+      setError('Could not update plugin data sharing.');
+    } finally {
+      setTogglingSharing(false);
+    }
+  }
+
   const unchanged = name === (data?.data.workspace.name ?? '') && domain === (data?.data.workspace.domain ?? '');
 
   return (
@@ -71,6 +94,37 @@ export default function WorkspacePage() {
             {isSaving ? 'Saving…' : 'Save'}
           </Button>
           {saved && <span style={{ fontSize: 12, color: 'var(--green)' }}>Saved</span>}
+        </div>
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '20px 24px', marginTop: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>Plugin data sharing</p>
+            <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--text2)', lineHeight: 1.5 }}>
+              Lets installed plugins publish and read shared data (contacts, deals, companies)
+              through the data hub. Turning this off blocks all cross-plugin data access.
+            </p>
+          </div>
+          <button
+            onClick={() => void toggleDataSharing()}
+            disabled={togglingSharing}
+            aria-label="Toggle plugin data sharing"
+            style={{
+              position: 'relative', width: 44, height: 24, borderRadius: 999, flexShrink: 0,
+              background: dataSharing ? 'var(--green)' : 'var(--border)',
+              border: 'none', cursor: togglingSharing ? 'default' : 'pointer', transition: 'background .2s',
+              opacity: togglingSharing ? 0.6 : 1,
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute', top: 3, left: dataSharing ? 23 : 3,
+                width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                transition: 'left .2s',
+              }}
+            />
+          </button>
         </div>
       </div>
     </div>

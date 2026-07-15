@@ -32,6 +32,17 @@ export const actionSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('assign_task'), user_id: z.string().uuid() }),
   z.object({ type: z.literal('mark_milestone_complete'), milestone_id: z.string().uuid() }),
   z.object({ type: z.literal('send_webhook'), url: z.string().url(), payload: z.record(z.unknown()).optional() }),
+  z.object({
+    type: z.literal('create_task'),
+    title: z.string().min(1).max(500),
+    status_id: z.string().uuid().optional(),
+    assignee_ids: z.array(z.string().uuid()).optional(),
+  }),
+  z.object({
+    type: z.literal('set_custom_field'),
+    custom_field_id: z.string().uuid(),
+    value: z.string(),
+  }),
 ])
 
 export const createRuleSchema = z.object({
@@ -198,6 +209,33 @@ export function createAutomationRouter(db: Kysely<Database>): Router {
 
       return res.json({ data: { success: true }, error: null })
     } catch (err) {
+      return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
+    }
+  })
+
+  return router
+}
+
+export function createAutomationLogsRouter(db: Kysely<Database>): Router {
+  const router = Router({ mergeParams: true })
+
+  router.get('/', async (req, res) => {
+    const { workspace } = req as unknown as AuthenticatedRequest
+    const { projectId } = req.params as { projectId: string }
+    try {
+      const project = await verifyProjectAccess(db, projectId, workspace.id)
+      if (!project) return res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Project not found' } })
+
+      const logs = await db.selectFrom('automation_logs as l')
+        .innerJoin('automation_rules as r', 'r.id', 'l.rule_id')
+        .select(['l.id', 'l.rule_id', 'r.name as rule_name', 'l.triggered_at', 'l.success', 'l.detail'])
+        .where('r.project_id', '=', projectId)
+        .orderBy('l.triggered_at', 'desc')
+        .limit(100)
+        .execute()
+
+      return res.json({ data: logs, error: null })
+    } catch {
       return res.status(500).json({ data: null, error: { code: 'INTERNAL', message: 'Internal server error' } })
     }
   })

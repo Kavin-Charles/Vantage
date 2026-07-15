@@ -8,19 +8,22 @@ import { handleSftpUpgrade } from './ws/sftp-session';
 import { handleMessagingUpgrade } from './ws/messaging-session';
 import { initRedisMessaging } from './lib/messaging-pubsub';
 import { apiEnvSchema, readConfig } from '@vencore/config';
-import { createDb } from '@vencore/db';
+import { createDb, runMigrations } from '@vencore/db';
 import type { Kysely } from 'kysely';
+import { sql as sqlTag } from 'kysely';
 import type { Database } from '@vencore/db';
 import { errorHandler } from './middleware/errors';
 import { createRequireAuth, requireAdmin, type AuthenticatedRequest } from './middleware/auth';
-import { decryptSettingValue, isEncryptedValue } from './lib/plugin-settings-crypto';
-import { createRequireModule } from './middleware/module';
+import { decryptSettingValue, isEncryptedValue, encryptSettingValue } from './lib/plugin-settings-crypto';
+import { createRequireModule, createRequireModuleFeature } from './middleware/module';
 import { createRequirePermission } from './middleware/permission';
 import { createWorkspaceModulesRouter } from './routes/workspace-modules';
 import { createWorkspaceRouter } from './routes/workspace';
 import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
 import { createGroupsRouter } from './routes/groups';
+import { createCrossModuleSettingsRouter } from './routes/cross-module-settings';
+import { createSidebarRouter } from './routes/sidebar';
 import { createInvitesRouter } from './routes/invites';
 import { createUserPermissionsRouter } from './routes/user-permissions';
 import { createConfigRouter } from './routes/config';
@@ -53,29 +56,41 @@ import { createNotificationsRouter } from './routes/notifications';
 import { createMessagingRouter } from './routes/messaging';
 import { createDashboardsRouter } from './routes/dashboards'
 import { createProjectsRouter, createProjectStatusesRouter, createProjectLabelsRouter } from './routes/projects';
+import { createProjectWidgetStatsRouter } from './routes/project-widget-stats';
 import { createProjectTasksRouter, createMyTasksRouter } from './routes/project-tasks';
 import { createCustomFieldsRouter, createTaskFieldValuesRouter } from './routes/custom-fields';
-import { createTimeLogsRouter } from './routes/time-logs';
+import { createTimeLogsRouter, createTimeSummaryRouter } from './routes/time-logs';
 import { createMilestonesRouter } from './routes/milestones';
 import { createSprintsRouter } from './routes/sprints';
+import { createRecurringRulesRouter } from './routes/recurring-rules';
 import { createProjectMembersRouter } from './routes/project-members';
 import { createPortalRouter, createPortalInternalRouter } from './routes/portal';
 import { createModuleEventSettingsRouter } from './routes/module-event-settings';
 import { createHooksRouter } from './routes/hooks';
+import { createHubProvidersRouter } from './routes/hub-providers';
+import { createHubSectionsRouter } from './routes/hub-sections';
+import { createHubSettingsRouter } from './routes/hub-settings';
+import { createSystemRouter } from './routes/system';
 import { startWebsiteChecker } from './workers/website-checker';
 import { startTaskDueNotifier } from './workers/task-due-notifier';
+import { startPmDueAlertWorker } from './workers/pm-due-alert';
 import { startWebhookDelivery } from './workers/webhook-delivery';
 import { startMetricsRollup } from './workers/metrics-rollup';
+import { startRecurringTaskGenerator } from './workers/recurring-task-generator';
 import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
 import { loadPluginBackend, getPluginRouter } from './lib/plugin-loader';
-import { createAutomationRouter } from './routes/automation';
+import { createAutomationRouter, createAutomationLogsRouter } from './routes/automation';
 import { initAutomationEngine } from './lib/automation-engine';
 import { createPmAnalyticsRouter } from './routes/pm-analytics';
 import { createProjectDocsRouter } from './routes/project-docs';
 import { createPmSearchRouter } from './routes/pm-search';
 import { createProjectTemplatesRouter, createSaveAsTemplateRouter } from './routes/project-templates';
-import { bridgeRegistry, pluginEventBus } from '@vencore/plugin-runtime';
+import { bridgeRegistry, pluginEventBus, registerHubBridgeMethods } from '@vencore/plugin-runtime';
+import { startPluginCron, scheduleToMinutes } from './workers/plugin-cron';
+import { startHubRetention } from './workers/hub-retention';
+import { initHubHookListeners } from './lib/hub-hook-listeners';
+import { initHookFeatureDispatcher } from './lib/hook-features';
 import { registerContactsBridgeMethods } from './routes/contacts';
 import { registerCompaniesBridgeMethods } from './routes/companies';
 import { registerDealsBridgeMethods } from './routes/pipelines';
@@ -101,6 +116,7 @@ registerTasksBridgeMethods();
 registerActivityBridgeMethods();
 registerServersBridgeMethods();
 registerWebsitesBridgeMethods();
+registerHubBridgeMethods();
 
 // Register built-in bridge methods
 bridgeRegistry
@@ -159,19 +175,39 @@ bridgeRegistry
       }
     }
 
+    // secret_body: like secret_headers, but substitutes {settingKey} tokens in
+    // the request body server-side (OAuth token exchanges put secrets in the
+    // body, not headers). Only keys that resolve to a configured secret are
+    // replaced; other brace tokens pass through untouched.
+    let body = p.body as string | undefined;
+    if (p.secret_body === true && typeof body === 'string') {
+      const needed = new Set<string>();
+      for (const m of body.matchAll(/\{([a-zA-Z0-9_]+)\}/g)) needed.add(m[1]!);
+      for (const key of needed) {
+        const row = await (db as any).selectFrom('plugin_settings').select(['value', 'encrypted'])
+          .where('workspace_id', '=', ctx.workspaceId)
+          .where('plugin_id', '=', ctx.pluginSlug)
+          .where('key', '=', key)
+          .executeTakeFirst() as { value: unknown; encrypted: boolean } | undefined;
+        if (!row || row.value == null || row.value === '') continue;
+        const resolvedValue = isEncryptedValue(row.value) ? decryptSettingValue(row.value) : String(row.value);
+        body = body.split(`{${key}}`).join(encodeURIComponent(resolvedValue));
+      }
+    }
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const res = await fetch(url, {
         method: (p.method as string | undefined) ?? 'GET',
         headers: Object.keys(headers).length > 0 ? headers : undefined,
-        body: p.body as string | undefined,
+        body,
         signal: controller.signal,
       });
-      const body = await res.text();
+      const respBody = await res.text();
       const respHeaders: Record<string, string> = {};
       res.headers.forEach((v: string, k: string) => { respHeaders[k] = v; });
-      return { status: res.status, headers: respHeaders, body, ok: res.ok };
+      return { status: res.status, headers: respHeaders, body: respBody, ok: res.ok };
     } catch (err) {
       const isAbort = err instanceof Error && err.name === 'AbortError';
       throw { code: isAbort ? 'TIMEOUT' : 'BRIDGE_ERROR', message: err instanceof Error ? err.message : String(err) };
@@ -180,27 +216,85 @@ bridgeRegistry
     }
   })
   .register('settings.get', null, async (ctx, p, db) => {
-    const row = await (db as any).selectFrom('plugin_settings').select('value')
+    const row = await (db as any).selectFrom('plugin_settings').select(['value', 'encrypted'])
       .where('workspace_id', '=', ctx.workspaceId)
       .where('plugin_id', '=', ctx.pluginSlug)
       .where('key', '=', p.key as string)
-      .executeTakeFirst();
-    return row ? row.value : null;
+      .executeTakeFirst() as { value: unknown; encrypted: boolean } | undefined;
+    if (!row) return null;
+    // Never hand ciphertext (or plaintext secrets) back to plugin code — use
+    // secret_headers / secret_body on http.fetch to consume secrets. Plugins
+    // get a set/unset signal only.
+    if (isEncryptedValue(row.value)) return '__secret_set__';
+    return row.value;
   })
   .register('settings.set', null, async (ctx, p, db) => {
+    const key = p.key as string;
+    // Encrypt when the manifest marks this settings field secret — mirrors the
+    // PUT /api/plugins/:id/settings route so plugin-written secrets (e.g. an
+    // OAuth refresh token) are stored encrypted too.
+    const fieldDef = (ctx.manifest?.settings_schema ?? []).find((f) => f.key === key);
+    let value: unknown = p.value;
+    let encrypted = false;
+    if (fieldDef?.secret && typeof value === 'string' && process.env['PLUGIN_SETTINGS_KEY']) {
+      value = encryptSettingValue(value);
+      encrypted = true;
+    }
+    const jsonbValue = sqlTag`${JSON.stringify(value)}::jsonb`;
     await (db as any).insertInto('plugin_settings')
-      .values({ workspace_id: ctx.workspaceId, plugin_id: ctx.pluginSlug, key: p.key as string, value: p.value })
-      .onConflict((oc: any) => oc.columns(['workspace_id', 'plugin_id', 'key']).doUpdateSet({ value: p.value, updated_at: new Date() }))
+      .values({ workspace_id: ctx.workspaceId, plugin_id: ctx.pluginSlug, key, value: jsonbValue, encrypted })
+      .onConflict((oc: any) => oc.columns(['workspace_id', 'plugin_id', 'key']).doUpdateSet({ value: jsonbValue, encrypted, updated_at: new Date() }))
       .execute();
     return null;
   })
   .register('bus.emit', null, async (ctx, p) => {
     const event = p.event as string;
-    if (!event.match(/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/)) {
+    if (!event.match(/^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/)) {
       throw { code: 'INVALID_EVENT', message: 'Event name must use reverse-domain format' };
+    }
+    // hub:* and cron:* topics are host-emitted only
+    if (event.startsWith('hub:') || event.startsWith('cron:')) {
+      throw { code: 'INVALID_EVENT', message: `'${event}' is a reserved host topic` };
+    }
+    // Enforce manifest emits[] declarations when present
+    const emits = ctx.manifest?.emits ?? [];
+    if (emits.length > 0 && !emits.includes(event)) {
+      throw { code: 'UNDECLARED_EVENT', message: `Event '${event}' is not declared in manifest emits[]` };
     }
     await pluginEventBus.forWorkspace(ctx.workspaceId).emit(event, p.payload);
     return null;
+  })
+  .register('cron.register', null, async (ctx, p, db) => {
+    const name = p.name as string;
+    const schedule = p.schedule as string;
+    if (!name || !/^[a-z][a-z0-9_-]{0,63}$/i.test(name)) {
+      throw { code: 'INVALID_REQUEST', message: 'Invalid cron job name' };
+    }
+    const effectiveSchedule = schedule ?? 'every 60m';
+    const intervalMin = scheduleToMinutes(effectiveSchedule);
+    const nextRunAt = new Date(Date.now() + intervalMin * 60_000);
+    await (db as any).insertInto('plugin_cron_jobs')
+      .values({
+        workspace_id: ctx.workspaceId,
+        plugin_id: ctx.pluginSlug,
+        job_name: name,
+        schedule: effectiveSchedule,
+        next_run_at: nextRunAt,
+        enabled: true,
+      })
+      .onConflict((oc: any) =>
+        oc.columns(['workspace_id', 'plugin_id', 'job_name'])
+          .doUpdateSet({
+            schedule: effectiveSchedule,
+            enabled: true,
+            // Recompute next_run_at only when the schedule actually changed —
+            // re-registering on every sandbox boot must not keep pushing the
+            // next run into the future.
+            next_run_at: sqlTag`CASE WHEN plugin_cron_jobs.schedule <> ${effectiveSchedule} THEN ${nextRunAt} ELSE plugin_cron_jobs.next_run_at END`,
+          }),
+      )
+      .execute();
+    return { registered: name, interval_minutes: intervalMin };
   })
   .register('user.get', null, async (ctx, _p, db) => {
     const row = await (db as any).selectFrom('users').select(['id', 'name', 'email', 'role'])
@@ -257,12 +351,15 @@ bridgeRegistry
 
 const requireAuth = createRequireAuth(db, env.JWT_SECRET);
 const requireModule = createRequireModule(db);
+const requireModuleFeature = createRequireModuleFeature(db);
+const requireCrmFeature = requireModuleFeature('crm');
+const requireInfraFeature = requireModuleFeature('infra');
 const requirePermission = createRequirePermission(db);
 
 const app = express();
 
 app.use(cors({
-  origin: process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000',
+  origin: env.APP_URL,
   credentials: true,
 }));
 app.use(cookieParser());
@@ -270,7 +367,7 @@ app.use(express.json({ limit: '10mb' }));
 
 // Public routes (no auth)
 app.use('/api/config', createConfigRouter(config, db));
-app.use('/api/auth', createAuthRouter(db, env.JWT_SECRET, config.smtp));
+app.use('/api/auth', createAuthRouter(db, env.JWT_SECRET, config.smtp, env.APP_URL));
 // Setup (public — must come before requireAuth routes)
 app.use('/api/setup', createSetupRouter(db));
 
@@ -278,37 +375,41 @@ app.use('/api/setup', createSetupRouter(db));
 app.use('/api/me', requireAuth, createMeRouter(db));
 app.use('/api/me/push-token', requireAuth, createPushTokenRouter(db));
 app.use('/api/workspace/modules', requireAuth, createWorkspaceModulesRouter(db));
-app.use('/api/contacts', requireAuth, requireModule('contacts'), createContactsRouter(db, requirePermission));
-app.use('/api/companies', requireAuth, requireModule('companies'), createCompaniesRouter(db, requirePermission));
+app.use('/api/contacts', requireAuth, requireCrmFeature('crm:contacts'), createContactsRouter(db, requirePermission));
+app.use('/api/companies', requireAuth, requireCrmFeature('crm:companies'), createCompaniesRouter(db, requirePermission));
 // Agent — must come before the broad /api catch below
 app.use('/api/agent', createAgentRouter(db, config.smtp));
-app.use('/api/pipelines', requireAuth, requireModule('pipelines'), createPipelinesRouter(db, requirePermission));
-app.use('/api/pipelines/:pipelineId/fields', requireAuth, requireModule('pipelines'), createPipelineFieldsRouter(db, requirePermission));
-app.use('/api/pipelines/:pipelineId/items', requireAuth, requireModule('pipelines'), createPipelineItemsRouter(db, requirePermission));
-app.use('/api/items', requireAuth, requireModule('pipelines'), createItemRouter(db, requirePermission));
+app.use('/api/pipelines', requireAuth, requireCrmFeature('crm:pipeline'), createPipelinesRouter(db, requirePermission));
+app.use('/api/pipelines/:pipelineId/fields', requireAuth, requireCrmFeature('crm:pipeline'), createPipelineFieldsRouter(db, requirePermission));
+app.use('/api/pipelines/:pipelineId/items', requireAuth, requireCrmFeature('crm:pipeline'), createPipelineItemsRouter(db, requirePermission));
+app.use('/api/items', requireAuth, requireCrmFeature('crm:pipeline'), createItemRouter(db, requirePermission));
 app.use(
   '/api/pipelines/:pipelineId/automations',
   requireAuth,
-  requireModule('pipelines'),
+  requireCrmFeature('crm:pipeline'),
   createPipelineAutomationsRouter(db, requirePermission),
 );
-app.use('/api/tasks/unified', requireAuth, requireModule('tasks'), createUnifiedTasksRouter(db, requirePermission));
-app.use('/api/tasks', requireAuth, requireModule('tasks'), createTasksRouter(db, requirePermission));
+app.use('/api/tasks/unified', requireAuth, requireCrmFeature('crm:tasks'), createUnifiedTasksRouter(db, requirePermission));
+app.use('/api/tasks', requireAuth, requireCrmFeature('crm:tasks'), createTasksRouter(db, requirePermission));
 app.use('/api/activity', requireAuth, requireModule('activity'), createActivityRouter(db, requirePermission));
-app.use('/api/alerts', requireAuth, requireModule('alerts'), createAlertsRouter(db));
+app.use('/api/alerts', requireAuth, requireInfraFeature('infra:alerts'), createAlertsRouter(db));
 app.use('/api/dashboards', requireAuth, createDashboardsRouter(db))
+app.use('/api/projects/widget-stats', requireAuth, createProjectWidgetStatsRouter(db));
 app.use('/api/projects', requireAuth, createProjectsRouter(db))
 app.use('/api/projects/:projectId/tasks/statuses', requireAuth, createProjectStatusesRouter(db));
 app.use('/api/projects/:projectId/labels', requireAuth, createProjectLabelsRouter(db));
 app.use('/api/projects/:projectId/tasks', requireAuth, createProjectTasksRouter(db));
+app.use('/api/projects/:projectId/recurring-rules', requireAuth, createRecurringRulesRouter(db));
 app.use('/api/projects/:projectId/milestones', requireAuth, createMilestonesRouter(db));
 app.use('/api/projects/:projectId/sprints', requireAuth, createSprintsRouter(db));
 app.use('/api/projects/:projectId/members', requireAuth, createProjectMembersRouter(db));
-app.use('/api/projects/:projectId/portal', requireAuth, createPortalInternalRouter(db));
+app.use('/api/projects/:projectId/portal', requireAuth, createPortalInternalRouter(db, config.smtp, env.JWT_SECRET));
 app.use('/api/projects/:projectId/automations', requireAuth, createAutomationRouter(db));
+app.use('/api/projects/:projectId/automation-logs', requireAuth, createAutomationLogsRouter(db));
 app.use('/api/projects/:projectId/custom-fields', requireAuth, createCustomFieldsRouter(db));
 app.use('/api/projects/:projectId/tasks/:taskId/field-values', requireAuth, createTaskFieldValuesRouter(db));
 app.use('/api/projects/:projectId/tasks/:taskId/time-logs', requireAuth, createTimeLogsRouter(db));
+app.use('/api/projects/:projectId/time-summary', requireAuth, createTimeSummaryRouter(db));
 app.use('/api/projects/:projectId/analytics', requireAuth, createPmAnalyticsRouter(db));
 app.use('/api/projects/:projectId/docs', requireAuth, createProjectDocsRouter(db));
 app.use('/api/projects/:projectId/save-as-template', requireAuth, createSaveAsTemplateRouter(db));
@@ -316,7 +417,7 @@ app.use('/api/pm/search', requireAuth, createPmSearchRouter(db));
 app.use('/api/project-templates', requireAuth, createProjectTemplatesRouter(db));
 
 // Public portal — no requireAuth
-app.use('/api/portal', createPortalRouter(db));
+app.use('/api/portal', createPortalRouter(db, env.JWT_SECRET));
 app.use('/api/me/tasks', requireAuth, createMyTasksRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
 app.use('/api/analytics', requireAuth, requireModule('analytics'), createAnalyticsRouter(db, requirePermission));
@@ -338,26 +439,36 @@ app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/workspace', requireAuth, requireAdmin, createWorkspaceRouter(db));
 app.use('/api/groups', requireAuth, requireAdmin, createGroupsRouter(db));
-app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requireAdmin));
+app.use('/api/cross-module-settings', requireAuth, requireAdmin, createCrossModuleSettingsRouter(db));
+app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requireAdmin, env.APP_URL));
 app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
 app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
+
+// Sidebar layout — GET open to all members, PUT /layout self-guards with requireAdmin
+app.use('/api/sidebar', requireAuth, createSidebarRouter(db));
 
 // Messaging
 app.use('/api/messaging', requireAuth, requireModule('messaging'), createMessagingRouter(db, requirePermission));
 
 // Infra routes
-app.use('/api/servers', requireAuth, requireModule('servers'), createServersRouter(db, requirePermission));
+app.use('/api/servers', requireAuth, requireInfraFeature('infra:servers'), createServersRouter(db, requirePermission));
 app.use('/api/sse', requireAuth, createSseRouter(db));
-app.use('/api/databases', requireAuth, requireModule('databases'), createInfraDatabasesRouter(db));
-app.use('/api/websites', requireAuth, requireModule('websites'), createWebsitesRouter(db, env.CRON_SECRET, requirePermission));
-app.use('/api/alert-thresholds', requireAuth, requireModule('alerts'), createAlertThresholdsRouter(db));
+app.use('/api/databases', requireAuth, requireInfraFeature('infra:databases'), createInfraDatabasesRouter(db));
+app.use('/api/websites', requireAuth, requireInfraFeature('infra:websites'), createWebsitesRouter(db, env.CRON_SECRET, requirePermission));
+app.use('/api/alert-thresholds', requireAuth, requireInfraFeature('infra:alerts'), createAlertThresholdsRouter(db));
 app.use('/api/settings/module-events', requireAuth, createModuleEventSettingsRouter(db));
 app.use('/api/settings/notifications', requireAuth, createNotificationPreferencesRouter(db));
+app.use('/api/settings', requireAuth, createHubProvidersRouter(db));
 app.use('/api/settings', requireAuth, createHooksRouter(db));
+app.use('/api/hub/sections', requireAuth, createHubSectionsRouter(db));
+app.use('/api/settings/domain', requireAuth, createHubSettingsRouter(db));
+
+// System — version + updates. Mixed auth handled inside the router.
+app.use('/api/system', createSystemRouter(db, env, requireAuth, requireAdmin));
 
 // SSH management
 app.use('/api/ssh', requireAuth, createSshKeypairRouter(db));
-app.use('/api/servers/:id/ssh', requireAuth, requireModule('servers'), requirePermission('servers:ssh'), createSshActionsRouter(db));
+app.use('/api/servers/:id/ssh', requireAuth, requireInfraFeature('infra:servers'), requirePermission('servers:ssh'), createSshActionsRouter(db));
 
 // Internal (cron) — protected by CRON_SECRET, no auth cookie
 app.use('/api/internal', createInternalRouter(db, env.CRON_SECRET));
@@ -376,11 +487,27 @@ startWebsiteChecker(db);
 // Start task-due notifier (fires at midnight UTC daily)
 startTaskDueNotifier(db);
 
+// Start pm-due alert worker (fires at midnight UTC daily)
+startPmDueAlertWorker(db);
+
 // Start webhook delivery worker (polls every 10 s)
 startWebhookDelivery(db);
 
 // Start metrics rollup + retention worker (15-min cycle)
 startMetricsRollup(db);
+
+// Start plugin cron worker (fires plugin-registered jobs, 60-s cycle)
+startPluginCron(db);
+
+// Purge tombstoned hub records past the retention window (daily)
+startHubRetention(db);
+
+// Hook features reacting to hub data changes from plugin providers
+initHubHookListeners(db);
+
+// Dispatch plugin-declared hook features on contract events
+initHookFeatureDispatcher(db);
+startRecurringTaskGenerator(db);
 
 // Init messaging Redis pub/sub (optional — falls back to local broadcast without it)
 if (env.REDIS_URL) {
@@ -413,24 +540,37 @@ httpServer.on('upgrade', (request, socket, head) => {
   }
 });
 
-httpServer.listen(env.PORT, () => {
-  logger.info({ port: env.PORT }, 'API server running');
+async function start(): Promise<void> {
+  if (env.NODE_ENV === 'production') {
+    logger.info('Running database migrations...');
+    await runMigrations(env.DATABASE_URL);
+    logger.info('Migrations up to date');
+  }
 
-  // Respawn backends for all enabled plugins on boot — otherwise plugin
-  // sandboxes stay dead after a restart until each is re-uploaded/re-enabled.
-  void (async () => {
-    try {
-      const rows = await db
-        .selectFrom('workspace_plugins')
-        .select(['plugin_id', 'workspace_id'])
-        .where('enabled', '=', true)
-        .execute();
-      for (const r of rows) {
-        try { loadPluginBackend(r.plugin_id, r.workspace_id, db); } catch { /* per-plugin failure is non-fatal */ }
+  httpServer.listen(env.PORT, () => {
+    logger.info({ port: env.PORT }, 'API server running');
+
+    // Respawn backends for all enabled plugins on boot — otherwise plugin
+    // sandboxes stay dead after a restart until each is re-uploaded/re-enabled.
+    void (async () => {
+      try {
+        const rows = await db
+          .selectFrom('workspace_plugins')
+          .select(['plugin_id', 'workspace_id'])
+          .where('enabled', '=', true)
+          .execute();
+        for (const r of rows) {
+          try { loadPluginBackend(r.plugin_id, r.workspace_id, db); } catch { /* per-plugin failure is non-fatal */ }
+        }
+        logger.info({ count: rows.length }, 'Loaded enabled plugin backends on startup');
+      } catch (err) {
+        logger.error({ err }, 'Failed to load plugin backends on startup');
       }
-      logger.info({ count: rows.length }, 'Loaded enabled plugin backends on startup');
-    } catch (err) {
-      logger.error({ err }, 'Failed to load plugin backends on startup');
-    }
-  })();
+    })();
+  });
+}
+
+void start().catch((err: unknown) => {
+  logger.error({ err }, 'API startup failed');
+  process.exit(1);
 });

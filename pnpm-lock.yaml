@@ -19,18 +19,6 @@ importers:
         specifier: ^5.4.0
         version: 5.9.3
 
-  apps/agent:
-    devDependencies:
-      '@types/node':
-        specifier: ^25.6.2
-        version: 25.6.2
-      tsx:
-        specifier: ^4.0.0
-        version: 4.21.0
-      typescript:
-        specifier: ^5.0.0
-        version: 5.9.3
-
   apps/api:
     dependencies:
       '@aws-sdk/client-s3':
@@ -123,6 +111,9 @@ importers:
       pino-pretty:
         specifier: ^11.0.0
         version: 11.3.0
+      semver:
+        specifier: ^7.8.5
+        version: 7.8.5
       ssh2:
         specifier: ^1.17.0
         version: 1.17.0
@@ -172,6 +163,9 @@ importers:
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
+      '@types/semver':
+        specifier: ^7.7.1
+        version: 7.7.1
       '@types/ssh2':
         specifier: ^1.15.5
         version: 1.15.5
@@ -191,8 +185,26 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@20.19.40)(jsdom@25.0.1)(lightningcss@1.32.0)(terser@5.47.1)
 
+  apps/updater:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.40
+      tsx:
+        specifier: ^4.7.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.4.0
+        version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.40)(jsdom@25.0.1)(lightningcss@1.32.0)(terser@5.47.1)
+
   apps/web:
     dependencies:
+      '@next/env':
+        specifier: ^16.2.10
+        version: 16.2.10
       '@reduxjs/toolkit':
         specifier: ^2.12.0
         version: 2.12.0(react-redux@9.3.0(@types/react@19.2.14)(react@19.1.0)(redux@5.0.1))(react@19.1.0)
@@ -372,6 +384,9 @@ importers:
       kysely:
         specifier: ^0.27.0
         version: 0.27.6
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
     devDependencies:
       typescript:
         specifier: ^5.4.0
@@ -1331,6 +1346,9 @@ packages:
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
 
+  '@next/env@16.2.10':
+    resolution: {integrity: sha512-zLPxg9M0MEHmygpj5OuxjQ+vHMiy/K7cSp74G8ecYolmgUWw0RwN02tF56npup/+qaI8JB97hQgS/r2Hb6QwVA==}
+
   '@next/env@16.2.6':
     resolution: {integrity: sha512-gd8HoHN4ufj73WmR3JmVolrpJR47ILK6LouP5xElPglaVxir6e1a7VzvTvDWkOoPXT9rkkTzyCxBu4yeZfZwcw==}
 
@@ -1856,6 +1874,9 @@ packages:
 
   '@types/react@19.2.14':
     resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
+
+  '@types/semver@7.7.1':
+    resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
 
   '@types/send@0.17.6':
     resolution: {integrity: sha512-Uqt8rPBE8SY0RK8JB1EzVOIZ32uqy8HwdxCnoCOsYrvnswqmFZ/k+9Ikidlk/ImhsdvBsloHbAlewb2IEBV/Og==}
@@ -4190,6 +4211,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  semver@7.8.5:
+    resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   send@0.19.2:
     resolution: {integrity: sha512-VMbMxbDeehAxpOtWJXlcUS5E8iXh6QmN+BkRX1GARS3wRaXEEgzCcB10gTQazO42tpNIya8xIyNx8fll1OFPrg==}
     engines: {node: '>= 0.8.0'}
@@ -5667,6 +5693,8 @@ snapshots:
       '@tybys/wasm-util': 0.10.2
     optional: true
 
+  '@next/env@16.2.10': {}
+
   '@next/env@16.2.6': {}
 
   '@next/eslint-plugin-next@16.2.6':
@@ -6059,6 +6087,7 @@ snapshots:
   '@types/node@25.6.2':
     dependencies:
       undici-types: 7.19.2
+    optional: true
 
   '@types/nodemailer@8.0.0':
     dependencies:
@@ -6088,6 +6117,8 @@ snapshots:
   '@types/react@19.2.14':
     dependencies:
       csstype: 3.2.3
+
+  '@types/semver@7.7.1': {}
 
   '@types/send@0.17.6':
     dependencies:
@@ -7918,7 +7949,7 @@ snapshots:
       lodash.isstring: 4.0.1
       lodash.once: 4.1.1
       ms: 2.1.3
-      semver: 7.7.4
+      semver: 7.8.5
 
   jsx-ast-utils@3.3.5:
     dependencies:
@@ -8794,6 +8825,8 @@ snapshots:
 
   semver@7.7.4: {}
 
+  semver@7.8.5: {}
+
   send@0.19.2:
     dependencies:
       debug: 2.6.9
@@ -9273,7 +9306,8 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici-types@7.19.2: {}
+  undici-types@7.19.2:
+    optional: true
 
   undici@7.25.0: {}
 

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import Link from 'next/link';
 import { apiFetch } from '@/modules/shared/lib/api';
+import { useConfig } from '@/modules/shared/lib/useConfig';
 import { setAuth } from '@/store/auth-slice';
 import type { AppDispatch } from '@/store';
 
@@ -12,6 +13,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch<AppDispatch>();
+  const { data: config } = useConfig();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,7 @@ function LoginForm() {
       }));
       const raw = searchParams.get('from') ?? '';
       // Prevent open redirect — only allow same-origin relative paths
-      const from = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/pipeline';
+      const from = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/crm/pipeline';
       window.location.href = from;
     } catch {
       setError('Invalid email or password');
@@ -67,16 +69,27 @@ function LoginForm() {
         padding: 32,
       }}>
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
-          <div style={{
-            width: 40, height: 40, background: 'var(--text)',
-            borderRadius: 'var(--radius-md)', display: 'inline-flex',
-            alignItems: 'center', justifyContent: 'center', marginBottom: 12,
-          }}>
-            <svg width="22" height="22" viewBox="0 0 16 16" fill="none">
-              <path d="M8 2L2 14h12L8 2z" fill="white" />
-            </svg>
-          </div>
+          {config?.app.logoUrl && config.app.logoUrl !== '/logo.png' ? (
+            <img
+              src={config.app.logoUrl}
+              alt={config.app.name}
+              style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 'var(--radius-md)', marginBottom: 12 }}
+            />
+          ) : (
+            <div style={{
+              width: 40, height: 40, background: 'var(--text)',
+              borderRadius: 'var(--radius-md)', display: 'inline-flex',
+              alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+            }}>
+              <svg width="22" height="22" viewBox="0 0 16 16" fill="none">
+                <path d="M8 2L2 14h12L8 2z" fill="white" />
+              </svg>
+            </div>
+          )}
           <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)' }}>Sign in</div>
+          {config?.app.tagline && (
+            <div style={{ fontSize: 13, color: 'var(--text2)', marginTop: 4 }}>{config.app.tagline}</div>
+          )}
         </div>
 
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

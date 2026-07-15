@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
 
 export function Modal({
@@ -14,19 +15,28 @@ export function Modal({
   children: React.ReactNode;
   width?: number;
 }) {
+  // Portal to <body> so the overlay is positioned against the viewport, not a
+  // transformed ancestor. Pages that animate with CSS transforms (settings,
+  // etc.) would otherwise anchor `position: fixed` to the transformed element
+  // and push the modal off-centre.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        zIndex: 100,
+        zIndex: 1000,
       }}
     >
       <div
@@ -53,6 +63,7 @@ export function Modal({
         </div>
         <div style={{ padding: 20 }}>{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

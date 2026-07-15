@@ -6,6 +6,8 @@ import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { logItemCreated, logStageChanged, logFieldChanged } from '../lib/pipeline-activity';
 import { resolveHook } from '../lib/hooks-runtime';
+import { emitCrmEvent } from '../lib/crm-events';
+import { maybeSpawnProjectOnDealWon } from '../lib/deal-close-hooks';
 
 async function seedDefaultStatuses(db: Kysely<Database>, projectId: string) {
   const statuses = [
@@ -141,6 +143,8 @@ export function createPipelineItemsRouter(
         userId: uid(req as AuthenticatedRequest),
       });
 
+      emitCrmEvent(db, item.workspace_id, 'crm.deal@v1', 'created', item.id);
+
       res.status(201).json({ data: item, error: null });
     } catch (e) { next(e); }
   });
@@ -230,7 +234,17 @@ export function createItemRouter(
           fromStageId: current.stage_id, toStageId: body.stage_id,
         });
         await maybeAutoCreateProject(db, workspaceId, current.id, body.stage_id, userId);
+        emitCrmEvent(db, workspaceId, 'crm.deal@v1', 'stage_changed', current.id, { stage_id: body.stage_id });
+
+        const newStage = await db.selectFrom('pipeline_stages')
+          .select('is_won')
+          .where('id', '=', body.stage_id)
+          .executeTakeFirst();
+        if (newStage?.is_won) {
+          void maybeSpawnProjectOnDealWon({ db, workspaceId, userId, dealId: current.id });
+        }
       }
+      emitCrmEvent(db, workspaceId, 'crm.deal@v1', 'updated', current.id);
 
       if (body.field_values) {
         const oldVals = current.field_values as Record<string, unknown>;
@@ -276,6 +290,15 @@ export function createItemRouter(
           fromStageId: current.stage_id, toStageId: stage_id,
         });
         await maybeAutoCreateProject(db, workspaceId, current.id, stage_id, userId);
+        emitCrmEvent(db, workspaceId, 'crm.deal@v1', 'stage_changed', current.id, { stage_id });
+
+        const newStage = await db.selectFrom('pipeline_stages')
+          .select('is_won')
+          .where('id', '=', stage_id)
+          .executeTakeFirst();
+        if (newStage?.is_won) {
+          void maybeSpawnProjectOnDealWon({ db, workspaceId, userId, dealId: current.id });
+        }
       }
 
       res.json({ data: { id: current.id, stage_id, position }, error: null });

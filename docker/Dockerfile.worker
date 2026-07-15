@@ -1,0 +1,26 @@
+FROM node:20-bookworm-slim
+RUN corepack enable && corepack prepare pnpm@10.33.2 --activate
+WORKDIR /app
+ENV NODE_OPTIONS=--max-old-space-size=2048
+
+COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json turbo.json ./
+COPY packages/types/package.json ./packages/types/package.json
+COPY packages/db/package.json ./packages/db/package.json
+COPY packages/config/package.json ./packages/config/package.json
+COPY packages/api-client/package.json ./packages/api-client/package.json
+COPY packages/plugin-types/package.json ./packages/plugin-types/package.json
+COPY packages/plugin-runtime/package.json ./packages/plugin-runtime/package.json
+COPY packages/modules/package.json ./packages/modules/package.json
+COPY apps/api/package.json ./apps/api/package.json
+COPY apps/web/package.json ./apps/web/package.json
+COPY apps/worker/package.json ./apps/worker/package.json
+RUN pnpm install --frozen-lockfile
+
+COPY packages/ ./packages/
+COPY apps/worker/ ./apps/worker/
+RUN pnpm --filter "@vencore/worker..." build
+
+ENV NODE_ENV=production
+ARG VENCORE_VERSION=0.0.0-dev
+ENV VENCORE_VERSION=$VENCORE_VERSION
+CMD ["node", "apps/worker/dist/index.js"]

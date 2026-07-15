@@ -20,7 +20,6 @@ export default function PluginSlugPage({ params }: { params: Promise<{ slug: str
   const { slug } = use(params);
   const href = `/${slug}`;
   const getToken = useApiToken();
-  const apiUrl = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeReady, setIframeReady] = useState(false);
 
@@ -28,7 +27,7 @@ export default function PluginSlugPage({ params }: { params: Promise<{ slug: str
     queryKey: ['plugin-by-href', href],
     queryFn: async () => {
       const token = await getToken();
-      const res = await fetch(`${apiUrl}/api/plugins`, {
+      const res = await fetch('/api/plugins', {
         credentials: 'include',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -50,10 +49,10 @@ export default function PluginSlugPage({ params }: { params: Promise<{ slug: str
     void getToken().then(token => {
       iframeRef.current?.contentWindow?.postMessage(
         { type: 'AUTH_TOKEN', token },
-        apiUrl,
+        window.location.origin,
       );
     });
-  }, [iframeReady, apiUrl, getToken]);
+  }, [iframeReady, getToken]);
 
   if (isLoading) {
     return (
@@ -109,7 +108,7 @@ export default function PluginSlugPage({ params }: { params: Promise<{ slug: str
       <Topbar />
       <iframe
         ref={iframeRef}
-        src={`${apiUrl}/api/plugins/route/${plugin.plugin_id}/ui`}
+        src={`/api/plugins/route/${plugin.plugin_id}/ui`}
         style={{ flex: 1, border: 'none', width: '100%' }}
         title={plugin.name}
       />

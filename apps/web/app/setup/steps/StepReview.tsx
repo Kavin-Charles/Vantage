@@ -53,14 +53,27 @@ export function StepReview({ state, dispatch }: Props) {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          branding: { name: state.branding.name, logoUrl: state.branding.logoUrl },
+          branding: {
+            name: state.branding.name,
+            logoUrl: state.branding.logoUrl,
+            faviconUrl: state.branding.faviconUrl || undefined,
+            tagline: state.branding.tagline || undefined,
+            primaryColor: state.branding.primaryColor,
+          },
           features: state.features,
           smtp: state.smtp,
           admin: state.admin,
         }),
       });
       const json = await res.json();
-      if (json.error) throw new Error(json.error.message ?? json.error.code ?? 'Setup failed');
+      if (json.error) {
+        if (json.error.code === 'ALREADY_CONFIGURED') {
+          // Instance is configured but this browser lacks the setup cookie — heal it
+          window.location.href = '/api/setup/activate?from=/login';
+          return;
+        }
+        throw new Error(json.error.message ?? json.error.code ?? 'Setup failed');
+      }
 
       setStatus('finishing');
       const elapsed = Date.now() - startedAt;

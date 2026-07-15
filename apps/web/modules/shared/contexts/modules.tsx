@@ -45,6 +45,16 @@ export function ModuleProvider({ children }: { children: React.ReactNode }) {
   }, [token]);
 
   function isEnabled(moduleId: string): boolean {
+    // Child modules (`parent:child`) are effective only when their parent is
+    // on; a missing child row defaults to enabled.
+    const sep = moduleId.indexOf(':');
+    if (sep > 0) {
+      const parentId = moduleId.slice(0, sep);
+      const parent = modules.find(m => m.module_id === parentId);
+      if (!(parent?.enabled ?? false)) return false;
+      const child = modules.find(m => m.module_id === moduleId);
+      return child?.enabled ?? true;
+    }
     const row = modules.find(m => m.module_id === moduleId);
     return row?.enabled ?? false;
   }

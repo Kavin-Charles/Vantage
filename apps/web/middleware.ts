@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PUBLIC_PATHS = ['/login', '/invite', '/forgot-password', '/reset-password', '/api/auth', '/api/config', '/api/invites/accept'];
+const PUBLIC_PATHS = ['/login', '/invite', '/forgot-password', '/reset-password', '/api/auth', '/api/config', '/api/invites/accept', '/api/agent', '/api/deployments'];
 const SETUP_PATHS = ['/setup', '/api/setup'];
 
 export default function middleware(req: NextRequest) {

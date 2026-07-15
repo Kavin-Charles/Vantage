@@ -30,6 +30,7 @@ export function createInvitesRouter(
   smtp: SmtpConfig | null | undefined,
   requireAuth: RequestHandler,
   requireAdmin: RequestHandler,
+  appUrl: string,
 ): Router {
   const router = Router();
 
@@ -82,7 +83,6 @@ export function createInvitesRouter(
             secure: smtp.secure,
             auth: { user: smtp.user, pass: smtp.password },
           });
-          const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000';
           await transporter.sendMail({
             from: smtp.from,
             to: parsed.data.email,
