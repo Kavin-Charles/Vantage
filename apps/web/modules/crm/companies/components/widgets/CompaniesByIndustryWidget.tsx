@@ -39,7 +39,7 @@ function CompaniesByIndustryWidget({ config: _config }: { config: WidgetConfig }
         {sorted.map(([industry, count], i) => (
           <div key={industry} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 12, color: 'var(--text2)', width: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{industry}</span>
-            <MiniBar value={count} max={max} color={STAGE_COLORS[i % STAGE_COLORS.length] ?? '#9e998f'} />
+            <MiniBar value={count} max={max} color={STAGE_COLORS[i % STAGE_COLORS.length] ?? 'var(--text3)'} />
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', width: 20, textAlign: 'right', flexShrink: 0 }}>{count}</span>
           </div>
         ))}
