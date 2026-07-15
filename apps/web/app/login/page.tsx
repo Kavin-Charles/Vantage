@@ -25,7 +25,7 @@ function LoginForm() {
     setLoading(true);
     try {
       const res = await apiFetch<{
-        data: { id: string; name: string; email: string; role: 'admin' | 'member'; token: string };
+        data: { id: string; name: string; email: string; token: string };
       }>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
@@ -36,8 +36,7 @@ function LoginForm() {
           id: res.data.id,
           name: res.data.name,
           email: res.data.email,
-          role: res.data.role,
-          workspace_id: '',
+          isAdmin: false,
           permissions: [],
           theme: 'light',
         },

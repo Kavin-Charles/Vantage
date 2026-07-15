@@ -35,11 +35,11 @@ interface Props {
 
 export function DashboardPage({ dashboardId }: Props) {
   const getToken = useApiToken();
-  const { user } = useAuth();
+  const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
   const pluginWidgets = useDashboardWidgets();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = hasPermission('workspace:manage');
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [pendingLayout, setPendingLayout] = useState<LayoutWidget[] | null>(null);

@@ -734,7 +734,7 @@ export default function DatabaseDetailPage({ params }: { params: Promise<{ id: s
   });
 
   const database = data?.data;
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.isAdmin ?? false;
 
   if (isLoading) return <><Topbar /><div style={{ padding: 40, textAlign: 'center', color: 'var(--text3)' }}>Loading...</div></>;
   if (isError) return <><Topbar /><div style={{ padding: 40, textAlign: 'center', color: 'var(--red)' }}>Failed to load database. Check that the API is running.</div></>;
