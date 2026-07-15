@@ -41,3 +41,7 @@ import '@/modules/shared/components/widgets/WebsiteStatusWidget';
 import '@/modules/shared/components/widgets/WebsiteUptimeWidget';
 import '@/modules/shared/components/widgets/SslExpiryWidget';
 import '@/modules/shared/components/widgets/ResponseTimeWidget';
+import '@/modules/analytics/components/widgets/RevenueTrendWidget';
+import '@/modules/analytics/components/widgets/PipelineByStageWidget';
+import '@/modules/analytics/components/widgets/KpiCardsWidget';
+import '@/modules/analytics/components/widgets/TeamLeaderboardWidget';
