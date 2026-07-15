@@ -5,10 +5,11 @@ import { usePathname } from 'next/navigation';
 
 const SUB_TABS = [
   { href: '/settings/users', label: 'Users', exact: true },
-  { href: '/settings/groups', label: 'Groups' },
+  { href: '/settings/roles', label: 'Roles' },
+  { href: '/settings/roles/constraints', label: 'Constraints' },
 ];
 
-export default function UsersGroupsLayout({ children }: { children: React.ReactNode }) {
+export default function UsersRolesLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
