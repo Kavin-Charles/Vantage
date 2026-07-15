@@ -40,7 +40,7 @@ export function AlertsWidget({ config }: { config: WidgetConfig }) {
       ),
     refetchInterval: config.refreshInterval ?? 60_000,
     refetchIntervalInBackground: false,
-    staleTime: 30_000,
+    staleTime: 60_000,
     enabled,
   });
 

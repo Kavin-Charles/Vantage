@@ -108,6 +108,7 @@ export function DashboardPage({ dashboardId }: Props) {
         min_w: r.min_w,
         min_h: r.min_h,
         permission_key: r.permission_key,
+        config: r.config,
       }));
       await saveLayout(dashboardId, widgets, token);
       await queryClient.invalidateQueries({ queryKey: ['dashboard', dashboardId] });

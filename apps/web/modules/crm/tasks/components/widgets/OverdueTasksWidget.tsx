@@ -2,17 +2,18 @@
 
 import { useUnifiedTasks } from '../../lib/useUnifiedTasks';
 import { useToggleTask } from '../../lib/taskMutations';
-import { WidgetSkeleton } from '@/modules/shared/components/ui/WidgetHelpers';
+import { WidgetSkeleton, WidgetError } from '@/modules/shared/components/ui/WidgetHelpers';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
 import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
 import type { UnifiedTask } from '../../lib/types';
 
 function OverdueTasksWidget({ config }: { config: WidgetConfig }) {
-  const { data, isLoading } = useUnifiedTasks({ status: 'todo' });
+  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo' });
   const toggleMut = useToggleTask();
   const limit = config.limit ?? 10;
   if (isLoading) return <WidgetSkeleton />;
+  if (isError) return <WidgetError onRetry={() => void refetch()} />;
   const tasks: UnifiedTask[] = (data?.data?.overdue ?? []).slice(0, limit);
   if (tasks.length === 0) return (
     <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6, color: 'var(--text3)' }}>

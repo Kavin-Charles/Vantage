@@ -1,7 +1,7 @@
 'use client';
 
 import { useUnifiedTasks } from '../../lib/useUnifiedTasks';
-import { WidgetSkeleton, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
+import { WidgetSkeleton, WidgetError, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
 import { useToggleTask } from '../../lib/taskMutations';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
 import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
@@ -34,9 +34,10 @@ function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => voi
 }
 
 function DueTodayWidget({ config: _config }: { config: WidgetConfig }) {
-  const { data, isLoading } = useUnifiedTasks({ status: 'todo' });
+  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo' });
   const toggleMut = useToggleTask();
   if (isLoading) return <WidgetSkeleton />;
+  if (isError) return <WidgetError onRetry={() => void refetch()} />;
   const tasks: UnifiedTask[] = data?.data?.today ?? [];
   if (tasks.length === 0) return <EmptyState href="/crm/tasks" label="Nothing due today" icon="check" />;
   return (

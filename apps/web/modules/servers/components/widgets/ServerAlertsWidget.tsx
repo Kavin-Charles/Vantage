@@ -25,7 +25,7 @@ function ServerAlertsWidget({ config }: { config: WidgetConfig }) {
         '/api/alerts?resolved=false&resource_type=server&limit=10',
         { token: await getToken() },
       ),
-    staleTime: 30_000,
+    staleTime: 60_000,
     refetchInterval: config.refreshInterval ?? 60_000,
     refetchIntervalInBackground: false,
     enabled: isEnabled('servers'),

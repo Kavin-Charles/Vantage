@@ -1,14 +1,15 @@
 'use client';
 
 import { useUnifiedTasks } from '../../lib/useUnifiedTasks';
-import { WidgetSkeleton, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
+import { WidgetSkeleton, WidgetError, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
 import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
 import type { UnifiedTask } from '../../lib/types';
 
 function UpcomingDeadlinesWidget({ config: _config }: { config: WidgetConfig }) {
-  const { data, isLoading } = useUnifiedTasks({ status: 'todo' });
+  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo' });
   if (isLoading) return <WidgetSkeleton />;
+  if (isError) return <WidgetError onRetry={() => void refetch()} />;
   const tasks: UnifiedTask[] = [
     ...(data?.data?.today ?? []),
     ...(data?.data?.this_week ?? []),

@@ -27,7 +27,7 @@ function CriticalAlertsWidget({ config }: { config: WidgetConfig }) {
         '/api/alerts?resolved=false&severity=critical&limit=10',
         { token: await getToken() },
       ),
-    staleTime: 30_000,
+    staleTime: 60_000,
     refetchInterval: config.refreshInterval ?? 60_000,
     refetchIntervalInBackground: false,
   });

@@ -37,7 +37,7 @@ export function ActivityWidget({ config }: { config: WidgetConfig }) {
     queryFn: async () => listActivity(await getToken(), { limit: 8 }),
     refetchInterval: config.refreshInterval ?? 120_000,
     refetchIntervalInBackground: false,
-    staleTime: 30_000,
+    staleTime: 60_000,
     enabled,
   });
 

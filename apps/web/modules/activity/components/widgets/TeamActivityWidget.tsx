@@ -36,7 +36,7 @@ function TeamActivityWidget({ config }: { config: WidgetConfig }) {
         `/api/activity?limit=${limit}`,
         { token: await getToken() },
       ),
-    staleTime: 30_000,
+    staleTime: 60_000,
     refetchInterval: config.refreshInterval ?? 60_000,
     refetchIntervalInBackground: false,
   });
