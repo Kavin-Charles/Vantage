@@ -1,18 +1,28 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { WidgetConfig, WidgetFilterKey } from '@/modules/shared/lib/dashboard-registry';
 
 interface Props {
-  supportedFilters?: WidgetFilterKey[];
+  supportedFilters: WidgetFilterKey[];
   config: WidgetConfig;
-  onChange: (config: WidgetConfig) => void;
-  onRemove: () => void;
-  onClose: () => void;
+  onConfigChange: (config: WidgetConfig) => void;
+  onRemove?: () => void;
+  onClose?: () => void;
 }
 
-export function WidgetConfigPopover({ supportedFilters = [], config, onChange, onRemove, onClose }: Props) {
+export function WidgetConfigPopover({ supportedFilters, config, onConfigChange, onRemove, onClose }: Props) {
   const has = (f: WidgetFilterKey) => supportedFilters.includes(f);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
 
   return (
     <>
@@ -24,7 +34,7 @@ export function WidgetConfigPopover({ supportedFilters = [], config, onChange, o
         style={{
           position: 'absolute', top: 36, right: 8, zIndex: 200,
           background: 'var(--surface)', border: '1px solid var(--border)',
-          borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+          borderRadius: 10, boxShadow: '0 4px 12px var(--border)',
           width: 220, padding: '8px 0', fontSize: 13,
         }}
         onClick={e => e.stopPropagation()}
@@ -38,7 +48,7 @@ export function WidgetConfigPopover({ supportedFilters = [], config, onChange, o
                 { label: '30 days', value: '30d' },
               ]}
               value={config.timeRange ?? '7d'}
-              onChange={v => onChange({ ...config, timeRange: v as WidgetConfig['timeRange'] })}
+              onChange={v => onConfigChange({ ...config, timeRange: v as WidgetConfig['timeRange'] })}
             />
           </Section>
         )}
@@ -51,7 +61,7 @@ export function WidgetConfigPopover({ supportedFilters = [], config, onChange, o
                 { label: '25', value: '25' },
               ]}
               value={String(config.limit ?? 10)}
-              onChange={v => onChange({ ...config, limit: Number(v) })}
+              onChange={v => onConfigChange({ ...config, limit: Number(v) })}
             />
           </Section>
         )}
@@ -64,7 +74,7 @@ export function WidgetConfigPopover({ supportedFilters = [], config, onChange, o
                 { label: 'Area', value: 'area' },
               ]}
               value={config.chartType ?? 'line'}
-              onChange={v => onChange({ ...config, chartType: v as WidgetConfig['chartType'] })}
+              onChange={v => onConfigChange({ ...config, chartType: v as WidgetConfig['chartType'] })}
             />
           </Section>
         )}
@@ -78,7 +88,7 @@ export function WidgetConfigPopover({ supportedFilters = [], config, onChange, o
                 { label: '5m', value: '300000' },
               ]}
               value={String(config.refreshInterval ?? 0)}
-              onChange={v => onChange({ ...config, refreshInterval: Number(v) })}
+              onChange={v => onConfigChange({ ...config, refreshInterval: Number(v) })}
             />
           </Section>
         )}
@@ -88,7 +98,7 @@ export function WidgetConfigPopover({ supportedFilters = [], config, onChange, o
               <input
                 type="checkbox"
                 checked={config.compactMode ?? false}
-                onChange={e => onChange({ ...config, compactMode: e.target.checked })}
+                onChange={e => onConfigChange({ ...config, compactMode: e.target.checked })}
               />
               Compact mode
             </label>
