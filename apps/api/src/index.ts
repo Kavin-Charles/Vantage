@@ -299,10 +299,20 @@ bridgeRegistry
     return { registered: name, interval_minutes: intervalMin };
   })
   .register('user.get', null, async (ctx, _p, db) => {
-    const row = await (db as any).selectFrom('users').select(['id', 'name', 'email', 'role'])
+    const row = await db.selectFrom('users').select(['id', 'name', 'email'])
       .where('workspace_id', '=', ctx.workspaceId)
       .executeTakeFirst();
-    return row ?? null;
+    if (!row) return null;
+    // 'users.role' was dropped by RBAC3 — derive an admin flag from role membership
+    // instead (grants_all role) so plugins that gated on role='admin' still work.
+    const adminRow = await db.selectFrom('user_roles as ur')
+      .innerJoin('roles as r', 'r.id', 'ur.role_id')
+      .where('ur.user_id', '=', row.id)
+      .where('ur.workspace_id', '=', ctx.workspaceId)
+      .where('r.grants_all', '=', true)
+      .select('r.id')
+      .executeTakeFirst();
+    return { ...row, isAdmin: !!adminRow };
   })
   .register('workspace.get', null, async (ctx, _p, db) => {
     // workspaces has no 'plan' column — selecting it threw 42703 for every plugin.

@@ -518,8 +518,16 @@ describe('POST /api/roles/:id/members', () => {
   });
 
   it('adds a user to the role', async () => {
-    const { db, chain } = buildDb({ selectResult: { id: 'r1' } });
-    chain['execute'] = vi.fn().mockResolvedValue([]);
+    const { db, chain } = buildDb();
+    chain['executeTakeFirst'] = vi.fn()
+      .mockResolvedValueOnce({ id: 'r1', max_members: null }) // role lookup
+      .mockResolvedValueOnce({ count: 0 });                    // cardinality count
+    chain['execute'] = vi.fn()
+      .mockResolvedValueOnce([]) // existing user_roles for this user
+      .mockResolvedValueOnce([]) // inheritance edges
+      .mockResolvedValueOnce([]) // ssd sets
+      .mockResolvedValue([]);    // insert calls
+
     const router = createRolesRouter(db as never, allowPermission() as never);
     const res = buildRes();
     await runStack(
@@ -532,6 +540,54 @@ describe('POST /api/roles/:id/members', () => {
     expect(db['insertInto']).toHaveBeenCalledWith('user_session_roles');
     expect(res['status']).toHaveBeenCalledWith(201);
     expect(res['json']).toHaveBeenCalledWith({ data: null, error: null });
+  });
+
+  it('rejects with 409 SSD_CONFLICT and does not write when the new role would violate an SoD set', async () => {
+    const { db, chain } = buildDb();
+    chain['executeTakeFirst'] = vi.fn()
+      .mockResolvedValueOnce({ id: 'r-target', max_members: null }); // role lookup
+    chain['execute'] = vi.fn()
+      .mockResolvedValueOnce([{ role_id: 'r-other' }])                                   // user's existing roles
+      .mockResolvedValueOnce([])                                                         // inheritance edges
+      .mockResolvedValueOnce([{ id: 'set1', name: 'Sales/Finance SoD', cardinality: 1 }]) // ssd_sets
+      .mockResolvedValueOnce([{ role_id: 'r-other' }, { role_id: 'r-target' }]);          // ssd_set_roles for set1
+
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/members', 'post'),
+      buildReq({ params: { id: 'r-target' }, body: { userId: validUserId } }),
+      res,
+    );
+
+    expect(res['status']).toHaveBeenCalledWith(409);
+    const arg = (res['json'] as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
+    expect(arg.error.code).toBe('SSD_CONFLICT');
+    expect(db['insertInto']).not.toHaveBeenCalled();
+  });
+
+  it('rejects with 409 CARDINALITY and does not write when the target role is at its member cap', async () => {
+    const { db, chain } = buildDb();
+    chain['executeTakeFirst'] = vi.fn()
+      .mockResolvedValueOnce({ id: 'r-target', max_members: 1 }) // role lookup
+      .mockResolvedValueOnce({ count: 1 });                       // already at cap
+    chain['execute'] = vi.fn()
+      .mockResolvedValueOnce([]) // user's existing roles
+      .mockResolvedValueOnce([]) // inheritance edges
+      .mockResolvedValueOnce([]); // ssd sets (none)
+
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/members', 'post'),
+      buildReq({ params: { id: 'r-target' }, body: { userId: validUserId } }),
+      res,
+    );
+
+    expect(res['status']).toHaveBeenCalledWith(409);
+    const arg = (res['json'] as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
+    expect(arg.error.code).toBe('CARDINALITY');
+    expect(db['insertInto']).not.toHaveBeenCalled();
   });
 });
 

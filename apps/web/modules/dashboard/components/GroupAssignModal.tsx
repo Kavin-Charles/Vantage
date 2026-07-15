@@ -3,13 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { apiFetch } from '@/modules/shared/lib/api';
-
-interface Group {
-  id: string;
-  name: string;
-  color: string;
-}
+import { listGroupAssignments } from '../lib/dashboard-api';
 
 interface Props {
   open: boolean;
@@ -23,10 +17,10 @@ export function GroupAssignModal({ open, onClose, currentGroupIds, onSave }: Pro
   const [selected, setSelected] = useState<Set<string>>(new Set(currentGroupIds));
 
   const { data: groups = [] } = useQuery({
-    queryKey: ['groups'],
+    queryKey: ['dashboard-group-assignments'],
     queryFn: async () => {
-      const res = await apiFetch<{ data: Group[]; error: null }>('/api/groups', { token: await getToken() });
-      return res.data ?? [];
+      const assignments = await listGroupAssignments(await getToken());
+      return assignments.groups;
     },
     enabled: open,
   });

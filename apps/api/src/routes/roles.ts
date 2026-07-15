@@ -9,7 +9,7 @@ import { invalidateRoleMemberCaches, invalidatePermissionCache } from '../middle
 import { getDefaultPermissionsForRole, getModuleForPermission } from '@vencore/modules';
 import { buildGroupedPermissions, loadInheritanceEdges, loadSsdSets } from '../lib/rbac/db';
 import { authorizedRoleClosure, wouldCreateCycle } from '../lib/rbac/closure';
-import { checkSSD } from '../lib/rbac/constraints';
+import { checkSSD, checkCardinality } from '../lib/rbac/constraints';
 
 const createRoleSchema = z.object({
   name: z.string().min(1).max(100),
@@ -367,11 +367,43 @@ export function createRolesRouter(
         .selectFrom('roles')
         .where('id', '=', roleId)
         .where('workspace_id', '=', workspace.id)
-        .select('id')
+        .select(['id', 'max_members'])
         .executeTakeFirst();
       if (!role) {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND' } });
         return;
+      }
+
+      // This is an alternate assignment path alongside PUT /api/users/:id/roles — it
+      // must enforce the same SoD guardrails, otherwise an admin can seat a user into
+      // an SSD-conflicting role or bust a cardinality cap here instead.
+      const existingRows = await db
+        .selectFrom('user_roles')
+        .where('user_id', '=', parsed.data.userId)
+        .where('workspace_id', '=', workspace.id)
+        .select('role_id')
+        .execute();
+      const existingRoleIds = existingRows.map(r => r.role_id);
+
+      if (!existingRoleIds.includes(roleId)) {
+        const edges = await loadInheritanceEdges(db);
+        const closure = authorizedRoleClosure([...existingRoleIds, roleId], edges);
+        const ssdSets = await loadSsdSets(db, workspace.id);
+        const violations = checkSSD(closure, ssdSets);
+        if (violations.length > 0) {
+          res.status(409).json({ data: null, error: { code: 'SSD_CONFLICT', conflicts: violations } });
+          return;
+        }
+
+        const countRow = await db
+          .selectFrom('user_roles')
+          .where('role_id', '=', roleId)
+          .select(db.fn.countAll<number>().as('count'))
+          .executeTakeFirst();
+        if (!checkCardinality(role, Number(countRow?.count ?? 0))) {
+          res.status(409).json({ data: null, error: { code: 'CARDINALITY', roleId } });
+          return;
+        }
       }
 
       await db

@@ -3,24 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { apiFetch } from '@/modules/shared/lib/api';
+import { assignGroups, listGroupAssignments, type DashboardGroup } from '@/modules/dashboard/lib/dashboard-api';
 
-interface GroupRow {
-  id: string;
-  name: string;
-  color: string;
-  dashboard_id: string | null;
-}
-
-interface DashboardOption {
-  id: string;
-  name: string;
-}
-
-interface GroupAssignmentsResponse {
-  groups: GroupRow[];
-  dashboards: DashboardOption[];
-}
+type GroupRow = DashboardGroup;
 
 function dedupeGroups(rows: GroupRow[]): GroupRow[] {
   const byId = new Map<string, GroupRow>();
@@ -37,11 +22,7 @@ export default function DashboardSettingsPage() {
     queryKey: ['dashboard-group-assignments'],
     queryFn: async () => {
       const token = await getToken();
-      const res = await apiFetch<{ data: GroupAssignmentsResponse; error: null }>(
-        '/api/dashboards/group-assignments',
-        { token },
-      );
-      return res.data;
+      return listGroupAssignments(token);
     },
   });
 
@@ -65,12 +46,28 @@ export default function DashboardSettingsPage() {
     setFeedback(prev => ({ ...prev, [groupId]: undefined }));
     try {
       const token = await getToken();
-      const value = selections[groupId] ?? '';
-      await apiFetch(`/api/groups/${groupId}/dashboard`, {
-        method: 'PUT',
-        body: JSON.stringify({ dashboard_id: value || null }),
-        token,
-      });
+      const newDashboardId = selections[groupId] || null;
+      const allGroups = data?.groups ?? [];
+      const oldDashboardId = allGroups.find(g => g.id === groupId)?.dashboard_id ?? null;
+
+      // There is no per-group "set my dashboard" endpoint — dashboard_group_assignments
+      // is keyed by dashboard, so moving a group to a new dashboard means removing it
+      // from the old dashboard's group set and adding it to the new one's.
+      if (oldDashboardId && oldDashboardId !== newDashboardId) {
+        const remaining = allGroups
+          .filter(g => g.dashboard_id === oldDashboardId && g.id !== groupId)
+          .map(g => g.id);
+        await assignGroups(oldDashboardId, remaining, token);
+      }
+
+      if (newDashboardId) {
+        const current = allGroups
+          .filter(g => g.dashboard_id === newDashboardId)
+          .map(g => g.id);
+        const updated = current.includes(groupId) ? current : [...current, groupId];
+        await assignGroups(newDashboardId, updated, token);
+      }
+
       await queryClient.invalidateQueries({ queryKey: ['dashboard-group-assignments'] });
       setFeedback(prev => ({ ...prev, [groupId]: 'saved' }));
     } catch {
