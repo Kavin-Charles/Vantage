@@ -12,3 +12,7 @@ import '@/modules/crm/pipeline/components/widgets/PipelineValueWidget';
 import '@/modules/crm/pipeline/components/widgets/ClosingThisWeekWidget';
 import '@/modules/crm/pipeline/components/widgets/WinRateWidget';
 import '@/modules/crm/pipeline/components/widgets/RecentOpportunitiesWidget';
+import '@/modules/crm/companies/components/widgets/RecentCompaniesWidget';
+import '@/modules/crm/companies/components/widgets/CompaniesByIndustryWidget';
+import '@/modules/crm/companies/components/widgets/LargestCustomersWidget';
+import '@/modules/crm/companies/components/widgets/CompanyGrowthWidget';
