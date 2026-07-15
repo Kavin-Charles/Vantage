@@ -604,7 +604,9 @@ describe('POST /api/roles/:id/inherit', () => {
   it('rejects a cycle when the new edge is already reachable in reverse', async () => {
     // Existing edge child -> parent means adding parent -> child would close a cycle.
     const { db, chain } = buildDb();
-    chain['execute'] = vi.fn().mockResolvedValueOnce([{ parent_role_id: childId, child_role_id: parentId }]); // loadInheritanceEdges
+    chain['execute'] = vi.fn()
+      .mockResolvedValueOnce([{ id: parentId }, { id: childId }])          // ownership check — both owned
+      .mockResolvedValueOnce([{ parent_role_id: childId, child_role_id: parentId }]); // loadInheritanceEdges
 
     const router = createRolesRouter(db as never, allowPermission() as never);
     const res = buildRes();
@@ -624,6 +626,7 @@ describe('POST /api/roles/:id/inherit', () => {
     const { db, chain } = buildDb();
     // Query order: loadInheritanceEdges -> loadSsdSets (ssd_sets) -> members (user_roles) -> insert -> invalidateRoleMemberCaches (user_roles)
     chain['execute'] = vi.fn()
+      .mockResolvedValueOnce([{ id: parentId }, { id: childId }]) // ownership check — both owned
       .mockResolvedValueOnce([])   // loadInheritanceEdges — no existing edges
       .mockResolvedValueOnce([])   // loadSsdSets — no ssd sets
       .mockResolvedValueOnce([])   // members of parent — none
@@ -647,6 +650,7 @@ describe('POST /api/roles/:id/inherit', () => {
     const memberId = '33333333-3333-3333-3333-333333333333';
     const { db, chain } = buildDb();
     chain['execute'] = vi.fn()
+      .mockResolvedValueOnce([{ id: parentId }, { id: childId }])      // ownership check — both owned
       .mockResolvedValueOnce([])                                       // loadInheritanceEdges — none
       .mockResolvedValueOnce([{ id: 'set1', name: 'Segregated', cardinality: 2 }]) // ssd_sets
       .mockResolvedValueOnce([{ role_id: parentId }, { role_id: childId }])        // ssd_set_roles for set1
@@ -667,6 +671,21 @@ describe('POST /api/roles/:id/inherit', () => {
     expect(arg.error.conflicts).toEqual([{ userId: memberId, sets: [{ setId: 'set1', name: 'Segregated' }] }]);
     expect(db['insertInto']).not.toHaveBeenCalled();
   });
+
+  it('returns 404 when a role is not in the caller workspace (no cross-tenant edge)', async () => {
+    const { db, chain } = buildDb();
+    chain['execute'] = vi.fn().mockResolvedValue([{ id: parentId }]); // ownership check — only one owned
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/inherit', 'post'),
+      buildReq({ params: { id: parentId }, body: { childRoleId: childId } }),
+      res,
+    );
+
+    expect(res['status']).toHaveBeenCalledWith(404);
+    expect(db['insertInto']).not.toHaveBeenCalled();
+  });
 });
 
 describe('DELETE /api/roles/:id/inherit/:childId', () => {
@@ -675,7 +694,9 @@ describe('DELETE /api/roles/:id/inherit/:childId', () => {
 
   it('removes the inheritance edge and invalidates caches', async () => {
     const { db, chain } = buildDb();
-    chain['execute'] = vi.fn().mockResolvedValue([]);
+    chain['execute'] = vi.fn()
+      .mockResolvedValueOnce([{ id: parentId }, { id: childId }]) // ownership check — both owned
+      .mockResolvedValue([]);
     const router = createRolesRouter(db as never, allowPermission() as never);
     const res = buildRes();
     await runStack(
@@ -686,5 +707,20 @@ describe('DELETE /api/roles/:id/inherit/:childId', () => {
 
     expect(db['deleteFrom']).toHaveBeenCalledWith('role_inheritance');
     expect(res['json']).toHaveBeenCalledWith({ data: null, error: null });
+  });
+
+  it('returns 404 and does not delete when a role is not in the workspace', async () => {
+    const { db, chain } = buildDb();
+    chain['execute'] = vi.fn().mockResolvedValue([{ id: parentId }]); // ownership check — only one owned
+    const router = createRolesRouter(db as never, allowPermission() as never);
+    const res = buildRes();
+    await runStack(
+      getFullStack(router, '/:id/inherit/:childId', 'delete'),
+      buildReq({ params: { id: parentId, childId } }),
+      res,
+    );
+
+    expect(res['status']).toHaveBeenCalledWith(404);
+    expect(db['deleteFrom']).not.toHaveBeenCalled();
   });
 });

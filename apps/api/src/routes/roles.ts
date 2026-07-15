@@ -436,6 +436,20 @@ export function createRolesRouter(
         return;
       }
 
+      // Both roles must belong to the caller's workspace — role_inheritance has
+      // no workspace_id and its FK only checks existence, so without this an
+      // admin could create a cross-tenant edge.
+      const owned = await db
+        .selectFrom('roles')
+        .where('workspace_id', '=', workspace.id)
+        .where('id', 'in', [parent, child])
+        .select('id')
+        .execute();
+      if (owned.length !== 2) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND' } });
+        return;
+      }
+
       const edges = await loadInheritanceEdges(db);
       if (wouldCreateCycle(edges, { parent, child })) {
         res.status(400).json({ data: null, error: { code: 'CYCLE' } });
@@ -487,6 +501,18 @@ export function createRolesRouter(
       const { workspace } = req as unknown as AuthenticatedRequest;
       const parent = req.params['id']!;
       const child = req.params['childId']!;
+
+      // Both roles must belong to the caller's workspace (see POST above).
+      const owned = await db
+        .selectFrom('roles')
+        .where('workspace_id', '=', workspace.id)
+        .where('id', 'in', [parent, child])
+        .select('id')
+        .execute();
+      if (owned.length !== 2) {
+        res.status(404).json({ data: null, error: { code: 'NOT_FOUND' } });
+        return;
+      }
 
       await db
         .deleteFrom('role_inheritance')
