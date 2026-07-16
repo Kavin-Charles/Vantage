@@ -7,6 +7,7 @@ import type { Database } from '@vencore/db';
 import type { SmtpConfig } from '@vencore/config';
 import { z } from 'zod';
 import { logger } from '../lib/logger';
+import { getEnabledModuleIds, resolveUserPermissions } from '../middleware/permission';
 
 const loginSchema = z.object({
   // Accept any x@y — self-hosted setups often use local domains without TLDs
@@ -77,7 +78,23 @@ export function createAuthRouter(
         path: '/',
       });
 
-      res.json({ data: { id: user.id, name: user.name, email: user.email, token }, error: null });
+      // Resolve access up-front so the client has the correct admin/permission
+      // state immediately after login (rather than relying on a follow-up /api/me).
+      const enabled = await getEnabledModuleIds(db, user.workspace_id);
+      const resolved = await resolveUserPermissions(db, user.id, user.workspace_id, enabled);
+
+      res.json({
+        data: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          token,
+          theme: user.theme,
+          isAdmin: resolved.superuser,
+          permissions: [...resolved.permissions],
+        },
+        error: null,
+      });
     } catch (err) {
       logger.error({ err }, 'POST /login error');
       res.status(500).json({ data: null, error: { code: 'INTERNAL_ERROR' } });

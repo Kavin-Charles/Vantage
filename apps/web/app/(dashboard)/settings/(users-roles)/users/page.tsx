@@ -12,6 +12,7 @@ import type { User } from '@vencore/types';
 
 interface UserWithActive extends User {
   is_active: boolean;
+  isAdmin: boolean;
 }
 
 export default function UsersPage() {
@@ -87,8 +88,8 @@ export default function UsersPage() {
         <div>
           {users.map(u => {
             const isSelf = u.id === currentUser?.id;
-            const adminCount = users.filter(x => x.role === 'admin' && x.is_active).length;
-            const cantRemove = isSelf || (u.role === 'admin' && adminCount <= 1);
+            const adminCount = users.filter(x => x.isAdmin && x.is_active).length;
+            const cantRemove = isSelf || (u.isAdmin && adminCount <= 1);
 
             return (
               <div
@@ -111,8 +112,8 @@ export default function UsersPage() {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={badgeStyle(u.role === 'admin' ? 'var(--blue)' : 'var(--text3)', u.role === 'admin' ? 'var(--blue-bg)' : 'var(--surface2)')}>
-                    {u.role}
+                  <span style={badgeStyle(u.isAdmin ? 'var(--blue)' : 'var(--text3)', u.isAdmin ? 'var(--blue-bg)' : 'var(--surface2)')}>
+                    {u.isAdmin ? 'Admin' : 'Member'}
                   </span>
                   {!u.is_active && (
                     <span style={badgeStyle('var(--amber)', 'var(--amber-bg)')}>Inactive</span>

@@ -25,7 +25,10 @@ function LoginForm() {
     setLoading(true);
     try {
       const res = await apiFetch<{
-        data: { id: string; name: string; email: string; token: string };
+        data: {
+          id: string; name: string; email: string; token: string;
+          isAdmin: boolean; permissions: string[]; theme: 'light' | 'dark';
+        };
       }>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
@@ -36,9 +39,9 @@ function LoginForm() {
           id: res.data.id,
           name: res.data.name,
           email: res.data.email,
-          isAdmin: false,
-          permissions: [],
-          theme: 'light',
+          isAdmin: res.data.isAdmin,
+          permissions: res.data.permissions,
+          theme: res.data.theme,
         },
       }));
       const raw = searchParams.get('from') ?? '';
