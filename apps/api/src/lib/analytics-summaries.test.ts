@@ -72,4 +72,10 @@ describe('summarizePm', () => {
     const out = summarizePm(0, undefined, [], [])
     expect(out.tasks).toEqual({ total: 0, done: 0, overdue: 0, open: 0, completion_rate: 0 })
   })
+
+  it('passes through null velocity and null end_date (active sprints)', () => {
+    const out = summarizePm(1, { total: 0, done: 0, overdue: 0, open: 0 },
+      [{ name: 'Sprint 4', velocity: null, end_date: null }], [])
+    expect(out.velocity).toEqual([{ sprint_name: 'Sprint 4', velocity: null, end_date: null }])
+  })
 })

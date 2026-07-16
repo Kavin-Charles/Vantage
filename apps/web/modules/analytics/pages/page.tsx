@@ -39,7 +39,7 @@ export default function AnalyticsPage() {
   const getToken = useApiToken();
   const [period, setPeriod] = useState<Period>('30d');
 
-  const { data: sectionsData, isLoading } = useQuery({
+  const { data: sectionsData, isLoading, isError } = useQuery({
     queryKey: ['analytics-sections'],
     queryFn: async () => getAnalyticsSections(await getToken()),
   });
@@ -78,7 +78,23 @@ export default function AnalyticsPage() {
       <Topbar action={periodToggle} />
 
       <div style={{ padding: 24 }}>
-        {!isLoading && sections.length === 0 && (
+        {isError && (
+          <div
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '48px 24px',
+              textAlign: 'center',
+              color: 'var(--text2)',
+              fontSize: 13,
+            }}
+          >
+            Failed to load analytics sections.
+          </div>
+        )}
+
+        {!isLoading && !isError && sections.length === 0 && (
           <div
             style={{
               background: 'var(--surface)',

@@ -191,13 +191,12 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
     } catch (err) { next(err); }
   });
 
-  // GET /api/analytics/infra?period= — infra rollup (servers/websites snapshot;
-  // period filters the open-alert counts)
+  // GET /api/analytics/infra?period= — infra rollup is a current-state snapshot
+  // (servers/websites/open alerts); period is accepted for interface consistency only
   router.get('/infra', requirePermission('analytics:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      const { period } = periodSchema.parse(req.query);
-      const periodStart = getPeriodStart(period);
+      periodSchema.parse(req.query);
 
       const servers = await db.selectFrom('servers')
         .select(['status', 'cpu_pct', 'mem_pct', 'disk_pct'])
@@ -213,7 +212,6 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
         .select(['severity', sql<string>`COUNT(*)`.as('count')])
         .where('workspace_id', '=', workspace.id)
         .where('resolved', '=', false)
-        .where('created_at', '>=', periodStart as never)
         .groupBy('severity')
         .execute();
 
