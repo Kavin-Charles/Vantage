@@ -4,6 +4,7 @@ import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
+import { summarizeInfra, summarizePm } from '../lib/analytics-summaries';
 
 const periodSchema = z.object({
   period: z.enum(['30d', '90d', '12m']).default('30d'),
@@ -187,6 +188,97 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
       }));
 
       res.json({ data: { reps }, error: null });
+    } catch (err) { next(err); }
+  });
+
+  // GET /api/analytics/infra?period= — infra rollup (servers/websites snapshot;
+  // period filters the open-alert counts)
+  router.get('/infra', requirePermission('analytics:view'), async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      const { period } = periodSchema.parse(req.query);
+      const periodStart = getPeriodStart(period);
+
+      const servers = await db.selectFrom('servers')
+        .select(['status', 'cpu_pct', 'mem_pct', 'disk_pct'])
+        .where('workspace_id', '=', workspace.id)
+        .execute();
+
+      const websites = await db.selectFrom('websites')
+        .select(['uptime_pct_30d', 'ssl_expiry_date'])
+        .where('workspace_id', '=', workspace.id)
+        .execute();
+
+      const alerts = await db.selectFrom('alerts')
+        .select(['severity', sql<string>`COUNT(*)`.as('count')])
+        .where('workspace_id', '=', workspace.id)
+        .where('resolved', '=', false)
+        .where('created_at', '>=', periodStart as never)
+        .groupBy('severity')
+        .execute();
+
+      res.json({ data: summarizeInfra(servers, websites, alerts), error: null });
+    } catch (err) { next(err); }
+  });
+
+  // GET /api/analytics/pm?period= — workspace-wide project management rollup
+  router.get('/pm', requirePermission('analytics:view'), async (req, res, next) => {
+    try {
+      const { workspace } = req as unknown as AuthenticatedRequest;
+      periodSchema.parse(req.query); // accepted for interface consistency
+
+      const activeProjects = await db.selectFrom('projects')
+        .select(sql<string>`COUNT(*)`.as('count'))
+        .where('workspace_id', '=', workspace.id)
+        .where('status', '=', 'ACTIVE')
+        .executeTakeFirstOrThrow();
+
+      const taskStats = await db.selectFrom('project_tasks as t')
+        .innerJoin('projects as p', 'p.id', 't.project_id')
+        .innerJoin('project_task_statuses as s', 's.id', 't.status_id')
+        .where('p.workspace_id', '=', workspace.id)
+        .where('p.status', '!=', 'DELETED')
+        .select([
+          sql<string>`COUNT(t.id)`.as('total'),
+          sql<string>`COUNT(CASE WHEN s.is_done THEN t.id END)`.as('done'),
+          sql<string>`COUNT(CASE WHEN t.due_date < NOW() AND NOT s.is_done THEN t.id END)`.as('overdue'),
+          sql<string>`COUNT(CASE WHEN NOT s.is_done THEN t.id END)`.as('open'),
+        ])
+        .executeTakeFirst();
+
+      const velocityRows = await db.selectFrom('sprints as sp')
+        .innerJoin('projects as p', 'p.id', 'sp.project_id')
+        .where('p.workspace_id', '=', workspace.id)
+        .where('p.status', '!=', 'DELETED')
+        .where('sp.status', 'in', ['COMPLETED', 'ACTIVE'])
+        .select(['sp.name', 'sp.velocity', 'sp.end_date'])
+        .orderBy('sp.end_date', 'desc')
+        .limit(8)
+        .execute();
+
+      const workloadRows = await db.selectFrom('project_task_assignees as a')
+        .innerJoin('project_tasks as t', 't.id', 'a.task_id')
+        .innerJoin('projects as p', 'p.id', 't.project_id')
+        .innerJoin('project_task_statuses as s', 's.id', 't.status_id')
+        .innerJoin('users as u', 'u.id', 'a.user_id')
+        .where('p.workspace_id', '=', workspace.id)
+        .where('p.status', '!=', 'DELETED')
+        .groupBy(['a.user_id', 'u.name'])
+        .select([
+          'a.user_id',
+          'u.name',
+          sql<string>`COUNT(t.id)`.as('total'),
+          sql<string>`COUNT(CASE WHEN s.is_done THEN t.id END)`.as('done'),
+          sql<string>`COUNT(CASE WHEN t.due_date < NOW() AND NOT s.is_done THEN t.id END)`.as('overdue'),
+        ])
+        .orderBy(sql`COUNT(CASE WHEN NOT s.is_done THEN t.id END)`, 'desc')
+        .limit(8)
+        .execute();
+
+      res.json({
+        data: summarizePm(activeProjects.count, taskStats, velocityRows, workloadRows),
+        error: null,
+      });
     } catch (err) { next(err); }
   });
 
