@@ -1,30 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Topbar } from '@/modules/shared/components/Topbar';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
-import { getRevenue, getPipeline, getTeam } from '@/modules/analytics/lib/analytics';
-import type { Period } from '@/modules/analytics/lib/analytics';
-import { KpiCards } from '../components/KpiCards';
-import { RevenueChart } from '../components/RevenueChart';
-import { PipelineChart } from '../components/PipelineChart';
-import { RepLeaderboard } from '../components/RepLeaderboard';
+import { usePluginRegistry } from '@/modules/shared/contexts/PluginRuntimeContext';
 import { ModuleGuard } from '@/modules/shared/components/ModuleGuard';
-import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
-
-function downloadCsv(filename: string, rows: Record<string, unknown>[]) {
-  if (rows.length === 0) return;
-  const headers = Object.keys(rows[0]!);
-  const csv = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
+import {
+  getAnalyticsSections,
+  type Period,
+  type ResolvedAnalyticsSection,
+} from '@/modules/analytics/lib/analytics';
+import { ANALYTICS_SECTION_COMPONENTS } from '../sections/registry';
 
 const PERIODS: { label: string; value: Period }[] = [
   { label: '30D', value: '30d' },
@@ -32,52 +19,37 @@ const PERIODS: { label: string; value: Period }[] = [
   { label: '12M', value: '12m' },
 ];
 
-const card: React.CSSProperties = {
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius-lg)',
-  marginBottom: 16,
-};
+function SectionRenderer({ section, period }: { section: ResolvedAnalyticsSection; period: Period }) {
+  const { registry } = usePluginRegistry();
+
+  if (section.kind === 'builtin') {
+    const Component = ANALYTICS_SECTION_COMPONENTS[section.id];
+    if (!Component) return null;
+    return <Component period={period} />;
+  }
+
+  // Plugin section — same fallback path as SlotOutlet
+  const def = registry.sections.get(`${section.plugin_id}:${section.id}`);
+  if (!def) return null;
+  const PluginComponent = def.component;
+  return <PluginComponent />;
+}
 
 export default function AnalyticsPage() {
   const getToken = useApiToken();
-  const qc = useQueryClient();
   const [period, setPeriod] = useState<Period>('30d');
-  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
-  const { data: revenueData, isLoading: revLoading } = useQuery({
-    queryKey: ['analytics-revenue', period],
-    queryFn: async () => getRevenue(await getToken(), period),
+  const { data: sectionsData, isLoading } = useQuery({
+    queryKey: ['analytics-sections'],
+    queryFn: async () => getAnalyticsSections(await getToken()),
   });
 
-  const { data: pipelineData, isLoading: pipeLoading } = useQuery({
-    queryKey: ['analytics-pipeline', period],
-    queryFn: async () => getPipeline(await getToken(), period),
-  });
-
-  const { data: teamData, isLoading: teamLoading } = useQuery({
-    queryKey: ['analytics-team', period],
-    queryFn: async () => getTeam(await getToken(), period),
-  });
-
-  function chartMenu(queryKey: string, rows: Record<string, unknown>[] | undefined, filename: string) {
-    const items: ContextMenuItem[] = [
-      { icon: 'refresh', label: 'Refresh', onClick: () => void qc.invalidateQueries({ queryKey: [queryKey, period] }) },
-      { icon: 'open', label: 'Export CSV', disabled: !rows || rows.length === 0, onClick: () => downloadCsv(filename, rows ?? []) },
-    ];
-    return (e: React.MouseEvent) => openMenu(e, items);
-  }
+  const sections = sectionsData?.data ?? [];
+  const overview = sections.filter(s => s.slot_id === 'overview');
+  const panels = sections.filter(s => s.slot_id === 'panels');
 
   const periodToggle = (
-    <div
-      style={{
-        display: 'flex',
-        gap: 3,
-        background: 'var(--surface2)',
-        borderRadius: 'var(--radius-md)',
-        padding: 3,
-      }}
-    >
+    <div style={{ display: 'flex', gap: 3, background: 'var(--surface2)', borderRadius: 'var(--radius-md)', padding: 3 }}>
       {PERIODS.map(p => (
         <button
           key={p.value}
@@ -106,71 +78,41 @@ export default function AnalyticsPage() {
       <Topbar action={periodToggle} />
 
       <div style={{ padding: 24 }}>
-        {/* KPI cards row */}
-        <KpiCards data={revenueData?.data} isLoading={revLoading} />
-
-        {/* Revenue over time */}
-        <div
-          onContextMenu={chartMenu('analytics-revenue', revenueData?.data?.series as Record<string, unknown>[] | undefined, 'revenue.csv')}
-          style={{ ...card, padding: '20px 24px' }}
-        >
+        {!isLoading && sections.length === 0 && (
           <div
             style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '48px 24px',
+              textAlign: 'center',
+              color: 'var(--text2)',
               fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--text)',
+            }}
+          >
+            No analytics sources enabled — enable a module to see analytics here.
+          </div>
+        )}
+
+        {overview.length > 0 && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${Math.min(overview.length, 3)}, 1fr)`,
+              gap: 16,
               marginBottom: 16,
             }}
           >
-            Revenue over time
+            {overview.map(s => (
+              <SectionRenderer key={`${s.plugin_id}:${s.id}`} section={s} period={period} />
+            ))}
           </div>
-          <RevenueChart
-            series={revenueData?.data?.series ?? []}
-            isLoading={revLoading}
-            period={period}
-          />
-        </div>
+        )}
 
-        {/* Pipeline by stage */}
-        <div
-          onContextMenu={chartMenu('analytics-pipeline', pipelineData?.data?.stages as Record<string, unknown>[] | undefined, 'pipeline.csv')}
-          style={{ ...card, padding: '20px 24px' }}
-        >
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--text)',
-              marginBottom: 16,
-            }}
-          >
-            Pipeline by stage
-          </div>
-          <PipelineChart
-            stages={pipelineData?.data?.stages ?? []}
-            isLoading={pipeLoading}
-          />
-        </div>
-
-        {/* Rep leaderboard */}
-        <div
-          onContextMenu={chartMenu('analytics-team', teamData?.data?.reps as Record<string, unknown>[] | undefined, 'rep-leaderboard.csv')}
-          style={{ ...card, marginBottom: 0, overflow: 'hidden' }}
-        >
-          <div
-            style={{
-              padding: '20px 24px 0',
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--text)',
-            }}
-          >
-            Rep leaderboard
-          </div>
-          <RepLeaderboard reps={teamData?.data?.reps} isLoading={teamLoading} />
-        </div>
+        {panels.map(s => (
+          <SectionRenderer key={`${s.plugin_id}:${s.id}`} section={s} period={period} />
+        ))}
       </div>
-      <ContextMenu menu={menu} onClose={closeMenu} />
     </ModuleGuard>
   );
 }
