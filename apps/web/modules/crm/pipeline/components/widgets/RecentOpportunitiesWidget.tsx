@@ -3,10 +3,25 @@
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
-import { getPipeline } from '@/modules/analytics/lib/analytics';
+import { apiFetch } from '@/modules/shared/lib/api';
+import type { StageData } from '@/modules/analytics/lib/analytics';
 import { WidgetSkeleton, WidgetError, EmptyState, WidgetHeader } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
+
+const fetchUserOptions = async (token: string): Promise<FilterOption[]> => {
+  const res = await apiFetch<{ data: { id: string; name: string }[] }>('/api/users', { token });
+  return res.data.map(u => ({ label: u.name, value: u.id }));
+};
+
+const STAGE_OPTIONS: FilterOption[] = [
+  { label: 'Lead', value: 'lead' },
+  { label: 'Qualifying', value: 'qualifying' },
+  { label: 'Proposal', value: 'proposal' },
+  { label: 'Closing', value: 'closing' },
+  { label: 'Won', value: 'won' },
+  { label: 'Lost', value: 'lost' },
+];
 
 const STAGE_COLORS: Record<string, string> = {
   lead: 'var(--text3)',
@@ -29,10 +44,22 @@ function RecentOpportunitiesWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
   const _limit = config.limit ?? 6;
+  const owner = config.filters?.['owner'] ?? '';
+  const stage = config.filters?.['stage'] ?? '';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'recent-opportunities'],
-    queryFn: async () => getPipeline(await getToken(), '30d'),
+    queryKey: ['widget', 'recent-opportunities', owner, stage],
+    queryFn: async () => {
+      const token = await getToken();
+      const qs = [
+        owner ? `&owner_id=${owner}` : '',
+        stage ? `&stage=${stage}` : '',
+      ].join('');
+      return apiFetch<{ data: { stages: StageData[] }; error: null }>(
+        `/api/analytics/pipeline?period=30d${qs}`,
+        { token },
+      );
+    },
     staleTime: 60_000,
     enabled: isEnabled('crm'),
   });
@@ -82,12 +109,17 @@ registerDashboardWidget({
   description: 'Pipeline breakdown by stage with deal count and value',
   icon: 'pipeline',
   category: 'sales',
+  module: 'pipeline',
   sizeOptions: ['medium', 'large'],
   defaultSize: 'medium',
   defaultW: 4,
   defaultH: 3,
   minW: 3,
   minH: 2,
+  filterDefs: [
+    { key: 'owner', label: 'Owner', type: 'select', fetchOptions: fetchUserOptions, placeholder: 'All owners' },
+    { key: 'stage', label: 'Stage', type: 'pills', options: STAGE_OPTIONS },
+  ],
   supportedFilters: ['limit'],
   defaultConfig: { limit: 6 },
   component: RecentOpportunitiesWidget,

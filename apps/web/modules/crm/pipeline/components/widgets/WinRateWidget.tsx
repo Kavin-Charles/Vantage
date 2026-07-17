@@ -3,20 +3,33 @@
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
-import { getRevenue } from '@/modules/analytics/lib/analytics';
-import type { Period } from '@/modules/analytics/lib/analytics';
+import { apiFetch } from '@/modules/shared/lib/api';
+import type { Period, RevenueData } from '@/modules/analytics/lib/analytics';
 import { WidgetSkeleton, WidgetError, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
+
+const fetchUserOptions = async (token: string): Promise<FilterOption[]> => {
+  const res = await apiFetch<{ data: { id: string; name: string }[] }>('/api/users', { token });
+  return res.data.map(u => ({ label: u.name, value: u.id }));
+};
 
 function WinRateWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
   const period: Period = config.timeRange === '30d' ? '30d' : config.timeRange === '1d' ? '30d' : '90d';
+  const owner = config.filters?.['owner'] ?? '';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'win-rate', period],
-    queryFn: async () => getRevenue(await getToken(), period),
+    queryKey: ['widget', 'win-rate', period, owner],
+    queryFn: async () => {
+      const token = await getToken();
+      const qs = owner ? `&owner_id=${owner}` : '';
+      return apiFetch<{ data: RevenueData; error: null }>(
+        `/api/analytics/revenue?period=${period}${qs}`,
+        { token },
+      );
+    },
     staleTime: 60_000,
     enabled: isEnabled('crm'),
   });
@@ -56,12 +69,16 @@ registerDashboardWidget({
   description: 'Percentage of deals won vs lost with a visual ring chart',
   icon: 'trophy',
   category: 'sales',
+  module: 'pipeline',
   sizeOptions: ['small', 'medium'],
   defaultSize: 'small',
   defaultW: 3,
   defaultH: 3,
   minW: 2,
   minH: 2,
+  filterDefs: [
+    { key: 'owner', label: 'Owner', type: 'select', fetchOptions: fetchUserOptions, placeholder: 'All owners' },
+  ],
   supportedFilters: ['timeRange'],
   defaultConfig: { timeRange: '30d' },
   component: WinRateWidget,

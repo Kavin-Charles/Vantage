@@ -3,18 +3,32 @@
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
-import { getPipeline } from '@/modules/analytics/lib/analytics';
+import { apiFetch } from '@/modules/shared/lib/api';
+import type { StageData } from '@/modules/analytics/lib/analytics';
 import { WidgetSkeleton, WidgetError, EmptyState, WidgetHeader } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
 
-function ClosingThisWeekWidget({ config: _config }: { config: WidgetConfig }) {
+const fetchUserOptions = async (token: string): Promise<FilterOption[]> => {
+  const res = await apiFetch<{ data: { id: string; name: string }[] }>('/api/users', { token });
+  return res.data.map(u => ({ label: u.name, value: u.id }));
+};
+
+function ClosingThisWeekWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
+  const owner = config.filters?.['owner'] ?? '';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'closing-this-week'],
-    queryFn: async () => getPipeline(await getToken(), '30d'),
+    queryKey: ['widget', 'closing-this-week', owner],
+    queryFn: async () => {
+      const token = await getToken();
+      const qs = owner ? `&owner_id=${owner}` : '';
+      return apiFetch<{ data: { stages: StageData[] }; error: null }>(
+        `/api/analytics/pipeline?period=30d${qs}`,
+        { token },
+      );
+    },
     staleTime: 60_000,
     enabled: isEnabled('crm'),
   });
@@ -84,12 +98,16 @@ registerDashboardWidget({
   description: 'Active pipeline stages with deal counts and values',
   icon: 'calendar',
   category: 'sales',
+  module: 'pipeline',
   sizeOptions: ['medium', 'large'],
   defaultSize: 'medium',
   defaultW: 4,
   defaultH: 3,
   minW: 3,
   minH: 2,
+  filterDefs: [
+    { key: 'owner', label: 'Owner', type: 'select', fetchOptions: fetchUserOptions, placeholder: 'All owners' },
+  ],
   supportedFilters: [],
   defaultConfig: {},
   component: ClosingThisWeekWidget,
