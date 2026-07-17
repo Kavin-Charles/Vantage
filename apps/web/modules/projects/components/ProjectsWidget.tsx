@@ -6,6 +6,7 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
 import { pmApi, type WidgetStats } from '@/modules/projects/lib/api';
 import { WidgetSkeleton, WidgetError, Stat, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
+import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
 
 function MilestoneRow({
   milestone,
@@ -44,7 +45,7 @@ function MilestoneRow({
   );
 }
 
-export function ProjectsWidget() {
+export function ProjectsWidget({ config: _config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
   const router = useRouter();

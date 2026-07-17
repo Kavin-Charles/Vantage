@@ -9,6 +9,15 @@ const periodSchema = z.object({
   period: z.enum(['30d', '90d', '12m']).default('30d'),
 });
 
+const revenueQuerySchema = periodSchema.extend({
+  owner_id: z.string().uuid().optional(),
+});
+
+const pipelineQuerySchema = periodSchema.extend({
+  owner_id: z.string().uuid().optional(),
+  stage: z.string().max(100).optional(),
+});
+
 function getPeriodStart(period: '30d' | '90d' | '12m'): Date {
   const d = new Date();
   if (period === '30d') d.setDate(d.getDate() - 30);
@@ -24,12 +33,12 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
   router.get('/revenue', requirePermission('analytics:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      const { period } = periodSchema.parse(req.query);
+      const { period, owner_id: revenueOwnerId } = revenueQuerySchema.parse(req.query);
       const periodStart = getPeriodStart(period);
       const periodEnd = new Date();
 
       // Query 1: Won records in period (for revenue KPIs)
-      const wonRows = await db
+      let wonQ = db
         .selectFrom('pipeline_records as pr')
         .innerJoin('pipeline_stages as ps', 'ps.id', 'pr.stage_id')
         .leftJoin('record_field_values as rfv', join => join.onRef('rfv.record_id', '=', 'pr.id'))
@@ -45,11 +54,12 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
         .where('ps.is_won', '=', true)
         .where('pr.deleted_at', 'is', null)
         .where('pr.created_at', '>=', periodStart as never)
-        .where('pr.created_at', '<', periodEnd as never)
-        .executeTakeFirstOrThrow();
+        .where('pr.created_at', '<', periodEnd as never);
+      if (revenueOwnerId) wonQ = wonQ.where('pr.owner_id', '=', revenueOwnerId);
+      const wonRows = await wonQ.executeTakeFirstOrThrow();
 
       // Query 2: Lost records in period (for win rate denominator)
-      const lostCount = await db
+      let lostQ = db
         .selectFrom('pipeline_records as pr')
         .innerJoin('pipeline_stages as ps', 'ps.id', 'pr.stage_id')
         .select(sql<string>`COUNT(*)`.as('lost_count'))
@@ -57,8 +67,9 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
         .where('ps.is_lost', '=', true)
         .where('pr.deleted_at', 'is', null)
         .where('pr.created_at', '>=', periodStart as never)
-        .where('pr.created_at', '<', periodEnd as never)
-        .executeTakeFirstOrThrow();
+        .where('pr.created_at', '<', periodEnd as never);
+      if (revenueOwnerId) lostQ = lostQ.where('pr.owner_id', '=', revenueOwnerId);
+      const lostCount = await lostQ.executeTakeFirstOrThrow();
 
       const dealsWon = Number(wonRows.deals_won);
       const dealsLost = Number(lostCount.lost_count);
@@ -72,7 +83,7 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
         ? sql<string>`DATE_TRUNC('month', pr.created_at)`
         : sql<string>`DATE_TRUNC('week', pr.created_at)`;
 
-      const seriesRows = await db
+      let seriesQ = db
         .selectFrom('pipeline_records as pr')
         .innerJoin('pipeline_stages as ps', 'ps.id', 'pr.stage_id')
         .leftJoin('record_field_values as rfv', join => join.onRef('rfv.record_id', '=', 'pr.id'))
@@ -83,7 +94,9 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
         .where('ps.is_won', '=', true)
         .where('pr.deleted_at', 'is', null)
         .where('pr.created_at', '>=', periodStart as never)
-        .where('pr.created_at', '<', periodEnd as never)
+        .where('pr.created_at', '<', periodEnd as never);
+      if (revenueOwnerId) seriesQ = seriesQ.where('pr.owner_id', '=', revenueOwnerId);
+      const seriesRows = await seriesQ
         .select([
           bucketExpr.as('bucket'),
           sql<string>`COALESCE(SUM((rfv.value #>> '{}')::numeric), 0)`.as('revenue'),
@@ -110,10 +123,10 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
   router.get('/pipeline', requirePermission('analytics:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      const { period } = periodSchema.parse(req.query);
+      const { period, owner_id: pipelineOwnerId, stage: stageFilter } = pipelineQuerySchema.parse(req.query);
       const periodStart = getPeriodStart(period);
 
-      const stageRows = await db
+      let stageQ = db
         .selectFrom('pipeline_records as pr')
         .innerJoin('pipeline_stages as ps', 'ps.id', 'pr.stage_id')
         .leftJoin('record_field_values as rfv', join => join.onRef('rfv.record_id', '=', 'pr.id'))
@@ -122,7 +135,10 @@ export function createAnalyticsRouter(db: Kysely<Database>, requirePermission: (
         )
         .where('pr.workspace_id', '=', workspace.id)
         .where('pr.deleted_at', 'is', null)
-        .where('pr.updated_at', '>=', periodStart as never)
+        .where('pr.updated_at', '>=', periodStart as never);
+      if (pipelineOwnerId) stageQ = stageQ.where('pr.owner_id', '=', pipelineOwnerId);
+      if (stageFilter) stageQ = stageQ.where(sql`lower(ps.name)` as never, '=', stageFilter.toLowerCase() as never);
+      const stageRows = await stageQ
         .select([
           'pr.stage_id',
           'ps.name as stage_name',

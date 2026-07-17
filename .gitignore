@@ -6,6 +6,9 @@ _design/
 # Local scratch / brainstorm artifacts
 artifacts/
 
+# Runtime config (may contain credentials — use vencore.config.example.json as template)
+vencore.config.json
+
 # Logs
 logs
 *.log
