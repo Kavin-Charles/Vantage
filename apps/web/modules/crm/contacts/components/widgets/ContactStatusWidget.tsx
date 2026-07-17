@@ -58,6 +58,7 @@ registerDashboardWidget({
   description: 'Bar breakdown of contacts by prospect / customer / cold / churned',
   icon: 'chart-bar',
   category: 'sales',
+  module: 'contacts',
   sizeOptions: ['small', 'medium'],
   defaultSize: 'small',
   defaultW: 3,

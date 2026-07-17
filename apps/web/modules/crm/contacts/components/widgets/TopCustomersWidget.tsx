@@ -7,17 +7,25 @@ import { useModules } from '@/modules/shared/contexts/modules';
 import { listContacts } from '@vencore/api-client';
 import { WidgetSkeleton, WidgetError, EmptyState, WidgetHeader } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
+
+const STATUS_OPTIONS: FilterOption[] = [
+  { label: 'Prospect', value: 'prospect' },
+  { label: 'Customer', value: 'customer' },
+  { label: 'Cold', value: 'cold' },
+  { label: 'Churned', value: 'churned' },
+];
 
 function TopCustomersWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
   const router = useRouter();
   const limit = config.limit ?? 8;
+  const status = config.filters?.['status'] ?? 'customer';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'top-customers', limit],
-    queryFn: async () => listContacts(await getToken(), { status: 'customer', limit: String(limit) }),
+    queryKey: ['widget', 'top-customers', limit, status],
+    queryFn: async () => listContacts(await getToken(), { status, limit: String(limit) }),
     staleTime: 60_000,
     enabled: isEnabled('crm'),
   });
@@ -60,6 +68,10 @@ registerDashboardWidget({
   description: 'Your customer contacts — keep your most important relationships visible',
   icon: 'star',
   category: 'sales',
+  module: 'contacts',
+  filterDefs: [
+    { key: 'status', label: 'Status', type: 'pills', options: STATUS_OPTIONS },
+  ],
   sizeOptions: ['medium', 'large'],
   defaultSize: 'medium',
   defaultW: 4,

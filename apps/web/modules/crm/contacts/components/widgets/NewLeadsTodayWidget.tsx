@@ -54,6 +54,7 @@ registerDashboardWidget({
   description: 'Count of new contacts added today plus total prospect count',
   icon: 'users',
   category: 'sales',
+  module: 'contacts',
   sizeOptions: ['small', 'medium'],
   defaultSize: 'small',
   defaultW: 2,

@@ -7,17 +7,28 @@ import { useModules } from '@/modules/shared/contexts/modules';
 import { listContacts } from '@vencore/api-client';
 import { WidgetSkeleton, WidgetError, EmptyState, WidgetHeader, relativeTime } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
+
+const STATUS_OPTIONS: FilterOption[] = [
+  { label: 'Prospect', value: 'prospect' },
+  { label: 'Customer', value: 'customer' },
+  { label: 'Cold', value: 'cold' },
+  { label: 'Churned', value: 'churned' },
+];
 
 function RecentContactsWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
   const router = useRouter();
   const limit = config.limit ?? 8;
+  const status = config.filters?.['status'] ?? '';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'contacts-recent', limit],
-    queryFn: async () => listContacts(await getToken(), { limit: String(limit) }),
+    queryKey: ['widget', 'contacts-recent', limit, status],
+    queryFn: async () => listContacts(await getToken(), {
+      limit: String(limit),
+      ...(status ? { status } : {}),
+    }),
     staleTime: 60_000,
     enabled: isEnabled('crm'),
   });
@@ -79,6 +90,7 @@ registerDashboardWidget({
   description: 'Latest contacts added to your workspace with status badges',
   icon: 'users',
   category: 'sales',
+  module: 'contacts',
   sizeOptions: ['medium', 'large'],
   defaultSize: 'medium',
   defaultW: 4,
@@ -86,6 +98,9 @@ registerDashboardWidget({
   minW: 3,
   minH: 3,
   supportedFilters: ['limit'],
+  filterDefs: [
+    { key: 'status', label: 'Status', type: 'pills', options: STATUS_OPTIONS },
+  ],
   defaultConfig: { limit: 8 },
   component: RecentContactsWidget,
 });

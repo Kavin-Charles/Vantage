@@ -82,6 +82,7 @@ registerDashboardWidget({
   description: 'New contacts added over time — spot acquisition trends',
   icon: 'trending-up',
   category: 'sales',
+  module: 'contacts',
   sizeOptions: ['medium', 'large', 'wide'],
   defaultSize: 'wide',
   defaultW: 6,

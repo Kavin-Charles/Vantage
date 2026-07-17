@@ -7,18 +7,28 @@ import { useModules } from '@/modules/shared/contexts/modules';
 import { listContacts } from '@vencore/api-client';
 import { WidgetSkeleton, WidgetError, WidgetHeader } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
+import { apiFetch } from '@/modules/shared/lib/api';
+
+const fetchUserOptions = async (token: string): Promise<FilterOption[]> => {
+  const res = await apiFetch<{ data: { id: string; name: string }[] }>('/api/users', { token });
+  return res.data.map(u => ({ label: u.name, value: u.id }));
+};
 
 function FollowupsDueWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
   const router = useRouter();
   const limit = config.limit ?? 10;
+  const owner = config.filters?.['owner'] ?? '';
   const cutoff = new Date(Date.now() - 7 * 86_400_000);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'followups-due'],
-    queryFn: async () => listContacts(await getToken(), { limit: '100' }),
+    queryKey: ['widget', 'followups-due', owner],
+    queryFn: async () => listContacts(await getToken(), {
+      limit: '100',
+      ...(owner ? { owner_id: owner } : {}),
+    }),
     staleTime: 60_000,
     enabled: isEnabled('crm'),
   });
@@ -71,6 +81,10 @@ registerDashboardWidget({
   description: 'Contacts not reached in 7+ days — prioritise your outreach',
   icon: 'clock',
   category: 'sales',
+  module: 'contacts',
+  filterDefs: [
+    { key: 'owner', label: 'Owner', type: 'select', fetchOptions: fetchUserOptions, placeholder: 'All owners' },
+  ],
   sizeOptions: ['medium', 'large'],
   defaultSize: 'medium',
   defaultW: 4,
