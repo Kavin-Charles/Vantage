@@ -5,7 +5,16 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { WidgetSkeleton, WidgetError, WidgetHeader, relativeTime } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
+
+const ACTIVITY_TYPE_OPTIONS: FilterOption[] = [
+  { label: 'Email', value: 'email' },
+  { label: 'Call', value: 'call' },
+  { label: 'Note', value: 'note' },
+  { label: 'Meeting', value: 'meeting' },
+  { label: 'Deal', value: 'deal_change' },
+  { label: 'Infra', value: 'infra_alert' },
+];
 
 type ActivityRow = {
   id: string;
@@ -28,14 +37,18 @@ const TYPE_EMOJI: Record<string, string> = {
 function WorkspaceActivityWidget({ config }: { config: WidgetConfig }) {
   const getToken = useApiToken();
   const limit = config.limit ?? 10;
+  const activityType = config.filters?.['type'] ?? '';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'workspace-activity', limit],
-    queryFn: async () =>
-      apiFetch<{ data: ActivityRow[] }>(
-        `/api/activity?limit=${limit}`,
-        { token: await getToken() },
-      ),
+    queryKey: ['widget', 'workspace-activity', limit, activityType],
+    queryFn: async () => {
+      const token = await getToken();
+      const qs = new URLSearchParams({
+        limit: String(limit),
+        ...(activityType ? { type: activityType } : {}),
+      });
+      return apiFetch<{ data: ActivityRow[] }>(`/api/activity?${qs}`, { token });
+    },
     staleTime: 60_000,
     refetchInterval: config.refreshInterval ?? 60_000,
     refetchIntervalInBackground: false,
@@ -93,7 +106,11 @@ registerDashboardWidget({
   defaultH: 4,
   minW: 3,
   minH: 3,
+  module: 'activity',
   supportedFilters: ['limit', 'refreshInterval'],
   defaultConfig: { limit: 10, refreshInterval: 60_000 },
+  filterDefs: [
+    { key: 'type', label: 'Type', type: 'pills', options: ACTIVITY_TYPE_OPTIONS },
+  ],
   component: WorkspaceActivityWidget,
 });

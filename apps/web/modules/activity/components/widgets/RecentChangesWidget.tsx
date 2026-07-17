@@ -83,6 +83,7 @@ registerDashboardWidget({
   defaultH: 3,
   minW: 2,
   minH: 2,
+  module: 'activity',
   supportedFilters: ['refreshInterval'],
   defaultConfig: { refreshInterval: 60_000 },
   component: RecentChangesWidget,

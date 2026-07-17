@@ -5,7 +5,12 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { WidgetSkeleton, WidgetError, WidgetHeader, relativeTime } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
+
+const fetchUserOptions = async (token: string): Promise<FilterOption[]> => {
+  const res = await apiFetch<{ data: { id: string; name: string }[] }>('/api/users', { token });
+  return res.data.map(u => ({ label: u.name, value: u.id }));
+};
 
 type ActivityRow = {
   id: string;
@@ -28,14 +33,18 @@ const TYPE_EMOJI: Record<string, string> = {
 function TeamActivityWidget({ config }: { config: WidgetConfig }) {
   const getToken = useApiToken();
   const limit = config.limit ?? 10;
+  const userId = config.filters?.['user'] ?? '';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'team-activity', limit],
-    queryFn: async () =>
-      apiFetch<{ data: ActivityRow[] }>(
-        `/api/activity?limit=${limit}`,
-        { token: await getToken() },
-      ),
+    queryKey: ['widget', 'team-activity', limit, userId],
+    queryFn: async () => {
+      const token = await getToken();
+      const qs = new URLSearchParams({
+        limit: String(limit),
+        ...(userId ? { user_id: userId } : {}),
+      });
+      return apiFetch<{ data: ActivityRow[] }>(`/api/activity?${qs}`, { token });
+    },
     staleTime: 60_000,
     refetchInterval: config.refreshInterval ?? 60_000,
     refetchIntervalInBackground: false,
@@ -114,7 +123,11 @@ registerDashboardWidget({
   defaultH: 4,
   minW: 3,
   minH: 3,
+  module: 'activity',
   supportedFilters: ['limit', 'refreshInterval'],
   defaultConfig: { limit: 10, refreshInterval: 60_000 },
+  filterDefs: [
+    { key: 'user', label: 'Team Member', type: 'select', fetchOptions: fetchUserOptions, placeholder: 'All members' },
+  ],
   component: TeamActivityWidget,
 });

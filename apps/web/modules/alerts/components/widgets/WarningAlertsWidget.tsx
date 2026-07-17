@@ -5,7 +5,14 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { WidgetSkeleton, WidgetError, WidgetHeader, relativeTime } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
+
+const RESOURCE_TYPE_OPTIONS: FilterOption[] = [
+  { label: 'Server', value: 'server' },
+  { label: 'Database', value: 'database' },
+  { label: 'Website', value: 'website' },
+  { label: 'CRM', value: 'crm' },
+];
 
 type AlertRow = {
   id: string;
@@ -19,14 +26,20 @@ type AlertRow = {
 
 function WarningAlertsWidget({ config }: { config: WidgetConfig }) {
   const getToken = useApiToken();
+  const resourceType = config.filters?.['resource_type'] ?? '';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'warning-alerts'],
-    queryFn: async () =>
-      apiFetch<{ data: AlertRow[]; error: null }>(
-        '/api/alerts?resolved=false&severity=warning&limit=10',
-        { token: await getToken() },
-      ),
+    queryKey: ['widget', 'warning-alerts', resourceType],
+    queryFn: async () => {
+      const token = await getToken();
+      const qs = new URLSearchParams({
+        resolved: 'false',
+        severity: 'warning',
+        limit: '10',
+        ...(resourceType ? { resource_type: resourceType } : {}),
+      });
+      return apiFetch<{ data: AlertRow[]; error: null }>(`/api/alerts?${qs}`, { token });
+    },
     staleTime: 60_000,
     refetchInterval: config.refreshInterval ?? 60_000,
     refetchIntervalInBackground: false,
@@ -87,7 +100,11 @@ registerDashboardWidget({
   defaultH: 3,
   minW: 2,
   minH: 2,
+  module: 'alerts',
   supportedFilters: ['refreshInterval'],
   defaultConfig: { refreshInterval: 60_000 },
+  filterDefs: [
+    { key: 'resource_type', label: 'Resource Type', type: 'pills', options: RESOURCE_TYPE_OPTIONS },
+  ],
   component: WarningAlertsWidget,
 });
