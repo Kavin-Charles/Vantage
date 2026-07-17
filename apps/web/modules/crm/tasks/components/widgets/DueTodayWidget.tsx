@@ -41,7 +41,7 @@ function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => voi
 
 function DueTodayWidget({ config }: { config: WidgetConfig }) {
   const owner = config.filters?.['owner'] ?? '';
-  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo', owner_id: owner });
+  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo', owner_id: owner || undefined });
   const toggleMut = useToggleTask();
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;

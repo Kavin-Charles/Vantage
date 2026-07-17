@@ -14,7 +14,7 @@ const fetchUserOptions = async (token: string): Promise<FilterOption[]> => {
 
 function UpcomingDeadlinesWidget({ config }: { config: WidgetConfig }) {
   const owner = config.filters?.['owner'] ?? '';
-  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo', owner_id: owner });
+  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo', owner_id: owner || undefined });
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
   const tasks: UnifiedTask[] = [

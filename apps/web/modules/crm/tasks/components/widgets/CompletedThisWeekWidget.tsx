@@ -13,7 +13,7 @@ const fetchUserOptions = async (token: string): Promise<FilterOption[]> => {
 
 function CompletedThisWeekWidget({ config }: { config: WidgetConfig }) {
   const owner = config.filters?.['owner'] ?? '';
-  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'done', owner_id: owner });
+  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'done', owner_id: owner || undefined });
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
   const count = data?.total ?? 0;

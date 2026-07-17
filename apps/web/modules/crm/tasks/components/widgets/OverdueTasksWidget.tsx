@@ -16,7 +16,7 @@ const fetchUserOptions = async (token: string): Promise<FilterOption[]> => {
 
 function OverdueTasksWidget({ config }: { config: WidgetConfig }) {
   const owner = config.filters?.['owner'] ?? '';
-  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo', owner_id: owner });
+  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo', owner_id: owner || undefined });
   const toggleMut = useToggleTask();
   const limit = config.limit ?? 10;
   if (isLoading) return <WidgetSkeleton />;
