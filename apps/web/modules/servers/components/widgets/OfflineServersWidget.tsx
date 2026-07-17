@@ -61,6 +61,7 @@ registerDashboardWidget({
   description: 'Count and list of offline or degraded servers',
   icon: 'server',
   category: 'infra',
+  module: 'servers',
   sizeOptions: ['small', 'medium'],
   defaultSize: 'small',
   defaultW: 3,

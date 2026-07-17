@@ -38,6 +38,6 @@ function TeamWorkloadWidget({ config: _config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'projects:team-workload', label: 'Team Workload', description: 'Active, at-risk, overdue and milestone summary across all projects', icon: 'users', category: 'projects', sizeOptions: ['medium', 'wide'], defaultSize: 'medium', defaultW: 6, defaultH: 2, minW: 4, minH: 2, supportedFilters: [], defaultConfig: {}, component: TeamWorkloadWidget });
+registerDashboardWidget({ id: 'projects:team-workload', label: 'Team Workload', description: 'Active, at-risk, overdue and milestone summary across all projects', icon: 'users', category: 'projects', module: 'projects', sizeOptions: ['medium', 'wide'], defaultSize: 'medium', defaultW: 6, defaultH: 2, minW: 4, minH: 2, supportedFilters: [], defaultConfig: {}, component: TeamWorkloadWidget });
 
 export { };

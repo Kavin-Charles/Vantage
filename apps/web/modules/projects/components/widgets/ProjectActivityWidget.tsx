@@ -44,6 +44,6 @@ function ProjectActivityWidget({ config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'projects:recent-activity', label: 'Recent Project Activity', description: 'Workspace activity feed focused on project-related events', icon: 'activity', category: 'projects', sizeOptions: ['medium', 'large'], defaultSize: 'medium', defaultW: 4, defaultH: 4, minW: 3, minH: 3, supportedFilters: ['limit'], defaultConfig: { limit: 10 }, component: ProjectActivityWidget });
+registerDashboardWidget({ id: 'projects:recent-activity', label: 'Recent Project Activity', description: 'Workspace activity feed focused on project-related events', icon: 'activity', category: 'projects', module: 'projects', sizeOptions: ['medium', 'large'], defaultSize: 'medium', defaultW: 4, defaultH: 4, minW: 3, minH: 3, supportedFilters: ['limit'], defaultConfig: { limit: 10 }, component: ProjectActivityWidget });
 
 export { };

@@ -53,4 +53,4 @@ function ActiveProjectsWidget({ config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'projects:active', label: 'Active Projects', description: 'In-progress projects with health and completion percentage', icon: 'projects', category: 'projects', sizeOptions: ['medium', 'large'], defaultSize: 'medium', defaultW: 4, defaultH: 4, minW: 3, minH: 3, supportedFilters: ['limit'], defaultConfig: { limit: 8 }, component: ActiveProjectsWidget });
+registerDashboardWidget({ id: 'projects:active', label: 'Active Projects', description: 'In-progress projects with health and completion percentage', icon: 'projects', category: 'projects', module: 'projects', sizeOptions: ['medium', 'large'], defaultSize: 'medium', defaultW: 4, defaultH: 4, minW: 3, minH: 3, supportedFilters: ['limit'], defaultConfig: { limit: 8 }, component: ActiveProjectsWidget });

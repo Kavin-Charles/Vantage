@@ -4,11 +4,18 @@ import { useRouter } from 'next/navigation';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
 import { listServers } from '@/modules/servers/lib/servers';
+import { apiFetch } from '@/modules/shared/lib/api';
 import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
 import { WidgetSkeleton, WidgetError, EmptyState, WidgetHeader, MiniBar } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
 import type { Server } from '@vencore/types';
+
+const fetchRegionOptions = async (token: string): Promise<FilterOption[]> => {
+  const res = await apiFetch<{ data: { region: string | null }[] }>('/api/servers', { token });
+  const regions = [...new Set(res.data.map(s => s.region).filter((r): r is string => r !== null))];
+  return regions.map(r => ({ label: r, value: r }));
+};
 
 function ServerCpuRow({ server, onOpen }: { server: Server; onOpen: () => void }) {
   const live = useServerMetrics(server.id);
@@ -33,9 +40,10 @@ function CpuUsageWidget({ config }: { config: WidgetConfig }) {
   const getToken = useApiToken();
   const router = useRouter();
   const limit = config.limit ?? 5;
+  const region = config.filters?.['region'] ?? '';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'servers-cpu'],
+    queryKey: ['widget', 'servers-cpu', region],
     queryFn: async () => listServers(await getToken()),
     staleTime: 60_000,
     refetchInterval: config.refreshInterval ?? 60_000,
@@ -47,7 +55,10 @@ function CpuUsageWidget({ config }: { config: WidgetConfig }) {
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
 
-  const servers = [...(data?.data ?? [])].sort((a, b) => (b.cpu_pct ?? 0) - (a.cpu_pct ?? 0)).slice(0, limit);
+  const servers = [...(data?.data ?? [])]
+    .filter(s => !region || s.region === region)
+    .sort((a, b) => (b.cpu_pct ?? 0) - (a.cpu_pct ?? 0))
+    .slice(0, limit);
   if (servers.length === 0) return <EmptyState href="/servers" label="Connect your first server" icon="server" />;
 
   return (
@@ -66,6 +77,7 @@ registerDashboardWidget({
   description: 'Servers ranked by CPU percentage — spot hotspots instantly',
   icon: 'cpu',
   category: 'infra',
+  module: 'servers',
   sizeOptions: ['small', 'medium'],
   defaultSize: 'medium',
   defaultW: 4,
@@ -74,5 +86,8 @@ registerDashboardWidget({
   minH: 2,
   supportedFilters: ['limit', 'refreshInterval'],
   defaultConfig: { limit: 5, refreshInterval: 60_000 },
+  filterDefs: [
+    { key: 'region', label: 'Region', type: 'select', fetchOptions: fetchRegionOptions, placeholder: 'All regions' },
+  ],
   component: CpuUsageWidget,
 });

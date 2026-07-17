@@ -64,6 +64,7 @@ registerDashboardWidget({
   description: 'Servers ranked by average CPU + RAM usage',
   icon: 'cpu',
   category: 'infra',
+  module: 'servers',
   sizeOptions: ['medium', 'large'],
   defaultSize: 'medium',
   defaultW: 4,

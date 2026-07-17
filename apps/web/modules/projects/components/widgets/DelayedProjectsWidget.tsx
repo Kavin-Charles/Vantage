@@ -54,6 +54,6 @@ function DelayedProjectsWidget({ config: _config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'projects:delayed', label: 'Delayed Projects', description: 'Projects past their end date that are not yet complete', icon: 'warning', category: 'projects', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: [], defaultConfig: {}, component: DelayedProjectsWidget });
+registerDashboardWidget({ id: 'projects:delayed', label: 'Delayed Projects', description: 'Projects past their end date that are not yet complete', icon: 'warning', category: 'projects', module: 'projects', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: [], defaultConfig: {}, component: DelayedProjectsWidget });
 
 export { };

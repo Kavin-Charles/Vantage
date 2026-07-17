@@ -42,6 +42,6 @@ function MilestonesDueWidget({ config: _config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'projects:milestones-due', label: 'Milestones Due', description: 'Upcoming project milestones from widget stats', icon: 'flag', category: 'projects', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: [], defaultConfig: {}, component: MilestonesDueWidget });
+registerDashboardWidget({ id: 'projects:milestones-due', label: 'Milestones Due', description: 'Upcoming project milestones from widget stats', icon: 'flag', category: 'projects', module: 'projects', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: [], defaultConfig: {}, component: MilestonesDueWidget });
 
 export { };

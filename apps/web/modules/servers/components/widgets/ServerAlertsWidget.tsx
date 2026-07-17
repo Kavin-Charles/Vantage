@@ -60,6 +60,7 @@ registerDashboardWidget({
   description: 'Unresolved alerts scoped to server resources',
   icon: 'warning',
   category: 'infra',
+  module: 'servers',
   sizeOptions: ['small', 'medium'],
   defaultSize: 'medium',
   defaultW: 4,
