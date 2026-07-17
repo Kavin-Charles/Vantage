@@ -37,7 +37,7 @@ export function WidgetCard({ widgetId, label, isEditMode, config, onConfigChange
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
   const [configOpen, setConfigOpen] = useState(false);
   const def = getDashboardWidgetById(widgetId);
-  const hasFilters = (def?.supportedFilters?.length ?? 0) > 0;
+  const hasFilters = (def?.supportedFilters?.length ?? 0) > 0 || (def?.filterDefs?.length ?? 0) > 0;
 
   return (
     <div
@@ -126,6 +126,7 @@ export function WidgetCard({ widgetId, label, isEditMode, config, onConfigChange
       {configOpen && (
         <WidgetConfigPopover
           supportedFilters={def?.supportedFilters ?? []}
+          filterDefs={def?.filterDefs}
           config={config}
           onConfigChange={cfg => { onConfigChange?.(cfg); }}
           onRemove={() => { setConfigOpen(false); onRemove?.(widgetId); }}
