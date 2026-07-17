@@ -24,12 +24,17 @@ const CRM_SUBMODULES: SubModuleMeta[] = [
   { id: 'crm:tasks',     name: 'Tasks' },
 ];
 
+const INFRA_SUBMODULES: SubModuleMeta[] = [
+  { id: 'infra:servers',   name: 'Servers' },
+  { id: 'infra:databases', name: 'Databases' },
+  { id: 'infra:websites',  name: 'Websites' },
+  { id: 'infra:alerts',    name: 'Alerts' },
+];
+
 const MODULE_META: ModuleMeta[] = [
   { id: 'dashboard', name: 'Dashboard', description: 'Custom dashboards and widget layouts.', settingsHref: '/settings/dashboards' },
   { id: 'crm', name: 'CRM', description: 'Contacts, companies, deals pipeline, and tasks.', settingsHref: '/settings/pipelines', subModules: CRM_SUBMODULES },
-  { id: 'websites',   name: 'Websites',   description: 'Website uptime monitoring and SSL expiry.',         settingsHref: null },
-  { id: 'servers',    name: 'Servers',    description: 'Server monitoring and agent heartbeats.',           settingsHref: null },
-  { id: 'databases',  name: 'Databases',  description: 'Database health monitoring and connection management.', settingsHref: null },
+  { id: 'infra', name: 'Infrastructure', description: 'Servers, databases, website uptime, and alerting.', settingsHref: null, subModules: INFRA_SUBMODULES },
   { id: 'analytics', name: 'Analytics', description: 'Revenue, pipeline stats, and team leaderboard.',     settingsHref: null },
   { id: 'activity',  name: 'Activity',  description: 'Unified activity feed across all workspace records.', settingsHref: null },
   { id: 'projects',  name: 'Project Management', description: 'Projects, tasks, sprints, automations, and client portals.', settingsHref: '/settings/project-management/hooks' },

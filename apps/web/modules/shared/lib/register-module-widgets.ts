@@ -1,11 +1,10 @@
 import { registerDashboardWidget } from './dashboard-registry';
 import { ContactsWidget } from '@/modules/crm/contacts/components/ContactsWidget';
 import { PipelineWidget } from '@/modules/crm/pipeline/components/PipelineWidget';
-import { ServersWidget } from '@/modules/servers/components/ServersWidget';
+import { ServersWidget } from '@/modules/infra/servers/components/ServersWidget';
 import { ProjectsWidget } from '@/modules/projects/components/ProjectsWidget';
+import { AlertsWidget } from '@/modules/infra/alerts/components/AlertsWidget';
 import { ActivityWidget } from '@/modules/activity/components/ActivityWidget';
-// AlertsWidget self-registers in its own file (imported via register-all-widgets.ts → alerts module)
-import '@/modules/alerts/components/AlertsWidget';
 
 registerDashboardWidget({
   id: 'core:contacts',
@@ -78,6 +77,24 @@ registerDashboardWidget({
   defaultConfig: {},
   permission: 'projects:view',
   component: ProjectsWidget,
+});
+
+registerDashboardWidget({
+  id: 'core:alerts',
+  module: 'alerts',
+  label: 'Alerts',
+  description: 'Unresolved critical and warning alerts with quick acknowledge',
+  icon: 'alert-triangle',
+  category: 'infra',
+  sizeOptions: ['medium', 'large'],
+  defaultSize: 'medium',
+  defaultW: 4,
+  defaultH: 3,
+  minW: 3,
+  minH: 2,
+  supportedFilters: [],
+  defaultConfig: {},
+  component: AlertsWidget,
 });
 
 registerDashboardWidget({

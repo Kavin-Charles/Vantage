@@ -1,4 +1,4 @@
-import type { ModuleDefinition } from '../types';
+import type { ModuleDefinition, SubModule } from '../types';
 
 export const CRM_MODULE: ModuleDefinition = {
   id: 'crm',
@@ -40,18 +40,7 @@ export const CRM_MODULE: ModuleDefinition = {
   emitsActivity: true,
 };
 
-// CRM is a parent module with per-page child modules. Each child gates one
-// sidebar entry, its page, and its API routes; a child is only effective when
-// the parent `crm` module is also enabled.
-export interface CrmSubModule {
-  id: string;
-  label: string;
-  path: string;
-  permission: string;
-  legacyModuleId: string;
-}
-
-export const CRM_SUBMODULES: readonly CrmSubModule[] = [
+export const CRM_SUBMODULES: readonly SubModule[] = [
   { id: 'crm:pipeline',  label: 'Pipeline',  path: '/crm/pipeline',  permission: 'pipelines:view', legacyModuleId: 'pipelines' },
   { id: 'crm:contacts',  label: 'Contacts',  path: '/crm/contacts',  permission: 'contacts:view',  legacyModuleId: 'contacts'  },
   { id: 'crm:companies', label: 'Companies', path: '/crm/companies', permission: 'companies:view', legacyModuleId: 'companies' },

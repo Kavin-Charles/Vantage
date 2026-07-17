@@ -19,9 +19,9 @@ export interface SidebarPrefs {
 // Mirrors apps/api/src/lib/sidebar-layout.ts seedGroups() — fallback when the API is unreachable.
 export const FALLBACK_GROUPS: SidebarGroup[] = [
   { id: null, label: 'Sales',    is_default: false, item_keys: ['/crm/pipeline', '/crm/contacts', '/crm/companies', '/crm/tasks', '/activity'] },
-  { id: null, label: 'Infra',    is_default: false, item_keys: ['/servers', '/databases', '/websites'] },
+  { id: null, label: 'Infra',    is_default: false, item_keys: ['/infra/servers', '/infra/databases', '/infra/websites', '/infra/alerts'] },
   { id: null, label: 'Projects', is_default: false, item_keys: ['/messaging', '/projects'] },
-  { id: null, label: 'Insights', is_default: false, item_keys: ['/analytics', '/alerts'] },
+  { id: null, label: 'Insights', is_default: false, item_keys: ['/analytics'] },
   { id: null, label: 'General',  is_default: true,  item_keys: ['/dashboard'] },
 ];
 
