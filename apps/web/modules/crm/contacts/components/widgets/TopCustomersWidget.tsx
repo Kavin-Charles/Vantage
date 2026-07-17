@@ -54,7 +54,7 @@ function TopCustomersWidget({ config }: { config: WidgetConfig }) {
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; }}
           >
             <span style={{ fontSize: 11, color: 'var(--text3)', width: 16, flexShrink: 0 }}>{i + 1}</span>
-            <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--green-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--green)', flexShrink: 0 }}>
+            <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--surface2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'var(--green)', flexShrink: 0 }}>
               {c.name[0]?.toUpperCase()}
             </div>
             <span style={{ fontSize: 13, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
