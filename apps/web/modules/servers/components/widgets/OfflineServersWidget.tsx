@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
-import { listServers } from '@/modules/servers/lib/servers';
+import { listServers } from '@/modules/infra/servers/lib/servers';
 import { WidgetSkeleton, WidgetError, Stat } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
 import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';

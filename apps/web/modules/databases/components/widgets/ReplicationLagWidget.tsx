@@ -2,7 +2,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
-import { listInfraDatabases } from '@/modules/databases/lib/infra-databases';
+import { listInfraDatabases } from '@/modules/infra/databases/lib/infra-databases';
+import type { InfraDatabase } from '@vencore/types';
 import { WidgetSkeleton, WidgetError, EmptyState, WidgetHeader } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
 import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
@@ -34,14 +35,14 @@ function ReplicationLagWidget({ config }: { config: WidgetConfig }) {
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
 
-  const dbs = (data?.data ?? []).filter(db => !engine || db.engine === engine).filter(d => d.replication_lag_s != null).sort((a, b) => (b.replication_lag_s ?? 0) - (a.replication_lag_s ?? 0));
+  const dbs = (data?.data ?? []).filter((db: InfraDatabase) => !engine || db.engine === engine).filter((d: InfraDatabase) => d.replication_lag_s != null).sort((a: InfraDatabase, b: InfraDatabase) => (b.replication_lag_s ?? 0) - (a.replication_lag_s ?? 0));
   if (dbs.length === 0) return <EmptyState href="/infra/databases" label="No replication lag data" icon="database" />;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <WidgetHeader label="Replication Lag" href="/infra/databases" />
       <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {dbs.map(db => {
+        {dbs.map((db: InfraDatabase) => {
           const lag = db.replication_lag_s ?? 0;
           const color = lag > 10 ? 'var(--red)' : lag > 2 ? 'var(--amber)' : 'var(--green)';
           return (

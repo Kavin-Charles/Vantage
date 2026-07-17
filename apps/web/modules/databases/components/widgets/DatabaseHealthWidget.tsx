@@ -2,7 +2,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
-import { listInfraDatabases } from '@/modules/databases/lib/infra-databases';
+import { listInfraDatabases } from '@/modules/infra/databases/lib/infra-databases';
+import type { InfraDatabase } from '@vencore/types';
 import { WidgetSkeleton, WidgetError, EmptyState, WidgetHeader, StatusDot } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
 import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
@@ -34,7 +35,7 @@ function DatabaseHealthWidget({ config }: { config: WidgetConfig }) {
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
 
-  const dbs = (data?.data ?? []).filter(db => !engine || db.engine === engine);
+  const dbs = (data?.data ?? []).filter((db: InfraDatabase) => !engine || db.engine === engine);
   if (dbs.length === 0) return <EmptyState href="/infra/databases" label="Add your first database" icon="database" />;
 
   const STATUS_COLOR: Record<string, string> = { healthy: 'var(--green)', degraded: 'var(--amber)', offline: 'var(--red)' };
@@ -43,7 +44,7 @@ function DatabaseHealthWidget({ config }: { config: WidgetConfig }) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <WidgetHeader label="Database Health" href="/infra/databases" />
       <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {dbs.map(db => (
+        {dbs.map((db: InfraDatabase) => (
           <div key={db.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px', borderBottom: '1px solid var(--border)' }}>
             <StatusDot color={STATUS_COLOR[db.status] ?? 'var(--text3)'} />
             <span style={{ fontSize: 12, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{db.name}</span>

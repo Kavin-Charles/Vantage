@@ -2,7 +2,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { useModules } from '@/modules/shared/contexts/modules';
-import { listInfraDatabases } from '@/modules/databases/lib/infra-databases';
+import { listInfraDatabases } from '@/modules/infra/databases/lib/infra-databases';
+import type { InfraDatabase } from '@vencore/types';
 import { WidgetSkeleton, WidgetError, EmptyState, WidgetHeader, MiniBar } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
 import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
@@ -34,16 +35,16 @@ function DbConnectionsWidget({ config }: { config: WidgetConfig }) {
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
 
-  const dbs = (data?.data ?? []).filter(db => !engine || db.engine === engine).filter(d => d.connection_count != null).sort((a, b) => (b.connection_count ?? 0) - (a.connection_count ?? 0));
+  const dbs = (data?.data ?? []).filter((db: InfraDatabase) => !engine || db.engine === engine).filter((d: InfraDatabase) => d.connection_count != null).sort((a: InfraDatabase, b: InfraDatabase) => (b.connection_count ?? 0) - (a.connection_count ?? 0));
   if (dbs.length === 0) return <EmptyState href="/infra/databases" label="No connection data yet" icon="database" />;
 
-  const max = Math.max(...dbs.map(d => d.connection_count ?? 0), 1);
+  const max = Math.max(...dbs.map((d: InfraDatabase) => d.connection_count ?? 0), 1);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <WidgetHeader label="DB Connections" href="/infra/databases" />
       <div style={{ flex: 1, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {dbs.map(db => (
+        {dbs.map((db: InfraDatabase) => (
           <div key={db.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
             <span style={{ fontSize: 12, color: 'var(--text)', width: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>{db.name}</span>
             <MiniBar value={db.connection_count ?? 0} max={max} color="var(--green)" />
