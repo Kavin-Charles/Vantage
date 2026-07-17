@@ -1,7 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { getDashboardWidgets, type DashboardWidgetDef, type WidgetCategory } from '@/modules/shared/lib/dashboard-registry';
+import {
+  getDashboardWidgets,
+  CATEGORY_MODULES,
+  CATEGORY_ORDER,
+  type DashboardWidgetDef,
+  type WidgetCategory,
+} from '@/modules/shared/lib/dashboard-registry';
 import { Icon } from '@/modules/shared/components/ui/Icon';
 
 const CATEGORY_LABELS: Record<WidgetCategory | 'all', string> = {
@@ -13,7 +19,11 @@ const CATEGORY_LABELS: Record<WidgetCategory | 'all', string> = {
   insights: 'Insights',
 };
 
-const CATEGORY_ORDER: (WidgetCategory | 'all')[] = ['all', 'sales', 'projects', 'infra', 'communication', 'insights'];
+type SidebarFilter =
+  | { type: 'all' }
+  | { type: 'category'; category: WidgetCategory }
+  | { type: 'module'; category: WidgetCategory; module: string }
+  | { type: 'plugins' };
 
 interface Props {
   open: boolean;
@@ -25,11 +35,15 @@ interface Props {
 
 export function WidgetMarketplaceModal({ open, onClose, currentWidgetIds, pluginWidgets, onAdd }: Props) {
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<WidgetCategory | 'all'>('all');
+  const [filter, setFilter] = useState<SidebarFilter>({ type: 'all' });
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (open) { setSearch(''); setCategory('all'); setTimeout(() => searchRef.current?.focus(), 50); }
+    if (open) {
+      setSearch('');
+      setFilter({ type: 'all' });
+      setTimeout(() => searchRef.current?.focus(), 50);
+    }
   }, [open]);
 
   useEffect(() => {
@@ -41,16 +55,33 @@ export function WidgetMarketplaceModal({ open, onClose, currentWidgetIds, plugin
 
   if (!open) return null;
 
-  const allWidgets = [
-    ...getDashboardWidgets(),
-    ...[...pluginWidgets.values()],
-  ];
+  const allWidgets = [...getDashboardWidgets(), ...[...pluginWidgets.values()]];
 
   const q = search.toLowerCase();
-  const filtered = allWidgets.filter(d => {
-    const matchesSearch = !q || d.label.toLowerCase().includes(q) || d.description.toLowerCase().includes(q);
-    const matchesCategory = category === 'all' || d.category === category;
-    return matchesSearch && matchesCategory;
+  const filtered = allWidgets.filter(def => {
+    const matchesSearch = !q || def.label.toLowerCase().includes(q) || def.description.toLowerCase().includes(q);
+    if (filter.type === 'all') return matchesSearch;
+    if (filter.type === 'category') return matchesSearch && def.category === filter.category;
+    if (filter.type === 'module') return matchesSearch && def.module === filter.module;
+    if (filter.type === 'plugins') return matchesSearch && pluginWidgets.has(def.id);
+    return false;
+  });
+
+  const isFilterActive = (f: SidebarFilter): boolean => {
+    if (filter.type !== f.type) return false;
+    if (f.type === 'category' && filter.type === 'category') return filter.category === f.category;
+    if (f.type === 'module' && filter.type === 'module') return filter.module === f.module;
+    return filter.type === f.type;
+  };
+
+  const sidebarBtnStyle = (active: boolean, indent = false): React.CSSProperties => ({
+    display: 'block', width: '100%', textAlign: 'left',
+    padding: indent ? '5px 16px 5px 28px' : '7px 16px',
+    background: active ? 'var(--surface2)' : 'none',
+    border: 'none', cursor: 'pointer', fontSize: indent ? 12 : 13,
+    fontWeight: active ? 600 : 400,
+    color: active ? 'var(--text)' : indent ? 'var(--text2)' : 'var(--text2)',
+    borderLeft: active ? '2px solid var(--text)' : '2px solid transparent',
   });
 
   return (
@@ -62,7 +93,8 @@ export function WidgetMarketplaceModal({ open, onClose, currentWidgetIds, plugin
       <div
         style={{
           position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-          zIndex: 301, width: 860, maxWidth: 'calc(100vw - 32px)', maxHeight: '80vh',
+          zIndex: 301, width: 860, maxWidth: 'calc(100vw - 32px)',
+          height: '80vh',  // fixed height — no collapse when few widgets
           background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16,
           boxShadow: '0 24px 80px rgba(0,0,0,0.18)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}
@@ -74,7 +106,7 @@ export function WidgetMarketplaceModal({ open, onClose, currentWidgetIds, plugin
             <input
               ref={searchRef}
               value={search}
-              onChange={e => { setSearch(e.target.value); if (e.target.value) setCategory('all'); }}
+              onChange={e => { setSearch(e.target.value); if (e.target.value) setFilter({ type: 'all' }); }}
               placeholder="Search widgets…"
               style={{
                 padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border)',
@@ -89,22 +121,51 @@ export function WidgetMarketplaceModal({ open, onClose, currentWidgetIds, plugin
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* Sidebar */}
           <div style={{ width: 160, borderRight: '1px solid var(--border)', padding: '12px 0', flexShrink: 0, overflowY: 'auto' }}>
-            {CATEGORY_ORDER.map(cat => (
+            {/* All */}
+            <button
+              onClick={() => { setFilter({ type: 'all' }); setSearch(''); }}
+              style={sidebarBtnStyle(filter.type === 'all')}
+            >
+              All
+            </button>
+
+            {/* Categories + modules */}
+            {(CATEGORY_ORDER as WidgetCategory[]).map(cat => {
+              const modules = CATEGORY_MODULES[cat] ?? [];
+              const catActive = isFilterActive({ type: 'category', category: cat });
+              return (
+                <React.Fragment key={cat}>
+                  <button
+                    onClick={() => { setFilter({ type: 'category', category: cat }); setSearch(''); }}
+                    style={sidebarBtnStyle(catActive)}
+                  >
+                    {CATEGORY_LABELS[cat]}
+                  </button>
+                  {modules.map(mod => {
+                    const modActive = isFilterActive({ type: 'module', category: cat, module: mod.id });
+                    return (
+                      <button
+                        key={mod.id}
+                        onClick={() => { setFilter({ type: 'module', category: cat, module: mod.id }); setSearch(''); }}
+                        style={sidebarBtnStyle(modActive, true)}
+                      >
+                        {mod.label}
+                      </button>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })}
+
+            {/* Plugins — only when at least one plugin widget exists */}
+            {pluginWidgets.size > 0 && (
               <button
-                key={cat}
-                onClick={() => { setCategory(cat); setSearch(''); }}
-                style={{
-                  display: 'block', width: '100%', textAlign: 'left',
-                  padding: '7px 16px', background: category === cat ? 'var(--surface2)' : 'none',
-                  border: 'none', cursor: 'pointer', fontSize: 13,
-                  fontWeight: category === cat ? 600 : 400,
-                  color: category === cat ? 'var(--text)' : 'var(--text2)',
-                  borderLeft: category === cat ? '2px solid var(--text)' : '2px solid transparent',
-                }}
+                onClick={() => { setFilter({ type: 'plugins' }); setSearch(''); }}
+                style={sidebarBtnStyle(filter.type === 'plugins')}
               >
-                {CATEGORY_LABELS[cat]}
+                Plugins
               </button>
-            ))}
+            )}
           </div>
 
           {/* Widget grid */}
@@ -130,7 +191,7 @@ export function WidgetMarketplaceModal({ open, onClose, currentWidgetIds, plugin
                           width: 32, height: 32, borderRadius: 8, background: 'var(--surface2)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                         }}>
-                          <Icon name={def.icon} size={16} color="var(--text2)" />
+                          {def.iconEl ?? <Icon name={def.icon} size={16} color="var(--text2)" />}
                         </div>
                         <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)' }}>{def.label}</span>
                       </div>
