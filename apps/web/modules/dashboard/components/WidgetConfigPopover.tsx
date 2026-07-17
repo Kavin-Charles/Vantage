@@ -1,18 +1,22 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import type { WidgetConfig, WidgetFilterKey } from '@/modules/shared/lib/dashboard-registry';
+import { useQuery } from '@tanstack/react-query';
+import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import type { WidgetConfig, WidgetFilterKey, WidgetFilterDef, FilterOption } from '@/modules/shared/lib/dashboard-registry';
 
 interface Props {
   supportedFilters: WidgetFilterKey[];
+  filterDefs?: WidgetFilterDef[];
   config: WidgetConfig;
   onConfigChange: (config: WidgetConfig) => void;
   onRemove?: () => void;
   onClose?: () => void;
 }
 
-export function WidgetConfigPopover({ supportedFilters, config, onConfigChange, onRemove, onClose }: Props) {
+export function WidgetConfigPopover({ supportedFilters, filterDefs, config, onConfigChange, onRemove, onClose }: Props) {
   const has = (f: WidgetFilterKey) => supportedFilters.includes(f);
+  const getToken = useApiToken();
 
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
@@ -104,6 +108,21 @@ export function WidgetConfigPopover({ supportedFilters, config, onConfigChange, 
             </label>
           </Section>
         )}
+
+        {/* Widget-specific filterDefs */}
+        {filterDefs?.map(def => (
+          <FilterDefControl
+            key={def.key}
+            def={def}
+            value={config.filters?.[def.key] ?? ''}
+            getToken={getToken}
+            onChange={v => {
+              const filters = { ...(config.filters ?? {}), [def.key]: v };
+              onConfigChange({ ...config, filters });
+            }}
+          />
+        ))}
+
         <div style={{ borderTop: '1px solid var(--border)', marginTop: 4, paddingTop: 4 }}>
           <button
             onClick={onRemove}
@@ -123,6 +142,63 @@ export function WidgetConfigPopover({ supportedFilters, config, onConfigChange, 
   );
 }
 
+function FilterDefControl({
+  def,
+  value,
+  getToken,
+  onChange,
+}: {
+  def: WidgetFilterDef;
+  value: string;
+  getToken: () => Promise<string>;
+  onChange: (v: string) => void;
+}) {
+  const { data: dynamicOptions } = useQuery<FilterOption[]>({
+    queryKey: ['widget-filter-options', def.key],
+    queryFn: async () => {
+      const token = await getToken();
+      return def.fetchOptions!(token);
+    },
+    staleTime: 300_000,
+    enabled: !!def.fetchOptions,
+  });
+
+  const options = def.fetchOptions ? (dynamicOptions ?? []) : (def.options ?? []);
+
+  if (def.type === 'pills') {
+    const allOption: FilterOption = { label: 'All', value: '' };
+    return (
+      <Section label={def.label}>
+        <PillGroup
+          options={[allOption, ...options]}
+          value={value}
+          onChange={onChange}
+        />
+      </Section>
+    );
+  }
+
+  return (
+    <Section label={def.label}>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{
+          width: '100%', padding: '4px 8px', borderRadius: 6,
+          border: '1px solid var(--border)', background: 'var(--surface2)',
+          fontSize: 12, color: 'var(--text)', fontFamily: 'DM Sans, sans-serif',
+          cursor: 'pointer',
+        }}
+      >
+        <option value="">{def.placeholder ?? `All ${def.label}`}</option>
+        {options.map(o => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </Section>
+  );
+}
+
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ padding: '6px 14px 8px' }}>
@@ -135,7 +211,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 }
 
 function PillGroup({ options, value, onChange }: {
-  options: { label: string; value: string }[];
+  options: FilterOption[];
   value: string;
   onChange: (v: string) => void;
 }) {
