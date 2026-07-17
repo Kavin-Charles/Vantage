@@ -28,12 +28,61 @@ export interface WidgetConfig {
   filters?: Record<string, string>;
 }
 
+// --- New types ---
+
+export interface FilterOption {
+  label: string;
+  value: string;
+}
+
+export interface WidgetFilterDef {
+  key: string;
+  label: string;
+  type: 'pills' | 'select';
+  options?: FilterOption[];
+  fetchOptions?: (token: string) => Promise<FilterOption[]>;
+  placeholder?: string;
+  multi?: boolean;
+}
+
+export interface ModuleDef {
+  id: string;
+  label: string;
+}
+
+export const CATEGORY_MODULES: Record<WidgetCategory, ModuleDef[]> = {
+  sales: [
+    { id: 'contacts', label: 'Contacts' },
+    { id: 'pipeline', label: 'Pipeline' },
+    { id: 'companies', label: 'Companies' },
+  ],
+  projects: [
+    { id: 'tasks', label: 'Tasks' },
+    { id: 'projects', label: 'Projects' },
+  ],
+  infra: [
+    { id: 'servers', label: 'Servers' },
+    { id: 'databases', label: 'Databases' },
+    { id: 'websites', label: 'Websites' },
+  ],
+  communication: [],
+  insights: [
+    { id: 'analytics', label: 'Analytics' },
+    { id: 'alerts', label: 'Alerts' },
+    { id: 'activity', label: 'Activity' },
+  ],
+};
+
+// --- End new types ---
+
 export interface DashboardWidgetDef {
   id: string;
   label: string;
   description: string;
   icon: string;
+  iconEl?: React.ReactNode;       // NEW: takes precedence over icon when present
   category: WidgetCategory;
+  module?: string;                // NEW: e.g. 'contacts', 'pipeline', 'servers'
   sizeOptions: WidgetSize[];
   defaultSize: WidgetSize;
   defaultW: number;
@@ -42,6 +91,7 @@ export interface DashboardWidgetDef {
   minH?: number;
   permission?: string;
   supportedFilters?: WidgetFilterKey[];
+  filterDefs?: WidgetFilterDef[]; // NEW: widget-specific dynamic/static filter controls
   defaultConfig?: WidgetConfig;
   component: React.ComponentType<{ config: WidgetConfig }>;
 }
