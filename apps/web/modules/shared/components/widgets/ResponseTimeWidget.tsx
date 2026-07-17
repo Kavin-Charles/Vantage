@@ -49,4 +49,4 @@ function ResponseTimeWidget({ config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'infra:websites-response-time', label: 'Response Time', description: 'Response time per website, slowest first', icon: 'clock', category: 'infra', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: ['refreshInterval'], defaultConfig: { refreshInterval: 60_000 }, component: ResponseTimeWidget });
+registerDashboardWidget({ id: 'infra:websites-response-time', label: 'Response Time', description: 'Response time per website, slowest first', icon: 'clock', category: 'infra', module: 'websites', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: ['refreshInterval'], defaultConfig: { refreshInterval: 60_000 }, component: ResponseTimeWidget });

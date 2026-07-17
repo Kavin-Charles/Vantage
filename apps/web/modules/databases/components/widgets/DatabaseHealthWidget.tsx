@@ -5,14 +5,24 @@ import { useModules } from '@/modules/shared/contexts/modules';
 import { listInfraDatabases } from '@/modules/databases/lib/infra-databases';
 import { WidgetSkeleton, WidgetError, EmptyState, WidgetHeader, StatusDot } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
+
+const ENGINE_OPTIONS: FilterOption[] = [
+  { label: 'Postgres', value: 'postgres' },
+  { label: 'MySQL', value: 'mysql' },
+  { label: 'Redis', value: 'redis' },
+  { label: 'ClickHouse', value: 'clickhouse' },
+  { label: 'Mongo', value: 'mongo' },
+  { label: 'Other', value: 'other' },
+];
 
 function DatabaseHealthWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
+  const engine = config.filters?.['engine'] ?? '';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'db-health'],
+    queryKey: ['widget', 'db-health', engine],
     queryFn: async () => listInfraDatabases(await getToken()),
     staleTime: 60_000,
     refetchInterval: config.refreshInterval ?? 120_000,
@@ -24,7 +34,7 @@ function DatabaseHealthWidget({ config }: { config: WidgetConfig }) {
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
 
-  const dbs = data?.data ?? [];
+  const dbs = (data?.data ?? []).filter(db => !engine || db.engine === engine);
   if (dbs.length === 0) return <EmptyState href="/infra/databases" label="Add your first database" icon="database" />;
 
   const STATUS_COLOR: Record<string, string> = { healthy: 'var(--green)', degraded: 'var(--amber)', offline: 'var(--red)' };
@@ -46,4 +56,4 @@ function DatabaseHealthWidget({ config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'infra:db-health', label: 'Database Health', description: 'Status summary for all monitored databases', icon: 'database', category: 'infra', sizeOptions: ['small', 'medium'], defaultSize: 'medium', defaultW: 4, defaultH: 3, minW: 3, minH: 2, supportedFilters: ['refreshInterval'], defaultConfig: { refreshInterval: 120_000 }, component: DatabaseHealthWidget });
+registerDashboardWidget({ id: 'infra:db-health', label: 'Database Health', description: 'Status summary for all monitored databases', icon: 'database', category: 'infra', module: 'databases', sizeOptions: ['small', 'medium'], defaultSize: 'medium', defaultW: 4, defaultH: 3, minW: 3, minH: 2, supportedFilters: ['refreshInterval'], filterDefs: [{ key: 'engine', label: 'Engine', type: 'pills', options: ENGINE_OPTIONS }], defaultConfig: { refreshInterval: 120_000 }, component: DatabaseHealthWidget });

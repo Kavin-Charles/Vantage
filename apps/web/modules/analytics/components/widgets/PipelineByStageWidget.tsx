@@ -50,4 +50,4 @@ function PipelineByStageWidget({ config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'insights:pipeline-by-stage', label: 'Pipeline by Stage', description: 'Deal count per pipeline stage as a bar chart', icon: 'chart', category: 'insights', sizeOptions: ['medium', 'large'], defaultSize: 'medium', defaultW: 4, defaultH: 4, minW: 3, minH: 3, supportedFilters: [], defaultConfig: { filters: { period: '30d' } }, component: PipelineByStageWidget });
+registerDashboardWidget({ id: 'insights:pipeline-by-stage', label: 'Pipeline by Stage', description: 'Deal count per pipeline stage as a bar chart', icon: 'chart', category: 'insights', module: 'analytics', sizeOptions: ['medium', 'large'], defaultSize: 'medium', defaultW: 4, defaultH: 4, minW: 3, minH: 3, supportedFilters: [], defaultConfig: { filters: { period: '30d' } }, component: PipelineByStageWidget });

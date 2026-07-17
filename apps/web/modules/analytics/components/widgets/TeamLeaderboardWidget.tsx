@@ -49,4 +49,4 @@ function TeamLeaderboardWidget({ config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'insights:team-leaderboard', label: 'Team Leaderboard', description: 'Sales reps ranked by closed revenue', icon: 'users', category: 'insights', sizeOptions: ['medium', 'large'], defaultSize: 'medium', defaultW: 4, defaultH: 4, minW: 3, minH: 3, supportedFilters: [], defaultConfig: { filters: { period: '30d' } }, component: TeamLeaderboardWidget });
+registerDashboardWidget({ id: 'insights:team-leaderboard', label: 'Team Leaderboard', description: 'Sales reps ranked by closed revenue', icon: 'users', category: 'insights', module: 'analytics', sizeOptions: ['medium', 'large'], defaultSize: 'medium', defaultW: 4, defaultH: 4, minW: 3, minH: 3, supportedFilters: [], defaultConfig: { filters: { period: '30d' } }, component: TeamLeaderboardWidget });

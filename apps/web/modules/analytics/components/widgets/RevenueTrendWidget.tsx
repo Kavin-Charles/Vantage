@@ -64,4 +64,4 @@ function RevenueTrendWidget({ config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'insights:revenue-trend', label: 'Revenue Trend', description: 'Total revenue with area chart, configurable period', icon: 'chart', category: 'insights', sizeOptions: ['medium', 'large', 'wide'], defaultSize: 'medium', defaultW: 4, defaultH: 4, minW: 3, minH: 3, supportedFilters: [], defaultConfig: { filters: { period: '30d' } }, component: RevenueTrendWidget });
+registerDashboardWidget({ id: 'insights:revenue-trend', label: 'Revenue Trend', description: 'Total revenue with area chart, configurable period', icon: 'chart', category: 'insights', module: 'analytics', sizeOptions: ['medium', 'large', 'wide'], defaultSize: 'medium', defaultW: 4, defaultH: 4, minW: 3, minH: 3, supportedFilters: [], defaultConfig: { filters: { period: '30d' } }, component: RevenueTrendWidget });

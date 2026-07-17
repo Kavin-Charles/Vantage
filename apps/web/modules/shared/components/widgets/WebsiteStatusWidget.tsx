@@ -46,4 +46,4 @@ function WebsiteStatusWidget({ config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'infra:websites-status', label: 'Website Status', description: 'Live status for all monitored websites', icon: 'globe', category: 'infra', sizeOptions: ['small', 'medium'], defaultSize: 'medium', defaultW: 4, defaultH: 3, minW: 3, minH: 2, supportedFilters: ['refreshInterval'], defaultConfig: { refreshInterval: 60_000 }, component: WebsiteStatusWidget });
+registerDashboardWidget({ id: 'infra:websites-status', label: 'Website Status', description: 'Live status for all monitored websites', icon: 'globe', category: 'infra', module: 'websites', sizeOptions: ['small', 'medium'], defaultSize: 'medium', defaultW: 4, defaultH: 3, minW: 3, minH: 2, supportedFilters: ['refreshInterval'], defaultConfig: { refreshInterval: 60_000 }, component: WebsiteStatusWidget });

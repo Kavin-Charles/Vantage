@@ -5,14 +5,24 @@ import { useModules } from '@/modules/shared/contexts/modules';
 import { listInfraDatabases } from '@/modules/databases/lib/infra-databases';
 import { WidgetSkeleton, WidgetError, EmptyState, WidgetHeader, MiniBar } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
 
-function DbStorageWidget({ config: _config }: { config: WidgetConfig }) {
+const ENGINE_OPTIONS: FilterOption[] = [
+  { label: 'Postgres', value: 'postgres' },
+  { label: 'MySQL', value: 'mysql' },
+  { label: 'Redis', value: 'redis' },
+  { label: 'ClickHouse', value: 'clickhouse' },
+  { label: 'Mongo', value: 'mongo' },
+  { label: 'Other', value: 'other' },
+];
+
+function DbStorageWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
+  const engine = config.filters?.['engine'] ?? '';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'db-storage'],
+    queryKey: ['widget', 'db-storage', engine],
     queryFn: async () => listInfraDatabases(await getToken()),
     staleTime: 60_000,
     enabled: isEnabled('servers'),
@@ -22,7 +32,7 @@ function DbStorageWidget({ config: _config }: { config: WidgetConfig }) {
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
 
-  const dbs = [...(data?.data ?? [])].filter(d => d.storage_gb != null).sort((a, b) => (b.storage_gb ?? 0) - (a.storage_gb ?? 0));
+  const dbs = (data?.data ?? []).filter(db => !engine || db.engine === engine).filter(d => d.storage_gb != null).sort((a, b) => (b.storage_gb ?? 0) - (a.storage_gb ?? 0));
   if (dbs.length === 0) return <EmptyState href="/infra/databases" label="Add your first database" icon="database" />;
 
   const max = dbs[0]?.storage_gb ?? 1;
@@ -43,4 +53,4 @@ function DbStorageWidget({ config: _config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'infra:db-storage', label: 'DB Storage', description: 'Storage usage per database, sorted descending', icon: 'database', category: 'infra', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: [], defaultConfig: {}, component: DbStorageWidget });
+registerDashboardWidget({ id: 'infra:db-storage', label: 'DB Storage', description: 'Storage usage per database, sorted descending', icon: 'database', category: 'infra', module: 'databases', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: [], filterDefs: [{ key: 'engine', label: 'Engine', type: 'pills', options: ENGINE_OPTIONS }], defaultConfig: {}, component: DbStorageWidget });

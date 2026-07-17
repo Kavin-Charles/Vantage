@@ -50,4 +50,4 @@ function SslExpiryWidget({ config: _config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'infra:websites-ssl', label: 'SSL Expiry', description: 'Days until SSL cert expiry per website — red < 7 days', icon: 'lock', category: 'infra', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: [], defaultConfig: {}, component: SslExpiryWidget });
+registerDashboardWidget({ id: 'infra:websites-ssl', label: 'SSL Expiry', description: 'Days until SSL cert expiry per website — red < 7 days', icon: 'lock', category: 'infra', module: 'websites', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: [], defaultConfig: {}, component: SslExpiryWidget });

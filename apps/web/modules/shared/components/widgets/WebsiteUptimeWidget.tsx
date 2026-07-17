@@ -45,4 +45,4 @@ function WebsiteUptimeWidget({ config: _config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'infra:websites-uptime', label: '30d Uptime', description: 'Uptime percentage over 30 days per website, worst first', icon: 'globe', category: 'infra', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: [], defaultConfig: {}, component: WebsiteUptimeWidget });
+registerDashboardWidget({ id: 'infra:websites-uptime', label: '30d Uptime', description: 'Uptime percentage over 30 days per website, worst first', icon: 'globe', category: 'infra', module: 'websites', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: [], defaultConfig: {}, component: WebsiteUptimeWidget });

@@ -49,4 +49,4 @@ function KpiCardsWidget({ config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'insights:kpi-cards', label: 'KPI Cards', description: 'Revenue, win rate, open deals, pipeline value at a glance', icon: 'chart', category: 'insights', sizeOptions: ['wide', 'full'], defaultSize: 'wide', defaultW: 8, defaultH: 2, minW: 4, minH: 2, supportedFilters: [], defaultConfig: { filters: { period: '30d' } }, component: KpiCardsWidget });
+registerDashboardWidget({ id: 'insights:kpi-cards', label: 'KPI Cards', description: 'Revenue, win rate, open deals, pipeline value at a glance', icon: 'chart', category: 'insights', module: 'analytics', sizeOptions: ['wide', 'full'], defaultSize: 'wide', defaultW: 8, defaultH: 2, minW: 4, minH: 2, supportedFilters: [], defaultConfig: { filters: { period: '30d' } }, component: KpiCardsWidget });

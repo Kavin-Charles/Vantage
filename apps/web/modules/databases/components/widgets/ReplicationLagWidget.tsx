@@ -5,14 +5,24 @@ import { useModules } from '@/modules/shared/contexts/modules';
 import { listInfraDatabases } from '@/modules/databases/lib/infra-databases';
 import { WidgetSkeleton, WidgetError, EmptyState, WidgetHeader } from '@/modules/shared/components/ui/WidgetHelpers';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
+
+const ENGINE_OPTIONS: FilterOption[] = [
+  { label: 'Postgres', value: 'postgres' },
+  { label: 'MySQL', value: 'mysql' },
+  { label: 'Redis', value: 'redis' },
+  { label: 'ClickHouse', value: 'clickhouse' },
+  { label: 'Mongo', value: 'mongo' },
+  { label: 'Other', value: 'other' },
+];
 
 function ReplicationLagWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
+  const engine = config.filters?.['engine'] ?? '';
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['widget', 'db-replication-lag'],
+    queryKey: ['widget', 'db-replication-lag', engine],
     queryFn: async () => listInfraDatabases(await getToken()),
     staleTime: 60_000,
     refetchInterval: config.refreshInterval ?? 60_000,
@@ -24,7 +34,7 @@ function ReplicationLagWidget({ config }: { config: WidgetConfig }) {
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
 
-  const dbs = [...(data?.data ?? [])].filter(d => d.replication_lag_s != null).sort((a, b) => (b.replication_lag_s ?? 0) - (a.replication_lag_s ?? 0));
+  const dbs = (data?.data ?? []).filter(db => !engine || db.engine === engine).filter(d => d.replication_lag_s != null).sort((a, b) => (b.replication_lag_s ?? 0) - (a.replication_lag_s ?? 0));
   if (dbs.length === 0) return <EmptyState href="/infra/databases" label="No replication lag data" icon="database" />;
 
   return (
@@ -46,4 +56,4 @@ function ReplicationLagWidget({ config }: { config: WidgetConfig }) {
   );
 }
 
-registerDashboardWidget({ id: 'infra:db-replication-lag', label: 'Replication Lag', description: 'Replication lag per database — red > 10s', icon: 'database', category: 'infra', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: ['refreshInterval'], defaultConfig: { refreshInterval: 60_000 }, component: ReplicationLagWidget });
+registerDashboardWidget({ id: 'infra:db-replication-lag', label: 'Replication Lag', description: 'Replication lag per database — red > 10s', icon: 'database', category: 'infra', module: 'databases', sizeOptions: ['small', 'medium'], defaultSize: 'small', defaultW: 3, defaultH: 3, minW: 2, minH: 2, supportedFilters: ['refreshInterval'], filterDefs: [{ key: 'engine', label: 'Engine', type: 'pills', options: ENGINE_OPTIONS }], defaultConfig: { refreshInterval: 60_000 }, component: ReplicationLagWidget });
