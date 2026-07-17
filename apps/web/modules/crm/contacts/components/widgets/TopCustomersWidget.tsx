@@ -16,6 +16,10 @@ const STATUS_OPTIONS: FilterOption[] = [
   { label: 'Churned', value: 'churned' },
 ];
 
+const STATUS_COLOR: Record<string, string> = {
+  prospect: 'var(--blue)', customer: 'var(--green)', cold: 'var(--text3)', churned: 'var(--red)',
+};
+
 function TopCustomersWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
@@ -54,7 +58,11 @@ function TopCustomersWidget({ config }: { config: WidgetConfig }) {
               {c.name[0]?.toUpperCase()}
             </div>
             <span style={{ fontSize: 13, color: 'var(--text)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-            <span style={{ fontSize: 10, color: 'var(--green)', background: 'var(--green-bg)', padding: '1px 6px', borderRadius: 6, flexShrink: 0 }}>Customer</span>
+            <span style={{
+              fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 6, flexShrink: 0,
+              color: STATUS_COLOR[c.status] ?? 'var(--text3)', background: 'var(--surface2)',
+              textTransform: 'capitalize',
+            }}>{c.status}</span>
           </button>
         ))}
       </div>
