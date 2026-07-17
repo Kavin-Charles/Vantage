@@ -9,6 +9,7 @@ import '@/modules/alerts/components/AlertsWidget';
 
 registerDashboardWidget({
   id: 'core:contacts',
+  module: 'contacts',
   label: 'Contacts',
   description: 'Recent contacts with status filters and quick navigation',
   icon: 'users',
@@ -26,6 +27,7 @@ registerDashboardWidget({
 
 registerDashboardWidget({
   id: 'core:pipeline',
+  module: 'pipeline',
   label: 'Pipeline Overview',
   description: 'Your active pipeline stages at a glance',
   icon: 'pipeline',
@@ -43,6 +45,7 @@ registerDashboardWidget({
 
 registerDashboardWidget({
   id: 'core:servers',
+  module: 'servers',
   label: 'Server Health',
   description: 'Online/degraded/offline counts with per-server CPU and RAM',
   icon: 'server',
@@ -60,6 +63,7 @@ registerDashboardWidget({
 
 registerDashboardWidget({
   id: 'core:projects',
+  module: 'projects',
   label: 'Projects Overview',
   description: 'Active projects, at-risk count, overdue tasks, and upcoming milestones',
   icon: 'projects',
@@ -78,6 +82,7 @@ registerDashboardWidget({
 
 registerDashboardWidget({
   id: 'core:activity',
+  module: 'activity',
   label: 'Workspace Activity',
   description: 'Latest workspace activity across all records',
   icon: 'activity',
