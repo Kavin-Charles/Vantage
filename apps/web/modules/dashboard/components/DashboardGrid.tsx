@@ -73,6 +73,7 @@ export function DashboardGrid({ layoutRows, isEditMode, pluginWidgets, onLayoutC
         <ResponsiveGridLayout
           width={width}
           layouts={layouts}
+          containerPadding={[0, 0]}
           breakpoints={{ lg: 1200, md: 996, sm: 768 }}
           cols={{ lg: 12, md: 10, sm: 6 }}
           rowHeight={80}
