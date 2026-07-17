@@ -46,6 +46,7 @@ registerDashboardWidget({
   description: 'Open task count per team member',
   icon: 'users',
   category: 'projects',
+  module: 'tasks',
   sizeOptions: ['medium', 'large'],
   defaultSize: 'medium',
   defaultW: 4,

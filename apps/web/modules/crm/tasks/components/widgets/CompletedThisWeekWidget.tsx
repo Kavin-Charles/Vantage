@@ -2,11 +2,18 @@
 
 import { useUnifiedTasks } from '../../lib/useUnifiedTasks';
 import { WidgetSkeleton, WidgetError } from '@/modules/shared/components/ui/WidgetHelpers';
+import { apiFetch } from '@/modules/shared/lib/api';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
 
-function CompletedThisWeekWidget({ config: _config }: { config: WidgetConfig }) {
-  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'done' });
+const fetchUserOptions = async (token: string): Promise<FilterOption[]> => {
+  const res = await apiFetch<{ data: { id: string; name: string }[] }>('/api/users', { token });
+  return res.data.map(u => ({ label: u.name, value: u.id }));
+};
+
+function CompletedThisWeekWidget({ config }: { config: WidgetConfig }) {
+  const owner = config.filters?.['owner'] ?? '';
+  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'done', owner_id: owner });
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
   const count = data?.total ?? 0;
@@ -24,6 +31,7 @@ registerDashboardWidget({
   description: 'Count of tasks completed during the current week',
   icon: 'check',
   category: 'projects',
+  module: 'tasks',
   sizeOptions: ['small'],
   defaultSize: 'small',
   defaultW: 2,
@@ -31,6 +39,9 @@ registerDashboardWidget({
   minW: 2,
   minH: 2,
   supportedFilters: [],
+  filterDefs: [
+    { key: 'owner', label: 'Owner', type: 'select', fetchOptions: fetchUserOptions, placeholder: 'All owners' },
+  ],
   defaultConfig: {},
   component: CompletedThisWeekWidget,
 });

@@ -4,12 +4,19 @@ import { useUnifiedTasks } from '../../lib/useUnifiedTasks';
 import { useToggleTask } from '../../lib/taskMutations';
 import { WidgetSkeleton, WidgetError } from '@/modules/shared/components/ui/WidgetHelpers';
 import { Icon } from '@/modules/shared/components/ui/Icon';
+import { apiFetch } from '@/modules/shared/lib/api';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
 import type { UnifiedTask } from '../../lib/types';
 
+const fetchUserOptions = async (token: string): Promise<FilterOption[]> => {
+  const res = await apiFetch<{ data: { id: string; name: string }[] }>('/api/users', { token });
+  return res.data.map(u => ({ label: u.name, value: u.id }));
+};
+
 function OverdueTasksWidget({ config }: { config: WidgetConfig }) {
-  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo' });
+  const owner = config.filters?.['owner'] ?? '';
+  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo', owner_id: owner });
   const toggleMut = useToggleTask();
   const limit = config.limit ?? 10;
   if (isLoading) return <WidgetSkeleton />;
@@ -50,6 +57,7 @@ registerDashboardWidget({
   description: 'Tasks past their due date — clear blockers fast',
   icon: 'warning',
   category: 'projects',
+  module: 'tasks',
   sizeOptions: ['small', 'medium'],
   defaultSize: 'small',
   defaultW: 3,
@@ -57,6 +65,9 @@ registerDashboardWidget({
   minW: 2,
   minH: 2,
   supportedFilters: ['limit'],
+  filterDefs: [
+    { key: 'owner', label: 'Owner', type: 'select', fetchOptions: fetchUserOptions, placeholder: 'All owners' },
+  ],
   defaultConfig: { limit: 10 },
   component: OverdueTasksWidget,
 });

@@ -80,6 +80,7 @@ registerDashboardWidget({
   description: 'New companies added over time',
   icon: 'trending-up',
   category: 'sales',
+  module: 'companies',
   sizeOptions: ['medium', 'large', 'wide'],
   defaultSize: 'wide',
   defaultW: 6,

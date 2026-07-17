@@ -47,6 +47,7 @@ registerDashboardWidget({
   description: 'Open tasks split by HIGH / MEDIUM / LOW / NONE priority',
   icon: 'chart-bar',
   category: 'projects',
+  module: 'tasks',
   sizeOptions: ['small', 'medium'],
   defaultSize: 'small',
   defaultW: 3,

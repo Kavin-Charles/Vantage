@@ -54,6 +54,7 @@ registerDashboardWidget({
   description: 'Bar breakdown of companies grouped by industry',
   icon: 'chart-bar',
   category: 'sales',
+  module: 'companies',
   sizeOptions: ['medium', 'large'],
   defaultSize: 'medium',
   defaultW: 4,

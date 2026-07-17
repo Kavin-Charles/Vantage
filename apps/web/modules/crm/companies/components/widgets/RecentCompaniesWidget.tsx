@@ -60,6 +60,7 @@ registerDashboardWidget({
   description: 'Latest companies added to your workspace',
   icon: 'building',
   category: 'sales',
+  module: 'companies',
   sizeOptions: ['medium', 'large'],
   defaultSize: 'medium',
   defaultW: 4,

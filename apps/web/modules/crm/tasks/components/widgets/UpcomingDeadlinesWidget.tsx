@@ -2,12 +2,19 @@
 
 import { useUnifiedTasks } from '../../lib/useUnifiedTasks';
 import { WidgetSkeleton, WidgetError, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
+import { apiFetch } from '@/modules/shared/lib/api';
 import { registerDashboardWidget } from '@/modules/shared/lib/dashboard-registry';
-import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
+import type { WidgetConfig, FilterOption } from '@/modules/shared/lib/dashboard-registry';
 import type { UnifiedTask } from '../../lib/types';
 
-function UpcomingDeadlinesWidget({ config: _config }: { config: WidgetConfig }) {
-  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo' });
+const fetchUserOptions = async (token: string): Promise<FilterOption[]> => {
+  const res = await apiFetch<{ data: { id: string; name: string }[] }>('/api/users', { token });
+  return res.data.map(u => ({ label: u.name, value: u.id }));
+};
+
+function UpcomingDeadlinesWidget({ config }: { config: WidgetConfig }) {
+  const owner = config.filters?.['owner'] ?? '';
+  const { data, isLoading, isError, refetch } = useUnifiedTasks({ status: 'todo', owner_id: owner });
   if (isLoading) return <WidgetSkeleton />;
   if (isError) return <WidgetError onRetry={() => void refetch()} />;
   const tasks: UnifiedTask[] = [
@@ -40,6 +47,7 @@ registerDashboardWidget({
   description: 'Tasks due today and this week',
   icon: 'clock',
   category: 'projects',
+  module: 'tasks',
   sizeOptions: ['small', 'medium'],
   defaultSize: 'small',
   defaultW: 3,
@@ -47,6 +55,9 @@ registerDashboardWidget({
   minW: 2,
   minH: 2,
   supportedFilters: [],
+  filterDefs: [
+    { key: 'owner', label: 'Owner', type: 'select', fetchOptions: fetchUserOptions, placeholder: 'All owners' },
+  ],
   defaultConfig: {},
   component: UpcomingDeadlinesWidget,
 });

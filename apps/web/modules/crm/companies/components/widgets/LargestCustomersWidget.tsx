@@ -68,6 +68,7 @@ registerDashboardWidget({
   description: 'Companies ranked by number of contacts and team size',
   icon: 'building',
   category: 'sales',
+  module: 'companies',
   sizeOptions: ['medium', 'large'],
   defaultSize: 'medium',
   defaultW: 4,
