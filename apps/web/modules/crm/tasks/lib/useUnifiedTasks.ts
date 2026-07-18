@@ -24,6 +24,7 @@ export function useUnifiedTasks(filters: UnifiedTasksFilters = {}) {
       if (filters.priority) params.set('priority', filters.priority)
       if (filters.show_all) params.set('show_all', 'true')
       if (filters.q) params.set('q', filters.q)
+      if (filters.owner_id) params.set('owner_id', filters.owner_id)
       const qs = params.toString() ? `?${params.toString()}` : ''
       return apiFetch<UnifiedTasksResponse>(`/api/tasks/unified${qs}`, {
         token: await getToken(),

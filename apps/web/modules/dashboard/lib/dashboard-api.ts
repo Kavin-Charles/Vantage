@@ -1,4 +1,5 @@
 import { apiFetch } from '@/modules/shared/lib/api';
+import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
 
 export interface DashboardSummary {
   id: string;
@@ -19,6 +20,7 @@ export interface LayoutWidget {
   min_w: number | null;
   min_h: number | null;
   permission_key: string | null;
+  config: WidgetConfig;
 }
 
 export interface DashboardDetail extends DashboardSummary {
@@ -35,6 +37,7 @@ export interface SaveLayoutWidget {
   min_w?: number | null;
   min_h?: number | null;
   permission_key?: string | null;
+  config?: WidgetConfig;
 }
 
 export async function listDashboards(token: string): Promise<DashboardSummary[]> {

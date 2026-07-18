@@ -8,8 +8,9 @@ import { listPipelines } from '@/modules/crm/pipeline/lib/pipelines';
 import type { Pipeline } from '@/modules/crm/pipeline/lib/pipelines';
 import { Badge } from '@/modules/shared/components/ui/Badge';
 import { WidgetSkeleton, WidgetError, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
+import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
 
-export function PipelineWidget() {
+export function PipelineWidget({ config: _config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
   const router = useRouter();

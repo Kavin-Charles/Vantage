@@ -109,6 +109,10 @@
   animation: widgetIn .2s ease both;
 }
 
+.widget-card-enter:hover .widget-gear {
+  opacity: 1 !important;
+}
+
 @keyframes toastIn {
   from { opacity: 0; transform: translateX(16px); }
   to   { opacity: 1; transform: translateX(0); }

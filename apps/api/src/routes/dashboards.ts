@@ -9,6 +9,15 @@ const dashboardNameSchema = z.object({
   name: z.string().min(1).max(100),
 });
 
+const widgetConfigSchema = z.object({
+  timeRange: z.enum(['1d', '7d', '30d']).optional(),
+  limit: z.number().int().min(1).optional(),
+  compactMode: z.boolean().optional(),
+  chartType: z.enum(['line', 'bar', 'pie', 'area']).optional(),
+  refreshInterval: z.number().int().min(1).optional(),
+  filters: z.record(z.string(), z.string()).optional(),
+}).passthrough();
+
 const layoutWidgetSchema = z.object({
   widget_id: z.string().min(1),
   x: z.number().int().min(0),
@@ -18,6 +27,7 @@ const layoutWidgetSchema = z.object({
   min_w: z.number().int().min(1).nullable().optional(),
   min_h: z.number().int().min(1).nullable().optional(),
   permission_key: z.string().nullable().optional(),
+  config: widgetConfigSchema.optional(),
 });
 
 const saveLayoutSchema = z.object({
@@ -277,6 +287,7 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
                 min_w: w.min_w ?? null,
                 min_h: w.min_h ?? null,
                 permission_key: w.permission_key ?? null,
+                config: w.config ?? {},
               })),
             )
             .execute();

@@ -318,7 +318,7 @@ export function PluginRuntimeProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     function handleDashboardWidget(e: Event) {
-      const { def, component } = (e as CustomEvent<{ def: Omit<DashboardWidgetDef, 'component'>; component: React.ComponentType }>).detail;
+      const { def, component } = (e as CustomEvent<{ def: Omit<DashboardWidgetDef, 'component'>; component: DashboardWidgetDef['component'] }>).detail;
       setDashboardWidgets(prev => new Map(prev).set(def.id, { ...def, component }));
     }
     window.addEventListener('vencore:dashboard:register-widget', handleDashboardWidget);

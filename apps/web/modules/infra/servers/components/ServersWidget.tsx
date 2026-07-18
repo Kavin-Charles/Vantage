@@ -9,6 +9,7 @@ import { Badge } from '@/modules/shared/components/ui/Badge';
 import { WidgetSkeleton, WidgetError, Stat, EmptyState } from '@/modules/shared/components/ui/WidgetHelpers';
 import { useServerMetrics } from '@/modules/shared/contexts/ServerMetricsContext';
 import type { Server } from '@vencore/types';
+import type { WidgetConfig } from '@/modules/shared/lib/dashboard-registry';
 
 function WidgetRow({ server: s, last, onOpen }: { server: Server; last: boolean; onOpen: () => void }) {
   const live = useServerMetrics(s.id);
@@ -47,7 +48,7 @@ function WidgetRow({ server: s, last, onOpen }: { server: Server; last: boolean;
   );
 }
 
-export function ServersWidget() {
+export function ServersWidget({ config }: { config: WidgetConfig }) {
   const { isEnabled } = useModules();
   const getToken = useApiToken();
   const router = useRouter();
@@ -56,6 +57,8 @@ export function ServersWidget() {
     queryKey: ['widget', 'servers'],
     queryFn: async () => listServers(await getToken()),
     staleTime: 60_000,
+    refetchInterval: config.refreshInterval ?? 60_000,
+    refetchIntervalInBackground: false,
     enabled: isEnabled('infra:servers'),
   });
 

@@ -911,6 +911,7 @@ export interface DashboardLayoutTable {
   min_w: number | null;
   min_h: number | null;
   permission_key: string | null;
+  config: Generated<Record<string, unknown>>;
   created_at: Generated<Date>;
 }
 

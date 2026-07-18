@@ -11,6 +11,7 @@ const querySchema = z.object({
   priority: z.enum(['URGENT', 'HIGH', 'MEDIUM', 'LOW', 'NONE']).optional(),
   show_all: z.coerce.boolean().default(false),
   q: z.string().optional(),
+  owner_id: z.string().uuid().optional(),
 })
 
 export interface UnifiedTask {
@@ -83,8 +84,8 @@ export function createUnifiedTasksRouter(db: Kysely<Database>, requirePermission
         res.status(400).json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } })
         return
       }
-      const { status, source, priority, show_all, q } = parsed.data
-      const showAll = show_all && isAdmin
+      const { status, source, priority, show_all, q, owner_id } = parsed.data
+      const showAll = show_all && user.role === 'admin'
 
       // ── 1. CRM tasks ────────────────────────────────────────────────────────
       let crmQ = db
@@ -99,7 +100,11 @@ export function createUnifiedTasksRouter(db: Kysely<Database>, requirePermission
         ])
         .where('t.workspace_id', '=', workspace.id)
 
-      if (!showAll) crmQ = crmQ.where('t.assignee_id', '=', user.id)
+      if (owner_id) {
+        crmQ = crmQ.where('t.assignee_id', '=', owner_id)
+      } else if (!showAll) {
+        crmQ = crmQ.where('t.assignee_id', '=', user.id)
+      }
       if (status !== 'all') crmQ = crmQ.where('t.status', '=', status as 'todo' | 'done')
 
       const crmRows = await crmQ.execute()
@@ -121,7 +126,12 @@ export function createUnifiedTasksRouter(db: Kysely<Database>, requirePermission
         .where('p.workspace_id', '=', workspace.id)
         .where('p.status', '!=', 'DELETED' as never)
 
-      if (!showAll) {
+      if (owner_id) {
+        ptQ = ptQ.where('t.id', 'in', db
+          .selectFrom('project_task_assignees')
+          .select('task_id')
+          .where('user_id', '=', owner_id))
+      } else if (!showAll) {
         ptQ = ptQ.where('t.id', 'in', db
           .selectFrom('project_task_assignees')
           .select('task_id')
