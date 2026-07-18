@@ -28,9 +28,9 @@ export function createChannelsRouter(
   // Admins may pass ?scope=all to get every workspace channel with member_count (no unread tracking).
   router.get('/', requirePermission('messaging:view'), async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      const { workspace, user, isAdmin } = req as unknown as AuthenticatedRequest;
 
-      if (req.query['scope'] === 'all' && user.role === 'admin') {
+      if (req.query['scope'] === 'all' && isAdmin) {
         const allChannels = await db
           .selectFrom('channels')
           .where('channels.workspace_id', '=', workspace.id)

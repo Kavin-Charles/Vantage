@@ -237,10 +237,12 @@ export function createAgentRouter(db: Kysely<Database>, smtp?: SmtpConfig | null
             void (async () => {
               try {
                 const admins = await db
-                  .selectFrom('users')
-                  .where('workspace_id', '=', server.workspace_id)
-                  .where('role', '=', 'admin')
-                  .select(['id', 'email'])
+                  .selectFrom('user_roles as ur')
+                  .innerJoin('roles as r', 'r.id', 'ur.role_id')
+                  .innerJoin('users as u', 'u.id', 'ur.user_id')
+                  .where('ur.workspace_id', '=', server.workspace_id)
+                  .where('r.grants_all', '=', true)
+                  .select(['u.id', 'u.email'])
                   .execute();
 
                 if (admins.length > 0) {

@@ -298,7 +298,7 @@ export function Sidebar() {
     staleTime: 15_000,
   });
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.isAdmin ?? false;
   const { data: updateAvailable = false } = useQuery({
     queryKey: ['update-badge'],
     enabled: isAdmin,
@@ -533,7 +533,7 @@ export function Sidebar() {
               {user?.name ?? user?.email ?? ''}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'capitalize' }}>
-              {user?.role ?? ''}
+              {user ? (user.isAdmin ? 'Admin' : 'Member') : ''}
             </div>
           </div>
           <Link

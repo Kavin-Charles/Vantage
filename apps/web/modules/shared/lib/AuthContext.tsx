@@ -27,8 +27,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUser = async () => {
     if (!token) return;
     try {
-      const res = await apiFetch<{ data: { user: AuthUser } }>('/api/me', { token });
-      dispatch(setUser(res.data.user));
+      const res = await apiFetch<{
+        data: {
+          user: { id: string; name: string; email: string; theme: 'light' | 'dark' };
+          isAdmin: boolean;
+          permissions: string[];
+        };
+      }>('/api/me', { token });
+      dispatch(setUser({ ...res.data.user, isAdmin: res.data.isAdmin, permissions: res.data.permissions }));
     } catch {
       dispatch(clearAuth());
     }
@@ -53,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasPermission = (key: string): boolean => {
     if (!user) return false;
-    if (user.role === 'admin') return true;
+    if (user.isAdmin) return true;
     return (user.permissions ?? []).includes(key);
   };
 

@@ -70,8 +70,8 @@ export function createHubProvidersRouter(db: Kysely<Database>): Router {
 
   router.get('/hub-providers', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         return res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
       }
 
@@ -105,8 +105,8 @@ export function createHubProvidersRouter(db: Kysely<Database>): Router {
 
   router.put('/hub-providers/:group', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         return res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
       }
 

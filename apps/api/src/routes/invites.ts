@@ -7,17 +7,18 @@ import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { SmtpConfig } from '@vencore/config';
 import type { AuthenticatedRequest } from '../middleware/auth';
+import { assignRole, getDefaultRoleId } from '../lib/role-assignment';
 
 const createInviteSchema = z.object({
   email: z.string().email(),
   role: z.enum(['admin', 'member']).default('member'),
+  roleIds: z.array(z.string().uuid()).optional(),
 });
 
 const directCreateSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(8),
-  role: z.enum(['admin', 'member']).default('member'),
 });
 
 const acceptInviteSchema = z.object({
@@ -25,18 +26,55 @@ const acceptInviteSchema = z.object({
   password: z.string().min(8),
 });
 
+type RoleResolution =
+  | { ok: true; roleIds: string[] }
+  | { ok: false; code: 'INVALID_ROLE_IDS' | 'NO_DEFAULT_ROLE' };
+
+/**
+ * Resolves the role ids to grant on an invite. Explicit `requestedRoleIds` must
+ * all belong to `workspaceId` — this is the cross-tenant guard, since role ids
+ * arrive from the request body and role_inheritance/invite_roles have no
+ * workspace_id column of their own to lean on. Falls back to the workspace's
+ * `is_default` role when none are requested.
+ */
+async function resolveRoleIds(
+  db: Kysely<Database>,
+  workspaceId: string,
+  requestedRoleIds: string[] | undefined,
+): Promise<RoleResolution> {
+  if (requestedRoleIds && requestedRoleIds.length > 0) {
+    const unique = [...new Set(requestedRoleIds)];
+    const owned = await db
+      .selectFrom('roles')
+      .where('workspace_id', '=', workspaceId)
+      .where('id', 'in', unique)
+      .select('id')
+      .execute();
+    if (owned.length !== unique.length) {
+      return { ok: false, code: 'INVALID_ROLE_IDS' };
+    }
+    return { ok: true, roleIds: owned.map(r => r.id) };
+  }
+
+  const defaultRoleId = await getDefaultRoleId(db, workspaceId);
+  if (!defaultRoleId) {
+    return { ok: false, code: 'NO_DEFAULT_ROLE' };
+  }
+  return { ok: true, roleIds: [defaultRoleId] };
+}
+
 export function createInvitesRouter(
   db: Kysely<Database>,
   smtp: SmtpConfig | null | undefined,
   requireAuth: RequestHandler,
-  requireAdmin: RequestHandler,
+  requireUsersManage: RequestHandler,
   appUrl: string,
 ): Router {
   const router = Router();
 
-  // POST /api/invites — create invite or direct-create (admin only)
-  // requireAuth + requireAdmin applied here so the accept routes below remain public
-  router.post('/', requireAuth, requireAdmin, async (req, res, next) => {
+  // POST /api/invites — create invite or direct-create (users:manage only)
+  // requireAuth + requireUsersManage applied here so the accept routes below remain public
+  router.post('/', requireAuth, requireUsersManage, async (req, res, next) => {
     try {
       const { workspace, user: inviter } = req as unknown as AuthenticatedRequest;
 
@@ -59,6 +97,13 @@ export function createInvitesRouter(
           return;
         }
 
+        const roleResolution = await resolveRoleIds(db, workspace.id, parsed.data.roleIds);
+        if (!roleResolution.ok) {
+          const status = roleResolution.code === 'INVALID_ROLE_IDS' ? 400 : 500;
+          res.status(status).json({ data: null, error: { code: roleResolution.code } });
+          return;
+        }
+
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
 
@@ -74,6 +119,14 @@ export function createInvitesRouter(
           })
           .returning(['id', 'email', 'token'])
           .executeTakeFirstOrThrow();
+
+        for (const roleId of roleResolution.roleIds) {
+          await db
+            .insertInto('invite_roles')
+            .values({ invite_id: invite.id, role_id: roleId })
+            .onConflict(oc => oc.columns(['invite_id', 'role_id']).doNothing())
+            .execute();
+        }
 
         try {
           const nodemailer = await import('nodemailer');
@@ -119,6 +172,12 @@ export function createInvitesRouter(
           return;
         }
 
+        const defaultRoleId = await getDefaultRoleId(db, workspace.id);
+        if (!defaultRoleId) {
+          res.status(500).json({ data: null, error: { code: 'NO_DEFAULT_ROLE' } });
+          return;
+        }
+
         const hash = await bcrypt.hash(parsed.data.password, 12);
         const user = await db
           .insertInto('users')
@@ -127,10 +186,11 @@ export function createInvitesRouter(
             name: parsed.data.name,
             email: parsed.data.email,
             password_hash: hash,
-            role: parsed.data.role,
           })
-          .returning(['id', 'name', 'email', 'role', 'created_at'])
+          .returning(['id', 'name', 'email', 'created_at'])
           .executeTakeFirstOrThrow();
+
+        await assignRole(db, workspace.id, user.id, defaultRoleId);
 
         res.status(201).json({ data: { user }, error: null });
       }
@@ -192,17 +252,39 @@ export function createInvitesRouter(
         return;
       }
 
+      const inviteRoleRows = await db
+        .selectFrom('invite_roles')
+        .where('invite_id', '=', invite.id)
+        .select('role_id')
+        .execute();
+
+      let roleIdsToAssign = inviteRoleRows.map(r => r.role_id);
+      if (roleIdsToAssign.length === 0) {
+        // Invites created before invite_roles existed (or with no roles recorded)
+        // fall back to the workspace's default role.
+        const defaultRoleId = await getDefaultRoleId(db, invite.workspace_id);
+        if (!defaultRoleId) {
+          res.status(500).json({ data: null, error: { code: 'NO_DEFAULT_ROLE' } });
+          return;
+        }
+        roleIdsToAssign = [defaultRoleId];
+      }
+
       const hash = await bcrypt.hash(parsed.data.password, 12);
-      await db
+      const newUser = await db
         .insertInto('users')
         .values({
           workspace_id: invite.workspace_id,
           name: parsed.data.name,
           email: invite.email,
           password_hash: hash,
-          role: invite.role as 'admin' | 'member',
         })
-        .execute();
+        .returning(['id'])
+        .executeTakeFirstOrThrow();
+
+      for (const roleId of roleIdsToAssign) {
+        await assignRole(db, invite.workspace_id, newUser.id, roleId);
+      }
 
       await db
         .updateTable('invites')

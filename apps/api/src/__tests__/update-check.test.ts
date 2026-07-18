@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 function buildMockDb(meta: { notified_version: string | null } = { notified_version: null }) {
   const chain: Record<string, unknown> = {};
-  for (const f of ['set', 'where', 'select', 'selectAll', 'values', 'execute', 'executeTakeFirst']) {
+  for (const f of ['set', 'where', 'select', 'selectAll', 'values', 'execute', 'executeTakeFirst', 'innerJoin']) {
     chain[f] = vi.fn().mockReturnValue(chain);
   }
   chain['execute'] = vi.fn().mockResolvedValue([]);

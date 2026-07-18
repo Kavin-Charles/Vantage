@@ -7,8 +7,8 @@
  */
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { getMe } from '@vencore/api-client';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
 import { apiFetch } from '@/modules/shared/lib/api';
 
 interface ProviderGroup {
@@ -20,12 +20,8 @@ interface ProviderGroup {
 
 export function PendingProviderBanner() {
   const getToken = useApiToken();
-
-  const { data: me } = useQuery({
-    queryKey: ['me'],
-    queryFn: async () => getMe(await getToken()),
-  });
-  const isAdmin = me?.data.user.role === 'admin';
+  const { hasPermission } = useAuth();
+  const isAdmin = hasPermission('integrations:manage');
 
   const { data } = useQuery({
     queryKey: ['hub-providers'],

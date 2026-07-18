@@ -1,57 +1,26 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { resolvePermissions, __clearPermCacheForTesting } from './permission';
-import type { Kysely } from 'kysely';
-import type { Database } from '@vencore/db';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { resolveRolePermissions } from '../lib/rbac/resolve';
 
-function buildMockDb(overrides: { permission: string; granted: boolean }[]) {
-  const chain: Record<string, unknown> = {};
-  for (const f of ['selectFrom', 'select', 'where']) {
-    chain[f] = vi.fn().mockReturnValue(chain);
-  }
-  chain['execute'] = vi.fn().mockResolvedValue(overrides);
-  return {
-    selectFrom: vi.fn().mockReturnValue(chain),
-  } as unknown as Kysely<Database>;
-}
+// The DB wiring is integration-tested in Plan B; here we assert the pure
+// resolver contract the middleware relies on.
+beforeEach(() => {});
 
-beforeEach(() => {
-  __clearPermCacheForTesting();
-});
-
-describe('resolvePermissions', () => {
-  it('returns all permissions for admin (bypasses DB)', async () => {
-    const db = buildMockDb([]);
-    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'admin', []);
-    // admin sentinel: always returns true for has()
-    expect(result.has('contacts:delete')).toBe(true);
-    expect(result.has('anything:random')).toBe(true);
+describe('resolver contract used by permission middleware', () => {
+  const moduleOf = (p: string) => (p.startsWith('contacts') ? 'crm' : null);
+  it('superuser bypasses everything', () => {
+    const r = resolveRolePermissions({
+      activeRoleIds: ['a'], edges: [], grantsAllRoleIds: new Set(['a']),
+      rolePermissions: new Map(), enabledModuleIds: new Set(), moduleOf,
+    });
+    expect(r.superuser).toBe(true);
   });
-
-  it('returns role-default permissions for member', async () => {
-    const db = buildMockDb([]);
-    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['crm', 'infra', 'analytics', 'activity']);
-    expect(result.has('contacts:view')).toBe(true);
-    expect(result.has('contacts:create')).toBe(true);
-    expect(result.has('contacts:delete')).toBe(false);
-  });
-
-  it('applies granted override', async () => {
-    const db = buildMockDb([{ permission: 'contacts:delete', granted: true }]);
-    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['crm', 'infra', 'analytics', 'activity']);
-    expect(result.has('contacts:delete')).toBe(true);
-  });
-
-  it('applies denied override', async () => {
-    const db = buildMockDb([{ permission: 'contacts:create', granted: false }]);
-    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['crm', 'infra', 'analytics', 'activity']);
-    expect(result.has('contacts:create')).toBe(false);
-  });
-
-  it('blocks permissions from disabled modules', async () => {
-    const db = buildMockDb([]);
-    // crm module disabled — only infra enabled
-    const result = await resolvePermissions(db, 'user-1', 'ws-1', 'member', ['infra']);
-    expect(result.has('contacts:view')).toBe(false);
-    expect(result.has('websites:view')).toBe(true);
+  it('member gets only granted role perms in enabled modules', () => {
+    const r = resolveRolePermissions({
+      activeRoleIds: ['m'], edges: [], grantsAllRoleIds: new Set(),
+      rolePermissions: new Map([['m', ['contacts:view']]]),
+      enabledModuleIds: new Set(['crm']), moduleOf,
+    });
+    expect(r.permissions.has('contacts:view')).toBe(true);
+    expect(r.permissions.has('contacts:delete')).toBe(false);
   });
 });

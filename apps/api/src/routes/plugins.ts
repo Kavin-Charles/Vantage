@@ -224,9 +224,11 @@ async function notifyAdmins(
   title: string,
   body: string,
 ): Promise<void> {
-  const admins = await db.selectFrom('users').select('id')
-    .where('workspace_id', '=', workspaceId)
-    .where('role', '=', 'admin')
+  const admins = await db.selectFrom('user_roles as ur')
+    .innerJoin('roles as r', 'r.id', 'ur.role_id')
+    .select('ur.user_id as id')
+    .where('ur.workspace_id', '=', workspaceId)
+    .where('r.grants_all', '=', true)
     .execute();
   await Promise.allSettled(admins.map((a) =>
     (db as any).insertInto('plugin_notifications').values({

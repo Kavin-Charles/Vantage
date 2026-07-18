@@ -183,7 +183,7 @@ export async function handleSftpUpgrade(
   }
 
   const user = await db.selectFrom('users').where('id', '=', payload.sub)
-    .select(['id', 'workspace_id', 'role']).executeTakeFirst();
+    .select(['id', 'workspace_id']).executeTakeFirst();
   if (!user) { ws.close(4001, 'Unauthorized'); return; }
 
   const workspace = await db.selectFrom('workspaces').where('id', '=', user.workspace_id)

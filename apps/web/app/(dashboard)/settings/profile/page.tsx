@@ -83,7 +83,7 @@ export default function ProfilePage() {
         <div style={{ display: 'grid', gap: 12, marginTop: 20 }}>
           {[
             { label: 'Email', value: user.email },
-            { label: 'Role', value: user.role },
+            { label: 'Role', value: user.isAdmin ? 'Admin' : 'Member' },
             { label: 'User ID', value: user.id },
           ].map(({ label, value }) => (
             <div

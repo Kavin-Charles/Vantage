@@ -86,3 +86,22 @@ export async function assignGroups(id: string, group_ids: string[], token: strin
     token,
   });
 }
+
+export interface DashboardGroup {
+  id: string;
+  name: string;
+  color: string;
+  dashboard_id: string | null;
+}
+
+export interface GroupAssignments {
+  groups: DashboardGroup[];
+  dashboards: { id: string; name: string }[];
+}
+
+export async function listGroupAssignments(token: string): Promise<GroupAssignments> {
+  const res = await apiFetch<{ data: GroupAssignments; error: null }>('/api/dashboards/group-assignments', {
+    token,
+  });
+  return res.data ?? { groups: [], dashboards: [] };
+}

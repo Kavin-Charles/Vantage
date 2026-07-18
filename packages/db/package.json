@@ -8,9 +8,11 @@
     "build": "tsc && tsc -p tsconfig.migrations.json",
     "dev": "tsc --watch",
     "db:migrate": "tsx --env-file=../../apps/api/.env src/migrate.ts",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@vencore/modules": "workspace:*",
     "@vencore/types": "workspace:*",
     "kysely": "^0.27.0",
     "pg": "^8.11.0"
@@ -18,6 +20,7 @@
   "devDependencies": {
     "@types/pg": "^8.11.0",
     "tsx": "^4.7.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^1.0.0"
   }
 }

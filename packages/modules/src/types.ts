@@ -4,6 +4,7 @@ export interface PermissionDef {
   key: string;
   label: string;
   defaultRoles: UserRole[];
+  group?: string; // references a ModuleDefinition.permissionGroups[].id; undefined => "General"
 }
 
 export interface NavItem {
@@ -19,6 +20,7 @@ export interface ModuleDefinition {
   icon: string;
   defaultEnabled: boolean;
   permissions: PermissionDef[];
+  permissionGroups?: { id: string; label: string }[];
   nav: NavItem[];
   apiPrefixes: string[];
   workers: string[];

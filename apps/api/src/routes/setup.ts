@@ -9,6 +9,8 @@ import { smtpSchema } from '@vencore/config';
 import { encryptSmtpPassword } from '../lib/setup-crypto';
 import { isConfigured } from '../lib/setup-db';
 import { seedWorkspaceModules } from '../lib/seed-modules';
+import { seedWorkspaceRoles } from '../lib/seed-roles';
+import { assignRole } from '../lib/role-assignment';
 import { logger } from '../lib/logger';
 
 // In-memory rate limiter: IP → timestamps of recent requests
@@ -106,17 +108,22 @@ export function createSetupRouter(db: Kysely<Database>): Router {
         // Seed module toggles — respect installer feature selections
         await seedWorkspaceModules(trx, workspace.id, features);
 
+        // Seed system roles (Administrator/Member)
+        const { adminRoleId } = await seedWorkspaceRoles(trx, workspace.id);
+
         // Create admin user
-        await trx
+        const adminUser = await trx
           .insertInto('users')
           .values({
             workspace_id: workspace.id,
             name: admin.name,
             email: admin.email,
             password_hash: passwordHash,
-            role: 'admin',
           })
-          .execute();
+          .returning(['id'])
+          .executeTakeFirstOrThrow();
+
+        await assignRole(trx, workspace.id, adminUser.id, adminRoleId);
 
         // Encrypt SMTP password if provided
         let smtpToStore = smtp ? { ...smtp } as Record<string, unknown> : null;

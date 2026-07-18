@@ -58,8 +58,8 @@ export function createHooksRouter(db: Kysely<Database>): Router {
   // GET /api/settings/hooks/:moduleId
   router.get('/hooks/:moduleId', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
         return;
       }
@@ -170,8 +170,8 @@ export function createHooksRouter(db: Kysely<Database>): Router {
   // PATCH /api/settings/hooks/:moduleId/:featureId
   router.patch('/hooks/:moduleId/:featureId', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
         return;
       }
@@ -267,8 +267,8 @@ export function createHooksRouter(db: Kysely<Database>): Router {
   // Hook features declared by installed plugins — admin can toggle + configure.
   router.get('/plugin-hooks', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
         return;
       }
@@ -315,8 +315,8 @@ export function createHooksRouter(db: Kysely<Database>): Router {
   // PATCH /api/settings/plugin-hooks/:pluginId/:featureId
   router.patch('/plugin-hooks/:pluginId/:featureId', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
         return;
       }
@@ -369,8 +369,8 @@ export function createHooksRouter(db: Kysely<Database>): Router {
   // GET /api/settings/providers
   router.get('/providers', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
         return;
       }
@@ -391,8 +391,8 @@ export function createHooksRouter(db: Kysely<Database>): Router {
   // POST /api/settings/providers
   router.post('/providers', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
         return;
       }
@@ -432,8 +432,8 @@ export function createHooksRouter(db: Kysely<Database>): Router {
   // DELETE /api/settings/providers/:id
   router.delete('/providers/:id', async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
-      if (user.role !== 'admin') {
+      const { workspace, isAdmin, permissions } = req as unknown as AuthenticatedRequest;
+      if (!isAdmin && !permissions.has('integrations:manage')) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
         return;
       }

@@ -6,6 +6,8 @@ import type { VencoreConfig } from '@vencore/config';
 import { logger } from './logger';
 import { seedDefaultPipeline } from './seed-pipeline';
 import { seedWorkspaceModules } from './seed-modules';
+import { seedWorkspaceRoles } from './seed-roles';
+import { assignRole } from './role-assignment';
 
 export async function seedOnFirstBoot(
   db: Kysely<Database>,
@@ -32,6 +34,9 @@ export async function seedOnFirstBoot(
   // Seed module toggles (idempotent)
   await seedWorkspaceModules(db, workspace.id);
 
+  // Seed system roles (idempotent)
+  const { adminRoleId } = await seedWorkspaceRoles(db, workspace.id);
+
   // Default pipeline
   await seedDefaultPipeline(db, workspace.id);
 
@@ -52,16 +57,18 @@ export async function seedOnFirstBoot(
     const hash = await bcrypt.hash(password, 12);
     const adminEmail = `admin@${config.app.domain ?? 'localhost'}`;
 
-    await db
+    const adminUser = await db
       .insertInto('users')
       .values({
         workspace_id: workspace.id,
         name: 'Admin',
         email: adminEmail,
         password_hash: hash,
-        role: 'admin',
       })
-      .execute();
+      .returning(['id'])
+      .executeTakeFirstOrThrow();
+
+    await assignRole(db, workspace.id, adminUser.id, adminRoleId);
 
     console.log(`\n[VENCORE] First boot admin: ${adminEmail} / ${password}\n`);
     logger.info({ email: adminEmail }, '[Vencore] Admin user seeded');

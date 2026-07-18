@@ -21,7 +21,7 @@ import type { ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu
 
 export default function TasksPage() {
   const { user: authUser } = useAuth()
-  const isAdmin = authUser?.role === 'admin'
+  const isAdmin = authUser?.isAdmin ?? false
 
   const [filters, setFilters] = useState<UnifiedTasksFilters>({ status: 'todo' })
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
