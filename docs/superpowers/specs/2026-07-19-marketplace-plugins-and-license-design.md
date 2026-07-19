@@ -13,8 +13,9 @@ licensing work end-to-end:
 - Licenses bind per workspace and are re-checked periodically; plugins whose license
   becomes invalid are auto-disabled.
 
-All changes are **Vencore-side only**. The `vencore-platform` repo is the source of
-truth for the marketplace/license contract and is not modified.
+Changes span **both repos**. The `vencore-platform` repo remains the source of truth
+for the marketplace/license contract; Vencore aligns to it, and the platform gets four
+targeted hardening fixes (see "Platform-side improvements").
 
 ## Context: what already exists
 
@@ -33,7 +34,7 @@ The plumbing is largely wired but broken by contract drift with the platform's c
 - `workspace_plugins` columns (migration `20260610_002`): `pricing_type`, `license_key`,
   `source`, `platform_plugin_id`, plus base `enabled`.
 
-**Platform (reference, not modified):**
+**Platform (contract source of truth):**
 - `GET /v1/plugins` — list approved plugins (returns `id`, `slug`, pricing, etc.).
 - `GET /v1/plugins/:slug` — plugin detail **by slug**, includes `download_url`.
 - `POST /v1/licenses/validate` — binds a key to an `instance_id`, returns state.
@@ -99,8 +100,9 @@ The plumbing is largely wired but broken by contract drift with the platform's c
 - Surface the platform's error codes to the client: `EXPIRED` (403), `REVOKED` (403),
   `BOUND_ELSEWHERE` (409), `NOT_FOUND` (404), plus existing `LICENSE_REQUIRED` (402).
 
-**Deactivate** (disable-toggle site): unchanged — `deactivate` only needs
-`{plugin_id, key}`.
+**Deactivate** (disable-toggle site): send `{ plugin_id, key, instance_id:
+workspace.id }` — required once the platform's secure-deactivate change lands (only the
+bound instance may unbind).
 
 ### 2. Instance identity
 
@@ -147,6 +149,56 @@ from the workspace record for platform-side admin visibility.
 - Set `MARKETPLACE_API_URL` and `MARKETPLACE_SERVICE_TOKEN` (already in `.env.example`).
   Empty `MARKETPLACE_API_URL` keeps the marketplace list empty and the cron a no-op.
 
+## Platform-side improvements (`vencore-platform`)
+
+Four targeted fixes to defects found during research. A, C, D are fully
+backward-compatible. B makes `instance_id` required on deactivate, so **deploy order
+matters**: ship the Vencore client change (which adds `instance_id` to the deactivate
+payload — an unknown key old platforms simply strip) before or together with the
+platform change.
+
+### A. `GET /v1/plugins/:idOrSlug` — accept id or slug
+
+`apps/api/src/routes/v1/plugins.ts`: if the param parses as a UUID, match on `p.id`,
+otherwise on `p.slug` (both still `where status = 'approved'`). Removes the 404 drift
+class entirely; Vencore's slug fix becomes belt-and-braces.
+
+### B. Secure `/v1/licenses/deactivate`
+
+`apps/api/src/routes/v1/licenses.ts`: `DeactivateBody` gains required
+`instance_id: uuid`. Rules:
+
+- Key not found → 404 (unchanged).
+- Key unbound (`instance_id` null) → no-op success (`{ deactivated: true }`).
+- Key bound to the caller's `instance_id` → unbind (unchanged behavior).
+- Key bound to a **different** instance → 409 `BOUND_ELSEWHERE`.
+
+Closes the hole where any service-token holder could unbind a license bound to another
+instance. (The service token already gates the route; this adds per-instance
+authorization.)
+
+### C. `/v1/licenses/check` lazily persists state transitions
+
+Today `validate` persists an observed `active → grace`/`expired` transition but `check`
+only computes it — the DB drifts until the sweep cron runs. Change: after
+`resolveState`, if `state.status !== record.status`, persist `status` + `grace_until`
+and log a license event (`expired` on expiry), mirroring the `validate` code path.
+Reuse one helper for both routes.
+
+### D. Last-checked telemetry
+
+New migration (`010_license_last_checked.ts`): add `last_checked_at timestamptz`
+nullable to `license_keys`. `/check` sets it (now) for every key it finds whose bound
+`instance_id` matches the caller (or is unbound); `validate` sets it too. Expose the
+column in `GET /admin/licenses` so admins can see which instances are actually polling.
+
+### Platform testing
+
+- Unit: id-or-slug param resolution; deactivate matrix (unbound / same instance /
+  other instance); check-persist transition writes; `last_checked_at` updated on
+  validate and check.
+- Existing `license-state.test.ts` / `license-sweep.test.ts` untouched and green.
+
 ## Testing
 
 - **Unit:** validate payload builder includes `instance_id`; cron re-check disable
@@ -161,7 +213,6 @@ from the workspace record for platform-side admin visibility.
 
 ## Out of scope
 
-- Modifying `vencore-platform`.
 - Revoke callbacks / a Vencore webhook endpoint (poll fallback is used instead).
 - Free-plugin flow changes; plugin sandbox/runtime changes.
 - Purchasing / subscription management inside Vencore (buyers get keys from the
@@ -178,3 +229,13 @@ from the workspace record for platform-side admin visibility.
 - `apps/web/app/(dashboard)/settings/plugins/page.tsx` — slug install, status badge,
   error messages.
 - Tests under `apps/api/src/__tests__/`.
+
+**vencore-platform:**
+
+- `apps/api/src/routes/v1/plugins.ts` — id-or-slug lookup.
+- `apps/api/src/routes/v1/licenses.ts` — secure deactivate, check persist,
+  `last_checked_at`, shared transition-persist helper.
+- `apps/api/src/db/migrations/010_license_last_checked.ts` — new column.
+- `apps/api/src/db/types.ts` — column type.
+- `apps/api/src/routes/admin/licenses.ts` — expose `last_checked_at`.
+- Tests under `apps/api/src/lib/__tests__/` / route tests.
