@@ -17,6 +17,7 @@ import { encryptSettingValue, isEncryptedValue, decryptSettingValue } from '../l
 import { logger } from '../lib/logger';
 import { semverValid, semverValidRange } from '../lib/version';
 import { checkVersionRules } from '../lib/plugin-version-rules';
+import { buildLicenseValidatePayload, buildLicenseDeactivatePayload } from '../lib/marketplace-license';
 
 // ── Esbuild Global Shim Plugin ────────────────────────────────────────────────
 const globalExternalsPlugin: esbuild.Plugin = {
@@ -384,11 +385,11 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
    * Downloads plugin from marketplace and installs it.
    * Paid plugins require a license_key in the body.
    */
-  router.post('/marketplace/install/:platformPluginId', requireAdmin, async (req, res, next) => {
+  router.post('/marketplace/install/:slug', requireAdmin, async (req, res, next) => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vencore-plugin-'));
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      const { platformPluginId } = req.params as { platformPluginId: string };
+      const { slug } = req.params as { slug: string };
       const { license_key } = req.body as { license_key?: string };
 
       const marketplaceUrl = process.env['MARKETPLACE_API_URL'] ?? '';
@@ -397,7 +398,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
       }
 
       const svcToken = process.env['MARKETPLACE_SERVICE_TOKEN'] ?? '';
-      const r = await fetch(`${marketplaceUrl}/v1/plugins/${platformPluginId}`, {
+      const r = await fetch(`${marketplaceUrl}/v1/plugins/${slug}`, {
         headers: { 'x-service-token': svcToken },
       });
       if (!r.ok) {
@@ -412,7 +413,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         const licRes = await fetch(`${marketplaceUrl}/v1/licenses/validate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-service-token': svcToken },
-          body: JSON.stringify({ plugin_id: mp.id, workspace_id: workspace.id, key: license_key }),
+          body: JSON.stringify(buildLicenseValidatePayload(workspace, mp.id, license_key)),
         });
         const licJson = await (licRes.json() as Promise<{ data: { valid: boolean } | null; error: { code: string; message: string } | null }>);
         if (licJson.error) {
@@ -496,6 +497,8 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           enabled: isPaid ? true : true,
           pricing_type: mp.pricing_type,
           license_key: isPaid ? (license_key ?? null) : null,
+          license_status: isPaid ? 'active' as const : null,
+          license_checked_at: isPaid ? new Date() : null,
           source: 'marketplace',
           platform_plugin_id: mp.id,
         })
@@ -507,6 +510,8 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
             enabled: true,
             pricing_type: mp.pricing_type,
             license_key: isPaid ? (license_key ?? null) : null,
+            license_status: isPaid ? 'active' as const : null,
+            license_checked_at: isPaid ? new Date() : null,
             source: 'marketplace',
             platform_plugin_id: mp.id,
           })
@@ -898,7 +903,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
           const licRes = await fetch(`${marketplaceUrl}/v1/licenses/validate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'x-service-token': svcTok },
-            body: JSON.stringify({ plugin_id: existing.platform_plugin_id, workspace_id: workspace.id, key }),
+            body: JSON.stringify(buildLicenseValidatePayload(workspace, existing.platform_plugin_id, key)),
           });
           const licJson = await (licRes.json() as Promise<{ data: { valid: boolean } | null; error: { code: string; message: string } | null }>);
           if (licJson.error) {
@@ -907,7 +912,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         }
         const plugin = await db
           .updateTable('workspace_plugins')
-          .set({ enabled: true, license_key: key })
+          .set({ enabled: true, license_key: key, license_status: 'active', license_checked_at: new Date() })
           .where('id', '=', req.params['id']!)
           .where('workspace_id', '=', workspace.id)
           .returningAll()
@@ -920,7 +925,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
         await fetch(`${marketplaceUrl}/v1/licenses/deactivate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-service-token': svcTok },
-          body: JSON.stringify({ plugin_id: existing.platform_plugin_id, workspace_id: workspace.id, key: existing.license_key }),
+          body: JSON.stringify(buildLicenseDeactivatePayload(workspace.id, existing.platform_plugin_id, existing.license_key)),
         }).catch(() => { /* non-fatal — key stays in DB, platform may already be deactivated */ });
       }
 
