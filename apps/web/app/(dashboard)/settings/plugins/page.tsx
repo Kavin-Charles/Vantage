@@ -18,6 +18,7 @@ interface WorkspacePlugin {
   license_key: string | null;
   source: 'local' | 'marketplace';
   platform_plugin_id: string | null;
+  license_status: 'active' | 'grace' | 'expired' | 'revoked' | 'bound_elsewhere' | 'not_found' | null;
 }
 
 interface MarketplacePlugin {
@@ -43,8 +44,29 @@ function StarIcon() {
   );
 }
 
+const LICENSE_BADGE: Record<string, { label: string; fg: string; bg: string }> = {
+  grace: { label: 'License expiring — renew soon', fg: 'var(--amber)', bg: 'var(--amber-bg)' },
+  expired: { label: 'License expired', fg: 'var(--red)', bg: 'var(--red-bg)' },
+  revoked: { label: 'License revoked', fg: 'var(--red)', bg: 'var(--red-bg)' },
+  bound_elsewhere: { label: 'License in use elsewhere', fg: 'var(--red)', bg: 'var(--red-bg)' },
+  not_found: { label: 'License not found', fg: 'var(--red)', bg: 'var(--red-bg)' },
+};
+
+function LicenseBadge({ status }: { status: string | null }) {
+  if (!status || !(status in LICENSE_BADGE)) return null;
+  const b = LICENSE_BADGE[status]!;
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 999,
+      color: b.fg, background: b.bg, whiteSpace: 'nowrap',
+    }}>
+      {b.label}
+    </span>
+  );
+}
+
 function LicenseModal({ plugin, onClose, onActivate }: {
-  plugin: { id: string; name: string; platform_plugin_id: string | null };
+  plugin: { name: string };
   onClose: () => void;
   onActivate: (key: string) => Promise<void>;
 }) {
@@ -134,6 +156,7 @@ export default function PluginsSettingsPage() {
   const [removing, setRemoving] = useState<string | null>(null);
   const [installing, setInstalling] = useState<string | null>(null);
   const [licenseTarget, setLicenseTarget] = useState<WorkspacePlugin | null>(null);
+  const [installTarget, setInstallTarget] = useState<MarketplacePlugin | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
@@ -262,15 +285,8 @@ export default function PluginsSettingsPage() {
     }
   }
 
-  async function installFromMarketplace(mp: MarketplacePlugin, licenseKey?: string) {
-    if (mp.pricing_type === 'paid' && !licenseKey) {
-      // We can't show LicenseModal here directly since we don't have a WorkspacePlugin yet.
-      // Use a simple prompt for now — the modal will show after install attempt.
-      const key = window.prompt(`Enter license key for "${mp.name}":`)?.trim();
-      if (!key) return;
-      return installFromMarketplace(mp, key);
-    }
-
+  /** Runs the install request. Throws on failure so modal callers can show the error inline. */
+  async function performInstall(mp: MarketplacePlugin, licenseKey?: string): Promise<void> {
     setInstalling(mp.id);
     setError(null);
     setWarnings([]);
@@ -278,7 +294,7 @@ export default function PluginsSettingsPage() {
       const body: Record<string, unknown> = {};
       if (licenseKey) body['license_key'] = licenseKey;
 
-      const res = await fetch(`${apiUrl}/api/plugins/marketplace/install/${mp.id}`, {
+      const res = await fetch(`${apiUrl}/api/plugins/marketplace/install/${mp.slug}`, {
         method: 'POST',
         headers: { ...await authHeaders(), 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -295,10 +311,20 @@ export default function PluginsSettingsPage() {
       // Refresh the sidebar nav / plugin runtime (they read the ['plugins'] query)
       await queryClient.invalidateQueries({ queryKey: ['plugins'] });
       setMarketplace(prev => prev.map(p => p.id === mp.id ? { ...p, installed: true } : p));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Install failed');
     } finally {
       setInstalling(null);
+    }
+  }
+
+  async function installFromMarketplace(mp: MarketplacePlugin, licenseKey?: string) {
+    if (mp.pricing_type === 'paid' && !licenseKey) {
+      setInstallTarget(mp);
+      return;
+    }
+    try {
+      await performInstall(mp, licenseKey);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Install failed');
     }
   }
 
@@ -384,6 +410,7 @@ export default function PluginsSettingsPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{plugin.name}</p>
                         {plugin.pricing_type === 'paid' && <StarIcon />}
+                        {plugin.pricing_type === 'paid' && <LicenseBadge status={plugin.license_status} />}
                       </div>
                       <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text3)' }}>
                         {plugin.plugin_id} · v{plugin.version}
@@ -503,6 +530,18 @@ export default function PluginsSettingsPage() {
             </section>
           )}
         </>
+      )}
+
+      {/* License key modal — marketplace install */}
+      {installTarget && (
+        <LicenseModal
+          plugin={installTarget}
+          onClose={() => setInstallTarget(null)}
+          onActivate={async (key) => {
+            await performInstall(installTarget, key);
+            setInstallTarget(null);
+          }}
+        />
       )}
 
       {/* License key modal */}
