@@ -684,6 +684,8 @@ export interface WorkspacePluginTable {
   license_key: string | null;
   source: Generated<'local' | 'marketplace'>;
   platform_plugin_id: string | null;
+  license_status: 'active' | 'grace' | 'expired' | 'revoked' | 'bound_elsewhere' | 'not_found' | null;
+  license_checked_at: Date | null;
 }
 
 export interface PluginStorageTable {
