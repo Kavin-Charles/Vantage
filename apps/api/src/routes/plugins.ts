@@ -381,7 +381,7 @@ export function createPluginsRouter(db: Kysely<Database>): ExpressRouter {
   });
 
   /**
-   * POST /api/plugins/marketplace/install/:platformPluginId
+   * POST /api/plugins/marketplace/install/:slug
    * Downloads plugin from marketplace and installs it.
    * Paid plugins require a license_key in the body.
    */
