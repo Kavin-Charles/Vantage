@@ -18,6 +18,7 @@ interface WorkspacePlugin {
   license_key: string | null;
   source: 'local' | 'marketplace';
   platform_plugin_id: string | null;
+  license_status: 'active' | 'grace' | 'expired' | 'revoked' | 'bound_elsewhere' | 'not_found' | null;
 }
 
 interface MarketplacePlugin {
@@ -40,6 +41,27 @@ function StarIcon() {
     <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style={{ color: '#d97706', flexShrink: 0 }}>
       <path d="M6 1l1.4 2.8 3.1.45-2.25 2.2.53 3.1L6 8.1l-2.78 1.45.53-3.1L1.5 4.25l3.1-.45z" />
     </svg>
+  );
+}
+
+const LICENSE_BADGE: Record<string, { label: string; fg: string; bg: string }> = {
+  grace: { label: 'License expiring — renew soon', fg: 'var(--amber)', bg: 'var(--amber-bg)' },
+  expired: { label: 'License expired', fg: 'var(--red)', bg: 'var(--red-bg)' },
+  revoked: { label: 'License revoked', fg: 'var(--red)', bg: 'var(--red-bg)' },
+  bound_elsewhere: { label: 'License in use elsewhere', fg: 'var(--red)', bg: 'var(--red-bg)' },
+  not_found: { label: 'License not found', fg: 'var(--red)', bg: 'var(--red-bg)' },
+};
+
+function LicenseBadge({ status }: { status: string | null }) {
+  if (!status || !(status in LICENSE_BADGE)) return null;
+  const b = LICENSE_BADGE[status]!;
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 999,
+      color: b.fg, background: b.bg, whiteSpace: 'nowrap',
+    }}>
+      {b.label}
+    </span>
   );
 }
 
@@ -278,7 +300,7 @@ export default function PluginsSettingsPage() {
       const body: Record<string, unknown> = {};
       if (licenseKey) body['license_key'] = licenseKey;
 
-      const res = await fetch(`${apiUrl}/api/plugins/marketplace/install/${mp.id}`, {
+      const res = await fetch(`${apiUrl}/api/plugins/marketplace/install/${mp.slug}`, {
         method: 'POST',
         headers: { ...await authHeaders(), 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -384,6 +406,7 @@ export default function PluginsSettingsPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{plugin.name}</p>
                         {plugin.pricing_type === 'paid' && <StarIcon />}
+                        {plugin.pricing_type === 'paid' && <LicenseBadge status={plugin.license_status} />}
                       </div>
                       <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text3)' }}>
                         {plugin.plugin_id} · v{plugin.version}
