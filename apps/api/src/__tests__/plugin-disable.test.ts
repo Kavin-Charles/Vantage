@@ -14,7 +14,7 @@ function mockDb(admins: Array<Record<string, unknown>>) {
   const inserts: Array<{ table: string; values: Record<string, unknown> }> = [];
 
   const selectChain: Record<string, unknown> = {};
-  for (const f of ['select', 'where']) {
+  for (const f of ['select', 'where', 'innerJoin']) {
     selectChain[f] = vi.fn().mockReturnValue(selectChain);
   }
   selectChain['execute'] = vi.fn().mockResolvedValue(admins);
