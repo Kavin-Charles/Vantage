@@ -1,16 +1,16 @@
-# Graph Report - Vencore  (2026-07-15)
+# Graph Report - Vencore  (2026-07-16)
 
 ## Corpus Check
-- 876 files · ~774,971 words
+- 895 files · ~787,267 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 6203 nodes · 8614 edges · 825 communities (427 shown, 398 thin omitted)
-- Extraction: 98% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 114 edges (avg confidence: 0.8)
+- 6290 nodes · 8787 edges · 812 communities (416 shown, 396 thin omitted)
+- Extraction: 98% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 115 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0467ce6e`
+- Built from commit: `6f9646a5`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -436,15 +436,9 @@
 - [[_COMMUNITY_Community 484|Community 484]]
 - [[_COMMUNITY_Add new resource pattern (migrate-types-db-route-ui)|Add new resource pattern (migrate-types-db-route-ui)]]
 - [[_COMMUNITY_DashboardGrid — responsive dragresize widget grid using react-grid-layout|DashboardGrid — responsive drag/resize widget grid using react-grid-layout]]
-- [[_COMMUNITY_ServerDetailPage|ServerDetailPage]]
-- [[_COMMUNITY_ServersListPage (dashboard route)|ServersListPage (dashboard route)]]
-- [[_COMMUNITY_GroupsPage|GroupsPage]]
 - [[_COMMUNITY_Community 490|Community 490]]
-- [[_COMMUNITY_Community 491|Community 491]]
 - [[_COMMUNITY_PluginsSettingsPage|PluginsSettingsPage]]
 - [[_COMMUNITY_TeamPage|TeamPage]]
-- [[_COMMUNITY_UsersPage|UsersPage]]
-- [[_COMMUNITY_Community 496|Community 496]]
 - [[_COMMUNITY_client_portal_sessions|client_portal_sessions]]
 - [[_COMMUNITY_deals|deals]]
 - [[_COMMUNITY_milestones|milestones]]
@@ -555,10 +549,7 @@
 - [[_COMMUNITY_setupDb (function)|setupDb (function)]]
 - [[_COMMUNITY_BLOCKED_CIDRS_V4 (constant)|BLOCKED_CIDRS_V4 (constant)]]
 - [[_COMMUNITY_ssrfGuard (middleware function)|ssrfGuard (middleware function)]]
-- [[_COMMUNITY_Community 608|Community 608]]
 - [[_COMMUNITY_20240102_002_infra_monitoring.d.ts|20240102_002_infra_monitoring.d.ts]]
-- [[_COMMUNITY_Community 613|Community 613]]
-- [[_COMMUNITY_Community 616|Community 616]]
 - [[_COMMUNITY_Community 617|Community 617]]
 - [[_COMMUNITY_@vencoreconfig|@vencore/config]]
 - [[_COMMUNITY_@vencoredb|@vencore/db]]
@@ -704,18 +695,13 @@
 - [[_COMMUNITY_Community 776|Community 776]]
 - [[_COMMUNITY_Community 777|Community 777]]
 - [[_COMMUNITY_Community 778|Community 778]]
-- [[_COMMUNITY_Community 792|Community 792]]
-- [[_COMMUNITY_Community 806|Community 806]]
 - [[_COMMUNITY_Community 807|Community 807]]
-- [[_COMMUNITY_Community 808|Community 808]]
-- [[_COMMUNITY_Community 810|Community 810]]
 - [[_COMMUNITY_Community 811|Community 811]]
 - [[_COMMUNITY_Community 812|Community 812]]
+- [[_COMMUNITY_Community 814|Community 814]]
 - [[_COMMUNITY_Community 815|Community 815]]
 - [[_COMMUNITY_Community 818|Community 818]]
 - [[_COMMUNITY_Community 819|Community 819]]
-- [[_COMMUNITY_Community 820|Community 820]]
-- [[_COMMUNITY_Community 822|Community 822]]
 - [[_COMMUNITY_Community 823|Community 823]]
 - [[_COMMUNITY_Community 824|Community 824]]
 - [[_COMMUNITY_Community 826|Community 826]]
@@ -725,11 +711,11 @@
 - [[_COMMUNITY_Community 830|Community 830]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `useApiToken()` - 268 edges
+1. `useApiToken()` - 283 edges
 2. `apiFetch()` - 77 edges
 3. `useContextMenu()` - 71 edges
 4. `AuthenticatedRequest` - 70 edges
-5. `useAuth()` - 49 edges
+5. `useAuth()` - 53 edges
 6. `Icon()` - 42 edges
 7. `Button()` - 37 edges
 8. `ContextMenuItem` - 35 edges
@@ -755,19 +741,19 @@
 - 1-file cycle: `apps/web/app/(dashboard)/infra/databases/[id]/page.tsx -> apps/web/app/(dashboard)/infra/databases/[id]/page.tsx`
 - 1-file cycle: `apps/web/modules/projects/lib/api.ts -> apps/web/modules/projects/lib/api.ts`
 
-## Communities (825 total, 398 thin omitted)
+## Communities (812 total, 396 thin omitted)
 
 ### Community 0 - "Database Schema Layer"
 Cohesion: 0.01
 Nodes (332): Activity, ActivityTable, Alert, AlertTable, AlertThreshold, AlertThresholdTable, AlertThresholdUpdate, ApiKey (+324 more)
 
 ### Community 1 - "API Server Core"
-Cohesion: 0.10
-Nodes (26): GroupHeader(), NAV_ITEMS, NavItemDef, NavLink(), Sidebar(), WorkspacePlugin, addGroupBelow(), collapseKey() (+18 more)
+Cohesion: 0.11
+Nodes (24): GroupHeader(), NAV_ITEMS, NavItemDef, NavLink(), Sidebar(), WorkspacePlugin, addGroupBelow(), collapseKey() (+16 more)
 
 ### Community 3 - "CRM API Routes"
-Cohesion: 0.10
-Nodes (16): getDefaultRoleId(), acceptInviteSchema, createInviteSchema, createInvitesRouter(), directCreateSchema, resolveRoleIds(), RoleResolution, createUserSchema (+8 more)
+Cohesion: 0.17
+Nodes (12): fmt(), KpiCards(), Props, ChartPoint, MetricChart(), niceMax(), PAD, Props (+4 more)
 
 ### Community 5 - "Shared Platform Types"
 Cohesion: 0.03
@@ -782,12 +768,12 @@ Cohesion: 0.07
 Nodes (29): 10. Implementation phases, 11. Testing, 12. Rollout / risk, 13. Explicitly out of scope, 1. Problem, 2. Current-state facts (grounding), 3. Target model — RBAC3, 4.1 Tables (rename `groups` → `roles` **in place** — preserves FK data, no copy step) (+21 more)
 
 ### Community 10 - "CRM UI Pages"
-Cohesion: 0.19
-Nodes (16): EVENT_LABELS, ItemActivity(), Props, ItemDetail(), Tab, ActivityEntry, apiFetch(), createItem() (+8 more)
+Cohesion: 0.07
+Nodes (46): HEALTH_STYLES, LinkedProjectCard(), EVENT_LABELS, ItemActivity(), Props, ItemDetail(), Props, Tab (+38 more)
 
 ### Community 11 - "Infrastructure DB Client"
-Cohesion: 0.27
-Nodes (14): AdapterPage, applyKeyset(), builtinAdapterSupports(), HANDLERS, iso(), page(), parseCursor(), postFilter() (+6 more)
+Cohesion: 0.24
+Nodes (15): AdapterPage, applyKeyset(), builtinAdapterSupports(), countBuiltinCrm(), HANDLERS, iso(), page(), parseCursor() (+7 more)
 
 ### Community 12 - "Plugin Types SDK"
 Cohesion: 0.21
@@ -802,8 +788,8 @@ Cohesion: 0.05
 Nodes (48): Activity Data Entity, Activity Feed List, Activity Type: Call, Activity Type: Email, Activity Type: Meeting, Activity Type: Note, CRM Navigation Section, General Navigation Section (+40 more)
 
 ### Community 17 - "Mobile UI Components"
-Cohesion: 0.05
-Nodes (43): CrossModuleSettingKey, DEFAULT_CROSS_MODULE_SETTINGS, getCrossModuleSetting(), listCrossModuleSettings(), setCrossModuleSetting(), CompleteParams, maybeSpawnProjectOnDealWon(), maybeUpdateDealStageOnProjectComplete() (+35 more)
+Cohesion: 0.06
+Nodes (39): CrossModuleSettingKey, DEFAULT_CROSS_MODULE_SETTINGS, getCrossModuleSetting(), listCrossModuleSettings(), setCrossModuleSetting(), CompleteParams, maybeSpawnProjectOnDealWon(), maybeUpdateDealStageOnProjectComplete() (+31 more)
 
 ### Community 18 - "Server SSH Terminal"
 Cohesion: 0.06
@@ -815,11 +801,11 @@ Nodes (18): Backend Entry Point, Backend SDK, Bus Namespace, Construction, Core 
 
 ### Community 20 - "Web Analytics Charts"
 Cohesion: 0.04
-Nodes (53): Tab, Tab, EffectivePermissionsView(), InviteUserModal(), Props, PermissionRow(), Props, RoleBadges() (+45 more)
+Nodes (50): eyebrow, Tab, eyebrow, SkeletonRow(), ACTION_LABEL, ActivityEntry, DatabaseActivitiesTab(), DatabaseAlertsTab() (+42 more)
 
 ### Community 21 - "Installer Config Generator"
-Cohesion: 0.09
-Nodes (21): eyebrow, Alert, clearInfraDatabaseQueryHistory(), clearInfraDatabaseThresholds(), DbThresholdInput, DbThresholdsResponse, DbThresholdValues, getInfraDatabase() (+13 more)
+Cohesion: 0.13
+Nodes (11): ChannelView(), Props, Props, SearchPanel(), SearchResult, TypingIndicator(), TypingUser, TypingUser (+3 more)
 
 ### Community 22 - "Module Registry"
 Cohesion: 0.04
@@ -830,32 +816,32 @@ Cohesion: 0.18
 Nodes (13): Vencore Mobile UI Kit, Font: Bricolage Grotesque (Display), Font: IBM Plex Mono (Mono), Font: IBM Plex Sans (Body), Type Families Preview, Type Scale 10px — eyebrow label (sans 600 1.4px), Type Scale 13px — default UI, table cells, buttons, body, Type Scale 14px — body baseline (+5 more)
 
 ### Community 25 - "API Dependencies"
-Cohesion: 0.13
-Nodes (17): decryptPrivateKey(), encryptPrivateKey(), getKey(), runCommand(), sseStart(), sseWrite(), SshSessionConfig, withSshSession() (+9 more)
+Cohesion: 0.23
+Nodes (13): guardPath(), handleOp(), JwtPayload, promisifyVoid(), sftpDelete(), sftpLs(), sftpMkdir(), SftpOp (+5 more)
 
 ### Community 26 - "Web Dependencies"
-Cohesion: 0.16
-Nodes (18): Props, CreateDashboardModal(), Props, DashboardHeader(), Props, DashboardTab(), DashboardTabs(), Props (+10 more)
+Cohesion: 0.14
+Nodes (20): Props, CreateDashboardModal(), Props, DashboardHeader(), Props, DashboardTab(), DashboardTabs(), Props (+12 more)
 
 ### Community 27 - "Analytics KPI Cards"
-Cohesion: 0.06
-Nodes (26): executeActions(), initAutomationEngine(), ParsedAction, ParsedTrigger, PMEvent, PMEventEmitter, pmEvents, actionSchema (+18 more)
+Cohesion: 0.07
+Nodes (22): executeActions(), initAutomationEngine(), ParsedAction, ParsedTrigger, PMEvent, PMEventEmitter, pmEvents, actionSchema (+14 more)
 
 ### Community 30 - "Pipeline Settings UI"
 Cohesion: 0.08
 Nodes (31): ACTIVITY_MODULE, ADMIN_MODULE, ANALYTICS_MODULE, CRM_MODULE, CRM_SUBMODULE_IDS, CRM_SUBMODULES, DASHBOARD_MODULE, INFRA_MODULE (+23 more)
 
 ### Community 32 - "Automation Engine Core"
-Cohesion: 0.11
-Nodes (18): assignRole(), ALL_SUBMODULE_IDS, FEATURE_MODULE_MAP, seedWorkspaceModules(), DEFAULT_STAGES, seedDefaultPipeline(), SeededRoles, seedWorkspaceRoles() (+10 more)
+Cohesion: 0.07
+Nodes (30): assignRole(), getDefaultRoleId(), ALL_SUBMODULE_IDS, FEATURE_MODULE_MAP, seedWorkspaceModules(), DEFAULT_STAGES, seedDefaultPipeline(), SeededRoles (+22 more)
 
 ### Community 33 - "Widget Card System"
-Cohesion: 0.05
-Nodes (41): AboutPage(), AppearancePage(), ContactsTable(), Editable, NON_TEXT_INPUT_TYPES, formatDate(), HEALTH, hex2rgb() (+33 more)
+Cohesion: 0.04
+Nodes (58): AboutPage(), AppearancePage(), timeAgo(), ApiKeyTable(), Props, formatDate(), HEALTH, hex2rgb() (+50 more)
 
 ### Community 34 - "Contact CRM Drawer"
 Cohesion: 0.03
-Nodes (59): config, db, errorHandler(), createActivityRouter(), createActivitySchema, registerActivityBridgeMethods(), createAlertThresholdsRouter(), updateSchema (+51 more)
+Nodes (55): config, db, errorHandler(), createActivityRouter(), createActivitySchema, registerActivityBridgeMethods(), createAlertThresholdsRouter(), updateSchema (+47 more)
 
 ### Community 36 - "Pipeline Kanban View"
 Cohesion: 0.05
@@ -878,12 +864,12 @@ Cohesion: 0.05
 Nodes (38): 1. Data Layer, 2. API Layer, 3. List Page Revamp, 4. Detail Page Revamp, 5. Alerts Tab, 6. Activities Tab, 7. SQL Enhancements, 8. Module Hook Wiring (+30 more)
 
 ### Community 42 - "Packages Plugin Runtime Src In"
-Cohesion: 0.06
-Nodes (36): eyebrow, WidgetRow(), useServerMetrics(), AlertsTab(), ChartPoint, MetricChart(), niceMax(), PAD (+28 more)
+Cohesion: 0.11
+Nodes (18): Analytics Hub — Dynamic Cross-Module Analytics, Architecture, Builtin section registry (new), Components (files), CRM — no backend change, Data / API, Decisions (locked during brainstorming), Error handling & edge cases (+10 more)
 
 ### Community 43 - "Apps Web Modules Pipeline Page"
-Cohesion: 0.19
-Nodes (10): AlertInfo, sendAlertEmail(), AgentRequest, createRequireAgentToken(), createAgentRouter(), createDeploymentSchema, dbCheckSchema, lastBroadcastAt (+2 more)
+Cohesion: 0.09
+Nodes (16): notify(), NotifyParams, expo, PushPreferences, sendPush(), bulkUpdateSchema, createMyTasksRouter(), createProjectTasksRouter() (+8 more)
 
 ### Community 44 - "Components Contactswidget"
 Cohesion: 0.05
@@ -894,40 +880,40 @@ Cohesion: 0.07
 Nodes (28): Activity, Alert, API Route Structure, Codebase Navigation — graphify, Coding Conventions, Company, Contact, Current State & Priorities (+20 more)
 
 ### Community 46 - "Lib Csv Csvescape"
-Cohesion: 0.16
-Nodes (14): checkRecordTypePermission(), CheckRecordTypePermissionArgs, OP_COLUMN, RecordTypeOp, createRequireAuth(), __clearPermCacheForTesting(), getEnabledModuleIds(), permCache (+6 more)
+Cohesion: 0.13
+Nodes (18): checkRecordTypePermission(), CheckRecordTypePermissionArgs, OP_COLUMN, RecordTypeOp, createRequireAuth(), __clearPermCacheForTesting(), getEnabledModuleIds(), permCache (+10 more)
 
 ### Community 47 - "Worker Package"
 Cohesion: 0.06
 Nodes (34): dependencies, next, @next/env, react, react-dom, react-grid-layout, react-redux, @reduxjs/toolkit (+26 more)
 
 ### Community 50 - "Mobile App"
-Cohesion: 0.13
-Nodes (14): CsvImportExport(), Props, downloadCSV(), parseCSV(), parseCSVRow(), splitCSVRows(), ALERT_BG, ALERT_COLOR (+6 more)
+Cohesion: 0.15
+Nodes (9): Notification, NotificationBell(), PAGE_TITLES, Topbar(), Filter, FILTER_LABELS, ProjectsPage(), PluginSlugPage() (+1 more)
 
 ### Community 52 - "Components Pipelinekanban Pipe"
-Cohesion: 0.10
-Nodes (24): fmt(), KpiCards(), Props, PipelineChart(), Props, eyebrow, Props, RepLeaderboard() (+16 more)
+Cohesion: 0.16
+Nodes (14): AnalyticsSectionProps, getInfraAnalytics(), getPmAnalytics(), getRevenue(), CrmOverviewTile(), fmtMoney(), card, InfraAnalyticsSection() (+6 more)
 
 ### Community 54 - "Lib Auto Number"
-Cohesion: 0.13
-Nodes (15): eyebrow, DatabaseCard(), SkeletonRow(), createInfraDatabase(), deleteInfraDatabase(), getInfraDatabaseConnectionString(), testInfraDatabaseConnection(), ALL_STATUSES (+7 more)
+Cohesion: 0.02
+Nodes (75): Tab, api, ConstraintSetEditor(), Candidate, DataProvidersSection(), ProviderGroup, EffectivePermissionsView(), CompatibleProvider (+67 more)
 
 ### Community 55 - "Lib Calendar"
 Cohesion: 0.06
 Nodes (31): 1.1 Module Registry, 1.2 ActivityType Additions, 1.3 logActivity Wiring, 1.4 Alert Wiring, 1.5 Notification Helper, 1.6 ProjectsWidget, 1.7 Animation Baseline, 1.8 Files (PR1) (+23 more)
 
 ### Community 56 - "Lib Item Groups"
-Cohesion: 0.12
-Nodes (25): Tab, PipelineConfigPage(), TABS, apiFetch(), createField(), createPipeline(), createStage(), deleteField() (+17 more)
+Cohesion: 0.04
+Nodes (63): generateMetadata(), getBranding(), ibmPlexMono, ibmPlexSans, Tab, ActiveRoleSwitcher(), PendingProviderBanner(), ProviderGroup (+55 more)
 
 ### Community 57 - "Lib Ssh Crypto"
 Cohesion: 0.17
 Nodes (18): ApiKeyRequest, createRequireApiKey(), requireScope(), createSchema, createV1CompaniesRouter(), listSchema, updateSchema, createV1ContactsRouter() (+10 more)
 
 ### Community 58 - "Concept Artifacts Persistence"
-Cohesion: 0.12
-Nodes (36): candidatesForGroup(), validateHubDeclarations(), countBuiltinCrm(), CONTRACT_EVENT_ALIASES, ContractAction, emitContractEvent(), expandListenTopics(), CONTRACT_GROUPS (+28 more)
+Cohesion: 0.09
+Nodes (46): candidatesForGroup(), validateHubDeclarations(), CONTRACT_EVENT_ALIASES, ContractAction, emitContractEvent(), expandListenTopics(), CONTRACT_GROUPS, ContractDef (+38 more)
 
 ### Community 59 - "Jobs Alert Eval"
 Cohesion: 0.07
@@ -938,8 +924,8 @@ Cohesion: 0.11
 Nodes (15): main(), FieldDef, FIELDS, main(), main(), DESIRED, main(), main() (+7 more)
 
 ### Community 61 - "Agent Package"
-Cohesion: 0.06
-Nodes (27): timeAgo(), ModuleGuard(), ModuleGuardProps, Notification, NotificationBell(), PAGE_TITLES, Topbar(), SUB_MODULE_BY_SEGMENT (+19 more)
+Cohesion: 0.04
+Nodes (53): Tab, eyebrow, WidgetRow(), Props, SshTerminal(), ModuleProvider(), ContextValue, LiveAlertEvent (+45 more)
 
 ### Community 62 - "Components Templatefieldmapper"
 Cohesion: 0.09
@@ -951,7 +937,7 @@ Nodes (24): 1. Navigation, 2. API Client Update, 3. TaskCreateModal, 4. AvatarGr
 
 ### Community 65 - "Web Tsconfig"
 Cohesion: 0.15
-Nodes (14): BridgeHandlerDef, BridgeHandlerFn, BridgeRegistry, BridgeContext, DB, dispatchBridgeCall(), BridgeCall, BridgeResult (+6 more)
+Nodes (13): BridgeHandlerDef, BridgeHandlerFn, BridgeRegistry, BridgeContext, DB, dispatchBridgeCall(), BridgeCall, BridgeResult (+5 more)
 
 ### Community 66 - "Components Alertbar"
 Cohesion: 0.08
@@ -962,8 +948,8 @@ Cohesion: 0.23
 Nodes (13): getPluginRouter(), invalidatePlugin(), getRunnerPath(), getSandboxRouter(), isUsingTsx(), killAllSandboxes(), killSandbox(), routerCache (+5 more)
 
 ### Community 69 - "Db Package"
-Cohesion: 0.07
-Nodes (37): AccountPage(), timeAgo(), eyebrow, AddTaskModal(), ContactItem, ProjectItem, Props, Source (+29 more)
+Cohesion: 0.12
+Nodes (9): ClosureEntry, computeActiveClosures(), computeAuthorizedClosures(), ConflictEntry, createRbacConstraintsRouter(), setSchema, updateSetSchema, buildDb() (+1 more)
 
 ### Community 70 - "Lib Automation Engine"
 Cohesion: 0.11
@@ -974,16 +960,16 @@ Cohesion: 0.08
 Nodes (23): Deleted Files, File Structure, Modified Files, New Files, Setup Wizard UI — Implementation Plan, Task 10: `StepDomainSsl.tsx`, Task 11: Update `StepSmtp.tsx`, Task 12: Update `StepFeatures.tsx` + `StepAdminAccount.tsx` (+15 more)
 
 ### Community 72 - "Src Config Schema"
-Cohesion: 0.07
-Nodes (23): Tab, Props, SshTerminal(), ConsoleTab(), DeploymentsTab(), STATUS_COLOR, EditServerModal(), inputStyle (+15 more)
+Cohesion: 0.11
+Nodes (13): AlertInfo, sendAlertEmail(), SseRegistry, AgentRequest, createRequireAgentToken(), createAgentRouter(), createDeploymentSchema, dbCheckSchema (+5 more)
 
 ### Community 73 - "Api Package Devdependencies"
 Cohesion: 0.22
 Nodes (8): Global Constraints, Post-merge (manual, not part of this branch), Semver Support Implementation Plan, Task 1: Semver engine (`version.ts`) + refactor update-check/system onto it, Task 2: `checkVersionRules` gate helper, Task 3: Manifest schema changes + wire gate into both install paths, Task 4: Web UI — warnings notice + version requirement display, Task 5: Release automation — GitHub Release on tag + root version
 
 ### Community 74 - "Components Notificationbell"
-Cohesion: 0.11
-Nodes (25): ActivityWidget(), TYPE_ICON, AlertsWidget(), SEVERITY_STYLE, ContactsWidget(), FILTERS, STATUS_SWATCH, STATUSES (+17 more)
+Cohesion: 0.07
+Nodes (36): ActivityWidget(), TYPE_ICON, AlertsWidget(), SEVERITY_STYLE, ContactsWidget(), FILTERS, STATUS_SWATCH, STATUSES (+28 more)
 
 ### Community 75 - "Screenshots Kit 01 All Screens"
 Cohesion: 0.20
@@ -994,8 +980,8 @@ Cohesion: 0.11
 Nodes (22): CRM Module — Contacts, Companies, Pipeline, Tasks, Activity, CRM Module, Deal: Ben Hartley — Indie License, Deal: Cobalt Systems — Enterprise, Deal: Cobalt — Infra Monitoring Add-on, Deal: Cobalt Systems — Starter, Deal: Fenix (partial, lost), Deal: Fenix Analytics — Team Plan (+14 more)
 
 ### Community 77 - "Vencore Turbo"
-Cohesion: 0.11
-Nodes (17): broadcastToChannel(), broadcastToWorkspace(), initRedisMessaging(), publishMessageEvent(), registerSocket(), registry, subscribeToChannels(), subscriptions (+9 more)
+Cohesion: 0.12
+Nodes (16): broadcastToChannel(), broadcastToWorkspace(), initRedisMessaging(), publishMessageEvent(), registerSocket(), registry, subscribeToChannels(), subscriptions (+8 more)
 
 ### Community 78 - "Apps Web Modules Activity Page"
 Cohesion: 0.09
@@ -1038,16 +1024,16 @@ Cohesion: 0.14
 Nodes (15): Nina Park — Admin User (Demo Persona), Vantage Brand — Logo and Identity (Pre-Vencore), Alert Bar Component — Critical/Warning/Info, Server Table — Status CPU MEM DISK REGION LAST PING, Servers List — Verify (v2), Mail Module — Inbox Three-Pane Layout, Mail Compose Button + Inbox/Starred/Sent/Trash Folders, Navigation Sidebar — CRM + Infrastructure + General Sections (+7 more)
 
 ### Community 89 - "Ws Sftp Session"
-Cohesion: 0.06
-Nodes (32): ApprovalRequest, ApproveTokenInfo, CreateRecurringRuleBody, CreateTaskBody, CRMCompany, CRMContact, CRMItem, crossModuleApi (+24 more)
+Cohesion: 0.12
+Nodes (17): ACTIVITY_ICONS, ActivityEntry, ActivityFeed(), card, ComboOption, CompanyCard(), ContactCard(), contactStatusStyle() (+9 more)
 
 ### Community 90 - "Api Client Package"
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+11 more)
 
 ### Community 92 - "Components Recordlist"
-Cohesion: 0.22
-Nodes (7): notify(), NotifyParams, expo, PushPreferences, sendPush(), runDueTaskNotifications(), startTaskDueNotifier()
+Cohesion: 0.30
+Nodes (10): loadPluginBackend(), loadPluginManifest(), pluginBundlePath(), pluginStorageDir(), savePluginFile(), isSandboxRunning(), start(), scheduleToMinutes() (+2 more)
 
 ### Community 93 - "Docker Compose Dev Service Db"
 Cohesion: 0.36
@@ -1066,12 +1052,12 @@ Cohesion: 0.11
 Nodes (18): Activity & Alerts Modules Implementation Plan, File Map, Self-Review Checklist (run before submitting), Task 10: Wire Auto-Emitter — Project Task Done, Task 11: Refactor alert-eval.ts to Use Services, Task 12: UI — Alerts Module Guard + Sidebar + AlertBar, Task 13: Settings Page — Module Event Settings, Task 14: Settings Page — Notification Preferences (+10 more)
 
 ### Community 101 - "Specs 2026-06-13-Project-Manag"
-Cohesion: 0.23
-Nodes (13): SetupWizard(), Props, RowStatus, Sidebar(), STEP_LABELS, getStepList(), getStepStatus(), INITIAL_STATE (+5 more)
+Cohesion: 0.15
+Nodes (19): Props, RowStatus, Sidebar(), STEP_LABELS, getStepList(), getStepStatus(), INITIAL_STATE, OPTIONAL_STEPS (+11 more)
 
 ### Community 102 - "Web Serverdetail"
-Cohesion: 0.18
-Nodes (9): SmtpConfig, EMPTY, fieldError, heading, input, Props, StepSmtp(), subtext (+1 more)
+Cohesion: 0.12
+Nodes (15): SmtpConfig, EMPTY, fieldError, heading, input, Props, StepSmtp(), subtext (+7 more)
 
 ### Community 103 - "Components Avatargroup"
 Cohesion: 0.11
@@ -1079,7 +1065,7 @@ Nodes (19): devDependencies, supertest, tsx, @types/adm-zip, @types/bcrypt, @typ
 
 ### Community 104 - "Components Recorddetail"
 Cohesion: 0.15
-Nodes (21): ItemDetailField(), Props, baseInputStyle, blurredStyle(), FieldEditor(), focusedStyle(), Props, FieldRenderer() (+13 more)
+Nodes (12): Props, View, VIEWS, ViewSwitcher(), ListProps, PipelineKanban, PipelineList, PipelineTable (+4 more)
 
 ### Community 105 - "Components Taskcreatemodal"
 Cohesion: 0.11
@@ -1098,8 +1084,8 @@ Cohesion: 0.11
 Nodes (17): Consolidation phase, Example: 5-step plan with 2 batches, Execution strategy, Finish, For each batch:, Load and analyze the plan, Overview, Persist (mandatory) (+9 more)
 
 ### Community 110 - "Screenshots Alert Bar Componen"
-Cohesion: 0.12
-Nodes (18): Props, View, VIEWS, ViewSwitcher(), Props, Props, Pipeline, KanbanProps (+10 more)
+Cohesion: 0.18
+Nodes (9): BulkActionBar(), Props, PRIORITY_OPTIONS, selectStyle, SOURCE_OPTIONS, STATUS_OPTIONS, TaskFilterBar(), Icon() (+1 more)
 
 ### Community 111 - "Screenshots Companies Action A"
 Cohesion: 0.12
@@ -1138,12 +1124,12 @@ Cohesion: 0.12
 Nodes (15): dependencies, zod, devDependencies, typescript, vitest, main, name, private (+7 more)
 
 ### Community 120 - "Lib Seed"
-Cohesion: 0.22
-Nodes (9): HEALTH_STYLES, LinkedProjectCard(), Props, getProject(), HEALTH_COLORS, ProjectLayout(), ProjectNav(), Project (+1 more)
+Cohesion: 0.09
+Nodes (16): ACTIVITY_ICONS, ACTIVITY_TYPES, ContactDrawer(), Props, ContactForm(), FieldErrors, Props, CombinedFilter (+8 more)
 
 ### Community 121 - "Lib Sftp Sftpclient"
-Cohesion: 0.25
-Nodes (3): createUserRolesRouter(), buildDb(), makeChain()
+Cohesion: 0.11
+Nodes (14): CATEGORIES, EmojiPicker(), Props, AttachmentPreview(), formatTime(), groupReactions(), MessageBubble(), Props (+6 more)
 
 ### Community 122 - "Screenshots Contacts Activity "
 Cohesion: 0.10
@@ -1154,16 +1140,16 @@ Cohesion: 0.12
 Nodes (15): Instance Updater Implementation Plan, Out of scope (from spec), Task 10: Compose + installers, Task 11: Web — Updates settings page + nav link + About version, Task 12: Sidebar update badge for admins, Task 13: Final verification + graph update, Task 1: `instance_meta` table — migration + schema type, Task 2: Compiled migrations + `runMigrations` with advisory lock (+7 more)
 
 ### Community 124 - "Scripts Seed Contacts"
-Cohesion: 0.19
-Nodes (11): affectedContracts(), guard(), hasHubPermission(), HUB_LIMITS, isHubEnabled(), publishWindows, purgeExpiredHubRecords(), registerHubBridgeMethods() (+3 more)
+Cohesion: 0.13
+Nodes (17): decryptPrivateKey(), encryptPrivateKey(), getKey(), runCommand(), sseStart(), sseWrite(), SshSessionConfig, withSshSession() (+9 more)
 
 ### Community 125 - "Superpowers Dashboard Plan Das"
-Cohesion: 0.14
-Nodes (10): ChannelView(), Props, Props, SearchPanel(), SearchResult, ThreadPanel(), TypingIndicator(), TypingUser (+2 more)
+Cohesion: 0.06
+Nodes (26): JwtPayload, requireAdmin(), createRequirePermission(), assignGroupsSchema, canAccessDashboard(), createDashboardsRouter(), dashboardNameSchema, getUserRoleIds() (+18 more)
 
 ### Community 127 - "Activate Route"
-Cohesion: 0.22
-Nodes (8): Commit, Concerns, External importers of deleted clients (for Plan C), Status: DONE, Task 8 Report — `@vencore/api-client` roles module, Type deviations from the brief (verified against actual API code), Verification, What changed
+Cohesion: 0.25
+Nodes (7): Commit, Concerns, Files created, Implementation notes, Status: Complete, Task 8 Report: ConstraintSetEditor + constraints page (SoD), Verification
 
 ### Community 128 - "Agent Tsconfig"
 Cohesion: 0.12
@@ -1182,8 +1168,8 @@ Cohesion: 0.33
 Nodes (5): attachContactTag(), createContactTag(), deleteContactTag(), detachContactTag(), listContactTags()
 
 ### Community 132 - "Components Recordtable"
-Cohesion: 0.23
-Nodes (12): PluginPanelSlot(), Props, PluginWidgetGrid(), Props, ResolvedSection, SlotOutlet(), PluginIframeSlot(), usePluginRegistry() (+4 more)
+Cohesion: 0.14
+Nodes (20): PluginPanelSlot(), Props, PluginWidgetGrid(), Props, ResolvedSection, SlotOutlet(), AnyComponent, defaultRegistry (+12 more)
 
 ### Community 134 - "Plugin Types Package"
 Cohesion: 0.13
@@ -1274,12 +1260,12 @@ Cohesion: 0.14
 Nodes (13): 10. Known limits / future host asks, 11. First implementation steps, 1. How it works (data flow), 2. Platform facts this design relies on (verified), 3. Phase 0 — host change (prerequisite), 4. plugin.json (manifest), 5. UI-JSON (the "how do I X" knowledge), 6. Backend endpoints (`http.onEndpoint`) (+5 more)
 
 ### Community 158 - "Steps Stepdomainssl"
-Cohesion: 0.07
-Nodes (25): ACTIVITY_ICONS, ACTIVITY_TYPES, ContactDrawer(), Props, CombinedFilter, eyebrow, SortField, SortOrder (+17 more)
+Cohesion: 0.19
+Nodes (11): AlertCountRow, avg(), InfraSummary, PmSummary, ServerRow, summarizeInfra(), summarizePm(), TaskStatsRow (+3 more)
 
 ### Community 159 - "Tests Contacts Test"
 Cohesion: 0.06
-Nodes (38): createChannelSchema, createChannelsRouter(), updateChannelSchema, createDmsRouter(), openDmSchema, createMessagingRouter(), createMembersRouter(), inviteMemberSchema (+30 more)
+Nodes (35): createChannelSchema, createChannelsRouter(), updateChannelSchema, createDmsRouter(), openDmSchema, createMessagingRouter(), createMembersRouter(), inviteMemberSchema (+27 more)
 
 ### Community 160 - "Web Shell"
 Cohesion: 0.15
@@ -1310,8 +1296,8 @@ Cohesion: 0.15
 Nodes (12): Database Module Revamp — Plan 1: Foundation, Task 10: Extend Worker Alert Evaluator for Databases, Task 11: Run Migration, Task 1: Create Feature Branch, Task 2: Write Migration, Task 3: Update Schema Types, Task 4: Extend ActivityType in API and Worker, Task 5: Update DATABASES_MODULE Definition (+4 more)
 
 ### Community 167 - "Steps Stepbranding"
-Cohesion: 0.12
-Nodes (15): Addendum: Restore `theme` to AuthUser (coordinator follow-up), `apps/web/modules/shared/lib/AuthContext.tsx`, `apps/web/store/auth-slice.ts`, Changes, Changes, Commit, Commit, Concerns (+7 more)
+Cohesion: 0.29
+Nodes (6): Commit, Deviations from Brief, Files Changed, Status, Task 1 Implementation Report, Test Results
 
 ### Community 168 - "Steps Stepfeatures"
 Cohesion: 0.21
@@ -1338,8 +1324,8 @@ Cohesion: 0.15
 Nodes (12): Approval, Assumptions, Goal, Output format (use exactly), Persist (mandatory), Persist (mandatory), Plan, Risks & mitigations (+4 more)
 
 ### Community 174 - "Companies Companyform Componen"
-Cohesion: 0.07
-Nodes (27): CustomFieldsManager(), FIELD_TYPES, inputStyle, Props, FREQUENCIES, PRIORITIES, Props, RecurringRuleModal() (+19 more)
+Cohesion: 0.22
+Nodes (11): BUILTIN_ANALYTICS_SECTIONS, BuiltinGateContext, BuiltinSectionDef, requiredContracts(), resolveBuiltinSections(), ResolvedBuiltinSection, createHubSectionsRouter(), ResolvedSection (+3 more)
 
 ### Community 175 - "Concept Infra Alert Bar"
 Cohesion: 0.33
@@ -1386,20 +1372,20 @@ Cohesion: 0.17
 Nodes (11): Acceptance criteria, Constraints, Goal, Known context, Options (2–4), Output sections (use exactly), Persist (mandatory), Recommendation (+3 more)
 
 ### Community 186 - "D Projects Vencorerepos Vencor"
-Cohesion: 0.07
-Nodes (25): WEBHOOK_EVENTS, JwtPayload, requireAdmin(), createRequirePermission(), createApiKeysRouter(), createKeySchema, assignGroupsSchema, canAccessDashboard() (+17 more)
+Cohesion: 0.20
+Nodes (10): getAnalyticsSections(), InfraAnalytics, PipelineData, PmAnalytics, ResolvedAnalyticsSection, TeamData, AnalyticsPage(), PERIODS (+2 more)
 
 ### Community 187 - "Jobs Pipeline Automations"
-Cohesion: 0.24
-Nodes (8): CATEGORIES, EmojiPicker(), Props, AttachmentPreview(), formatTime(), groupReactions(), MessageBubble(), Props
+Cohesion: 0.21
+Nodes (13): authorizedRoleClosure(), edges, wouldCreateCycle(), activeClosureForUser(), authorizedClosureForUser(), buildGroupedPermissions(), GroupedModule, GroupedPermission (+5 more)
 
 ### Community 188 - "Lib Record Type Permission"
 Cohesion: 0.24
-Nodes (6): ApiKeyTable(), Props, CreateApiKeyModal(), createApiKey(), deleteApiKey(), listApiKeys()
+Nodes (7): PipelineChart(), Props, getPipeline(), getTeam(), StageData, card, CrmAnalyticsSection()
 
 ### Community 189 - "Community 189"
-Cohesion: 0.24
-Nodes (10): AddWidgetPanel(), Props, DashboardGrid(), Props, resolveWidget(), LayoutWidget, DashboardWidgetDef, getDashboardWidgetById() (+2 more)
+Cohesion: 0.21
+Nodes (11): AddWidgetPanel(), Props, DashboardGrid(), Props, resolveWidget(), PluginRuntimeContextValue, DashboardWidgetDef, getDashboardWidgetById() (+3 more)
 
 ### Community 190 - "Plans Http Endpoints Heap Limi"
 Cohesion: 0.18
@@ -1434,8 +1420,8 @@ Cohesion: 0.18
 Nodes (10): compilerOptions, declaration, declarationMap, module, outDir, rootDir, sourceMap, exclude (+2 more)
 
 ### Community 198 - "Community 198"
-Cohesion: 0.08
-Nodes (33): Props, BulkActionBar(), Props, PRIORITY_OPTIONS, Props, selectStyle, SOURCE_OPTIONS, STATUS_OPTIONS (+25 more)
+Cohesion: 0.10
+Nodes (24): Props, Props, Props, TaskGroup(), Props, TaskRow(), TasksWidgetInner(), useBulkDeleteTasks() (+16 more)
 
 ### Community 200 - "Files Page"
 Cohesion: 0.20
@@ -1514,12 +1500,12 @@ Cohesion: 0.33
 Nodes (5): BACKOFF_SECONDS, deliverOne(), DeliveryRow, nextAttemptAt(), startWebhookDelivery()
 
 ### Community 220 - "Migrations 20240106 002 Server"
-Cohesion: 0.22
-Nodes (8): Home(), metadata, PageProps, SetupPage(), EnvLike, getSetupStatus(), resolveApiUrl(), SetupStatus
+Cohesion: 0.20
+Nodes (9): Home(), metadata, PageProps, SetupPage(), SetupWizard(), EnvLike, getSetupStatus(), resolveApiUrl() (+1 more)
 
 ### Community 221 - "Migrations 20240107 001 Webhoo"
-Cohesion: 0.12
-Nodes (13): cancelBtnStyle, ChannelRow(), ChannelSidebar(), ChannelWithMeta, inputStyle, labelStyle, primaryBtnStyle(), MessagingLayout() (+5 more)
+Cohesion: 0.04
+Nodes (64): AccountPage(), timeAgo(), eyebrow, AddTaskModal(), ContactItem, ProjectItem, Props, Source (+56 more)
 
 ### Community 222 - "Migrations 20240108 001 Api Ke"
 Cohesion: 0.22
@@ -1534,8 +1520,8 @@ Cohesion: 0.25
 Nodes (7): compilerOptions, lib, module, outDir, rootDir, extends, include
 
 ### Community 225 - "Community 225"
-Cohesion: 0.20
-Nodes (5): cancelBtnStyle, MessageList(), Props, saveBtnStyle, editMessage()
+Cohesion: 0.13
+Nodes (10): invalidatePermissionCache(), invalidateRoleMemberCaches(), createRoleSchema, createRolesRouter(), inheritBodySchema, memberBodySchema, permissionsBodySchema, updateRoleSchema (+2 more)
 
 ### Community 226 - "Migrations 20260520 001 Pipeli"
 Cohesion: 0.25
@@ -1570,20 +1556,20 @@ Cohesion: 0.25
 Nodes (8): Backend Plugin, Docs Map, Frontend Plugin, Install Shape, Manifest First, Repo Scripts, Runtime Bridge, Vantage Plugin SDK
 
 ### Community 235 - "Community 235"
-Cohesion: 0.28
-Nodes (6): queueWebhook(), WebhookEvent, createAlertsRouter(), createSchema, listSchema, updateSchema
+Cohesion: 0.12
+Nodes (14): queueWebhook(), WEBHOOK_EVENTS, WebhookEvent, createAlertsRouter(), createTaskSchema, createTasksRouter(), listQuerySchema, registerTasksBridgeMethods() (+6 more)
 
 ### Community 236 - "Community 236"
-Cohesion: 0.17
-Nodes (14): MessageInput(), Props, Props, TypingUser, addReaction(), deleteMessage(), getMessages(), getThread() (+6 more)
+Cohesion: 0.10
+Nodes (24): cancelBtnStyle, ChannelRow(), ChannelSidebar(), ChannelWithMeta, inputStyle, labelStyle, primaryBtnStyle(), MessageInput() (+16 more)
 
 ### Community 237 - "Migrations 20260602 003 Migrat"
-Cohesion: 0.29
-Nodes (6): Concerns, Self-review, Status: Complete, Task 3 (Plan C, frontend): RoleBadges component + roles list page — Report, Verification, What was implemented
+Cohesion: 0.17
+Nodes (11): Concerns, Deviations, Files Changed, Implementation Summary, Self-Review, Status: DONE, `summarizeInfra(servers, websites, alerts, now?): InfraSummary`, `summarizePm(activeProjectCount, taskStats, velocityRows, workloadRows): PmSummary` (+3 more)
 
 ### Community 238 - "Migrations 20260603 001 Plugin"
-Cohesion: 0.18
-Nodes (10): Commit, Concerns, Files, Implementation notes, Note on this file, Self-review, Status: Complete, Task 7 Report — Self-service session role activation (DSD-checked) (+2 more)
+Cohesion: 0.25
+Nodes (7): Browser verification (Step 4), Commit (Step 5), Deviations, Files changed, Note on this file, Task 7 Report: Section registry + Analytics page as slot outlet, Typecheck (Step 3)
 
 ### Community 239 - "Migrations 20260610 001 Dashbo"
 Cohesion: 0.18
@@ -1642,8 +1628,8 @@ Cohesion: 0.29
 Nodes (6): Step 1: Write the failing test, Step 2: Run test to verify it fails, Step 3: Implement, Step 4: Run test to verify it passes, Step 5: Commit, Task 1: Add `getWidgetStats` to the Projects API client
 
 ### Community 258 - "Community 258"
-Cohesion: 0.22
-Nodes (6): createUnifiedTasksRouter(), DueBucket, PRIORITY_ORDER, querySchema, UnifiedTask, UnifiedTasksBuckets
+Cohesion: 0.38
+Nodes (7): checkCardinality(), checkDSD(), checkSSD(), ConstraintSet, set, violated(), setRolesSchema
 
 ### Community 260 - "Modules Index Getallpermission"
 Cohesion: 0.32
@@ -1698,8 +1684,8 @@ Cohesion: 0.40
 Nodes (4): Code of Conduct, Enforcement, The longer version, The short version
 
 ### Community 276 - "Community 276"
-Cohesion: 0.16
-Nodes (12): Candidate, DataProvidersSection(), ProviderGroup, ContributedField, ContributedSection, inputStyle, PluginSettingsSections(), CrossModuleSettingsResponse (+4 more)
+Cohesion: 0.18
+Nodes (10): Analytics Hub Implementation Plan, Global Constraints, Task 1: Analytics page in the slot catalog + builtin section registry, Task 2: Merge builtin sections into the hub-sections resolver, Task 3: Infra + PM rollup summarizers (pure functions), Task 4: `/api/analytics/infra` and `/api/analytics/pm` endpoints, Task 5: Web fetchers + types + shared OverviewTile, Task 6: CRM, Infra, and PM section components (+2 more)
 
 ### Community 277 - "Activity Page"
 Cohesion: 0.70
@@ -1710,36 +1696,36 @@ Cohesion: 0.67
 Nodes (3): Path, find_repo_root(), main()
 
 ### Community 280 - "Alerts Page Component"
-Cohesion: 0.30
-Nodes (10): loadPluginBackend(), loadPluginManifest(), pluginBundlePath(), pluginStorageDir(), savePluginFile(), isSandboxRunning(), start(), scheduleToMinutes() (+2 more)
+Cohesion: 0.29
+Nodes (3): createSessionRolesRouter(), buildDb(), makeChain()
 
 ### Community 284 - "Community 284"
-Cohesion: 0.15
-Nodes (5): AnalyticsPage(), HealthData, Sprint, StatusData, WorkloadMember
+Cohesion: 0.25
+Nodes (7): GroupAssignModal(), Props, DashboardSettingsPage(), dedupeGroups(), GroupRow, DashboardGroup, listGroupAssignments()
 
 ### Community 285 - "Companies Page"
 Cohesion: 0.67
 Nodes (3): Path, find_repo_root(), main()
 
 ### Community 286 - "Contacts Page"
-Cohesion: 0.25
-Nodes (7): Concerns, Data shape verified, Files changed, Implemented, Self-review, Task 4 Report — RoleMatrixEditor + PermissionRow (Plan C, frontend), tsc evidence
+Cohesion: 0.22
+Nodes (8): Changes, Commit, Constraints Met, Deviations, Files Changed, Status, Task 4 Report: `/api/analytics/infra` and `/api/analytics/pm` Endpoints, Typecheck & Tests
 
 ### Community 287 - "Community 287"
 Cohesion: 0.12
 Nodes (15): File Structure, Global Constraints, RBAC3 — Plan C: Frontend Implementation Plan, Self-Review, Task 10: Sweep remaining `user.role` reads in web, Task 11: Plan C verification, Task 1: AuthContext + auth-slice on the isAdmin model, Task 2: Settings nav relabel + permission gating + route rename (+7 more)
 
 ### Community 288 - "Migrations 20240101 001 Initia"
-Cohesion: 0.20
-Nodes (9): Build/verify steps taken, Commit, Concerns / follow-ups, Files changed, Note, Status: Complete, Task 5 Report — RoleMembersPanel + RoleInheritancePanel + role detail page (Plan C), tsc summary (+1 more)
+Cohesion: 0.29
+Nodes (6): Commit, Deviations, Files Changed, Implementation Notes, Status, Verification
 
 ### Community 289 - "Migrations 20240102 002 Infra "
 Cohesion: 0.29
 Nodes (6): compilerOptions, module, outDir, rootDir, extends, include
 
 ### Community 290 - "Community 290"
-Cohesion: 0.25
-Nodes (4): MembersPage(), ProjectMember, ROLES, WorkspaceUser
+Cohesion: 0.36
+Nodes (5): niceMax(), Props, RevenueChart(), Period, SeriesPoint
 
 ### Community 291 - "Modules Manifests"
 Cohesion: 0.29
@@ -1770,8 +1756,8 @@ Cohesion: 0.33
 Nodes (4): ANALYTICS_FIXUPS, ANALYTICS_PAGE, REPLACEMENTS, ROOT
 
 ### Community 326 - "Tests Setup Crypto Test"
-Cohesion: 0.25
-Nodes (7): Commit, Concerns / notes for reviewer, Self-review — security carry-over checks, Status: DONE, Task 6 Report: SoD constraint sets router (SSD + DSD) + discarded-grants report, Verification, What was built
+Cohesion: 0.22
+Nodes (8): Commit, Deviations, Files Created (6), Files Modified, Status, Summary, Task 6 Report: CRM, Infra, PM Analytics Section Components, Typecheck Result
 
 ### Community 327 - "Tests Setup Db Test"
 Cohesion: 0.33
@@ -1822,8 +1808,8 @@ Cohesion: 0.60
 Nodes (4): AutomationEvent, executeAction(), matchesTrigger(), processAutomationEvent()
 
 ### Community 353 - "20240105_001_ssh_management.ts"
-Cohesion: 0.23
-Nodes (13): guardPath(), handleOp(), JwtPayload, promisifyVoid(), sftpDelete(), sftpLs(), sftpMkdir(), SftpOp (+5 more)
+Cohesion: 0.25
+Nodes (7): applyTemplateSchema, createProjectTemplatesRouter(), createSaveAsTemplateRouter(), saveAsTemplateSchema, TemplateData, TemplateStatus, TemplateTask
 
 ### Community 354 - "20240106_001_ssh_user.ts"
 Cohesion: 0.40
@@ -1833,13 +1819,17 @@ Nodes (4): File Map, PM Plan 1: Database Migration, Task 1: Create PM migration,
 Cohesion: 0.27
 Nodes (10): daysAgo(), DOMAINS, FIRST_NAMES, LAST_NAMES, loadEnv(), main(), PHONES, pick() (+2 more)
 
+### Community 356 - "Community 356"
+Cohesion: 0.25
+Nodes (7): WizardAction, FEATURE_CARDS, Features, heading, Props, StepFeatures(), subtext
+
 ### Community 357 - "Community 357"
-Cohesion: 0.17
-Nodes (8): CompatibleProvider, FeatureCard(), HookFeatureResponse, HooksPage(), HookState, InstalledProvider, Props, STATE_CONFIG
+Cohesion: 0.40
+Nodes (4): eyebrow, Props, RepLeaderboard(), RepData
 
 ### Community 358 - "20240109_001_notifications.ts"
-Cohesion: 0.15
-Nodes (12): CRM Module Merge Progress Ledger (feat/crm-module), CRM per-page sub-modules (design change, commit 243d861), Infra Module Merge Progress Ledger (feat/infra-module), PR2A Progress Ledger, PR2B Progress Ledger, PR3A Progress Ledger, PR3B Progress Ledger, RBAC3 Permissions Rework — Plan A (feat/permissions-rbac3) (+4 more)
+Cohesion: 0.14
+Nodes (13): Analytics Hub Progress Ledger (plan: docs/superpowers/plans/2026-07-16-analytics-hub.md), CRM Module Merge Progress Ledger (feat/crm-module), CRM per-page sub-modules (design change, commit 243d861), Infra Module Merge Progress Ledger (feat/infra-module), PR2A Progress Ledger, PR2B Progress Ledger, PR3A Progress Ledger, PR3B Progress Ledger (+5 more)
 
 ### Community 359 - "20240111_001_mail.ts"
 Cohesion: 0.40
@@ -1871,99 +1861,47 @@ Nodes (3): mockCreateTransport, mockSendMail, mockSmtp
 
 ### Community 377 - "Community 377"
 Cohesion: 0.14
-Nodes (13): GlobalContextMenu(), OfflineBanner(), AnyComponent, defaultRegistry, FrontendSurfaceRegistry, PanelDef, PluginIframeSlotProps, PluginRuntimeContextValue (+5 more)
+Nodes (7): Editable, GlobalContextMenu(), NON_TEXT_INPUT_TYPES, OfflineBanner(), Providers(), PluginRuntimeProvider(), store
 
 ### Community 424 - "API /api/groups"
-Cohesion: 0.12
-Nodes (26): authorizedRoleClosure(), edges, wouldCreateCycle(), checkCardinality(), checkDSD(), checkSSD(), ConstraintSet, set (+18 more)
+Cohesion: 0.33
+Nodes (4): createHooksRouter(), patchFeatureSchema, postProviderSchema, ProviderRef
+
+### Community 473 - "Community 473"
+Cohesion: 0.25
+Nodes (3): createUserRolesRouter(), buildDb(), makeChain()
 
 ### Community 482 - "ContactDrawer — sliding detail panel with activity, tasks, edit"
 Cohesion: 0.36
 Nodes (5): deriveInfraEnabled(), ITEM_KEY_MAP, OLD_MODULE_IDS, rewriteKeysForInfra(), up()
 
-### Community 483 - "Community 483"
-Cohesion: 0.12
-Nodes (14): PendingProviderBanner(), ProviderGroup, ModuleProvider(), ContextValue, LiveAlertEvent, LiveServerMetrics, ServerMetricsContext, ServerMetricsProvider() (+6 more)
-
 ### Community 484 - "Community 484"
 Cohesion: 0.25
 Nodes (7): Channel, CHANNELS, createNotificationPreferencesRouter(), patchSchema, PrefItem, SEVERITIES, Severity
 
-### Community 487 - "ServerDetailPage"
-Cohesion: 0.33
-Nodes (6): card, majorOf(), Phase, UpdateInfo, UpdaterStatus, UpdatesPage()
-
-### Community 488 - "ServersListPage (dashboard route)"
-Cohesion: 0.47
-Nodes (4): createMeRouter(), patchMeSchema, patchPasswordSchema, buildApp()
-
 ### Community 490 - "Community 490"
-Cohesion: 0.05
-Nodes (42): Props, TaskDetailPanel(), Assignee, Avatar(), AvatarGroup(), hashIndex(), initials(), PALETTE (+34 more)
-
-### Community 491 - "Community 491"
-Cohesion: 0.07
-Nodes (23): generateMetadata(), getBranding(), ibmPlexMono, ibmPlexSans, Providers(), Theme, ThemeContext, ThemeContextValue (+15 more)
+Cohesion: 0.03
+Nodes (84): Props, TaskDetailPanel(), Assignee, Avatar(), AvatarGroup(), hashIndex(), initials(), PALETTE (+76 more)
 
 ### Community 493 - "TeamPage"
-Cohesion: 0.40
-Nodes (4): createHubSectionsRouter(), ResolvedSection, isKnownSlot(), SLOT_CATALOG
-
-### Community 494 - "UsersPage"
-Cohesion: 0.50
-Nodes (3): createProjectTasksRouter(), buildChain(), projectAccessChain()
-
-### Community 496 - "Community 496"
-Cohesion: 0.29
-Nodes (7): FIELD_TYPE_META, FIELD_TYPES, FieldType, FieldTypeMeta, eyebrow, FieldsTab(), inputStyle()
+Cohesion: 0.47
+Nodes (4): createMeRouter(), patchMeSchema, patchPasswordSchema, buildApp()
 
 ### Community 597 - "Community 597"
 Cohesion: 0.22
 Nodes (11): Infra Alert Bar (3 alerts, prod-worker-01 memory critical), Add Website Button, Alert Banner (3 alerts, prod-postgres unreachable), Sidebar Navigation, Websites Monitoring Screen, Add Website CTA Button, Alert Bar — Database Unreachable Warning Banner, SSL Expiry Date — Certificate Expiration Tracking (+3 more)
 
-### Community 608 - "Community 608"
-Cohesion: 0.22
-Nodes (7): FINISHING_MESSAGES, heading, Props, SKIP_WARNINGS, Status, STEP_LABELS, subtext
-
-### Community 613 - "Community 613"
-Cohesion: 0.13
-Nodes (10): invalidatePermissionCache(), invalidateRoleMemberCaches(), createRoleSchema, createRolesRouter(), inheritBodySchema, memberBodySchema, permissionsBodySchema, updateRoleSchema (+2 more)
-
-### Community 616 - "Community 616"
-Cohesion: 0.29
-Nodes (3): createSessionRolesRouter(), buildDb(), makeChain()
-
 ### Community 617 - "Community 617"
-Cohesion: 0.20
-Nodes (9): `apps/api/src/routes/invites.ts`, `apps/api/src/scripts/backfill-pipeline-engine.ts` (record_type_permissions write path), Concerns / notes for follow-up, Cross-tenant security carry — confirmed present, Plan B Task 9 Report — Enrich invite→role flow + record_type_permissions write path, Status: Done, Tests — `apps/api/src/__tests__/invites-route.test.ts` (new), Verification (+1 more)
-
-### Community 736 - "Community 736"
-Cohesion: 0.60
-Nodes (3): createWorkspaceRouter(), patchWorkspaceSchema, buildApp()
+Cohesion: 0.25
+Nodes (7): api-client, Commit, Concerns, Plan C Task 9 Report — ActiveRoleSwitcher in the topbar, Status: Done, Verification, What was built
 
 ### Community 755 - "Community 755"
-Cohesion: 0.18
-Nodes (10): Changes, Commit, Concerns, Files, Plan C — Task 2 Report: Settings nav relabel + permission gating + route-group rename, Self-review, `settings/layout.tsx`, `settings/(users-roles)/layout.tsx` (renamed from `(users-groups)`) (+2 more)
-
-### Community 792 - "Community 792"
-Cohesion: 0.22
-Nodes (6): CONTRACT_LABELS, HubStat, PluginDetail, PluginPermDef, PluginSettingsField, PluginSettingsPage()
-
-### Community 806 - "Community 806"
-Cohesion: 0.25
-Nodes (3): createRbacConstraintsRouter(), buildDb(), makeChain()
+Cohesion: 0.15
+Nodes (12): Diff Verification, Files Changed, No Deviations, Status: DONE, Step 1: Extended the Resolver, Step 2: Typecheck, Step 3: Regression Test Suite, Step 4: Commit (+4 more)
 
 ### Community 807 - "Community 807"
-Cohesion: 0.22
-Nodes (8): Circular import check, Commit, Concerns, Not touched (out of scope, flagged for later), Status: Done, Task 10 Report: Auth middleware attaches `isAdmin` + resolved permissions, tsc result, What changed
-
-### Community 808 - "Community 808"
-Cohesion: 0.25
-Nodes (7): WizardAction, FEATURE_CARDS, Features, heading, Props, StepFeatures(), subtext
-
-### Community 810 - "Community 810"
 Cohesion: 0.29
-Nodes (3): CreatedProject, Template, TemplatesPage()
+Nodes (6): Concerns, Method, Per-site conversions, Task 10 Report (Plan C, frontend) — Sweep remaining `user.role` reads in apps/web, Unrelated `.role` reads left untouched (verified), Verification
 
 ### Community 811 - "Community 811"
 Cohesion: 0.25
@@ -1972,6 +1910,10 @@ Nodes (7): Callers found (`rg "getDefaultPermissionsForRole" apps packages --typ
 ### Community 812 - "Community 812"
 Cohesion: 0.25
 Nodes (7): Commits (on `feat/permissions-rbac3`), Concerns / follow-ups (not blocking), Files converted, with gate mapping, Result, Task 12 Report — Convert role/isAdmin call sites to RBAC3, Tests changed, User-creation role assignment (Task instruction F)
+
+### Community 814 - "Community 814"
+Cohesion: 0.29
+Nodes (6): C1 (Critical) — plugin bridge selected the dropped `users.role` column, C2 (Critical) — deleted `/api/groups` still called by web, Files touched, I3 (Important) — `POST /api/roles/:id/members` bypassed SSD/cardinality, RBAC3 Final Review — Fix Report, Verification summary
 
 ### Community 815 - "Community 815"
 Cohesion: 0.38
@@ -1985,10 +1927,6 @@ Nodes (3): Props, useDashboardWidgets(), DashboardPage()
 Cohesion: 0.40
 Nodes (4): createTask(), deleteTask(), listTasks(), updateTask()
 
-### Community 820 - "Community 820"
-Cohesion: 0.50
-Nodes (3): Group, GroupAssignModal(), Props
-
 ### Community 823 - "Community 823"
 Cohesion: 0.50
 Nodes (3): acknowledgeAlert(), listAlerts(), resolveAlert()
@@ -1998,19 +1936,19 @@ Cohesion: 0.50
 Nodes (3): getDefaultPipeline(), listPipelineDeals(), listPipelines()
 
 ## Knowledge Gaps
-- **3172 isolated node(s):** `Path`, `Any`, `Path`, `name`, `version` (+3167 more)
+- **3207 isolated node(s):** `Path`, `Any`, `Path`, `name`, `version` (+3202 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **398 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **396 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `useApiToken()` connect `Web Analytics Charts` to `API Server Core`, `Components Recordtable`, `CRM UI Pages`, `Community 276`, `Installer Config Generator`, `Community 792`, `Web Dependencies`, `Community 284`, `Steps Stepdomainssl`, `Widget Card System`, `Community 290`, `Packages Plugin Runtime Src In`, `Community 810`, `Companies Companyform Componen`, `Mobile App`, `Community 818`, `Components Pipelinekanban Pipe`, `Community 820`, `Lib Auto Number`, `Community 822`, `Lib Item Groups`, `Lib Record Type Permission`, `Agent Package`, `Db Package`, `Community 198`, `Src Config Schema`, `Components Notificationbell`, `Ws Sftp Session`, `Community 346`, `Migrations 20240107 001 Webhoo`, `Community 225`, `Community 483`, `Community 357`, `Community 490`, `Community 491`, `Community 236`, `Screenshots Alert Bar Componen`, `Community 496`, `20260602_003_migrate_deals_to_records.ts`, `Components Conversionmodal`, `Community 377`, `Superpowers Dashboard Plan Das`?**
-  _High betweenness centrality (0.024) - this node is a cross-community bridge._
-- **Why does `createDb()` connect `Vencore Package` to `Automation Engine Core`, `Community 355`?**
-  _High betweenness centrality (0.017) - this node is a cross-community bridge._
-- **Why does `main()` connect `Automation Engine Core` to `Vencore Package`?**
-  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `summarizeInfra()` connect `Steps Stepdomainssl` to `Web Analytics Charts`, `Tests Contacts Test`?**
+  _High betweenness centrality (0.111) - this node is a cross-community bridge._
+- **Why does `Metric()` connect `Web Analytics Charts` to `Steps Stepdomainssl`?**
+  _High betweenness centrality (0.111) - this node is a cross-community bridge._
+- **Why does `useApiToken()` connect `Lib Auto Number` to `API Server Core`, `CRM API Routes`, `Components Recordtable`, `CRM UI Pages`, `Web Analytics Charts`, `Installer Config Generator`, `Web Dependencies`, `Community 284`, `Widget Card System`, `Mobile App`, `Community 818`, `Components Pipelinekanban Pipe`, `Lib Item Groups`, `D Projects Vencorerepos Vencor`, `Lib Record Type Permission`, `Agent Package`, `Community 198`, `Components Notificationbell`, `Ws Sftp Session`, `Community 346`, `Migrations 20240107 001 Webhoo`, `Components Recorddetail`, `Community 377`, `Community 490`, `Community 236`, `20260602_003_migrate_deals_to_records.ts`, `Components Conversionmodal`, `Lib Seed`, `Lib Sftp Sftpclient`?**
+  _High betweenness centrality (0.058) - this node is a cross-community bridge._
 - **Are the 25 inferred relationships involving `useApiToken()` (e.g. with `TaskDetailPanel()` and `AlertsTab()`) actually correct?**
   _`useApiToken()` has 25 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 7 inferred relationships involving `useContextMenu()` (e.g. with `DashboardPage()` and `ActivityPage()`) actually correct?**
@@ -2018,4 +1956,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Are the 8 inferred relationships involving `useAuth()` (e.g. with `TaskDetailPanel()` and `AlertsTab()`) actually correct?**
   _`useAuth()` has 8 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `Path`, `Any`, `Traverse upwards to find the repository root (containing .agent/).` to the rest of the system?**
-  _3179 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _3214 weakly-connected nodes found - possible documentation gaps or missing edges._

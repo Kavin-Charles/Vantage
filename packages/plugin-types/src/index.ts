@@ -426,6 +426,10 @@ export const SLOT_CATALOG: Record<string, SlotDef[]> = {
   ],
   'contact-list': [{ id: 'toolbar', layout: 'inline' }, { id: 'extras', layout: 'stack' }],
   'deal-list': [{ id: 'toolbar', layout: 'inline' }, { id: 'extras', layout: 'stack' }],
+  'analytics': [
+    { id: 'overview', layout: 'grid' },
+    { id: 'panels', layout: 'stack' },
+  ],
 };
 
 export function isKnownSlot(slot: string): boolean {
