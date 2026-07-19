@@ -89,6 +89,7 @@ import { createProjectTemplatesRouter, createSaveAsTemplateRouter } from './rout
 import { bridgeRegistry, pluginEventBus, registerHubBridgeMethods } from '@vencore/plugin-runtime';
 import { startPluginCron, scheduleToMinutes } from './workers/plugin-cron';
 import { startHubRetention } from './workers/hub-retention';
+import { startLicenseCheck } from './workers/license-check';
 import { initHubHookListeners } from './lib/hub-hook-listeners';
 import { initHookFeatureDispatcher } from './lib/hook-features';
 import { registerContactsBridgeMethods } from './routes/contacts';
@@ -501,6 +502,9 @@ startPluginCron(db);
 
 // Purge tombstoned hub records past the retention window (daily)
 startHubRetention(db);
+
+// Start license re-check worker (paid marketplace plugins, 30-min cycle)
+startLicenseCheck(db);
 
 // Hook features reacting to hub data changes from plugin providers
 initHubHookListeners(db);
