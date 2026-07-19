@@ -3,12 +3,20 @@ import { z } from 'zod';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
-import { requireAdmin } from '../middleware/auth';
-import { resolvePermissions } from '../middleware/permission';
+import { createRequirePermission, resolveUserPermissions, getEnabledModuleIds } from '../middleware/permission';
 
 const dashboardNameSchema = z.object({
   name: z.string().min(1).max(100),
 });
+
+const widgetConfigSchema = z.object({
+  timeRange: z.enum(['1d', '7d', '30d']).optional(),
+  limit: z.number().int().min(1).optional(),
+  compactMode: z.boolean().optional(),
+  chartType: z.enum(['line', 'bar', 'pie', 'area']).optional(),
+  refreshInterval: z.number().int().min(1).optional(),
+  filters: z.record(z.string(), z.string()).optional(),
+}).passthrough();
 
 const layoutWidgetSchema = z.object({
   widget_id: z.string().min(1),
@@ -19,6 +27,7 @@ const layoutWidgetSchema = z.object({
   min_w: z.number().int().min(1).nullable().optional(),
   min_h: z.number().int().min(1).nullable().optional(),
   permission_key: z.string().nullable().optional(),
+  config: widgetConfigSchema.optional(),
 });
 
 const saveLayoutSchema = z.object({
@@ -29,18 +38,18 @@ const assignGroupsSchema = z.object({
   group_ids: z.array(z.string().uuid()),
 });
 
-async function getUserGroupIds(
+async function getUserRoleIds(
   db: Kysely<Database>,
   userId: string,
   workspaceId: string,
 ): Promise<string[]> {
   const rows = await db
-    .selectFrom('group_members')
+    .selectFrom('user_roles')
     .where('user_id', '=', userId)
     .where('workspace_id', '=', workspaceId)
-    .select('group_id')
+    .select('role_id')
     .execute();
-  return rows.map(r => r.group_id);
+  return rows.map(r => r.role_id);
 }
 
 async function canAccessDashboard(
@@ -48,15 +57,15 @@ async function canAccessDashboard(
   dashboardId: string,
   userId: string,
   workspaceId: string,
-  role: 'admin' | 'member',
+  isAdmin: boolean,
 ): Promise<boolean> {
-  if (role === 'admin') return true;
-  const groupIds = await getUserGroupIds(db, userId, workspaceId);
-  if (groupIds.length === 0) return false;
+  if (isAdmin) return true;
+  const roleIds = await getUserRoleIds(db, userId, workspaceId);
+  if (roleIds.length === 0) return false;
   const row = await db
     .selectFrom('dashboard_group_assignments')
     .where('dashboard_id', '=', dashboardId)
-    .where('group_id', 'in', groupIds)
+    .where('role_id', 'in', roleIds)
     .select('dashboard_id')
     .executeTakeFirst();
   return !!row;
@@ -64,13 +73,14 @@ async function canAccessDashboard(
 
 export function createDashboardsRouter(db: Kysely<Database>): Router {
   const router = Router();
+  const requirePermission = createRequirePermission(db);
 
   // GET /api/dashboards — list dashboards visible to current user
   router.get('/', async (req, res, next) => {
     try {
-      const { user, workspace } = req as unknown as AuthenticatedRequest;
+      const { user, workspace, isAdmin } = req as unknown as AuthenticatedRequest;
 
-      if (user.role === 'admin') {
+      if (isAdmin) {
         const dashboards = await db
           .selectFrom('dashboards')
           .where('workspace_id', '=', workspace.id)
@@ -80,12 +90,12 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
         return res.json({ data: dashboards, error: null });
       }
 
-      const groupIds = await getUserGroupIds(db, user.id, workspace.id);
-      if (groupIds.length === 0) return res.json({ data: [], error: null });
+      const roleIds = await getUserRoleIds(db, user.id, workspace.id);
+      if (roleIds.length === 0) return res.json({ data: [], error: null });
 
       const assigned = await db
         .selectFrom('dashboard_group_assignments')
-        .where('group_id', 'in', groupIds)
+        .where('role_id', 'in', roleIds)
         .select('dashboard_id')
         .execute();
       const ids = [...new Set(assigned.map(r => r.dashboard_id))];
@@ -102,8 +112,8 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
     } catch (err) { next(err); }
   });
 
-  // POST /api/dashboards — create dashboard [admin]
-  router.post('/', requireAdmin, async (req, res, next) => {
+  // POST /api/dashboards — create dashboard [workspace:manage]
+  router.post('/', requirePermission('workspace:manage'), async (req, res, next) => {
     try {
       const { user, workspace } = req as unknown as AuthenticatedRequest;
       const parsed = dashboardNameSchema.safeParse(req.body);
@@ -123,14 +133,14 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
     } catch (err) { next(err); }
   });
 
-  // GET /api/dashboards/group-assignments — groups with their assigned dashboard, plus all dashboards [admin]
-  router.get('/group-assignments', requireAdmin, async (req, res, next) => {
+  // GET /api/dashboards/group-assignments — roles with their assigned dashboard, plus all dashboards [workspace:manage]
+  router.get('/group-assignments', requirePermission('workspace:manage'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
 
       const groups = await db
-        .selectFrom('groups as g')
-        .leftJoin('dashboard_group_assignments as dga', 'dga.group_id', 'g.id')
+        .selectFrom('roles as g')
+        .leftJoin('dashboard_group_assignments as dga', 'dga.role_id', 'g.id')
         .where('g.workspace_id', '=', workspace.id)
         .select(['g.id', 'g.name', 'g.color', 'dga.dashboard_id'])
         .orderBy('g.name', 'asc')
@@ -150,7 +160,7 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
   // GET /api/dashboards/:id — get dashboard + layout + groups (permission-filtered)
   router.get('/:id', async (req, res, next) => {
     try {
-      const { user, workspace } = req as unknown as AuthenticatedRequest;
+      const { user, workspace, isAdmin } = req as unknown as AuthenticatedRequest;
       const { id } = req.params as { id: string };
 
       const dashboard = await db
@@ -163,7 +173,7 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
         return res.status(404).json({ data: null, error: { code: 'NOT_FOUND' } });
       }
 
-      const canAccess = await canAccessDashboard(db, id, user.id, workspace.id, user.role);
+      const canAccess = await canAccessDashboard(db, id, user.id, workspace.id, isAdmin);
       if (!canAccess) {
         return res.status(403).json({ data: null, error: { code: 'FORBIDDEN' } });
       }
@@ -174,47 +184,33 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
         .selectAll()
         .execute();
 
-      if (user.role !== 'admin') {
-        const enabledModuleIds = (
-          await db
-            .selectFrom('workspace_modules')
-            .where('workspace_id', '=', workspace.id)
-            .where('enabled', '=', true)
-            .select('module_id')
-            .execute()
-        ).map(r => r.module_id);
-
-        const userPerms = await resolvePermissions(
-          db,
-          user.id,
-          workspace.id,
-          user.role,
-          enabledModuleIds,
-        );
+      if (!isAdmin) {
+        const enabledModuleIds = await getEnabledModuleIds(db, workspace.id);
+        const resolved = await resolveUserPermissions(db, user.id, workspace.id, enabledModuleIds);
         layoutRows = layoutRows.filter(
-          row => row.permission_key === null || userPerms.has(row.permission_key),
+          row => row.permission_key === null || resolved.permissions.has(row.permission_key),
         );
       }
 
       const groups = await db
         .selectFrom('dashboard_group_assignments')
         .where('dashboard_id', '=', id)
-        .select('group_id')
+        .select('role_id')
         .execute();
 
       res.json({
         data: {
           ...dashboard,
           layout: layoutRows,
-          group_ids: groups.map(g => g.group_id),
+          group_ids: groups.map(g => g.role_id),
         },
         error: null,
       });
     } catch (err) { next(err); }
   });
 
-  // PUT /api/dashboards/:id — rename dashboard [admin]
-  router.put('/:id', requireAdmin, async (req, res, next) => {
+  // PUT /api/dashboards/:id — rename dashboard [workspace:manage]
+  router.put('/:id', requirePermission('workspace:manage'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { id } = req.params as { id: string };
@@ -236,8 +232,8 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
     } catch (err) { next(err); }
   });
 
-  // DELETE /api/dashboards/:id — delete dashboard [admin]
-  router.delete('/:id', requireAdmin, async (req, res, next) => {
+  // DELETE /api/dashboards/:id — delete dashboard [workspace:manage]
+  router.delete('/:id', requirePermission('workspace:manage'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { id } = req.params as { id: string };
@@ -254,8 +250,8 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
     } catch (err) { next(err); }
   });
 
-  // PUT /api/dashboards/:id/layout — replace all layout rows [admin]
-  router.put('/:id/layout', requireAdmin, async (req, res, next) => {
+  // PUT /api/dashboards/:id/layout — replace all layout rows [workspace:manage]
+  router.put('/:id/layout', requirePermission('workspace:manage'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { id } = req.params as { id: string };
@@ -291,6 +287,7 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
                 min_w: w.min_w ?? null,
                 min_h: w.min_h ?? null,
                 permission_key: w.permission_key ?? null,
+                config: w.config ?? {},
               })),
             )
             .execute();
@@ -301,8 +298,8 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
     } catch (err) { next(err); }
   });
 
-  // PUT /api/dashboards/:id/groups — set group assignments [admin]
-  router.put('/:id/groups', requireAdmin, async (req, res, next) => {
+  // PUT /api/dashboards/:id/groups — set role assignments [workspace:manage]
+  router.put('/:id/groups', requirePermission('workspace:manage'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
       const { id } = req.params as { id: string };
@@ -330,7 +327,7 @@ export function createDashboardsRouter(db: Kysely<Database>): Router {
         if (parsed.data.group_ids.length > 0) {
           await trx
             .insertInto('dashboard_group_assignments')
-            .values(parsed.data.group_ids.map(gid => ({ dashboard_id: id, group_id: gid })))
+            .values(parsed.data.group_ids.map(rid => ({ dashboard_id: id, role_id: rid })))
             .execute();
         }
       });

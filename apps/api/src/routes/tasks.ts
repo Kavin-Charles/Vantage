@@ -36,7 +36,7 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
 
   router.get('/', requirePermission('tasks:view'), async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      const { workspace, user, isAdmin } = req as unknown as AuthenticatedRequest;
 
       const parsed = listQuerySchema.safeParse(req.query);
       if (!parsed.success) {
@@ -45,7 +45,7 @@ export function createTasksRouter(db: Kysely<Database>, requirePermission: (p: s
       }
       const { page, per_page, status, assignee_id, contact_id, show_all } = parsed.data;
       // show_all=true (admin only) returns all workspace tasks regardless of assignee
-      const showAll = show_all === true && user.role === 'admin';
+      const showAll = show_all === true && isAdmin;
       // When filtering by contact_id, skip the assignee scope so all tasks for that contact are returned
       const effectiveAssignee = contact_id ? null : (showAll ? null : (assignee_id ?? user.id));
 

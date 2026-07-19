@@ -18,7 +18,7 @@ interface Props {
 
 export function ChannelSettings({ channelId, onClose }: Props) {
   const getToken = useApiToken();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const router = useRouter();
   const qc = useQueryClient();
 
@@ -114,7 +114,7 @@ export function ChannelSettings({ channelId, onClose }: Props) {
     },
   });
 
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = hasPermission('messaging:manage');
 
   return (
     <div style={{

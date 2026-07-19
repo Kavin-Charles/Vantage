@@ -41,11 +41,30 @@ async function backfill() {
         .returning(['id'])
         .executeTakeFirstOrThrow();
 
-      // 2. Default permissions
-      await db.insertInto('record_type_permissions').values([
-        { record_type_id: dealType.id, role: 'admin', can_view: true, can_create: true, can_edit: true, can_delete: true },
-        { record_type_id: dealType.id, role: 'member', can_view: true, can_create: true, can_edit: true, can_delete: false },
-      ] as never).execute();
+      // 2. Default permissions — granted to this workspace's system roles.
+      // record_type_permissions.role_id is a roles FK (the legacy `role` enum
+      // column was dropped by the rbac3 migration), so resolve the workspace's
+      // grants_all (Administrator) and is_default (Member) roles instead.
+      const adminRole = await db
+        .selectFrom('roles')
+        .select(['id'])
+        .where('workspace_id', '=', ws.id)
+        .where('grants_all', '=', true)
+        .executeTakeFirst();
+      const memberRole = await db
+        .selectFrom('roles')
+        .select(['id'])
+        .where('workspace_id', '=', ws.id)
+        .where('is_default', '=', true)
+        .executeTakeFirst();
+
+      const permissionRows = [
+        ...(adminRole ? [{ record_type_id: dealType.id, role_id: adminRole.id, can_view: true, can_create: true, can_edit: true, can_delete: true }] : []),
+        ...(memberRole ? [{ record_type_id: dealType.id, role_id: memberRole.id, can_view: true, can_create: true, can_edit: true, can_delete: false }] : []),
+      ];
+      if (permissionRows.length > 0) {
+        await db.insertInto('record_type_permissions').values(permissionRows as never).execute();
+      }
     }
 
     // 3. Migrate stage_fields → record_type_fields

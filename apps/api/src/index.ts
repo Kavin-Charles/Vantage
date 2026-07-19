@@ -21,11 +21,13 @@ import { createWorkspaceModulesRouter } from './routes/workspace-modules';
 import { createWorkspaceRouter } from './routes/workspace';
 import { createAuthRouter } from './routes/auth';
 import { createUsersRouter } from './routes/users';
-import { createGroupsRouter } from './routes/groups';
+import { createRolesRouter } from './routes/roles';
+import { createRbacConstraintsRouter } from './routes/rbac-constraints';
+import { createUserRolesRouter } from './routes/user-roles';
+import { createSessionRolesRouter } from './routes/session-roles';
 import { createCrossModuleSettingsRouter } from './routes/cross-module-settings';
 import { createSidebarRouter } from './routes/sidebar';
 import { createInvitesRouter } from './routes/invites';
-import { createUserPermissionsRouter } from './routes/user-permissions';
 import { createConfigRouter } from './routes/config';
 import { createSetupRouter } from './routes/setup';
 import { createMeRouter } from './routes/me';
@@ -298,10 +300,20 @@ bridgeRegistry
     return { registered: name, interval_minutes: intervalMin };
   })
   .register('user.get', null, async (ctx, _p, db) => {
-    const row = await (db as any).selectFrom('users').select(['id', 'name', 'email', 'role'])
+    const row = await db.selectFrom('users').select(['id', 'name', 'email'])
       .where('workspace_id', '=', ctx.workspaceId)
       .executeTakeFirst();
-    return row ?? null;
+    if (!row) return null;
+    // 'users.role' was dropped by RBAC3 — derive an admin flag from role membership
+    // instead (grants_all role) so plugins that gated on role='admin' still work.
+    const adminRow = await db.selectFrom('user_roles as ur')
+      .innerJoin('roles as r', 'r.id', 'ur.role_id')
+      .where('ur.user_id', '=', row.id)
+      .where('ur.workspace_id', '=', ctx.workspaceId)
+      .where('r.grants_all', '=', true)
+      .select('r.id')
+      .executeTakeFirst();
+    return { ...row, isAdmin: !!adminRow };
   })
   .register('workspace.get', null, async (ctx, _p, db) => {
     // workspaces has no 'plan' column — selecting it threw 42703 for every plugin.
@@ -420,6 +432,8 @@ app.use('/api/project-templates', requireAuth, createProjectTemplatesRouter(db))
 // Public portal — no requireAuth
 app.use('/api/portal', createPortalRouter(db, env.JWT_SECRET));
 app.use('/api/me/tasks', requireAuth, createMyTasksRouter(db));
+// Self-service session-role activation — any authenticated user manages their own active roles.
+app.use('/api/me/active-roles', requireAuth, createSessionRolesRouter(db));
 app.use('/api/notifications', requireAuth, createNotificationsRouter(db));
 app.use('/api/analytics', requireAuth, requireModule('analytics'), createAnalyticsRouter(db, requirePermission));
 app.use('/api/webhooks', requireAuth, createWebhooksRouter(db));
@@ -439,11 +453,12 @@ app.use('/api/plugins/route/:pluginId', requireAuth, (req, res, next) => {
 
 // Admin only — requireAuth + requireAdmin both applied
 app.use('/api/workspace', requireAuth, requireAdmin, createWorkspaceRouter(db));
-app.use('/api/groups', requireAuth, requireAdmin, createGroupsRouter(db));
 app.use('/api/cross-module-settings', requireAuth, requireAdmin, createCrossModuleSettingsRouter(db));
-app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requireAdmin, env.APP_URL));
-app.use('/api/users/:id/permissions', requireAuth, requireAdmin, createUserPermissionsRouter(db));
-app.use('/api/users', requireAuth, requireAdmin, createUsersRouter(db));
+app.use('/api/invites', createInvitesRouter(db, config.smtp, requireAuth, requirePermission('users:manage'), env.APP_URL));
+app.use('/api/users', requireAuth, requirePermission('users:manage'), createUsersRouter(db));
+app.use('/api/users/:id/roles', requireAuth, createUserRolesRouter(db, requirePermission));
+app.use('/api/roles', requireAuth, createRolesRouter(db, requirePermission));
+app.use('/api/rbac', requireAuth, createRbacConstraintsRouter(db, requirePermission));
 
 // Sidebar layout — GET open to all members, PUT /layout self-guards with requireAdmin
 app.use('/api/sidebar', requireAuth, createSidebarRouter(db));

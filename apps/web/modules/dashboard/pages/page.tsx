@@ -11,7 +11,7 @@ import { CreateDashboardModal } from '../components/CreateDashboardModal';
 export function DashboardIndexPage() {
   const router = useRouter();
   const getToken = useApiToken();
-  const { user } = useAuth();
+  const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
 
@@ -49,11 +49,11 @@ export function DashboardIndexPage() {
       }}
     >
       <p style={{ fontSize: 15, margin: 0 }}>
-        {user?.role === 'admin'
+        {hasPermission('workspace:manage')
           ? 'No dashboards yet.'
           : 'No dashboards have been assigned to your groups.'}
       </p>
-      {user?.role === 'admin' && (
+      {hasPermission('workspace:manage') && (
         <button
           onClick={() => setShowCreate(true)}
           style={{

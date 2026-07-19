@@ -72,8 +72,8 @@ function Toggle({
 export default function NotificationPreferencesPage() {
   const getToken = useApiToken();
   const qc = useQueryClient();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const { hasPermission } = useAuth();
+  const isAdmin = hasPermission('workspace:manage');
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   const { data, isLoading } = useQuery({

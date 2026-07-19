@@ -43,11 +43,13 @@ async function autoProjectFromHubDeals(
   if (wonDeals.length === 0) return;
 
   // Creator for auto-created projects: first workspace admin
-  const admin = await db.selectFrom('users')
-    .select('id')
-    .where('workspace_id', '=', workspaceId)
-    .where('role', '=', 'admin')
-    .orderBy('created_at', 'asc')
+  const admin = await db.selectFrom('user_roles as ur')
+    .innerJoin('roles as r', 'r.id', 'ur.role_id')
+    .innerJoin('users as u', 'u.id', 'ur.user_id')
+    .select('u.id')
+    .where('ur.workspace_id', '=', workspaceId)
+    .where('r.grants_all', '=', true)
+    .orderBy('u.created_at', 'asc')
     .executeTakeFirst();
   if (!admin) return;
 

@@ -11,8 +11,9 @@ function makeApp(db: Kysely<Database>, role: 'admin' | 'member' = 'admin') {
   const app = express()
   app.use(express.json())
   app.use((req, _res, next) => {
-    ;(req as any).user = { id: 'user-1', role }
+    ;(req as any).user = { id: 'user-1' }
     ;(req as any).workspace = { id: WORKSPACE_ID }
+    ;(req as any).isAdmin = role === 'admin'
     next()
   })
   app.use('/api/sidebar', createSidebarRouter(db))

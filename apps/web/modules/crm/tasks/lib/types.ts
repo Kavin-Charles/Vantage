@@ -38,6 +38,7 @@ export interface UnifiedTasksFilters {
   priority?: 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE'
   show_all?: boolean
   q?: string
+  owner_id?: string
 }
 
 export const BUCKET_LABELS: Record<DueBucket, string> = {

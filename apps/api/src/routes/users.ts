@@ -3,25 +3,36 @@ import bcrypt from 'bcrypt';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
+import { assignRole, getDefaultRoleId } from '../lib/role-assignment';
 import { z } from 'zod';
 
 const createUserSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(8),
-  role: z.enum(['admin', 'member']).default('member'),
 });
 
 const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
   email: z.string().email().optional(),
-  role: z.enum(['admin', 'member']).optional(),
   is_active: z.boolean().optional(),
 });
 
 const resetPasswordSchema = z.object({
   password: z.string().min(8),
 });
+
+async function isWorkspaceAdmin(db: Kysely<Database>, userId: string, workspaceId: string): Promise<boolean> {
+  const row = await db
+    .selectFrom('user_roles as ur')
+    .innerJoin('roles as r', 'r.id', 'ur.role_id')
+    .where('ur.user_id', '=', userId)
+    .where('ur.workspace_id', '=', workspaceId)
+    .where('r.grants_all', '=', true)
+    .select('ur.user_id')
+    .executeTakeFirst();
+  return !!row;
+}
 
 export function createUsersRouter(db: Kysely<Database>): Router {
   const router = Router();
@@ -33,16 +44,26 @@ export function createUsersRouter(db: Kysely<Database>): Router {
       const users = await db
         .selectFrom('users')
         .where('workspace_id', '=', workspace.id)
-        .select(['id', 'name', 'email', 'role', 'is_active', 'last_login_at', 'created_at'])
+        .select(['id', 'name', 'email', 'is_active', 'last_login_at', 'created_at'])
         .orderBy('created_at', 'asc')
         .execute();
-      res.json({ data: users, error: null });
+
+      const adminRows = await db
+        .selectFrom('user_roles as ur')
+        .innerJoin('roles as r', 'r.id', 'ur.role_id')
+        .where('ur.workspace_id', '=', workspace.id)
+        .where('r.grants_all', '=', true)
+        .select('ur.user_id')
+        .execute();
+      const adminIds = new Set(adminRows.map(r => r.user_id));
+
+      res.json({ data: users.map(u => ({ ...u, isAdmin: adminIds.has(u.id) })), error: null });
     } catch (err) {
       res.status(500).json({ data: null, error: { code: 'INTERNAL_ERROR' } });
     }
   });
 
-  // POST /api/users — create user (admin only, enforced at route level)
+  // POST /api/users — create user (users:manage, enforced at route level)
   router.post('/', async (req, res) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
@@ -62,6 +83,12 @@ export function createUsersRouter(db: Kysely<Database>): Router {
         return;
       }
 
+      const defaultRoleId = await getDefaultRoleId(db, workspace.id);
+      if (!defaultRoleId) {
+        res.status(500).json({ data: null, error: { code: 'NO_DEFAULT_ROLE' } });
+        return;
+      }
+
       const hash = await bcrypt.hash(parsed.data.password, 12);
       const user = await db
         .insertInto('users')
@@ -70,10 +97,11 @@ export function createUsersRouter(db: Kysely<Database>): Router {
           name: parsed.data.name,
           email: parsed.data.email,
           password_hash: hash,
-          role: parsed.data.role,
         })
-        .returning(['id', 'name', 'email', 'role', 'created_at'])
+        .returning(['id', 'name', 'email', 'created_at'])
         .executeTakeFirstOrThrow();
+
+      await assignRole(db, workspace.id, user.id, defaultRoleId);
 
       res.status(201).json({ data: user, error: null });
     } catch (err) {
@@ -81,7 +109,7 @@ export function createUsersRouter(db: Kysely<Database>): Router {
     }
   });
 
-  // PATCH /api/users/:id — update name/email/role
+  // PATCH /api/users/:id — update name/email/active
   router.patch('/:id', async (req, res) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
@@ -101,7 +129,7 @@ export function createUsersRouter(db: Kysely<Database>): Router {
         .set(parsed.data)
         .where('id', '=', req.params['id']!)
         .where('workspace_id', '=', workspace.id)
-        .returning(['id', 'name', 'email', 'role'])
+        .returning(['id', 'name', 'email'])
         .executeTakeFirst();
 
       if (!updated) {
@@ -159,21 +187,18 @@ export function createUsersRouter(db: Kysely<Database>): Router {
         return;
       }
 
-      // Guard: must have at least one active admin after removal
-      const target = await db
-        .selectFrom('users')
-        .where('id', '=', req.params['id']!)
-        .where('workspace_id', '=', workspace.id)
-        .select(['role'])
-        .executeTakeFirst();
+      // Guard: must have at least one active admin (grants_all role) after removal
+      const targetIsAdmin = await isWorkspaceAdmin(db, req.params['id']!, workspace.id);
 
-      if (target?.role === 'admin') {
+      if (targetIsAdmin) {
         const countResult = await db
-          .selectFrom('users')
-          .where('workspace_id', '=', workspace.id)
-          .where('role', '=', 'admin')
-          .where('is_active', '=', true)
-          .select(db.fn.count<number>('id').as('count'))
+          .selectFrom('user_roles as ur')
+          .innerJoin('roles as r', 'r.id', 'ur.role_id')
+          .innerJoin('users as u', 'u.id', 'ur.user_id')
+          .where('ur.workspace_id', '=', workspace.id)
+          .where('r.grants_all', '=', true)
+          .where('u.is_active', '=', true)
+          .select(eb => eb.fn.count<number>('ur.user_id').distinct().as('count'))
           .executeTakeFirstOrThrow();
         if (Number(countResult.count) <= 1) {
           res.status(400).json({ data: null, error: { code: 'LAST_ADMIN' } });
@@ -198,18 +223,18 @@ export function createUsersRouter(db: Kysely<Database>): Router {
     }
   });
 
-  // GET /api/users/:id/groups — list groups user belongs to
+  // GET /api/users/:id/groups — list roles user belongs to
   router.get('/:id/groups', async (req, res) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      const groups = await db
-        .selectFrom('group_members as gm')
-        .innerJoin('groups as g', 'g.id', 'gm.group_id')
-        .where('gm.user_id', '=', req.params['id']!)
-        .where('gm.workspace_id', '=', workspace.id)
-        .select(['g.id', 'g.name', 'g.color'])
+      const roles = await db
+        .selectFrom('user_roles as ur')
+        .innerJoin('roles as r', 'r.id', 'ur.role_id')
+        .where('ur.user_id', '=', req.params['id']!)
+        .where('ur.workspace_id', '=', workspace.id)
+        .select(['r.id', 'r.name', 'r.color'])
         .execute();
-      res.json({ data: groups, error: null });
+      res.json({ data: roles, error: null });
     } catch (err) {
       res.status(500).json({ data: null, error: { code: 'INTERNAL_ERROR' } });
     }

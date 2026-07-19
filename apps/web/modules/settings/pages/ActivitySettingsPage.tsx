@@ -61,8 +61,8 @@ function Toggle({
 export default function ActivitySettingsPage() {
   const getToken = useApiToken();
   const qc = useQueryClient();
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const { hasPermission } = useAuth();
+  const isAdmin = hasPermission('workspace:manage');
 
   const { data, isLoading } = useQuery({
     queryKey: ['module-event-settings'],

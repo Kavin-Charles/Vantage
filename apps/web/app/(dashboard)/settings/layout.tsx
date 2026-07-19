@@ -14,7 +14,6 @@ interface SettingsLink {
 
 interface SettingsGroup {
   label: string | null;
-  adminOnly?: boolean;
   links: SettingsLink[];
 }
 
@@ -26,6 +25,20 @@ const ADMIN_ONLY_DEEP_LINKS = [
   '/settings/dashboards',
   '/settings/project-management',
 ];
+
+// Workspace-management links are gated per-link by permission rather than by a blanket
+// admin flag on the group. isAdmin always satisfies hasPermission (see AuthContext).
+const LINK_PERMISSION: Record<string, string> = {
+  '/settings/workspace': 'workspace:manage',
+  '/settings/users': 'users:manage',
+  '/settings/notifications': 'workspace:manage',
+  '/settings/modules': 'modules:manage',
+  '/settings/plugins': 'plugins:manage',
+  '/settings/api-keys': 'apikeys:manage',
+  '/settings/ssh': 'workspace:manage',
+  '/settings/integrations': 'integrations:manage',
+  '/settings/updates': 'workspace:manage',
+};
 
 const GROUPS: SettingsGroup[] = [
   {
@@ -45,10 +58,9 @@ const GROUPS: SettingsGroup[] = [
   },
   {
     label: 'Workspace',
-    adminOnly: true,
     links: [
       { href: '/settings/workspace', label: 'Workspace' },
-      { href: '/settings/users', label: 'Users & Groups' },
+      { href: '/settings/users', label: 'Users & Roles' },
       { href: '/settings/notifications', label: 'Notifications' },
       { href: '/settings/modules', label: 'Modules' },
       { href: '/settings/plugins', label: 'Plugins' },
@@ -66,7 +78,7 @@ const GROUPS: SettingsGroup[] = [
 
 function isActive(pathname: string, href: string): boolean {
   if (pathname.startsWith(href)) return true;
-  if (href === '/settings/users' && pathname.startsWith('/settings/groups')) return true;
+  if (href === '/settings/users' && (pathname.startsWith('/settings/roles') || pathname.startsWith('/settings/groups'))) return true;
   return false;
 }
 
@@ -111,21 +123,21 @@ function SettingsNavLink({ href, label, active }: { href: string; label: string;
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isLoading } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const { user, isLoading, hasPermission } = useAuth();
+  const isAdmin = !!user?.isAdmin;
 
-  const visibleGroups = GROUPS.filter(g => !g.adminOnly || isAdmin);
-  const adminOnlyHrefs = [
-    ...GROUPS.filter(g => g.adminOnly).flatMap(g => g.links.map(l => l.href)),
-    ...ADMIN_ONLY_DEEP_LINKS,
-  ];
+  const canSee = (href: string): boolean => !(href in LINK_PERMISSION) || hasPermission(LINK_PERMISSION[href]);
+
+  const visibleGroups = GROUPS.map(group => ({ ...group, links: group.links.filter(link => canSee(link.href)) })).filter(
+    group => group.links.length > 0
+  );
 
   useEffect(() => {
-    if (
-      !isLoading &&
-      !isAdmin &&
-      (adminOnlyHrefs.some(href => isActive(pathname, href)) || pathname.startsWith('/settings/groups'))
-    ) {
+    if (isLoading) return;
+    const deepLinkBlocked = !isAdmin && ADMIN_ONLY_DEEP_LINKS.some(href => isActive(pathname, href));
+    const workspaceHref = Object.keys(LINK_PERMISSION).find(href => isActive(pathname, href));
+    const workspaceLinkBlocked = workspaceHref ? !hasPermission(LINK_PERMISSION[workspaceHref]) : false;
+    if (deepLinkBlocked || workspaceLinkBlocked) {
       router.push('/settings/profile');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

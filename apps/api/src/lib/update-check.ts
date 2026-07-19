@@ -60,9 +60,10 @@ export async function runUpdateCheck(
 
     if (meta?.notified_version !== latest) {
       const admins = await db
-        .selectFrom('users')
-        .select(['id', 'workspace_id'])
-        .where('role', '=', 'admin')
+        .selectFrom('user_roles as ur')
+        .innerJoin('roles as r', 'r.id', 'ur.role_id')
+        .select(['ur.user_id as id', 'ur.workspace_id'])
+        .where('r.grants_all', '=', true)
         .execute();
 
       if (admins.length > 0) {

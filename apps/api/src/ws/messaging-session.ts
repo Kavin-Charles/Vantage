@@ -58,7 +58,7 @@ export async function handleMessagingUpgrade(
   const user = await db
     .selectFrom('users')
     .where('id', '=', payload.sub)
-    .select(['id', 'workspace_id', 'role', 'name'])
+    .select(['id', 'workspace_id', 'name'])
     .executeTakeFirst();
 
   if (!user) {

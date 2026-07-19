@@ -96,19 +96,19 @@ describe('createRequireAuth', () => {
 });
 
 describe('requireAdmin', () => {
-  it('returns 403 if role is member', async () => {
+  it('returns 403 if isAdmin is false', async () => {
     const json = vi.fn();
     const mockRes = { status: vi.fn().mockReturnValue({ json }) };
     const next = vi.fn();
-    const req = { user: { role: 'member' } };
+    const req = { user: {}, isAdmin: false };
     const { requireAdmin } = await import('../middleware/auth');
     requireAdmin(req as never, mockRes as never, next);
     expect(mockRes.status).toHaveBeenCalledWith(403);
   });
 
-  it('calls next if role is admin', async () => {
+  it('calls next if isAdmin is true', async () => {
     const next = vi.fn();
-    const req = { user: { role: 'admin' } };
+    const req = { user: {}, isAdmin: true };
     const { requireAdmin } = await import('../middleware/auth');
     requireAdmin(req as never, {} as never, next);
     expect(next).toHaveBeenCalled();

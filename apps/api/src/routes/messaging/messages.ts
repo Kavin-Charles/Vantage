@@ -298,7 +298,7 @@ export function createMessagesRouter(
   // DELETE /messages/:id — soft delete (own) or any (messaging:manage)
   router.delete('/:id', requirePermission('messaging:send'), async (req, res, next) => {
     try {
-      const { workspace, user } = req as unknown as AuthenticatedRequest;
+      const { workspace, user, isAdmin } = req as unknown as AuthenticatedRequest;
 
       const existing = await db
         .selectFrom('messages')
@@ -314,7 +314,6 @@ export function createMessagesRouter(
 
       // Admins can delete any message; members only their own
       const isOwner = existing.user_id === user.id;
-      const isAdmin = user.role === 'admin';
       if (!isOwner && !isAdmin) {
         res.status(403).json({ data: null, error: { code: 'FORBIDDEN', message: 'Can only delete your own messages' } });
         return;
