@@ -27,7 +27,8 @@ function isUsingTsx(): boolean {
     !fs.existsSync(path.join(__dirname, 'runner.js'));
 }
 
-interface SandboxEntry {
+interface ChildProcessSandboxEntry {
+  inProcess?: false;
   child: ChildProcess;
   router: Router | null;
   pendingHttpRequests: Map<string, { resolve: (r: unknown) => void; reject: (e: unknown) => void }>;
@@ -35,6 +36,17 @@ interface SandboxEntry {
   workspaceId: string;
   busSubscriptions: Array<{ event: string; handler: (payload: unknown) => void | Promise<void> }>;
 }
+
+interface InProcessSandboxEntry {
+  inProcess: true;
+  router: Router;
+  pluginId: string;
+  workspaceId: string;
+  busSubscriptions: Array<{ event: string; handler: (payload: unknown) => void }>;
+  busHandlers: Map<string, Array<(payload: unknown) => void | Promise<void>>>;
+}
+
+type SandboxEntry = ChildProcessSandboxEntry | InProcessSandboxEntry;
 
 let httpRequestIdCounter = 0;
 const sandboxes = new Map<string, SandboxEntry>();
@@ -47,9 +59,169 @@ function sandboxKey(pluginId: string, workspaceId: string): string {
 function unsubscribeBus(entry: SandboxEntry): void {
   const bus = pluginEventBus.forWorkspace(entry.workspaceId);
   for (const sub of entry.busSubscriptions) {
-    bus.off(sub.event, sub.handler);
+    bus.off(sub.event, sub.handler as any);
   }
   entry.busSubscriptions = [];
+}
+
+/**
+ * Spawns an in-process sandbox fallback when child process fork is blocked or fails.
+ */
+function spawnInProcessSandbox(
+  pluginId: string,
+  workspaceId: string,
+  bundlePath: string,
+  dataAccess: readonly PluginPermission[],
+  tables: string[],
+  db: Kysely<Database>,
+  listens: readonly string[] = [],
+  manifest?: PluginManifest,
+): void {
+  const key = sandboxKey(pluginId, workspaceId);
+  const router = Router({ mergeParams: true });
+  const busHandlers = new Map<string, Array<(payload: unknown) => void | Promise<void>>>();
+  const busSubscriptions: Array<{ event: string; handler: (payload: unknown) => void }> = [];
+
+  const entry: InProcessSandboxEntry = {
+    inProcess: true,
+    router,
+    pluginId,
+    workspaceId,
+    busSubscriptions,
+    busHandlers,
+  };
+
+  sandboxes.set(key, entry);
+  routerCache.set(key, router);
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const mod = require(path.resolve(bundlePath)) as {
+      default?: { setup(vencore: unknown): void | Promise<void> };
+    };
+
+    if (!mod.default?.setup) {
+      logger.error({ pluginId, workspaceId }, 'In-process plugin setup failed: default.setup not found');
+      return;
+    }
+
+    const bridge = async (method: string, payload: unknown): Promise<unknown> => {
+      const result = await dispatchBridgeCall(
+        db as Kysely<any>,
+        { workspaceId, pluginSlug: pluginId, dataAccess, tables, manifest },
+        { method, payload: payload as any },
+      );
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+      return result.data;
+    };
+
+    const vencore = {
+      storage: {
+        get: (k: string) => bridge('storage.get', { key: k }),
+        set: (k: string, value: unknown) => bridge('storage.set', { key: k, value }),
+        delete: (k: string) => bridge('storage.delete', { key: k }),
+      },
+      settings: {
+        get: (k: string) => bridge('settings.get', { key: k }),
+        set: (k: string, value: unknown) => bridge('settings.set', { key: k, value }),
+      },
+      http: {
+        fetch: (url: string, opts?: unknown) => bridge('http.fetch', { url, ...(opts as object ?? {}) }),
+        onEndpoint: (endpointPath: string, handler: (req: unknown) => Promise<unknown>) => {
+          router.all(endpointPath, async (req, res) => {
+            try {
+              const result: any = await handler({
+                method: req.method,
+                path: req.path,
+                query: req.query as Record<string, string>,
+                headers: req.headers as Record<string, string>,
+                body: req.body != null ? (typeof req.body === 'string' ? req.body : JSON.stringify(req.body)) : null,
+                params: req.params as Record<string, string>,
+              });
+
+              const status = result?.status ?? 200;
+              const headers = result?.headers ?? {};
+              for (const [k, v] of Object.entries(headers)) res.setHeader(k, v as string);
+              res.status(status);
+              if (typeof result?.body === 'string') res.send(result.body);
+              else if (result?.body != null) res.json(result.body);
+              else res.end();
+            } catch (err) {
+              logger.error({ err, pluginId, workspaceId }, 'In-process plugin HTTP endpoint error');
+              res.status(500).json({ data: null, error: { code: 'PLUGIN_ERROR', message: 'Internal plugin error' } });
+            }
+          });
+        },
+      },
+      table: (name: string) => ({
+        list: (opts?: unknown) => bridge('table.list', { name, ...(opts as object ?? {}) }),
+        get: (id: string) => bridge('table.get', { name, id }),
+        insert: (data: unknown) => bridge('table.insert', { name, data }),
+        update: (id: string, data: unknown) => bridge('table.update', { name, id, data }),
+        delete: (id: string) => bridge('table.delete', { name, id }),
+        upsert: (data: unknown, opts: unknown) => bridge('table.upsert', { name, data, ...(opts as object) }),
+        count: (where?: unknown) => bridge('table.count', { name, where }),
+      }),
+      list: (resource: string, filter?: unknown) => bridge(`${resource}.list`, { filter }),
+      get: (resource: string, id: string) => bridge(`${resource}.get`, { id }),
+      create: (resource: string, data: unknown) => bridge(`${resource}.create`, { data }),
+      update: (resource: string, id: string, data: unknown) => bridge(`${resource}.update`, { id, data }),
+      delete: (resource: string, id: string) => bridge(`${resource}.delete`, { id }),
+      action: (resource: string, action: string, payload?: unknown) => bridge(`${resource}.${action}`, { payload }),
+      user: { get: () => bridge('user.get', {}) },
+      workspace: { get: () => bridge('workspace.get', {}) },
+      notify: (opts: unknown) => bridge('notify', opts),
+      files: {
+        upload: (buffer: Uint8Array, opts: unknown) => bridge('files.upload', { buffer: Buffer.from(buffer).toString('base64'), ...(opts as object) }),
+        getUrl: (fileId: string) => bridge('files.getUrl', { fileId }),
+        delete: (fileId: string) => bridge('files.delete', { fileId }),
+      },
+      cron: {
+        register: (schedule: string, name: string, handler: () => void | Promise<void>) => {
+          bridge('cron.register', { schedule, name }).catch(() => {});
+          busHandlers.set(`cron:${name}`, [handler]);
+        },
+      },
+      permissions: {
+        check: (userId: string, permissionKey: string) => bridge('permissions.check', { userId, permissionKey }),
+      },
+      context: {
+        get: () => bridge('context.get', {}),
+      },
+      bus: {
+        on: (event: string, handler: (payload: unknown) => void | Promise<void>) => {
+          const arr = busHandlers.get(event) ?? [];
+          arr.push(handler);
+          busHandlers.set(event, arr);
+        },
+        emit: (event: string, payload: unknown) => bridge('bus.emit', { event, payload }),
+      },
+    };
+
+    Promise.resolve(mod.default.setup(vencore)).catch((err) => {
+      logger.error({ err, pluginId, workspaceId }, 'In-process plugin setup promise rejected');
+    });
+
+    const parentBus = pluginEventBus.forWorkspace(workspaceId);
+    for (const event of new Set(listens)) {
+      const handler = (payload: unknown): void => {
+        const arr = busHandlers.get(event) ?? [];
+        for (const h of arr) {
+          Promise.resolve(h(payload)).catch((err) => {
+            logger.error({ err, pluginId, workspaceId, event }, 'In-process plugin event handler failed');
+          });
+        }
+      };
+      parentBus.on(event, handler);
+      busSubscriptions.push({ event, handler });
+    }
+
+    logger.info({ pluginId, workspaceId }, 'In-process plugin sandbox loaded successfully');
+  } catch (err) {
+    logger.error({ err, pluginId, workspaceId }, 'In-process plugin sandbox require failed');
+  }
 }
 
 export function spawnPluginSandbox(
@@ -68,30 +240,34 @@ export function spawnPluginSandbox(
   const existing = sandboxes.get(key);
   if (existing) {
     unsubscribeBus(existing);
-    existing.child.kill('SIGTERM');
+    if (!existing.inProcess) {
+      existing.child.kill('SIGTERM');
+    }
     sandboxes.delete(key);
     routerCache.delete(key);
   }
 
   const runnerPath = getRunnerPath();
-  // Use tsx's unified registration (`--import tsx`) rather than the ESM-only
-  // loader. On Node 23+ the ESM-only loader plus the runner's require() of the
-  // CJS plugin bundle trips ERR_REQUIRE_CYCLE_MODULE; the unified hook installs
-  // both CJS + ESM handling and avoids it. Prod (compiled runner.js) skips tsx.
   const execArgs: string[] = isUsingTsx()
     ? ['--import', 'tsx']
     : [];
 
-  const child = fork(runnerPath, [], {
-    execArgv: execArgs,
-    stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-    env: {
-      // Deliberately pass NO env vars to the sandbox — plugins have no env access
-      NODE_ENV: process.env['NODE_ENV'] ?? 'production',
-    },
-  });
+  let child: ChildProcess;
+  try {
+    child = fork(runnerPath, [], {
+      execArgv: execArgs,
+      stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+      env: {
+        NODE_ENV: process.env['NODE_ENV'] ?? 'production',
+      },
+    });
+  } catch (err) {
+    logger.warn({ pluginId, workspaceId, error: err instanceof Error ? err.message : String(err) }, 'Failed to spawn plugin sandbox child process. Falling back to in-process execution.');
+    spawnInProcessSandbox(pluginId, workspaceId, bundlePath, dataAccess, tables, db, listens, manifest);
+    return;
+  }
 
-  const entry: SandboxEntry = {
+  const entry: ChildProcessSandboxEntry = {
     child,
     router: null,
     pendingHttpRequests: new Map(),
@@ -107,7 +283,6 @@ export function spawnPluginSandbox(
   child.on('message', async (msg: Record<string, unknown>) => {
     switch (msg['type']) {
       case 'ready': {
-        // Send setup message once child signals ready
         child.send({
           type: 'setup',
           bundlePath,
@@ -123,11 +298,6 @@ export function spawnPluginSandbox(
         entry.router = router;
         routerCache.set(key, router);
 
-        // Subscribe declared listen topics on the workspace bus and forward
-        // each event to the sandbox over IPC. Topics come from the manifest
-        // (`listens` + `hooks` + hub change topics) — the parent cannot see
-        // the child's internal bus.on registrations, so the manifest is the
-        // source of truth for what reaches the sandbox.
         const bus = pluginEventBus.forWorkspace(workspaceId);
         for (const event of new Set(listens)) {
           const handler = (payload: unknown): void => {
@@ -240,7 +410,6 @@ export function spawnPluginSandbox(
     unsubscribeBus(entry);
     sandboxes.delete(key);
     routerCache.delete(key);
-    // Auto-restart on crash (but not on deliberate kill)
     if (signal !== 'SIGTERM' && code !== 0) {
       logger.info({ pluginId, workspaceId }, 'Restarting plugin sandbox after crash');
       setTimeout(() => {
@@ -251,7 +420,6 @@ export function spawnPluginSandbox(
     }
   });
 
-  // Pipe child stderr to parent logger
   child.stderr?.on('data', (chunk: Buffer) => {
     logger.warn({ pluginId, workspaceId }, `Plugin stderr: ${chunk.toString().trim()}`);
   });
@@ -261,11 +429,6 @@ export function getSandboxRouter(pluginId: string, workspaceId: string): Router 
   return routerCache.get(sandboxKey(pluginId, workspaceId)) ?? null;
 }
 
-/**
- * Sends a bus-style event directly to one sandbox (used by the plugin cron
- * worker to fire `cron:<name>` handlers registered inside the child).
- * Returns false when the sandbox is not running.
- */
 export function sendBusEventToSandbox(
   pluginId: string,
   workspaceId: string,
@@ -273,14 +436,25 @@ export function sendBusEventToSandbox(
   payload: unknown,
 ): boolean {
   const entry = sandboxes.get(sandboxKey(pluginId, workspaceId));
-  if (!entry || !entry.child.connected) return false;
+  if (!entry) return false;
+  if (entry.inProcess) {
+    const handlers = entry.busHandlers.get(event) ?? [];
+    for (const h of handlers) {
+      Promise.resolve(h(payload)).catch((err) => {
+        logger.error({ err, pluginId, workspaceId, event }, 'In-process plugin cron event execution failed');
+      });
+    }
+    return true;
+  }
+  if (!entry.child.connected) return false;
   entry.child.send({ type: 'bus_event', event, payload });
   return true;
 }
 
 export function isSandboxRunning(pluginId: string, workspaceId: string): boolean {
   const entry = sandboxes.get(sandboxKey(pluginId, workspaceId));
-  return Boolean(entry?.child.connected);
+  if (!entry) return false;
+  return entry.inProcess ? true : Boolean(entry.child.connected);
 }
 
 export function killSandbox(pluginId: string, workspaceId: string): void {
@@ -288,7 +462,9 @@ export function killSandbox(pluginId: string, workspaceId: string): void {
   const entry = sandboxes.get(key);
   if (entry) {
     unsubscribeBus(entry);
-    entry.child.kill('SIGTERM');
+    if (!entry.inProcess) {
+      entry.child.kill('SIGTERM');
+    }
     sandboxes.delete(key);
     routerCache.delete(key);
   }
@@ -297,7 +473,9 @@ export function killSandbox(pluginId: string, workspaceId: string): void {
 export function killAllSandboxes(): void {
   for (const [, entry] of sandboxes) {
     unsubscribeBus(entry);
-    entry.child.kill('SIGTERM');
+    if (!entry.inProcess) {
+      entry.child.kill('SIGTERM');
+    }
   }
   sandboxes.clear();
   routerCache.clear();
