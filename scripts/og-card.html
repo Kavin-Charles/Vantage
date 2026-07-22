@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  :root {
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --border: #e4e0d8;
+    --text: #1a1814;
+    --text2: #6b665c;
+    --green: #2d6a4f;
+    --green-bg: #d8f3dc;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1280px; height: 640px; }
+  body {
+    background:
+      radial-gradient(1100px 520px at 82% -12%, rgba(45,106,79,0.10), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 72px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .brand { display: flex; align-items: center; gap: 20px; }
+  .brand img { width: 76px; height: 76px; border-radius: 18px; }
+  .brand .name {
+    font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+    font-size: 52px;
+    letter-spacing: -0.5px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--green-bg);
+    color: var(--green);
+    font-weight: 600;
+    font-size: 20px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    margin-bottom: 26px;
+  }
+  .badge .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+  h1 {
+    font-family: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+    font-weight: 400;
+    font-size: 78px;
+    line-height: 1.02;
+    letter-spacing: -1px;
+    max-width: 1000px;
+  }
+  h1 .accent { color: var(--green); }
+  .subline {
+    margin-top: 26px;
+    font-size: 27px;
+    line-height: 1.4;
+    color: var(--text2);
+    max-width: 940px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 12px; }
+  .chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+  <header class="brand">
+    <img src="../logo.png" alt="Vencore logo" />
+    <span class="name">Vencore</span>
+  </header>
+
+  <main>
+    <span class="badge"><span class="dot"></span>Open-source · Self-hosted</span>
+    <h1>The <span class="accent">open-source</span>, self-hosted company&nbsp;OS.</h1>
+    <p class="subline">White-label CRM · Projects · Infra Monitoring · Analytics — one modular, multi-tenant platform.</p>
+  </main>
+
+  <footer class="chips">
+    <span class="chip">CRM &amp; Pipeline</span>
+    <span class="chip">Project Management</span>
+    <span class="chip">Infra Monitoring</span>
+    <span class="chip">Analytics</span>
+    <span class="chip">Messaging</span>
+    <span class="chip">Plugin Marketplace</span>
+  </footer>
+</body>
+</html>
