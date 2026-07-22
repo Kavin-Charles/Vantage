@@ -6,7 +6,19 @@ import { configSchema, type VantageConfig } from './config-schema';
 let cached: VantageConfig | null = null;
 
 const SAFE_DEFAULTS: VantageConfig = {
-  app: { name: 'Vencore', logoUrl: '/logo.png', domain: undefined },
+  app: {
+    name: 'Vencore',
+    logoUrl: '/logo.png',
+    domain: undefined,
+    appearance: {
+      accentColor: '#0b1330',
+      preset: 'default',
+      radius: 'rounded',
+      density: 'comfortable',
+      sidebarStyle: 'light',
+      login: { background: null, backgroundImage: null },
+    },
+  },
   features: { crm: true, infra: true, alerts: true, analytics: false, files: false },
   smtp: null,
   databases: [],
