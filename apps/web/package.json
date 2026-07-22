@@ -14,6 +14,7 @@
     "@reduxjs/toolkit": "^2.12.0",
     "@tanstack/react-query": "^5.0.0",
     "@vencore/api-client": "workspace:*",
+    "@vencore/config": "workspace:*",
     "@vencore/modules": "workspace:*",
     "@vencore/types": "workspace:*",
     "@xterm/addon-fit": "^0.11.0",

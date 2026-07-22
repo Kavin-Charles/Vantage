@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { generateTheme, appearanceSchema, type Appearance } from '@vencore/config';
 import { AuthProvider } from '@/modules/shared/lib/AuthContext';
 import { ThemeProvider } from '@/modules/shared/contexts/ThemeContext';
 import { Providers } from '@/modules/shared/components/Providers';
@@ -17,16 +18,38 @@ const ibmPlexMono = IBM_Plex_Mono({
   variable: '--font-mono',
 });
 
-async function getBranding(): Promise<{ name: string | null; tagline: string | null; faviconUrl: string | null }> {
+interface Branding {
+  name: string | null;
+  tagline: string | null;
+  faviconUrl: string | null;
+  appearance: Appearance;
+}
+
+async function getBranding(): Promise<Branding> {
   const apiUrl = process.env['API_URL'] ?? process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001';
   try {
     const res = await fetch(`${apiUrl}/api/config`, { cache: 'no-store', signal: AbortSignal.timeout(3000) });
-    const json = await res.json() as { data?: { app?: { name?: string; tagline?: string | null; faviconUrl?: string | null } } };
+    const json = await res.json() as {
+      data?: { app?: { name?: string; tagline?: string | null; faviconUrl?: string | null; appearance?: Appearance } };
+    };
     const app = json.data?.app;
-    return { name: app?.name ?? null, tagline: app?.tagline ?? null, faviconUrl: app?.faviconUrl ?? null };
+    return {
+      name: app?.name ?? null,
+      tagline: app?.tagline ?? null,
+      faviconUrl: app?.faviconUrl ?? null,
+      appearance: app?.appearance ?? appearanceSchema.parse({}),
+    };
   } catch {
-    return { name: null, tagline: null, faviconUrl: null };
+    return { name: null, tagline: null, faviconUrl: null, appearance: appearanceSchema.parse({}) };
   }
+}
+
+function themeStyle(appearance: Appearance): string {
+  const toBlock = (sel: string, vars: Record<string, string>) =>
+    `${sel}{${Object.entries(vars).map(([k, v]) => `${k}:${v}`).join(';')}}`;
+  const light = generateTheme(appearance.accentColor, 'light');
+  const dark = generateTheme(appearance.accentColor, 'dark');
+  return toBlock(':root', light) + toBlock('[data-theme="dark"]', dark);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -42,13 +65,21 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const { appearance } = await getBranding();
+
   return (
     <html
       lang="en"
       className={`${ibmPlexSans.variable} ${ibmPlexMono.variable}`}
+      data-radius={appearance.radius}
+      data-density={appearance.density}
+      data-nav={appearance.sidebarStyle}
       suppressHydrationWarning
     >
+      <head>
+        <style id="brand-theme" dangerouslySetInnerHTML={{ __html: themeStyle(appearance) }} />
+      </head>
       <body suppressHydrationWarning>
         <div id="app-root">
           <Providers>

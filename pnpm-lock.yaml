@@ -214,6 +214,9 @@ importers:
       '@vencore/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@vencore/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@vencore/modules':
         specifier: workspace:*
         version: link:../../packages/modules
