@@ -88,7 +88,7 @@ function NavLink({
   const router = useRouter();
   const [hover, setHover] = useState(false);
   const active = pathname === href || (href !== '/' && pathname.startsWith(href));
-  const bg = active ? 'var(--text)' : hover ? 'var(--surface2)' : 'transparent';
+  const bg = active ? 'var(--nav-active)' : hover ? 'var(--surface2)' : 'transparent';
   const fg = active ? 'var(--bg)' : hover ? 'var(--text)' : 'var(--text2)';
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
