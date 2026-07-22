@@ -14,7 +14,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const dispatch = useDispatch<AppDispatch>();
   const { data: config } = useConfig();
-  const login = config?.app.appearance.login;
+  const login = config?.app.appearance?.login;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
