@@ -30,8 +30,8 @@ export function Topbar({ action, left }: { action?: React.ReactNode; left?: Reac
   return (
     <div style={{
       height: 'var(--header-h)',
-      background: 'var(--surface)',
-      borderBottom: '1px solid var(--border)',
+      background: 'var(--nav-bg)',
+      borderBottom: '1px solid var(--nav-border)',
       display: 'flex', alignItems: 'center',
       padding: '0 24px', gap: 16, flexShrink: 0,
     }}>
@@ -40,7 +40,7 @@ export function Topbar({ action, left }: { action?: React.ReactNode; left?: Reac
           <span style={{
             fontFamily: 'var(--font-display)',
             fontSize: 20, fontWeight: 500,
-            letterSpacing: '-0.4px', color: 'var(--text)',
+            letterSpacing: '-0.4px', color: 'var(--nav-fg)',
           }}>{title}</span>
         )}
       </div>

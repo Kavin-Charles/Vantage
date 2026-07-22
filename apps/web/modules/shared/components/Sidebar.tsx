@@ -88,8 +88,10 @@ function NavLink({
   const router = useRouter();
   const [hover, setHover] = useState(false);
   const active = pathname === href || (href !== '/' && pathname.startsWith(href));
-  const bg = active ? 'var(--nav-active)' : hover ? 'var(--surface2)' : 'transparent';
-  const fg = active ? 'var(--bg)' : hover ? 'var(--text)' : 'var(--text2)';
+  const bg = active
+    ? 'color-mix(in srgb, var(--nav-fg) 16%, transparent)'
+    : hover ? 'var(--surface2)' : 'transparent';
+  const fg = active ? 'var(--nav-fg)' : hover ? 'var(--nav-fg)' : 'var(--nav-fg-muted)';
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
   return (
@@ -199,7 +201,7 @@ function GroupHeader({
             fontSize: 10, fontWeight: 600, color: 'var(--text3)',
             textTransform: 'uppercase', letterSpacing: 1.4,
             background: 'transparent', border: 'none',
-            borderBottom: '1px solid var(--border)',
+            borderBottom: '1px solid var(--nav-border)',
             outline: 'none', width: '100%', fontFamily: 'inherit',
             padding: 0,
           }}
@@ -401,14 +403,14 @@ export function Sidebar() {
   return (
     <div style={{
       width: 'var(--sidebar-w)',
-      background: 'var(--surface)',
-      borderRight: '1px solid var(--border)',
+      background: 'var(--nav-bg)',
+      borderRight: '1px solid var(--nav-border)',
       display: 'flex', flexDirection: 'column', flexShrink: 0,
       height: '100vh',
     }}>
       {/* Logo lockup */}
       <div style={{
-        padding: '16px 18px 14px', borderBottom: '1px solid var(--border)',
+        padding: '16px 18px 14px', borderBottom: '1px solid var(--nav-border)',
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
         <div style={{
@@ -424,7 +426,7 @@ export function Sidebar() {
         </div>
         <span style={{
           fontFamily: 'var(--font-display)', fontSize: 19,
-          fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.4px',
+          fontWeight: 600, color: 'var(--nav-fg)', letterSpacing: '-0.4px',
         }}>
           {config?.app?.name ?? ''}
         </span>
@@ -518,21 +520,21 @@ export function Sidebar() {
       </div>
 
       {/* User */}
-      <div style={{ marginTop: 'auto', padding: 12, borderTop: '1px solid var(--border)' }}>
+      <div style={{ marginTop: 'auto', padding: 12, borderTop: '1px solid var(--nav-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 12 }}>
           <div style={{
             width: 30, height: 30, borderRadius: '50%',
-            background: 'var(--surface2)', border: '1px solid var(--border)',
+            background: 'color-mix(in srgb, var(--nav-fg) 8%, transparent)', border: '1px solid var(--nav-border)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, fontWeight: 600, color: 'var(--text2)', flexShrink: 0,
+            fontSize: 12, fontWeight: 600, color: 'var(--nav-fg-muted)', flexShrink: 0,
           }}>
             {user ? ((user.name ?? user.email ?? '?')[0] ?? '?').toUpperCase() : '?'}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--nav-fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user?.name ?? user?.email ?? ''}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', textTransform: 'capitalize' }}>
+            <div style={{ fontSize: 11, color: 'var(--nav-fg-muted)', textTransform: 'capitalize' }}>
               {user ? (user.isAdmin ? 'Admin' : 'Member') : ''}
             </div>
           </div>
@@ -541,7 +543,7 @@ export function Sidebar() {
             title="Settings"
             style={{
               position: 'relative', background: 'none', border: 'none', cursor: 'pointer',
-              color: pathname.startsWith('/settings') ? 'var(--text)' : 'var(--text3)',
+              color: pathname.startsWith('/settings') ? 'var(--nav-fg)' : 'var(--nav-fg-muted)',
               padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center',
             }}
           >
@@ -553,7 +555,7 @@ export function Sidebar() {
           <button
             onClick={() => void logout()}
             title="Sign out"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--nav-fg-muted)', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center' }}
           >
             <Icon name="logout" size={15} />
           </button>
