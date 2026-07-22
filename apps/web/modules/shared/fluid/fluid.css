@@ -1,0 +1,94 @@
+/* apps/web/modules/shared/fluid/fluid.css */
+/* Vencore Fluid tokens — SCOPED to .fluid-root only. Never touches :root/globals.css. */
+
+.fluid-root {
+  /* Palette (light) — from vencore_fluid/DESIGN.md */
+  --fl-primary: #0048ce;
+  --fl-primary-container: #2d62ed;
+  --fl-on-primary: #ffffff;
+  --fl-on-primary-container: #eff0ff;
+  --fl-secondary: #686000;
+  --fl-secondary-container: #f3e34c;
+  --fl-on-secondary-container: #6d6400;
+  --fl-error: #ba1a1a;
+  --fl-error-container: #ffdad6;
+  --fl-on-error-container: #93000a;
+
+  --fl-surface: #f7f9fb;
+  --fl-surface-container-lowest: #ffffff;
+  --fl-surface-container-low: #f2f4f6;
+  --fl-surface-container: #eceef0;
+  --fl-surface-container-high: #e6e8ea;
+  --fl-surface-container-highest: #e0e3e5;
+  --fl-on-surface: #191c1e;
+  --fl-on-surface-variant: #434655;
+  --fl-outline: #737686;
+  --fl-outline-variant: #c3c5d7;
+
+  /* Glass */
+  --fl-glass-bg: rgba(255, 255, 255, 0.6);
+  --fl-glass-panel-bg: rgba(255, 255, 255, 0.4);
+  --fl-glass-border: rgba(255, 255, 255, 0.4);
+  --fl-glass-blur: 16px;
+
+  /* Body gradient */
+  --fl-body-gradient:
+    radial-gradient(circle at top left, #f7f9fb, #e0e3e5 40%, #f3e34c22 80%),
+    radial-gradient(circle at bottom right, #eff0ff 0%, #ffffff 50%);
+
+  /* Type */
+  --fl-font-display: var(--fluid-font-display), 'Space Grotesk', system-ui, sans-serif;
+  --fl-font-body: var(--fluid-font-body), 'Inter', system-ui, sans-serif;
+
+  /* Radii */
+  --fl-radius-input: 12px;
+  --fl-radius-card: 24px;
+  --fl-radius-pill: 9999px;
+
+  /* Elevation */
+  --fl-shadow-float: 0 20px 40px rgba(0, 0, 0, 0.04);
+  --fl-shadow-primary: 0 10px 20px rgba(0, 72, 206, 0.15);
+
+  color: var(--fl-on-surface);
+  font-family: var(--fl-font-body);
+}
+
+/* Dark overrides — data-theme is set on <html> by ThemeContext. Designed (no mockup). */
+:root[data-theme='dark'] .fluid-root {
+  --fl-on-primary: #eff0ff;
+  --fl-on-primary-container: #dce1ff;
+
+  --fl-surface: #101317;
+  --fl-surface-container-lowest: #0b0e11;
+  --fl-surface-container-low: #161a1f;
+  --fl-surface-container: #1b2027;
+  --fl-surface-container-high: #222831;
+  --fl-surface-container-highest: #2a313b;
+  --fl-on-surface: #eff1f3;
+  --fl-on-surface-variant: #c3c6cf;
+  --fl-outline: #8b8f9c;
+  --fl-outline-variant: #3a3f4b;
+
+  --fl-glass-bg: rgba(24, 28, 35, 0.55);
+  --fl-glass-panel-bg: rgba(24, 28, 35, 0.4);
+  --fl-glass-border: rgba(255, 255, 255, 0.08);
+
+  --fl-body-gradient:
+    radial-gradient(circle at top left, #12161c, #0b0e11 45%, #1b1f0a 90%),
+    radial-gradient(circle at bottom right, #10162b 0%, #0b0e11 55%);
+}
+
+.fluid-root .glass-panel {
+  background: var(--fl-glass-panel-bg);
+  backdrop-filter: blur(var(--fl-glass-blur));
+  -webkit-backdrop-filter: blur(var(--fl-glass-blur));
+  border: 1px solid var(--fl-glass-border);
+}
+
+.fluid-root .glass-card {
+  background: var(--fl-glass-bg);
+  backdrop-filter: blur(var(--fl-glass-blur));
+  -webkit-backdrop-filter: blur(var(--fl-glass-blur));
+  border: 1px solid var(--fl-glass-border);
+  border-radius: var(--fl-radius-card);
+}
