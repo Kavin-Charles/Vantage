@@ -5,6 +5,10 @@ export { readConfig, _resetConfig } from './read-config';
 export { readConfigFromDb } from './read-config-from-db';
 export type { VantageConfig, VantageConfig as VencoreConfig, DbSeedConfig, SmtpConfig } from './config-schema';
 export { configSchema, smtpSchema } from './config-schema';
+export { appearanceSchema, type Appearance } from './config-schema';
+
+// Visual customization — brand seed color → theme palette
+export { generateTheme } from './palette';
 
 // API env (process.env — only DB + secrets, no Clerk/Stripe)
 export const apiEnvSchema = z.object({
