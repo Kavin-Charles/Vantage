@@ -90,7 +90,7 @@ function NavLink({
   const active = pathname === href || (href !== '/' && pathname.startsWith(href));
   const bg = active
     ? 'color-mix(in srgb, var(--nav-fg) 16%, transparent)'
-    : hover ? 'var(--surface2)' : 'transparent';
+    : hover ? 'color-mix(in srgb, var(--nav-fg) 8%, transparent)' : 'transparent';
   const fg = active ? 'var(--nav-fg)' : hover ? 'var(--nav-fg)' : 'var(--nav-fg-muted)';
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
