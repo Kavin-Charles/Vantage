@@ -39,6 +39,10 @@ const setupSchema = z.object({
     radius: z.enum(['sharp', 'rounded', 'pill']).optional(),
     density: z.enum(['comfortable', 'compact']).optional(),
     sidebarStyle: z.enum(['light', 'dark', 'brand']).optional(),
+    login: z.object({
+      background: z.string().nullable(),
+      backgroundImage: z.string().nullable(),
+    }).optional(),
   }),
   features: z.object({
     crm: z.boolean(),
@@ -151,7 +155,7 @@ export function createSetupRouter(db: Kysely<Database>): Router {
               radius: branding.radius ?? 'rounded',
               density: branding.density ?? 'comfortable',
               sidebarStyle: branding.sidebarStyle ?? 'light',
-              login: { background: null, backgroundImage: null },
+              login: branding.login ?? { background: null, backgroundImage: null },
             },
           },
           features,

@@ -92,8 +92,8 @@ function BrandAppearanceSection() {
 
   useEffect(() => {
     if (config?.app.appearance) {
-      const { accentColor, preset, radius, density, sidebarStyle } = config.app.appearance;
-      setValues({ accentColor, preset, radius, density, sidebarStyle });
+      const { accentColor, preset, radius, density, sidebarStyle, login } = config.app.appearance;
+      setValues({ accentColor, preset, radius, density, sidebarStyle, login });
     }
   }, [config]);
 

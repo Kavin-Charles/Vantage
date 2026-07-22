@@ -69,6 +69,7 @@ describe('wizardReducer', () => {
       radius: 'rounded' as const,
       density: 'comfortable' as const,
       sidebarStyle: 'light' as const,
+      login: { background: null, backgroundImage: null },
     };
     const next = wizardReducer(INITIAL_STATE, { type: 'SET_BRANDING', value: updated });
     expect(next.branding.name).toBe('Acme');

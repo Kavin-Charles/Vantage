@@ -29,6 +29,7 @@ export type SetupState = {
     radius: 'sharp' | 'rounded' | 'pill';
     density: 'comfortable' | 'compact';
     sidebarStyle: 'light' | 'dark' | 'brand';
+    login: { background: string | null; backgroundImage: string | null };
   };
   smtp: SmtpConfig | null;
   features: { crm: boolean; infra: boolean; alerts: boolean; analytics: boolean };
@@ -60,6 +61,7 @@ export const INITIAL_STATE: SetupState = {
     radius: 'rounded',
     density: 'comfortable',
     sidebarStyle: 'light',
+    login: { background: null, backgroundImage: null },
   },
   smtp: null,
   features: { crm: true, infra: true, alerts: true, analytics: false },

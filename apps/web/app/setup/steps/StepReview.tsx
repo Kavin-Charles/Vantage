@@ -63,6 +63,7 @@ export function StepReview({ state, dispatch }: Props) {
             radius: state.branding.radius,
             density: state.branding.density,
             sidebarStyle: state.branding.sidebarStyle,
+            login: state.branding.login,
           },
           features: state.features,
           smtp: state.smtp,

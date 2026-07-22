@@ -1,6 +1,7 @@
 'use client';
 
 import { PRESETS } from '@vencore/config';
+import { Dropzone } from '@/modules/shared/components/ui/Dropzone';
 
 export interface AppearanceValues {
   accentColor: string;
@@ -8,6 +9,10 @@ export interface AppearanceValues {
   radius: 'sharp' | 'rounded' | 'pill';
   density: 'comfortable' | 'compact';
   sidebarStyle: 'light' | 'dark' | 'brand';
+  login: {
+    background: string | null;
+    backgroundImage: string | null;
+  };
 }
 
 export interface AppearanceControlsProps {
@@ -36,7 +41,10 @@ const SIDEBAR_OPTIONS = [
 ] as const;
 
 export function AppearanceControls({ value, onChange, disabled }: AppearanceControlsProps) {
-  const { accentColor, preset, radius, density, sidebarStyle } = value;
+  const { accentColor, preset, radius, density, sidebarStyle, login } = value;
+
+  const setLogin = (partial: Partial<AppearanceValues['login']>) =>
+    onChange({ login: { ...login, ...partial } });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -150,6 +158,66 @@ export function AppearanceControls({ value, onChange, disabled }: AppearanceCont
         disabled={disabled}
         onSelect={id => onChange({ sidebarStyle: id })}
       />
+
+      <Section
+        label="Login page background"
+        hint="If an image is set, it takes precedence over the background color."
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <input
+            type="color"
+            aria-label="Pick login background color"
+            value={login.background ?? '#ffffff'}
+            disabled={disabled}
+            onChange={e => setLogin({ background: e.target.value })}
+            style={{ width: 40, height: 32, border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', borderRadius: 4 }}
+          />
+          <input
+            aria-label="Login background color hex value"
+            value={login.background ?? ''}
+            disabled={disabled}
+            onChange={e => setLogin({ background: e.target.value || null })}
+            style={{
+              width: 110,
+              padding: '8px 12px',
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              background: 'var(--surface)',
+              color: 'var(--text)',
+              fontSize: 14,
+              boxSizing: 'border-box',
+            }}
+            placeholder="#f7f6f2"
+          />
+          {login.background && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => setLogin({ background: null })}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--surface)',
+                color: 'var(--text2)',
+                fontSize: 12,
+                cursor: disabled ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
+        <Dropzone
+          label="Background image"
+          hint="Optional — shown behind the login card, overrides the color above"
+          value={login.backgroundImage ?? ''}
+          onChange={dataUrl => setLogin({ backgroundImage: dataUrl })}
+          onRemove={() => setLogin({ backgroundImage: null })}
+          previewHeight={56}
+        />
+      </Section>
     </div>
   );
 }

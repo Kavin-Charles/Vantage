@@ -39,6 +39,7 @@ export function StepBranding({ state, dispatch, validateRef, onValidChange }: Pr
     radius: branding.radius,
     density: branding.density,
     sidebarStyle: branding.sidebarStyle,
+    login: branding.login,
   };
 
   const handleAppearanceChange = (partial: Partial<AppearanceValues>) => {
