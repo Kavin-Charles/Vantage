@@ -8,6 +8,14 @@ interface PublicConfig {
     faviconUrl: string | null;
     tagline: string | null;
     primaryColor: string | null;
+    appearance: {
+      accentColor: string;
+      preset: string;
+      radius: 'sharp' | 'rounded' | 'pill';
+      density: 'comfortable' | 'compact';
+      sidebarStyle: 'light' | 'dark' | 'brand';
+      login: { background: string | null; backgroundImage: string | null };
+    };
   };
   features: {
     crm: boolean;

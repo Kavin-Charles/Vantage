@@ -20,6 +20,7 @@ export function createConfigRouter(config: VencoreConfig, db: Kysely<Database>):
           faviconUrl: effective.app.faviconUrl ?? null,
           tagline: effective.app.tagline ?? null,
           primaryColor: effective.app.primaryColor ?? null,
+          appearance: effective.app.appearance,
         },
         features: effective.features,
       },

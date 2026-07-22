@@ -25,6 +25,19 @@
   --purple:       #4c1d95;
   --purple-bg:    #ede9fe;
 
+  /* Brand accent (overridden by SSR <style id="brand-theme">) */
+  --accent:        #0b1330;
+  --accent-hover:  #4a5677;
+  --accent-active: #0b1330;
+  --accent-weak:   #dbeafe;
+  --accent-fg:     #ffffff;
+
+  /* Navigation chrome */
+  --nav-bg:     var(--surface);
+  --nav-fg:     var(--text);
+  --nav-active: var(--accent);
+  --nav-border: var(--border);
+
   /* Layout */
   --sidebar-w:   220px;
   --header-h:    56px;
@@ -79,6 +92,12 @@
   --blue-bg:      #16233a;
   --purple:       #c4b5fd;
   --purple-bg:    #2a1f3a;
+
+  --accent:        #60a5fa;
+  --accent-hover:  #93c5fd;
+  --accent-active: #3b82f6;
+  --accent-weak:   #16233a;
+  --accent-fg:     #0f1117;
 
   --shadow-hover: 0 2px 8px rgba(0,0,0,0.4);
   --shadow-modal: 0 8px 32px rgba(0,0,0,0.5);
