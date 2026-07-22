@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { SetupState, WizardAction } from '../types';
 import { Dropzone } from '@/modules/shared/components/ui/Dropzone';
+import { AppearanceControls, type AppearanceValues } from '@/modules/shared/components/AppearanceControls';
 
 type Props = {
   state: SetupState;
@@ -10,8 +11,6 @@ type Props = {
   validateRef: React.MutableRefObject<() => boolean>;
   onValidChange: (valid: boolean) => void;
 };
-
-const SWATCHES = ['#0b1330', '#1e3a8a', '#2d6a4f', '#92400e', '#991b1b', '#4c1d95', '#0f766e', '#1a1814'];
 
 export function StepBranding({ state, dispatch, validateRef, onValidChange }: Props) {
   const { branding } = state;
@@ -33,6 +32,22 @@ export function StepBranding({ state, dispatch, validateRef, onValidChange }: Pr
 
   const set = (partial: Partial<SetupState['branding']>) =>
     dispatch({ type: 'SET_BRANDING', value: { ...branding, ...partial } });
+
+  const appearanceValue: AppearanceValues = {
+    accentColor: branding.primaryColor,
+    preset: branding.preset,
+    radius: branding.radius,
+    density: branding.density,
+    sidebarStyle: branding.sidebarStyle,
+  };
+
+  const handleAppearanceChange = (partial: Partial<AppearanceValues>) => {
+    const { accentColor, ...rest } = partial;
+    set({
+      ...(accentColor !== undefined ? { primaryColor: accentColor } : {}),
+      ...rest,
+    });
+  };
 
   return (
     <div data-step-id="branding">
@@ -83,41 +98,7 @@ export function StepBranding({ state, dispatch, validateRef, onValidChange }: Pr
             previewHeight={36}
           />
 
-          <Field label="Primary brand color" htmlFor="branding-color-hex">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-              <input
-                type="color"
-                aria-label="Pick custom color"
-                value={branding.primaryColor}
-                onChange={e => set({ primaryColor: e.target.value })}
-                style={{ width: 40, height: 32, border: 'none', cursor: 'pointer', borderRadius: 4 }}
-              />
-              <input
-                id="branding-color-hex"
-                style={{ ...input, width: 110 }}
-                value={branding.primaryColor}
-                onChange={e => set({ primaryColor: e.target.value })}
-                placeholder="#0b1330"
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {SWATCHES.map(swatch => (
-                <button
-                  key={swatch}
-                  type="button"
-                  aria-label={`Use color ${swatch}`}
-                  onClick={() => set({ primaryColor: swatch })}
-                  style={{
-                    width: 26, height: 26, borderRadius: '50%', background: swatch,
-                    border: branding.primaryColor.toLowerCase() === swatch ? '2px solid var(--text)' : '2px solid var(--border)',
-                    cursor: 'pointer', padding: 0,
-                    transform: branding.primaryColor.toLowerCase() === swatch ? 'scale(1.12)' : 'scale(1)',
-                    transition: 'transform var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease)',
-                  }}
-                />
-              ))}
-            </div>
-          </Field>
+          <AppearanceControls value={appearanceValue} onChange={handleAppearanceChange} />
 
           <Field label="Tagline" htmlFor="branding-tagline" hint="Optional — shown on login page">
             <input
