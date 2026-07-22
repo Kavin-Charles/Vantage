@@ -9,6 +9,7 @@ export { appearanceSchema, type Appearance } from './config-schema';
 
 // Visual customization — brand seed color → theme palette
 export { generateTheme } from './palette';
+export { PRESETS, getPreset, type Preset } from './presets';
 
 // API env (process.env — only DB + secrets, no Clerk/Stripe)
 export const apiEnvSchema = z.object({
