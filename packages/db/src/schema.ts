@@ -25,6 +25,17 @@ export interface UserTable {
   is_active: Generated<boolean>;
   theme: Generated<'light' | 'dark'>;
   last_login_at: Date | null;
+  default_landing_page: string | null;
+  totp_secret: string | null;
+  totp_enabled: Generated<boolean>;
+  created_at: Generated<Date>;
+}
+
+export interface UserRecoveryCodeTable {
+  id: Generated<string>;
+  user_id: string;
+  code_hash: string;
+  used_at: Date | null;
   created_at: Generated<Date>;
 }
 
@@ -1336,6 +1347,7 @@ export interface WorkspaceHookConfigTable {
 export interface Database {
   workspaces: WorkspaceTable;
   users: UserTable;
+  user_recovery_codes: UserRecoveryCodeTable;
   companies: CompanyTable;
   contacts: ContactTable;
   contact_tags: ContactTagTable;
