@@ -1,6 +1,6 @@
 'use client'
 
-import { Icon } from '@/modules/shared/components/ui/Icon'
+import { MSIcon } from '@/modules/shared/fluid/ui/MSIcon'
 
 interface Props {
   count: number
@@ -16,10 +16,10 @@ export function BulkActionBar({ count, onMarkDone, onMarkTodo, onDelete, onClear
   return (
     <div style={{
       position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-      background: 'var(--text)', color: '#fff',
-      borderRadius: 12, padding: '10px 16px',
+      background: '#102a43', color: '#ffffff',
+      borderRadius: 'var(--fl-radius-pill)', padding: '10px 16px',
       display: 'flex', alignItems: 'center', gap: 8,
-      boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+      boxShadow: '0 12px 32px rgba(0,0,0,0.24)',
       zIndex: 100,
       animation: 'bulkBarIn 0.15s ease-out forwards',
     }}>
@@ -35,7 +35,7 @@ export function BulkActionBar({ count, onMarkDone, onMarkTodo, onDelete, onClear
       {[
         { label: 'Mark done', icon: 'check', onClick: onMarkDone, danger: false },
         { label: 'Mark todo', icon: 'refresh', onClick: onMarkTodo, danger: false },
-        { label: 'Delete', icon: 'trash', onClick: onDelete, danger: true },
+        { label: 'Delete', icon: 'delete', onClick: onDelete, danger: true },
       ].map(action => (
         <button
           key={action.label}
@@ -51,7 +51,7 @@ export function BulkActionBar({ count, onMarkDone, onMarkTodo, onDelete, onClear
           onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.2)' }}
           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)' }}
         >
-          <Icon name={action.icon} size={12} />
+          <MSIcon name={action.icon} size={14} />
           {action.label}
         </button>
       ))}
@@ -68,7 +68,7 @@ export function BulkActionBar({ count, onMarkDone, onMarkTodo, onDelete, onClear
         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.6)' }}
         title="Clear selection"
       >
-        <Icon name="x" size={14} />
+        <MSIcon name="close" size={16} />
       </button>
     </div>
   )

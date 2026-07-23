@@ -2,9 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Modal } from '@/modules/shared/components/ui/Modal'
-import { Button } from '@/modules/shared/components/ui/Button'
-import { FormField, Input } from '@/modules/shared/components/ui/FormField'
+import { FluidModal, FluidInput, FluidSelect, FluidButton } from '@/modules/shared/fluid/ui'
 import { apiFetch } from '@/modules/shared/lib/api'
 import { useApiToken } from '@/modules/shared/lib/useApiToken'
 
@@ -70,16 +68,17 @@ export function AddTaskModal({ onClose }: Props) {
     },
   })
 
-  const selectStyle: React.CSSProperties = {
-    width: '100%', padding: '8px 12px', border: '1px solid var(--border)',
-    borderRadius: 10, fontSize: 13, background: 'var(--bg)', color: 'var(--text)',
-    fontFamily: 'inherit', outline: 'none',
+  function fieldLabel(label: string): React.ReactNode {
+    return (
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--fl-on-surface-variant)', marginBottom: 6 }}>
+        {label}
+      </label>
+    )
   }
 
   if (!source) {
     return (
-      <Modal title="Add Task" onClose={onClose}>
-        <p style={{ fontSize: 13, color: 'var(--text2)', marginBottom: 16 }}>Where should this task live?</p>
+      <FluidModal open title="Add Task" subtitle="Where should this task live?" onClose={onClose}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           {([
             { id: 'general', label: 'General', desc: 'Standalone task' },
@@ -90,20 +89,20 @@ export function AddTaskModal({ onClose }: Props) {
               key={opt.id}
               onClick={() => setSource(opt.id)}
               style={{
-                padding: '16px 12px', borderRadius: 10,
-                border: '1.5px solid var(--border)', background: 'var(--bg)',
-                cursor: 'pointer', textAlign: 'center', fontFamily: 'inherit',
+                padding: '16px 12px', borderRadius: 'var(--fl-radius-input)',
+                border: '1.5px solid var(--fl-outline-variant)', background: 'var(--fl-surface-container-lowest)',
+                cursor: 'pointer', textAlign: 'center', fontFamily: 'var(--fl-font-body)',
                 transition: 'border-color 0.12s, background 0.12s',
               }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--text)'; (e.currentTarget as HTMLElement).style.background = 'var(--surface2)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.background = 'var(--bg)' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--fl-primary)'; (e.currentTarget as HTMLElement).style.background = 'var(--fl-surface-container)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--fl-outline-variant)'; (e.currentTarget as HTMLElement).style.background = 'var(--fl-surface-container-lowest)' }}
             >
-              <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', marginBottom: 4 }}>{opt.label}</div>
-              <div style={{ fontSize: 11, color: 'var(--text3)' }}>{opt.desc}</div>
+              <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--fl-on-surface)', marginBottom: 4 }}>{opt.label}</div>
+              <div style={{ fontSize: 11, color: 'var(--fl-on-surface-variant)' }}>{opt.desc}</div>
             </button>
           ))}
         </div>
-      </Modal>
+      </FluidModal>
     )
   }
 
@@ -112,58 +111,69 @@ export function AddTaskModal({ onClose }: Props) {
     (source !== 'project' || form.project_id !== '')
 
   return (
-    <Modal title={`Add ${source.charAt(0).toUpperCase() + source.slice(1)} Task`} onClose={onClose}>
+    <FluidModal open title={`Add ${source.charAt(0).toUpperCase() + source.slice(1)} Task`} onClose={onClose}>
       <form onSubmit={e => { e.preventDefault(); if (canSubmit) createMut.mutate() }}>
-        <FormField label="Title *">
-          <Input required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Task title" />
-        </FormField>
+        <div style={{ marginBottom: 14 }}>
+          {fieldLabel('Title *')}
+          <FluidInput value={form.title} onChange={v => setForm(f => ({ ...f, title: v }))} placeholder="Task title" />
+        </div>
 
         {source === 'contact' && (
-          <FormField label="Contact *">
-            <select style={selectStyle} value={form.contact_id} onChange={e => setForm(f => ({ ...f, contact_id: e.target.value }))}>
-              <option value="">— Select contact —</option>
-              {contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </FormField>
+          <div style={{ marginBottom: 14 }}>
+            {fieldLabel('Contact *')}
+            <FluidSelect
+              value={form.contact_id}
+              onChange={v => setForm(f => ({ ...f, contact_id: v }))}
+              options={[{ label: '— Select contact —', value: '' }, ...contacts.map(c => ({ label: c.name, value: c.id }))]}
+            />
+          </div>
         )}
 
         {source === 'project' && (
           <>
-            <FormField label="Project *">
-              <select style={selectStyle} value={form.project_id} onChange={e => setForm(f => ({ ...f, project_id: e.target.value }))}>
-                <option value="">— Select project —</option>
-                {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </FormField>
-            <FormField label="Priority">
-              <select style={selectStyle} value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
-                {['NONE', 'LOW', 'MEDIUM', 'HIGH', 'URGENT'].map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </FormField>
+            <div style={{ marginBottom: 14 }}>
+              {fieldLabel('Project *')}
+              <FluidSelect
+                value={form.project_id}
+                onChange={v => setForm(f => ({ ...f, project_id: v }))}
+                options={[{ label: '— Select project —', value: '' }, ...projects.map(p => ({ label: p.name, value: p.id }))]}
+              />
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              {fieldLabel('Priority')}
+              <FluidSelect
+                value={form.priority}
+                onChange={v => setForm(f => ({ ...f, priority: v }))}
+                options={['NONE', 'LOW', 'MEDIUM', 'HIGH', 'URGENT'].map(p => ({ label: p, value: p }))}
+              />
+            </div>
           </>
         )}
 
-        <FormField label="Assign to">
-          <select style={selectStyle} value={form.assignee_id} onChange={e => setForm(f => ({ ...f, assignee_id: e.target.value }))}>
-            <option value="">— Me —</option>
-            {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}
-          </select>
-        </FormField>
+        <div style={{ marginBottom: 14 }}>
+          {fieldLabel('Assign to')}
+          <FluidSelect
+            value={form.assignee_id}
+            onChange={v => setForm(f => ({ ...f, assignee_id: v }))}
+            options={[{ label: '— Me —', value: '' }, ...users.map(u => ({ label: `${u.name} (${u.email})`, value: u.id }))]}
+          />
+        </div>
 
-        <FormField label="Due date">
-          <Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
-        </FormField>
+        <div style={{ marginBottom: 14 }}>
+          {fieldLabel('Due date')}
+          <FluidInput type="date" value={form.due_date} onChange={v => setForm(f => ({ ...f, due_date: v }))} />
+        </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'space-between', marginTop: 4 }}>
-          <Button type="button" onClick={() => setSource(null)}>← Back</Button>
+          <FluidButton type="button" variant="ghost" onClick={() => setSource(null)}>← Back</FluidButton>
           <div style={{ display: 'flex', gap: 8 }}>
-            <Button type="button" onClick={onClose}>Cancel</Button>
-            <Button type="submit" variant="primary" disabled={!canSubmit || createMut.isPending}>
+            <FluidButton type="button" variant="ghost" onClick={onClose}>Cancel</FluidButton>
+            <FluidButton type="submit" disabled={!canSubmit || createMut.isPending}>
               {createMut.isPending ? 'Saving…' : 'Add task'}
-            </Button>
+            </FluidButton>
           </div>
         </div>
       </form>
-    </Modal>
+    </FluidModal>
   )
 }

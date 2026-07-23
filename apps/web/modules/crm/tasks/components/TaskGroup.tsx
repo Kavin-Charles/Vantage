@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Icon } from '@/modules/shared/components/ui/Icon'
+import { MSIcon } from '@/modules/shared/fluid/ui/MSIcon'
 import type { UnifiedTask } from '../lib/types'
 import { TaskRow } from './TaskRow'
 import type { ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu'
@@ -36,8 +36,8 @@ export function TaskGroup({
           display: 'flex', alignItems: 'center', gap: 8,
           width: '100%', background: 'none', border: 'none', cursor: 'pointer',
           padding: '8px 16px', textAlign: 'left',
-          color: isOverdue ? 'var(--red)' : 'var(--text2)',
-          fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', fontFamily: 'inherit',
+          color: isOverdue ? 'var(--fl-error)' : 'var(--fl-on-surface-variant)',
+          fontSize: 12, fontWeight: 600, letterSpacing: '0.04em', fontFamily: 'var(--fl-font-body)',
         }}
       >
         <span style={{
@@ -45,13 +45,13 @@ export function TaskGroup({
           transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
           transition: 'transform 0.2s ease',
         }}>
-          <Icon name="chevron-down" size={13} />
+          <MSIcon name="expand_more" size={16} />
         </span>
         {label.toUpperCase()}
         <span style={{
           fontSize: 11, fontWeight: 700,
-          background: isOverdue ? 'var(--red-bg)' : 'var(--surface2)',
-          color: isOverdue ? 'var(--red)' : 'var(--text3)',
+          background: isOverdue ? 'var(--fl-error-container)' : 'var(--fl-surface-container)',
+          color: isOverdue ? 'var(--fl-error)' : 'var(--fl-on-surface-variant)',
           padding: '1px 7px', borderRadius: 999,
         }}>
           {tasks.length}
@@ -62,9 +62,9 @@ export function TaskGroup({
         overflow: 'hidden',
         maxHeight: collapsed ? 0 : `${tasks.length * 60}px`,
         transition: 'max-height 0.2s ease',
-        background: 'var(--surface)',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--border)',
+        background: 'var(--fl-surface-container-lowest)',
+        borderRadius: 'var(--fl-radius-card)',
+        border: '1px solid var(--fl-outline-variant)',
       }}>
         {tasks.map((task, i) => (
           <TaskRow

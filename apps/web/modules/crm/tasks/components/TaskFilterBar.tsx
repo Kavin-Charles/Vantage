@@ -1,6 +1,6 @@
 'use client'
 
-import { Icon } from '@/modules/shared/components/ui/Icon'
+import { FluidInput, FluidChip, FluidSelect } from '@/modules/shared/fluid/ui'
 import type { UnifiedTasksFilters } from '../lib/types'
 
 interface Props {
@@ -30,80 +30,53 @@ const PRIORITY_OPTIONS = [
   { value: 'LOW', label: 'Low' },
 ] as const
 
-const pillStyle = (active: boolean): React.CSSProperties => ({
-  padding: '4px 12px', borderRadius: 999, border: '1px solid var(--border)',
-  background: active ? 'var(--text)' : 'var(--surface)',
-  color: active ? '#fff' : 'var(--text2)',
-  fontSize: 12, fontWeight: 500, cursor: 'pointer',
-  fontFamily: 'inherit', transition: 'all 0.12s', whiteSpace: 'nowrap',
-})
-
-const selectStyle: React.CSSProperties = {
-  padding: '4px 10px', borderRadius: 8, border: '1px solid var(--border)',
-  background: 'var(--surface)', color: 'var(--text2)', fontSize: 12,
-  fontFamily: 'inherit', outline: 'none', cursor: 'pointer',
-}
-
 export function TaskFilterBar({ filters, isAdmin, onFiltersChange }: Props) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-      padding: '12px 0', marginBottom: 8,
+      display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
+      padding: '4px 0 16px',
     }}>
-      <div style={{ position: 'relative', marginRight: 4 }}>
-        <div style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text3)', display: 'flex' }}>
-          <Icon name="search" size={13} />
-        </div>
-        <input
-          type="text"
+      <div style={{ width: 200 }}>
+        <FluidInput
           value={filters.q ?? ''}
-          onChange={e => onFiltersChange({ ...filters, q: e.target.value || undefined })}
+          onChange={v => onFiltersChange({ ...filters, q: v || undefined })}
           placeholder="Search tasks…"
-          style={{
-            paddingLeft: 28, paddingRight: 10, paddingTop: 5, paddingBottom: 5,
-            borderRadius: 8, border: '1px solid var(--border)',
-            background: 'var(--surface)', color: 'var(--text)', fontSize: 12,
-            fontFamily: 'inherit', outline: 'none', width: 180,
-          }}
+          icon="search"
         />
       </div>
 
       {STATUS_OPTIONS.map(opt => (
-        <button
+        <FluidChip
           key={opt.value}
-          style={pillStyle((filters.status ?? 'all') === opt.value)}
+          active={(filters.status ?? 'all') === opt.value}
           onClick={() => onFiltersChange({ ...filters, status: opt.value as UnifiedTasksFilters['status'] })}
         >
           {opt.label}
-        </button>
+        </FluidChip>
       ))}
 
-      <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px' }} />
+      <div style={{ width: 1, height: 20, background: 'var(--fl-outline-variant)', margin: '0 2px' }} />
 
       {SOURCE_OPTIONS.map(opt => (
-        <button
+        <FluidChip
           key={opt.value}
-          style={pillStyle((filters.source ?? 'all') === opt.value)}
+          active={(filters.source ?? 'all') === opt.value}
           onClick={() => onFiltersChange({ ...filters, source: opt.value as UnifiedTasksFilters['source'] })}
         >
           {opt.label}
-        </button>
+        </FluidChip>
       ))}
 
-      <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px' }} />
+      <div style={{ width: 1, height: 20, background: 'var(--fl-outline-variant)', margin: '0 2px' }} />
 
-      <select
-        style={selectStyle}
+      <FluidSelect
         value={filters.priority ?? ''}
-        onChange={e => onFiltersChange({ ...filters, priority: (e.target.value || undefined) as UnifiedTasksFilters['priority'] })}
-      >
-        {PRIORITY_OPTIONS.map(opt => (
-          <option key={opt.value ?? 'any'} value={opt.value ?? ''}>{opt.label}</option>
-        ))}
-      </select>
+        onChange={v => onFiltersChange({ ...filters, priority: (v || undefined) as UnifiedTasksFilters['priority'] })}
+        options={PRIORITY_OPTIONS.map(opt => ({ label: opt.label, value: opt.value ?? '' }))}
+      />
 
       {isAdmin && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text2)', cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--fl-on-surface-variant)', cursor: 'pointer' }}>
           <input
             type="checkbox"
             checked={filters.show_all ?? false}

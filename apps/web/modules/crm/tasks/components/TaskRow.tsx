@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Icon } from '@/modules/shared/components/ui/Icon'
+import { MSIcon } from '@/modules/shared/fluid/ui/MSIcon'
 import type { ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu'
 import type { UnifiedTask } from '../lib/types'
 import { PRIORITY_COLOR, PRIORITY_BG, SOURCE_COLOR } from '../lib/types'
@@ -25,8 +25,8 @@ function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => voi
       onClick={e => { e.stopPropagation(); onChange() }}
       style={{
         width: 18, height: 18, borderRadius: 6, flexShrink: 0,
-        border: '1.5px solid ' + (checked ? 'var(--text)' : 'var(--border2, #d4cfc5)'),
-        background: checked ? 'var(--text)' : 'transparent',
+        border: '1.5px solid ' + (checked ? 'var(--fl-primary)' : 'var(--fl-outline-variant)'),
+        background: checked ? 'var(--fl-primary)' : 'transparent',
         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 0,
         transition: 'all 0.15s, transform 0.15s',
@@ -36,7 +36,7 @@ function Checkbox({ checked, onChange }: { checked: boolean; onChange: () => voi
       onMouseUp={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1)' }}
     >
-      {checked && <Icon name="check" size={11} color="#fff" strokeWidth={2.5} />}
+      {checked && <MSIcon name="check" size={13} style={{ color: 'var(--fl-on-primary)' }} weight={700} />}
     </button>
   )
 }
@@ -47,13 +47,13 @@ function SelectBox({ checked, onChange }: { checked: boolean; onChange: () => vo
       onClick={e => { e.stopPropagation(); onChange() }}
       style={{
         width: 16, height: 16, borderRadius: 4, flexShrink: 0,
-        border: '1.5px solid ' + (checked ? 'var(--text)' : 'var(--border)'),
-        background: checked ? 'var(--text)' : 'transparent',
+        border: '1.5px solid ' + (checked ? 'var(--fl-primary)' : 'var(--fl-outline-variant)'),
+        background: checked ? 'var(--fl-primary)' : 'transparent',
         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 0, transition: 'all 0.12s',
       }}
     >
-      {checked && <Icon name="check" size={10} color="#fff" strokeWidth={3} />}
+      {checked && <MSIcon name="check" size={12} style={{ color: 'var(--fl-on-primary)' }} weight={700} />}
     </button>
   )
 }
@@ -115,8 +115,8 @@ export function TaskRow({
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '11px 16px',
-        borderBottom: '1px solid var(--border)',
-        background: selected ? 'var(--blue-bg)' : hover ? 'var(--surface2)' : 'transparent',
+        borderBottom: '1px solid var(--fl-outline-variant)',
+        background: selected ? 'rgba(0,72,206,0.08)' : hover ? 'var(--fl-surface-container)' : 'transparent',
         transition: 'background 0.12s',
         cursor: 'pointer',
         opacity: 0,
@@ -149,9 +149,9 @@ export function TaskRow({
           onKeyDown={handleKeyDown}
           onClick={e => e.stopPropagation()}
           style={{
-            flex: 1, border: '1px solid var(--border)', borderRadius: 6,
+            flex: 1, border: '1px solid var(--fl-outline-variant)', borderRadius: 6,
             padding: '2px 6px', fontSize: 13, fontFamily: 'inherit',
-            background: 'var(--surface)', color: 'var(--text)', outline: 'none',
+            background: 'var(--fl-surface-container-lowest)', color: 'var(--fl-on-surface)', outline: 'none',
           }}
         />
       ) : (
@@ -159,7 +159,7 @@ export function TaskRow({
           onDoubleClick={startEdit}
           style={{
             flex: 1,
-            color: done ? 'var(--text3)' : 'var(--text)',
+            color: done ? 'var(--fl-outline)' : 'var(--fl-on-surface)',
             textDecoration: done ? 'line-through' : 'none',
             transition: 'color 0.3s, text-decoration 0.3s',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -187,7 +187,7 @@ export function TaskRow({
             if (task.source_url) window.location.href = task.source_url
           }}
           style={{
-            fontSize: 11, color: 'var(--text3)', flexShrink: 0, maxWidth: 100,
+            fontSize: 11, color: 'var(--fl-on-surface-variant)', flexShrink: 0, maxWidth: 100,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             cursor: task.source_url ? 'pointer' : 'default',
             textDecoration: task.source_url && hover ? 'underline' : 'none',
@@ -200,8 +200,8 @@ export function TaskRow({
       {task.status_label && (
         <span style={{
           fontSize: 10, padding: '2px 7px', borderRadius: 999, flexShrink: 0,
-          background: task.status_color ? `${task.status_color}22` : 'var(--surface2)',
-          color: task.status_color ?? 'var(--text2)',
+          background: task.status_color ? `${task.status_color}22` : 'var(--fl-surface-container)',
+          color: task.status_color ?? 'var(--fl-on-surface-variant)',
           fontWeight: 600,
         }}>
           {task.status_label}
@@ -211,8 +211,8 @@ export function TaskRow({
       {task.due_date && (
         <span style={{
           fontSize: 11, flexShrink: 0,
-          color: isOverdue ? 'var(--red)' : 'var(--text3)',
-          background: isOverdue ? 'var(--red-bg)' : 'transparent',
+          color: isOverdue ? 'var(--fl-error)' : 'var(--fl-on-surface-variant)',
+          background: isOverdue ? 'var(--fl-error-container)' : 'transparent',
           padding: isOverdue ? '2px 7px' : undefined,
           borderRadius: isOverdue ? 999 : undefined,
           fontWeight: isOverdue ? 600 : 400,
@@ -224,9 +224,9 @@ export function TaskRow({
       {task.assignee_name && (
         <span style={{
           width: 22, height: 22, borderRadius: '50%',
-          background: 'var(--surface2)', border: '1px solid var(--border)',
+          background: 'var(--fl-surface-container)', border: '1px solid var(--fl-outline-variant)',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 9, fontWeight: 700, color: 'var(--text2)', flexShrink: 0,
+          fontSize: 9, fontWeight: 700, color: 'var(--fl-on-surface-variant)', flexShrink: 0,
         }} title={task.assignee_name}>
           {task.assignee_name[0]?.toUpperCase()}
         </span>
@@ -237,13 +237,13 @@ export function TaskRow({
           onClick={e => { e.stopPropagation(); onDelete() }}
           style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
-            color: 'var(--text3)', borderRadius: 4, display: 'flex', alignItems: 'center',
+            color: 'var(--fl-on-surface-variant)', borderRadius: 4, display: 'flex', alignItems: 'center',
             transition: 'color 0.12s', flexShrink: 0,
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--red)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text3)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--fl-error)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--fl-on-surface-variant)' }}
         >
-          <Icon name="trash" size={13} />
+          <MSIcon name="delete" size={15} />
         </button>
       )}
     </div>

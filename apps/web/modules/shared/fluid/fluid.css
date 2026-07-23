@@ -13,6 +13,8 @@
   --fl-error: #ba1a1a;
   --fl-error-container: #ffdad6;
   --fl-on-error-container: #93000a;
+  --fl-success-container: #d8f3dc;
+  --fl-on-success-container: #1b5e20;
 
   --fl-surface: #f7f9fb;
   --fl-surface-container-lowest: #ffffff;
@@ -68,6 +70,8 @@
   --fl-on-surface-variant: #c3c6cf;
   --fl-outline: #8b8f9c;
   --fl-outline-variant: #3a3f4b;
+  --fl-success-container: #1e3a28;
+  --fl-on-success-container: #a7e0b8;
 
   --fl-glass-bg: rgba(24, 28, 35, 0.55);
   --fl-glass-panel-bg: rgba(24, 28, 35, 0.4);
