@@ -12,15 +12,26 @@ import { queueWebhook } from '../lib/queue-webhook';
 
 const contactStatusEnum = z.enum(['prospect', 'customer', 'cold', 'churned']);
 
+const socialLinksSchema = z.object({
+  linkedin: z.string().url().max(255).optional(),
+  twitter: z.string().url().max(255).optional(),
+  website: z.string().url().max(255).optional(),
+}).strict();
+
 const createContactSchema = z.object({
   name: z.string().min(1).max(255),
   email: z.string().email().max(255),
   phone: z.string().max(50).optional(),
+  title: z.string().max(255).optional(),
   status: contactStatusEnum.default('prospect'),
   company_id: z.string().uuid().optional(),
+  social_links: socialLinksSchema.optional(),
+  avatar_url: z.string().url().max(1024).optional(),
 });
 
 const updateContactSchema = createContactSchema.partial();
+
+const contactViewEnum = z.enum(['all', 'active', 'leads', 'dormant', 'active_deals']);
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -29,6 +40,7 @@ const listQuerySchema = z.object({
   owner_id: z.string().uuid().optional(),
   tag_id: z.string().uuid().optional(),
   q: z.string().max(200).optional(),
+  view: contactViewEnum.default('all'),
   sort: z.enum(['name', 'created_at', 'last_contacted_at']).default('created_at'),
   order: z.enum(['asc', 'desc']).default('desc'),
 });
@@ -56,6 +68,31 @@ async function tagsByContactId(
     const list = map.get(row.contact_id) ?? [];
     list.push({ id: row.id, name: row.name, color: row.color });
     map.set(row.contact_id, list);
+  }
+  return map;
+}
+
+/** Fetch each contact's most recent activity in one query, grouped by contact_id. */
+async function lastActivityByContactId(
+  db: Kysely<Database>,
+  workspaceId: string,
+  contactIds: string[],
+): Promise<Map<string, { label: string; at: string }>> {
+  const map = new Map<string, { label: string; at: string }>();
+  if (contactIds.length === 0) return map;
+
+  const rows = await db
+    .selectFrom('activities')
+    .where('activities.workspace_id', '=', workspaceId)
+    .where('activities.contact_id', 'in', contactIds)
+    .select(['activities.contact_id', 'activities.type', 'activities.body', 'activities.created_at'])
+    .orderBy('activities.created_at', 'desc')
+    .execute();
+
+  for (const row of rows) {
+    if (row.contact_id && !map.has(row.contact_id)) {
+      map.set(row.contact_id, { label: row.body ?? row.type, at: row.created_at.toISOString() });
+    }
   }
   return map;
 }
@@ -209,7 +246,7 @@ export function createContactsRouter(
           .json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
         return;
       }
-      const { page, per_page, status, owner_id, tag_id, q, sort, order } = parsed.data;
+      const { page, per_page, status, owner_id, tag_id, q, view, sort, order } = parsed.data;
 
       const base = db
         .selectFrom('contacts')
@@ -231,6 +268,17 @@ export function createContactsRouter(
             eb.or([eb('name', 'ilike', pattern), eb('email', 'ilike', pattern)]),
           ) as T;
         }
+        if (view === 'leads') q2 = q2.where('contacts.status', '=', 'prospect') as T;
+        if (view === 'active') q2 = q2.where('contacts.status', '=', 'customer') as T;
+        if (view === 'dormant') q2 = q2.where('contacts.status', 'in', ['cold', 'churned']) as T;
+        if (view === 'active_deals') {
+          q2 = q2.where(eb => eb.exists(
+            eb.selectFrom('deals').select('deals.id')
+              .whereRef('deals.contact_id', '=', 'contacts.id')
+              .where('deals.deleted_at', 'is', null)
+              .where('deals.stage_id', 'is not', null),
+          )) as T;
+        }
         return q2;
       };
 
@@ -244,8 +292,14 @@ export function createContactsRouter(
         base.select(db.fn.countAll<number>().as('count')),
       ).executeTakeFirstOrThrow();
 
-      const tagMap = await tagsByContactId(db, workspace.id, contacts.map(c => c.id));
-      const withTags = contacts.map(c => ({ ...c, tags: tagMap.get(c.id) ?? [] }));
+      const contactIds = contacts.map(c => c.id);
+      const tagMap = await tagsByContactId(db, workspace.id, contactIds);
+      const activityMap = await lastActivityByContactId(db, workspace.id, contactIds);
+      const withTags = contacts.map(c => ({
+        ...c,
+        tags: tagMap.get(c.id) ?? [],
+        last_activity: activityMap.get(c.id) ?? null,
+      }));
 
       res.json({ data: withTags, total: Number(count), page, per_page, error: null });
     } catch (err) {

@@ -104,7 +104,11 @@ describe('GET /api/contacts', () => {
   it('returns paginated contact list with total', async () => {
     const fakeContacts = [{ id: 'c1', name: 'Alice', email: 'alice@example.com', status: 'prospect' }];
     const { db, chain } = buildDb({ selectListResult: fakeContacts, countResult: 1 });
-    chain['execute'] = vi.fn().mockResolvedValue(fakeContacts);
+    // main list query, then tagsByContactId, then lastActivityByContactId — each a separate execute() call
+    chain['execute'] = vi.fn()
+      .mockResolvedValueOnce(fakeContacts)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
     chain['executeTakeFirstOrThrow'] = vi.fn().mockResolvedValue({ count: 1 });
 
     const { createContactsRouter } = await import('../routes/contacts');
@@ -115,7 +119,7 @@ describe('GET /api/contacts', () => {
     const res = buildRes();
     await handler(buildReq({ query: {} }), res, vi.fn());
     expect(res['json']).toHaveBeenCalledWith(expect.objectContaining({
-      data: fakeContacts.map(c => ({ ...c, tags: [] })), page: 1, per_page: 25, error: null,
+      data: fakeContacts.map(c => ({ ...c, tags: [], last_activity: null })), page: 1, per_page: 25, error: null,
     }));
   });
 
@@ -140,6 +144,46 @@ describe('GET /api/contacts', () => {
     const res = buildRes();
     await handler(buildReq({ query: { per_page: '999' } }), res, vi.fn());
     expect(res['status']).toHaveBeenCalledWith(400);
+  });
+
+  it('filters status=prospect when view=leads', async () => {
+    const { db, chain } = buildDb({ countResult: 0 });
+    chain['execute'] = vi.fn().mockResolvedValue([]);
+    chain['executeTakeFirstOrThrow'] = vi.fn().mockResolvedValue({ count: 0 });
+
+    const { createContactsRouter } = await import('../routes/contacts');
+    const router = createContactsRouter(db as never, noopPermission as never);
+    const handler = getHandler(router, '/');
+    await handler(buildReq({ query: { view: 'leads' } }), buildRes(), vi.fn());
+    expect(chain['where']).toHaveBeenCalledWith('contacts.status', '=', 'prospect');
+  });
+
+  it('attaches last_activity to each list row from the most recent activity', async () => {
+    const fakeContacts = [{ id: 'c1', name: 'Alice', email: 'alice@example.com', status: 'prospect' }];
+    const activityRows = [
+      { contact_id: 'c1', type: 'call', body: 'Left a voicemail', created_at: new Date('2026-07-20T10:00:00.000Z') },
+      { contact_id: 'c1', type: 'email', body: null, created_at: new Date('2026-07-18T10:00:00.000Z') },
+    ];
+    const { db, chain } = buildDb({ selectListResult: fakeContacts, countResult: 1 });
+    chain['execute'] = vi.fn()
+      .mockResolvedValueOnce(fakeContacts)   // main list query
+      .mockResolvedValueOnce([])             // tagsByContactId
+      .mockResolvedValueOnce(activityRows);  // lastActivityByContactId
+    chain['executeTakeFirstOrThrow'] = vi.fn().mockResolvedValue({ count: 1 });
+
+    const { createContactsRouter } = await import('../routes/contacts');
+    const router = createContactsRouter(db as never, noopPermission as never);
+    const handler = getHandler(router, '/');
+
+    const res = buildRes();
+    await handler(buildReq({ query: {} }), res, vi.fn());
+    expect(res['json']).toHaveBeenCalledWith(expect.objectContaining({
+      data: [{
+        ...fakeContacts[0],
+        tags: [],
+        last_activity: { label: 'Left a voicemail', at: '2026-07-20T10:00:00.000Z' },
+      }],
+    }));
   });
 });
 
@@ -227,6 +271,38 @@ describe('POST /api/contacts', () => {
     await handler(buildReq({ body: { name: 'Alice', email: 'new@example.com', status: 'prospect' } }), res, vi.fn());
     expect(db['transaction']).toHaveBeenCalled();
     expect(res['status']).toHaveBeenCalledWith(201);
+  });
+
+  it('accepts title and social_links and returns them in the created contact', async () => {
+    const socialLinks = { linkedin: 'https://linkedin.com/in/alice', twitter: 'https://twitter.com/alice' };
+    const newContact = {
+      id: 'c1', name: 'Alice', email: 'new@example.com', status: 'prospect',
+      title: 'VP of Sales', social_links: socialLinks,
+      workspace_id: 'ws1', owner_id: 'u1',
+    };
+    const { db, chain, trxChain } = buildDb({ selectResult: null, insertResult: newContact });
+    chain['executeTakeFirst'] = vi.fn().mockResolvedValue(null); // dupe-check → none
+    trxChain['executeTakeFirstOrThrow'] = vi.fn().mockResolvedValue(newContact);
+
+    const { createContactsRouter } = await import('../routes/contacts');
+    const router = createContactsRouter(db as never, noopPermission as never);
+    const handler = getHandler(router, '/', 'post');
+
+    const res = buildRes();
+    await handler(buildReq({
+      body: { name: 'Alice', email: 'new@example.com', status: 'prospect', title: 'VP of Sales', social_links: socialLinks },
+    }), res, vi.fn());
+
+    expect(res['status']).toHaveBeenCalledWith(201);
+    // the insert values passed to the trx must include title/social_links
+    expect(trxChain['values']).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'VP of Sales',
+      social_links: socialLinks,
+    }));
+    expect(res['json']).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ title: 'VP of Sales', social_links: socialLinks }),
+      error: null,
+    }));
   });
 });
 
