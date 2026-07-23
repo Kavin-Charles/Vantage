@@ -70,6 +70,59 @@ describe('POST /api/me/2fa/enroll', () => {
     expect(setArg.totp_secret).not.toBe('RAWSECRETXYZ');
     expect(setArg.totp_secret.split(':')).toHaveLength(3);
   });
+
+  it('re-enroll gate: rejects re-enrollment for an already-enabled user with no code, and does not rotate the secret', async () => {
+    const encrypted = encryptSecret('EXISTINGSECRET');
+    vi.mocked(authenticator.verify).mockReturnValue(false);
+    const db: any = { updateTable: vi.fn() };
+
+    const res = await request(
+      buildApp(db, { totp_enabled: true, totp_secret: encrypted }),
+    ).post('/api/me/2fa/enroll').send({});
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('INVALID_CODE');
+    expect(db.updateTable).not.toHaveBeenCalled();
+  });
+
+  it('re-enroll gate: rejects re-enrollment for an already-enabled user with an invalid code, and does not rotate the secret', async () => {
+    const encrypted = encryptSecret('EXISTINGSECRET');
+    vi.mocked(authenticator.verify).mockReturnValue(false);
+    const db: any = { updateTable: vi.fn() };
+
+    const res = await request(
+      buildApp(db, { totp_enabled: true, totp_secret: encrypted }),
+    ).post('/api/me/2fa/enroll').send({ code: '000000' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('INVALID_CODE');
+    expect(db.updateTable).not.toHaveBeenCalled();
+  });
+
+  it('re-enroll gate: allows re-enrollment for an already-enabled user with a valid current code, and rotates the secret', async () => {
+    const encrypted = encryptSecret('EXISTINGSECRET');
+    vi.mocked(authenticator.verify).mockReturnValue(true);
+    const setMock = vi.fn().mockReturnThis();
+    const db: any = {
+      updateTable: vi.fn().mockReturnValue({
+        set: setMock,
+        where: vi.fn().mockReturnThis(),
+        execute: vi.fn().mockResolvedValue(undefined),
+      }),
+    };
+
+    const res = await request(
+      buildApp(db, { totp_enabled: true, totp_secret: encrypted }),
+    ).post('/api/me/2fa/enroll').send({ code: '123456' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.error).toBeNull();
+    expect(res.body.data.secret).toBe('RAWSECRETXYZ');
+    expect(authenticator.verify).toHaveBeenCalledWith({ token: '123456', secret: 'EXISTINGSECRET' });
+    const setArg = setMock.mock.calls[0][0];
+    expect(setArg.totp_enabled).toBe(false);
+    expect(setArg.totp_secret).not.toBe('RAWSECRETXYZ');
+  });
 });
 
 describe('POST /api/me/2fa/verify', () => {

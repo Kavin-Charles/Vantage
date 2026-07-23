@@ -2,17 +2,21 @@ import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { authenticator } from 'otplib';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
 import type { SmtpConfig } from '@vencore/config';
 import { z } from 'zod';
 import { logger } from '../lib/logger';
 import { getEnabledModuleIds, resolveUserPermissions } from '../middleware/permission';
+import { decryptSecret } from '../lib/secret-crypto';
 
 const loginSchema = z.object({
   // Accept any x@y — self-hosted setups often use local domains without TLDs
   email: z.string().min(3).includes('@'),
   password: z.string().min(1),
+  // Second-factor code: either a 6-digit TOTP or a 16-char recovery code.
+  code: z.string().min(6).max(64).optional(),
 });
 
 const forgotSchema = z.object({
@@ -38,7 +42,7 @@ export function createAuthRouter(
       res.status(400).json({ data: null, error: { code: 'INVALID_INPUT' } });
       return;
     }
-    const { email, password } = parsed.data;
+    const { email, password, code } = parsed.data;
 
     try {
       const user = await db
@@ -56,6 +60,60 @@ export function createAuthRouter(
       if (!user || !valid) {
         res.status(401).json({ data: null, error: { code: 'INVALID_CREDENTIALS' } });
         return;
+      }
+
+      // Second-factor gate: only engaged when the user has TOTP enabled.
+      // Password is already verified at this point, but the token/cookie is
+      // withheld until a valid TOTP or recovery code is also presented.
+      if (user.totp_enabled) {
+        if (!code) {
+          res.json({ data: { totp_required: true }, error: null });
+          return;
+        }
+
+        let totpValid = false;
+        if (user.totp_secret) {
+          totpValid = authenticator.verify({ token: code, secret: decryptSecret(user.totp_secret) });
+        }
+
+        let matchedRecoveryCodeId: string | null = null;
+        if (!totpValid) {
+          const unusedCodes = await db
+            .selectFrom('user_recovery_codes')
+            .selectAll()
+            .where('user_id', '=', user.id)
+            .where('used_at', 'is', null)
+            .execute();
+
+          for (const row of unusedCodes) {
+            // eslint-disable-next-line no-await-in-loop
+            if (await bcrypt.compare(code, row.code_hash)) {
+              matchedRecoveryCodeId = row.id;
+              break;
+            }
+          }
+        }
+
+        if (!totpValid && !matchedRecoveryCodeId) {
+          res.status(401).json({ data: null, error: { code: 'INVALID_2FA', message: 'Invalid two-factor code.' } });
+          return;
+        }
+
+        if (matchedRecoveryCodeId) {
+          // Single-use, atomically: only spend the code if it is still unused. The
+          // `used_at is null` guard + affected-row check closes the TOCTOU window where
+          // two concurrent logins bearing the same code could both redeem it.
+          const spend = await db
+            .updateTable('user_recovery_codes')
+            .set({ used_at: new Date() })
+            .where('id', '=', matchedRecoveryCodeId)
+            .where('used_at', 'is', null)
+            .executeTakeFirst();
+          if (spend.numUpdatedRows === 0n) {
+            res.status(401).json({ data: null, error: { code: 'INVALID_2FA', message: 'Invalid two-factor code.' } });
+            return;
+          }
+        }
       }
 
       await db
