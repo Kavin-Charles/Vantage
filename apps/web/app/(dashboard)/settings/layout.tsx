@@ -45,7 +45,6 @@ const GROUPS: SettingsGroup[] = [
     label: 'Personal',
     links: [
       { href: '/settings/profile', label: 'Profile' },
-      { href: '/settings/appearance', label: 'Appearance' },
       { href: '/settings/preferences', label: 'Preferences' },
     ],
   },

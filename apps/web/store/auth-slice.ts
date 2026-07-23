@@ -7,6 +7,10 @@ export interface AuthUser {
   isAdmin: boolean;
   permissions: string[];
   theme: 'light' | 'dark';
+  /** Optional — only populated once /api/me has been fetched (see AuthContext.fetchUser). */
+  default_landing_page?: string | null;
+  /** Optional — only populated once /api/me has been fetched (see AuthContext.fetchUser). */
+  workspaceId?: string;
 }
 
 interface AuthState {

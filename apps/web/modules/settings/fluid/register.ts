@@ -1,5 +1,7 @@
 import { registerSettingsEntry } from '@/modules/shared/fluid/settings-registry';
 import { SettingsStub } from './SettingsStub';
+import { ProfilePanel } from './personal/ProfilePanel';
+import { PreferencesPanel } from './personal/PreferencesPanel';
 
 // Personal
 registerSettingsEntry({
@@ -7,7 +9,7 @@ registerSettingsEntry({
   scope: 'personal',
   label: 'Profile',
   icon: 'person',
-  component: SettingsStub,
+  component: ProfilePanel,
 });
 
 registerSettingsEntry({
@@ -15,7 +17,7 @@ registerSettingsEntry({
   scope: 'personal',
   label: 'Preferences',
   icon: 'tune',
-  component: SettingsStub,
+  component: PreferencesPanel,
 });
 
 registerSettingsEntry({

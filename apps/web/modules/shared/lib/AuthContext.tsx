@@ -29,12 +29,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await apiFetch<{
         data: {
-          user: { id: string; name: string; email: string; theme: 'light' | 'dark' };
+          user: { id: string; name: string; email: string; theme: 'light' | 'dark'; default_landing_page: string | null };
+          workspace: { id: string };
           isAdmin: boolean;
           permissions: string[];
         };
       }>('/api/me', { token });
-      dispatch(setUser({ ...res.data.user, isAdmin: res.data.isAdmin, permissions: res.data.permissions }));
+      dispatch(setUser({
+        ...res.data.user,
+        isAdmin: res.data.isAdmin,
+        permissions: res.data.permissions,
+        workspaceId: res.data.workspace.id,
+      }));
     } catch {
       dispatch(clearAuth());
     }
