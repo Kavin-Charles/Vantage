@@ -36,6 +36,8 @@ export interface CompanyTable {
   location: string | null;
   employee_count: number | null;
   website: string | null;
+  status: Generated<'active' | 'prospect' | 'churned'>;
+  annual_revenue: number | null;
   deleted_at: Date | null;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
