@@ -11,6 +11,8 @@ function buildApp(db: Partial<Kysely<Database>>, userOverrides: Record<string, u
   app.use(express.json());
   app.use((req, _res, next) => {
     (req as any).workspace = { id: 'ws-1' };
+    (req as any).isAdmin = false;
+    (req as any).permissions = new Set<string>();
     (req as any).user = {
       id: 'user-1',
       role: 'member',
@@ -25,6 +27,15 @@ function buildApp(db: Partial<Kysely<Database>>, userOverrides: Record<string, u
   app.use('/api/me', createMeRouter(db as Kysely<Database>));
   return app;
 }
+
+describe('GET /api/me', () => {
+  it('returns default_landing_page for the current user', async () => {
+    const db: any = {};
+    const res = await request(buildApp(db, { default_landing_page: '/analytics' })).get('/api/me');
+    expect(res.status).toBe(200);
+    expect(res.body.data.user).toMatchObject({ default_landing_page: '/analytics' });
+  });
+});
 
 describe('PATCH /api/me', () => {
   it('updates name and theme', async () => {
@@ -54,6 +65,30 @@ describe('PATCH /api/me', () => {
     const res = await request(buildApp(db)).patch('/api/me').send({});
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('INVALID_INPUT');
+  });
+
+  it('persists default_landing_page and returns it', async () => {
+    const updated = {
+      id: 'user-1',
+      name: 'Old Name',
+      email: 'user@example.com',
+      role: 'member',
+      theme: 'light',
+      default_landing_page: '/deals',
+    };
+    const setMock = vi.fn().mockReturnThis();
+    const db: any = {
+      updateTable: vi.fn().mockReturnValue({
+        set: setMock,
+        where: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockReturnThis(),
+        executeTakeFirstOrThrow: vi.fn().mockResolvedValue(updated),
+      }),
+    };
+    const res = await request(buildApp(db)).patch('/api/me').send({ default_landing_page: '/deals' });
+    expect(res.status).toBe(200);
+    expect(setMock).toHaveBeenCalledWith(expect.objectContaining({ default_landing_page: '/deals' }));
+    expect(res.body.data).toMatchObject({ default_landing_page: '/deals' });
   });
 });
 

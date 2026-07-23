@@ -8,6 +8,7 @@ import type { AuthenticatedRequest } from '../middleware/auth';
 const patchMeSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   theme: z.enum(['light', 'dark']).optional(),
+  default_landing_page: z.string().max(255).optional(),
 });
 
 const patchPasswordSchema = z.object({
@@ -24,7 +25,13 @@ export function createMeRouter(db: Kysely<Database>): ExpressRouter {
 
       res.json({
         data: {
-          user: { id: user.id, name: user.name, email: user.email, theme: user.theme },
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            theme: user.theme,
+            default_landing_page: user.default_landing_page,
+          },
           workspace,
           isAdmin,
           permissions: [...permissions],
@@ -36,7 +43,7 @@ export function createMeRouter(db: Kysely<Database>): ExpressRouter {
     }
   });
 
-  // PATCH /api/me — update name and/or theme
+  // PATCH /api/me — update name, theme, and/or default_landing_page
   router.patch('/', async (req, res, next) => {
     try {
       const { user } = req as unknown as AuthenticatedRequest;
@@ -54,7 +61,7 @@ export function createMeRouter(db: Kysely<Database>): ExpressRouter {
         .updateTable('users')
         .set(parsed.data)
         .where('id', '=', user.id)
-        .returning(['id', 'name', 'email', 'theme'])
+        .returning(['id', 'name', 'email', 'theme', 'default_landing_page'])
         .executeTakeFirstOrThrow();
 
       res.json({ data: updated, error: null });
