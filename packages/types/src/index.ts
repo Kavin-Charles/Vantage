@@ -53,6 +53,9 @@ export interface Contact {
   email: string;
   phone: string | null;
   status: ContactStatus;
+  title?: string | null;
+  social_links?: SocialLinks | null;
+  avatar_url?: string | null;
   last_contacted_at: Date | null;
   deleted_at: Date | null;
   created_at: Date;
@@ -69,6 +72,8 @@ export interface Company {
   location: string | null;
   employee_count: number | null;
   website: string | null;
+  status: 'active' | 'prospect' | 'churned';
+  annual_revenue?: number | null;
   deleted_at: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -691,3 +696,52 @@ export type WsServerEvent =
   | { type: 'channel.member_left'; channel_id: string; user_id: string }
   | { type: 'user.presence'; user_id: string; status: 'online' | 'away' | 'offline' }
   | { type: 'user.typing'; channel_id: string; user_id: string; name: string };
+
+export interface SocialLinks {
+  linkedin?: string;
+  twitter?: string;
+  website?: string;
+}
+
+/**
+ * Not yet exported elsewhere in this package — added here because
+ * ContactOverview needs it. Mirrors `DealTable` in packages/db/src/schema.ts.
+ */
+export interface Deal {
+  id: UUID;
+  workspace_id: UUID;
+  pipeline_id: UUID | null;
+  stage_id: UUID | null;
+  contact_id: UUID | null;
+  company_id: UUID | null;
+  owner_id: UUID;
+  name: string;
+  value: number;
+  probability: number;
+  close_date: string | null;
+  deleted_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export type DealPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface ContactOverviewMetrics {
+  total_deal_value: number;
+  interaction_count: number;
+  current_stage: string | null;
+  last_contact_at: string | null;
+}
+
+export interface StageFunnelEntry {
+  stage: string;
+  total: number;
+}
+
+export interface ContactOverview {
+  contact: Contact;
+  deals: Deal[];
+  activities: Activity[];
+  metrics: ContactOverviewMetrics;
+  stage_funnel: StageFunnelEntry[];
+}
