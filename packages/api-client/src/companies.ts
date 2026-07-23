@@ -1,9 +1,13 @@
 import { apiFetch } from './core';
 import type { Company } from '@vencore/types';
 
-export async function listCompanies(token: string): Promise<{ data: Company[]; total: number; page: number; per_page: number; error: null }> {
+export async function listCompanies(
+  token: string,
+  params?: Record<string, string>,
+): Promise<{ data: Company[]; total: number; page: number; per_page: number; error: null }> {
+  const qs = params ? '?' + new URLSearchParams(params).toString() : '';
   return apiFetch<{ data: Company[]; total: number; page: number; per_page: number; error: null }>(
-    '/api/companies',
+    `/api/companies${qs}`,
     { token },
   );
 }
