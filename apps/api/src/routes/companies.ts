@@ -5,6 +5,9 @@ import type { Database } from '@vencore/db';
 import type { AuthenticatedRequest } from '../middleware/auth';
 import { csvEscape, toCSV } from '../lib/csv';
 import { emitCrmEvent } from '../lib/crm-events';
+import { sizeBand } from '../lib/company-size';
+
+const companyStatusEnum = z.enum(['active', 'prospect', 'churned']);
 
 const createCompanySchema = z.object({
   name: z.string().min(1),
@@ -15,6 +18,8 @@ const createCompanySchema = z.object({
     v => (v === '' ? undefined : v),
     z.string().url().optional(),
   ),
+  status: companyStatusEnum.default('active'),
+  annual_revenue: z.coerce.number().min(0).optional(),
 });
 
 const updateCompanySchema = z.object({
@@ -26,6 +31,17 @@ const updateCompanySchema = z.object({
     v => (v === '' ? null : v),
     z.string().url().nullable().optional(),
   ),
+  status: companyStatusEnum.optional(),
+  annual_revenue: z.coerce.number().min(0).nullable().optional(),
+});
+
+const companyViewEnum = z.enum(['all', 'active', 'enterprise', 'startup', 'partner']);
+
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  per_page: z.coerce.number().int().min(1).max(100).default(25),
+  search: z.string().max(200).optional(),
+  view: companyViewEnum.default('all'),
 });
 
 
@@ -83,31 +99,44 @@ export function createCompaniesRouter(db: Kysely<Database>, requirePermission: (
   router.get('/', requirePermission('companies:view'), async (req, res, next) => {
     try {
       const { workspace } = req as unknown as AuthenticatedRequest;
-      const page = Number(req.query['page'] ?? 1);
-      const per_page = Math.min(Number(req.query['per_page'] ?? 25), 100);
-      const search = req.query['search'] as string | undefined;
+      const parsed = listQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        res
+          .status(400)
+          .json({ data: null, error: { code: 'INVALID_INPUT', message: parsed.error.message } });
+        return;
+      }
+      const { page, per_page, search, view } = parsed.data;
 
-      let query = db
+      const base = db
         .selectFrom('companies')
         .where('workspace_id', '=', workspace.id)
-        .where('deleted_at', 'is', null)
-        .selectAll()
+        .where('deleted_at', 'is', null);
+
+      const applyFilters = <T extends typeof base>(qb: T) => {
+        let q2 = qb;
+        if (search) q2 = q2.where('name', 'ilike', `%${search}%`) as T;
+        if (view === 'enterprise') q2 = q2.where('employee_count', '>=', 1000) as T;
+        if (view === 'startup') q2 = q2.where('employee_count', '<', 20) as T;
+        if (view === 'active') q2 = q2.where('status', '=', 'active') as T;
+        // 'partner' has no dedicated flag on companies yet — placeholder until one exists.
+        if (view === 'partner') q2 = q2.where('status', '=', 'active') as T;
+        return q2;
+      };
+
+      const companies = await applyFilters(base.selectAll())
         .orderBy('created_at', 'desc')
         .limit(per_page)
-        .offset((page - 1) * per_page);
+        .offset((page - 1) * per_page)
+        .execute();
 
-      if (search) query = query.where('name', 'ilike', `%${search}%`);
+      const { count } = await applyFilters(
+        base.select(db.fn.countAll<number>().as('count')),
+      ).executeTakeFirstOrThrow();
 
-      const companies = await query.execute();
+      const withSizeBand = companies.map(c => ({ ...c, size_band: sizeBand(c.employee_count) }));
 
-      const { count } = await db
-        .selectFrom('companies')
-        .where('workspace_id', '=', workspace.id)
-        .where('deleted_at', 'is', null)
-        .select(db.fn.countAll<number>().as('count'))
-        .executeTakeFirstOrThrow();
-
-      res.json({ data: companies, total: Number(count), page, per_page, error: null });
+      res.json({ data: withSizeBand, total: Number(count), page, per_page, error: null });
     } catch (err) {
       next(err);
     }
