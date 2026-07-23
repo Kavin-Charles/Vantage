@@ -31,6 +31,7 @@ import { createInvitesRouter } from './routes/invites';
 import { createConfigRouter } from './routes/config';
 import { createSetupRouter } from './routes/setup';
 import { createMeRouter } from './routes/me';
+import { createMe2faRouter } from './routes/me-2fa';
 import { createPushTokenRouter } from './routes/push-token';
 import { createContactsRouter } from './routes/contacts';
 import { createContactsOverviewRouter } from './routes/contacts-overview';
@@ -387,6 +388,7 @@ app.use('/api/setup', createSetupRouter(db));
 
 // Authenticated routes
 app.use('/api/me', requireAuth, createMeRouter(db));
+app.use('/api/me', requireAuth, createMe2faRouter(db));
 app.use('/api/me/push-token', requireAuth, createPushTokenRouter(db));
 app.use('/api/workspace/modules', requireAuth, createWorkspaceModulesRouter(db));
 app.use('/api/contacts', requireAuth, requireCrmFeature('crm:contacts'), createContactsRouter(db, requirePermission));
