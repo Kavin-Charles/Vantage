@@ -33,6 +33,7 @@ import { createSetupRouter } from './routes/setup';
 import { createMeRouter } from './routes/me';
 import { createPushTokenRouter } from './routes/push-token';
 import { createContactsRouter } from './routes/contacts';
+import { createContactsOverviewRouter } from './routes/contacts-overview';
 import { createCompaniesRouter } from './routes/companies';
 import { createPipelinesRouter } from './routes/pipelines';
 import { createPipelineFieldsRouter } from './routes/pipeline-fields';
@@ -389,6 +390,7 @@ app.use('/api/me', requireAuth, createMeRouter(db));
 app.use('/api/me/push-token', requireAuth, createPushTokenRouter(db));
 app.use('/api/workspace/modules', requireAuth, createWorkspaceModulesRouter(db));
 app.use('/api/contacts', requireAuth, requireCrmFeature('crm:contacts'), createContactsRouter(db, requirePermission));
+app.use('/api/contacts', requireAuth, requireCrmFeature('crm:contacts'), createContactsOverviewRouter(db, requirePermission));
 app.use('/api/companies', requireAuth, requireCrmFeature('crm:companies'), createCompaniesRouter(db, requirePermission));
 // Agent — must come before the broad /api catch below
 app.use('/api/agent', createAgentRouter(db, config.smtp));
