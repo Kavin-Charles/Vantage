@@ -1,4 +1,5 @@
-export type DealPriority = 'low' | 'medium' | 'high' | 'urgent';
+import type { DealPriority } from '@vencore/types';
+export type { DealPriority };
 
 export function deriveDealPriority(probability: number): DealPriority {
   if (probability >= 80) return 'urgent';
