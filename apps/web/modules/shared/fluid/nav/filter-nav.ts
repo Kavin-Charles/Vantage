@@ -45,7 +45,15 @@ export function buildNav(base: NavItem[], plugins: PluginNavItem[], ctx: NavCont
 
   const all = [...visible, ...pluginItems];
 
+  // Deduplicate by id, keeping the first occurrence (base items win over plugins)
+  const seenIds = new Set<string>();
+  const deduped = all.filter(item => {
+    if (seenIds.has(item.id)) return false;
+    seenIds.add(item.id);
+    return true;
+  });
+
   return GROUP_ORDER
-    .map(group => ({ group, items: all.filter(i => i.group === group) }))
+    .map(group => ({ group, items: deduped.filter(i => i.group === group) }))
     .filter(g => g.items.length > 0);
 }

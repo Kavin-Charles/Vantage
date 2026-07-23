@@ -47,4 +47,30 @@ describe('buildNav', () => {
     // only items without a module remain (dashboard, roles) → general only
     expect(groups.map(g => g.group)).toEqual(['general']);
   });
+
+  it('deduplicates plugin items with the same path, keeping the first', () => {
+    const plugins: PluginNavItem[] = [
+      { label: 'Calendar', path: '/calendar', icon: 'event', group: 'general' },
+      { label: 'Calendar Duplicate', path: '/calendar', icon: 'event_alt', group: 'general' },
+    ];
+    const groups = buildNav(items, plugins, ctx({}));
+    const general = groups.find(g => g.group === 'general')!;
+    const calendarItems = general.items.filter(i => i.id === 'plugin:/calendar');
+    expect(calendarItems).toHaveLength(1);
+    expect(calendarItems[0]!.label).toBe('Calendar');
+  });
+
+  it('deduplicates plugin items that collide with base item id, base wins', () => {
+    const plugins: PluginNavItem[] = [
+      { label: 'Dashboard Override', path: '/custom-dashboard', icon: 'dashboard', group: 'general' },
+    ];
+    const baseWithPlugin: NavItem[] = [
+      { id: 'plugin:/custom-dashboard', label: 'Dashboard', icon: 'dashboard', href: '/dashboard', group: 'general' },
+    ];
+    const groups = buildNav(baseWithPlugin, plugins, ctx({}));
+    const general = groups.find(g => g.group === 'general')!;
+    const dashboardItems = general.items.filter(i => i.id === 'plugin:/custom-dashboard');
+    expect(dashboardItems).toHaveLength(1);
+    expect(dashboardItems[0]!.label).toBe('Dashboard');
+  });
 });
