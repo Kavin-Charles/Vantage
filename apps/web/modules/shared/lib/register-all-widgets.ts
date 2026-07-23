@@ -4,6 +4,9 @@ import '@/modules/shared/lib/register-module-widgets';
 // CRM — Settings entry (Task 15)
 import '@/modules/crm/fluid/settings/register';
 
+// Settings — Personal + Workspace scope entries (Task 5)
+import '@/modules/settings/fluid/register';
+
 // CRM — Contacts (Task 11)
 import '@/modules/crm/contacts/components/widgets/RecentContactsWidget';
 import '@/modules/crm/contacts/components/widgets/NewLeadsTodayWidget';
