@@ -7,7 +7,21 @@ import type { PluginManifest } from '@vencore/plugin-types';
 import { HOOK_REGISTRY } from '../modules/registry';
 import { getActiveProviderForContract, resolveProviderName } from '@vencore/plugin-runtime';
 import { listPluginHookFeatures } from '../lib/hook-features';
+import { CRM_HOOK_FEATURES } from '../lib/crm-hook-features';
 import type { AuthenticatedRequest } from '../middleware/auth';
+
+/**
+ * Per-module hook features not (yet) declared in the shared @vencore/modules
+ * registry. Merged on top of HOOK_REGISTRY by module id so a moduleId can be
+ * sourced from either registry without callers caring which.
+ */
+const EXTRA_HOOK_FEATURES: Record<string, typeof CRM_HOOK_FEATURES> = {
+  crm: CRM_HOOK_FEATURES,
+};
+
+function getHookFeaturesForModule(moduleId: string) {
+  return [...(HOOK_REGISTRY[moduleId] ?? []), ...(EXTRA_HOOK_FEATURES[moduleId] ?? [])];
+}
 
 interface ProviderRef { id: string; name: string }
 
@@ -64,8 +78,8 @@ export function createHooksRouter(db: Kysely<Database>): Router {
         return;
       }
 
-      const features = HOOK_REGISTRY[req.params['moduleId']!];
-      if (!features || features.length === 0) {
+      const features = getHookFeaturesForModule(req.params['moduleId']!);
+      if (features.length === 0) {
         res.json({ data: [], error: null });
         return;
       }
@@ -178,8 +192,8 @@ export function createHooksRouter(db: Kysely<Database>): Router {
 
       const { moduleId, featureId } = req.params as { moduleId: string; featureId: string };
 
-      const features = HOOK_REGISTRY[moduleId];
-      const feature = features?.find(f => f.id === featureId);
+      const features = getHookFeaturesForModule(moduleId);
+      const feature = features.find(f => f.id === featureId);
       if (!feature) {
         res.status(404).json({ data: null, error: { code: 'NOT_FOUND', message: 'Feature not found' } });
         return;

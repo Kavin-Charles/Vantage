@@ -13,7 +13,7 @@ const MODULE_PROVIDER_MAP: Record<string, { providerId: string; name: string } |
   'crm':        { providerId: 'vencore-crm',       name: 'Vencore CRM' },
   'messaging':  { providerId: 'vencore-messaging', name: 'Vencore Messaging' },
   'infra':      { providerId: 'vencore-infra',     name: 'Vencore Infra' },
-  'analytics':  null,
+  'analytics':  { providerId: 'vencore-analytics', name: 'Analytics' },
   'activity':   null,
   'dashboard':  null,
   'projects':   null,
