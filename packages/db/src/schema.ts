@@ -300,6 +300,8 @@ export interface PipelineItemTable {
   pipeline_id: string;
   stage_id: string;
   workspace_id: string;
+  contact_id: string | null;
+  company_id: string | null;
   position: Generated<number>;
   field_values: Generated<Record<string, unknown>>;
   deleted_at: Date | null;
