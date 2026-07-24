@@ -1,6 +1,7 @@
 import { Router, type Router as ExpressRouter } from 'express';
 import type { Kysely } from 'kysely';
 import type { Database } from '@vencore/db';
+import type { OverviewDeal } from '@vencore/types';
 import type { AuthenticatedRequest } from '../middleware/auth';
 
 /**
@@ -35,13 +36,39 @@ export function createContactsOverviewRouter(
         return;
       }
 
-      const deals = await db
-        .selectFrom('deals')
+      const pipelineItems = await db
+        .selectFrom('pipeline_items')
         .selectAll()
         .where('workspace_id', '=', workspace.id)
         .where('contact_id', '=', id)
         .where('deleted_at', 'is', null)
         .execute();
+
+      const stageIds = [...new Set(pipelineItems.map((item) => item.stage_id))];
+      const stageNameById = new Map<string, string>();
+      if (stageIds.length > 0) {
+        const stages = await db
+          .selectFrom('pipeline_stages')
+          .select(['id', 'name'])
+          .where('id', 'in', stageIds)
+          .execute();
+        for (const stage of stages) {
+          stageNameById.set(stage.id, stage.name);
+        }
+      }
+
+      const deals: OverviewDeal[] = pipelineItems.map((item) => {
+        const fieldValues = (item.field_values ?? {}) as Record<string, unknown>;
+        return {
+          id: item.id,
+          name: (fieldValues['name'] as string | undefined) ?? '',
+          value: Number(fieldValues['value'] ?? 0),
+          stage_id: item.stage_id,
+          stage: stageNameById.get(item.stage_id) ?? null,
+          contact_id: item.contact_id,
+          company_id: item.company_id,
+        };
+      });
 
       const activities = await db
         .selectFrom('activities')
@@ -52,12 +79,21 @@ export function createContactsOverviewRouter(
         .limit(50)
         .execute();
 
-      const totalDealValue = deals.reduce((sum, d) => sum + Number(d.value ?? 0), 0);
+      const tasks = await db
+        .selectFrom('tasks')
+        .selectAll()
+        .where('workspace_id', '=', workspace.id)
+        .where('contact_id', '=', id)
+        .orderBy('created_at', 'desc')
+        .limit(50)
+        .execute();
+
+      const totalDealValue = deals.reduce((sum, d) => sum + d.value, 0);
 
       const funnel = new Map<string, number>();
       for (const d of deals) {
-        const stage = d.stage_id ?? 'unstaged';
-        funnel.set(stage, (funnel.get(stage) ?? 0) + Number(d.value ?? 0));
+        const stage = d.stage ?? 'unstaged';
+        funnel.set(stage, (funnel.get(stage) ?? 0) + d.value);
       }
 
       res.json({
@@ -65,10 +101,11 @@ export function createContactsOverviewRouter(
           contact,
           deals,
           activities,
+          tasks,
           metrics: {
             total_deal_value: totalDealValue,
             interaction_count: activities.length,
-            current_stage: deals[0]?.stage_id ?? null,
+            current_stage: deals[0]?.stage ?? null,
             last_contact_at: contact.last_contacted_at
               ? new Date(contact.last_contacted_at).toISOString()
               : null,

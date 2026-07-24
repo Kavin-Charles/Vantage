@@ -726,6 +726,22 @@ export interface Deal {
 
 export type DealPriority = 'low' | 'medium' | 'high' | 'urgent';
 
+/**
+ * Deal as projected by the contact/company overview endpoints from a
+ * `pipeline_items` row: name/value read out of `field_values`, `stage`
+ * resolved to the pipeline stage's display name. Distinct from the legacy
+ * `Deal` (which mirrored the dropped `deals` table).
+ */
+export interface OverviewDeal {
+  id: UUID;
+  name: string;
+  value: number;
+  stage_id: UUID | null;
+  stage: string | null;
+  contact_id: UUID | null;
+  company_id: UUID | null;
+}
+
 export interface ContactOverviewMetrics {
   total_deal_value: number;
   interaction_count: number;
@@ -740,8 +756,9 @@ export interface StageFunnelEntry {
 
 export interface ContactOverview {
   contact: Contact;
-  deals: Deal[];
+  deals: OverviewDeal[];
   activities: Activity[];
+  tasks: Task[];
   metrics: ContactOverviewMetrics;
   stage_funnel: StageFunnelEntry[];
 }
