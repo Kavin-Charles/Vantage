@@ -1,6 +1,7 @@
 import { registerSettingsEntry } from '@/modules/shared/fluid/settings-registry';
 import { SettingsStub } from './SettingsStub';
 import { ModulesListPanel } from './modules/ModulesListPanel';
+import { PluginsPanel } from './plugins/PluginsPanel';
 import { ProfilePanel } from './personal/ProfilePanel';
 import { PreferencesPanel } from './personal/PreferencesPanel';
 import { SecurityPanel } from './personal/SecurityPanel';
@@ -78,7 +79,7 @@ registerSettingsEntry({
   label: 'Plugins',
   icon: 'extension',
   adminOnly: true,
-  component: SettingsStub,
+  component: PluginsPanel,
 });
 
 registerSettingsEntry({
