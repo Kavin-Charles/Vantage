@@ -8,6 +8,8 @@ export interface PipelineItem {
   workspace_id: string;
   position: number;
   field_values: Record<string, unknown>;
+  contact_id: string | null;
+  company_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -43,7 +45,12 @@ export const listItems = (
 export const createItem = (
   token: string,
   pipelineId: string,
-  body: { stage_id: string; field_values: Record<string, unknown> },
+  body: {
+    stage_id: string;
+    field_values: Record<string, unknown>;
+    contact_id?: string | null;
+    company_id?: string | null;
+  },
 ) =>
   apiFetch<PipelineItem>(token, `/pipelines/${pipelineId}/items`, {
     method: 'POST',
@@ -56,7 +63,12 @@ export const getItem = (token: string, id: string) =>
 export const updateItem = (
   token: string,
   id: string,
-  body: { stage_id?: string; field_values?: Record<string, unknown> },
+  body: {
+    stage_id?: string;
+    field_values?: Record<string, unknown>;
+    contact_id?: string | null;
+    company_id?: string | null;
+  },
 ) =>
   apiFetch<PipelineItem>(token, `/items/${id}`, {
     method: 'PATCH',

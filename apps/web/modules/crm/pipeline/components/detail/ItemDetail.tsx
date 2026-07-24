@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getItem, updateItem, deleteItem } from '@/modules/crm/pipeline/lib/items';
+import { listContacts } from '@/modules/crm/contacts/lib/contacts';
+import { listCompanies } from '@/modules/crm/companies/lib/companies';
 import { ItemDetailField } from './ItemDetailField';
 import { ItemActivity } from './ItemActivity';
 import { pmApi } from '@/modules/projects/lib/api';
@@ -24,11 +26,24 @@ export function ItemDetail({ itemId, pipeline, onClose }: Props) {
   const [deleteHovered, setDeleteHovered] = useState(false);
   const [closeHovered, setCloseHovered] = useState(false);
   const [stageFocused, setStageFocused] = useState(false);
+  const [contactFocused, setContactFocused] = useState(false);
+  const [companyFocused, setCompanyFocused] = useState(false);
 
   const { data: item } = useQuery({
     queryKey: ['item', itemId],
     queryFn: async () => getItem(await getToken(), itemId),
   });
+
+  const { data: contactsData } = useQuery({
+    queryKey: ['contacts', 'item-detail-picker'],
+    queryFn: async () => listContacts(await getToken(), { per_page: '100' }),
+  });
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies', 'item-detail-picker'],
+    queryFn: async () => listCompanies(await getToken(), { per_page: '100' }),
+  });
+  const contacts = contactsData?.data ?? [];
+  const companies = companiesData?.data ?? [];
 
   const updateMut = useMutation({
     mutationFn: async (field_values: Record<string, unknown>) =>
@@ -42,6 +57,24 @@ export function ItemDetail({ itemId, pipeline, onClose }: Props) {
   const stageMut = useMutation({
     mutationFn: async (stage_id: string) =>
       updateItem(await getToken(), itemId, { stage_id }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['item', itemId] });
+      void qc.invalidateQueries({ queryKey: ['items', pipeline.id] });
+    },
+  });
+
+  const contactMut = useMutation({
+    mutationFn: async (contact_id: string | null) =>
+      updateItem(await getToken(), itemId, { contact_id }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['item', itemId] });
+      void qc.invalidateQueries({ queryKey: ['items', pipeline.id] });
+    },
+  });
+
+  const companyMut = useMutation({
+    mutationFn: async (company_id: string | null) =>
+      updateItem(await getToken(), itemId, { company_id }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['item', itemId] });
       void qc.invalidateQueries({ queryKey: ['items', pipeline.id] });
@@ -202,6 +235,90 @@ export function ItemDetail({ itemId, pipeline, onClose }: Props) {
             >
               {pipeline.stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
+          </div>
+        )}
+
+        {/* Contact + Company */}
+        {item && (
+          <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0, display: 'flex', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{
+                fontSize: 11,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.6px',
+                color: 'var(--text3)',
+                fontFamily: 'var(--font-sans)',
+                display: 'block',
+                marginBottom: 6,
+              }}>
+                Contact
+              </label>
+              <select
+                value={item.contact_id ?? ''}
+                onChange={e => contactMut.mutate(e.target.value || null)}
+                onFocus={() => setContactFocused(true)}
+                onBlur={() => setContactFocused(false)}
+                disabled={contactMut.isPending}
+                style={{
+                  width: '100%',
+                  padding: '7px 10px',
+                  border: `1px solid ${contactFocused ? 'var(--text2)' : 'var(--border)'}`,
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontFamily: 'var(--font-sans)',
+                  background: 'var(--surface)',
+                  color: 'var(--text)',
+                  outline: 'none',
+                  transition: 'border-color .15s ease, box-shadow .15s ease',
+                  boxShadow: contactFocused ? '0 0 0 3px rgba(11,19,48,0.06)' : 'none',
+                  boxSizing: 'border-box',
+                  opacity: contactMut.isPending ? 0.6 : 1,
+                }}
+              >
+                <option value="">None</option>
+                {contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{
+                fontSize: 11,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.6px',
+                color: 'var(--text3)',
+                fontFamily: 'var(--font-sans)',
+                display: 'block',
+                marginBottom: 6,
+              }}>
+                Company
+              </label>
+              <select
+                value={item.company_id ?? ''}
+                onChange={e => companyMut.mutate(e.target.value || null)}
+                onFocus={() => setCompanyFocused(true)}
+                onBlur={() => setCompanyFocused(false)}
+                disabled={companyMut.isPending}
+                style={{
+                  width: '100%',
+                  padding: '7px 10px',
+                  border: `1px solid ${companyFocused ? 'var(--text2)' : 'var(--border)'}`,
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontFamily: 'var(--font-sans)',
+                  background: 'var(--surface)',
+                  color: 'var(--text)',
+                  outline: 'none',
+                  transition: 'border-color .15s ease, box-shadow .15s ease',
+                  boxShadow: companyFocused ? '0 0 0 3px rgba(11,19,48,0.06)' : 'none',
+                  boxSizing: 'border-box',
+                  opacity: companyMut.isPending ? 0.6 : 1,
+                }}
+              >
+                <option value="">None</option>
+                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
           </div>
         )}
 

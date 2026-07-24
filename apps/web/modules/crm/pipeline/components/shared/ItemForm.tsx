@@ -1,8 +1,10 @@
 'use client';
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { createItem } from '@/modules/crm/pipeline/lib/items';
+import { listContacts } from '@/modules/crm/contacts/lib/contacts';
+import { listCompanies } from '@/modules/crm/companies/lib/companies';
 import { FieldEditor } from '@/modules/crm/pipeline/components/fields/FieldEditor';
 import type { PipelineField, PipelineStage } from '@/modules/crm/pipeline/lib/pipelines';
 
@@ -19,14 +21,34 @@ export function ItemForm({ pipelineId, stages, fields, defaultStageId, onClose }
   const qc = useQueryClient();
   const [stageId, setStageId] = useState(defaultStageId ?? stages[0]?.id ?? '');
   const [values, setValues] = useState<Record<string, unknown>>({});
+  const [contactId, setContactId] = useState('');
+  const [companyId, setCompanyId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [stageFocused, setStageFocused] = useState(false);
+  const [contactFocused, setContactFocused] = useState(false);
+  const [companyFocused, setCompanyFocused] = useState(false);
   const [primaryHovered, setPrimaryHovered] = useState(false);
+
+  const { data: contactsData } = useQuery({
+    queryKey: ['contacts', 'item-form-picker'],
+    queryFn: async () => listContacts(await getToken(), { per_page: '100' }),
+  });
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies', 'item-form-picker'],
+    queryFn: async () => listCompanies(await getToken(), { per_page: '100' }),
+  });
+  const contacts = contactsData?.data ?? [];
+  const companies = companiesData?.data ?? [];
 
   const mutation = useMutation({
     mutationFn: async () => {
       const token = await getToken();
-      return createItem(token, pipelineId, { stage_id: stageId, field_values: values });
+      return createItem(token, pipelineId, {
+        stage_id: stageId,
+        field_values: values,
+        contact_id: contactId || null,
+        company_id: companyId || null,
+      });
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['items', pipelineId] });
@@ -46,10 +68,10 @@ export function ItemForm({ pipelineId, stages, fields, defaultStageId, onClose }
     marginBottom: 6,
   };
 
-  const selectStyle: React.CSSProperties = {
+  const selectStyle = (focused: boolean): React.CSSProperties => ({
     width: '100%',
     padding: '8px 12px',
-    border: `1px solid ${stageFocused ? 'var(--text2)' : 'var(--border)'}`,
+    border: `1px solid ${focused ? 'var(--text2)' : 'var(--border)'}`,
     borderRadius: 10,
     fontSize: 13,
     fontFamily: 'var(--font-sans)',
@@ -57,9 +79,9 @@ export function ItemForm({ pipelineId, stages, fields, defaultStageId, onClose }
     color: 'var(--text)',
     outline: 'none',
     transition: 'border-color .15s ease, box-shadow .15s ease',
-    boxShadow: stageFocused ? '0 0 0 3px rgba(11,19,48,0.06)' : 'none',
+    boxShadow: focused ? '0 0 0 3px rgba(11,19,48,0.06)' : 'none',
     boxSizing: 'border-box',
-  };
+  });
 
   return (
     <div
@@ -138,11 +160,41 @@ export function ItemForm({ pipelineId, stages, fields, defaultStageId, onClose }
             <select
               value={stageId}
               onChange={e => setStageId(e.target.value)}
-              style={selectStyle}
+              style={selectStyle(stageFocused)}
               onFocus={() => setStageFocused(true)}
               onBlur={() => setStageFocused(false)}
             >
               {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+
+          {/* Contact */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}>Contact</label>
+            <select
+              value={contactId}
+              onChange={e => setContactId(e.target.value)}
+              style={selectStyle(contactFocused)}
+              onFocus={() => setContactFocused(true)}
+              onBlur={() => setContactFocused(false)}
+            >
+              <option value="">None</option>
+              {contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+
+          {/* Company */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}>Company</label>
+            <select
+              value={companyId}
+              onChange={e => setCompanyId(e.target.value)}
+              style={selectStyle(companyFocused)}
+              onFocus={() => setCompanyFocused(true)}
+              onBlur={() => setCompanyFocused(false)}
+            >
+              <option value="">None</option>
+              {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
 
