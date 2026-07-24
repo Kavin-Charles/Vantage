@@ -273,10 +273,10 @@ export function createContactsRouter(
         if (view === 'dormant') q2 = q2.where('contacts.status', 'in', ['cold', 'churned']) as T;
         if (view === 'active_deals') {
           q2 = q2.where(eb => eb.exists(
-            eb.selectFrom('deals').select('deals.id')
-              .whereRef('deals.contact_id', '=', 'contacts.id')
-              .where('deals.deleted_at', 'is', null)
-              .where('deals.stage_id', 'is not', null),
+            eb.selectFrom('pipeline_items').select('pipeline_items.id')
+              .whereRef('pipeline_items.contact_id', '=', 'contacts.id')
+              .where('pipeline_items.workspace_id', '=', workspace.id)
+              .where('pipeline_items.deleted_at', 'is', null),
           )) as T;
         }
         return q2;

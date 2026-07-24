@@ -42,6 +42,7 @@ export function createContactsOverviewRouter(
         .where('workspace_id', '=', workspace.id)
         .where('contact_id', '=', id)
         .where('deleted_at', 'is', null)
+        .orderBy('created_at', 'desc')
         .execute();
 
       const stageIds = [...new Set(pipelineItems.map((item) => item.stage_id))];

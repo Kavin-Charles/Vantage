@@ -54,14 +54,16 @@ export function createCompaniesOverviewRouter(
 
       const stageIds = [...new Set(pipelineItems.map((item) => item.stage_id))];
       const stageNameById = new Map<string, string>();
+      const stageOutcomeById = new Map<string, { is_won: boolean; is_lost: boolean }>();
       if (stageIds.length > 0) {
         const stages = await db
           .selectFrom('pipeline_stages')
-          .select(['id', 'name'])
+          .select(['id', 'name', 'is_won', 'is_lost'])
           .where('id', 'in', stageIds)
           .execute();
         for (const stage of stages) {
           stageNameById.set(stage.id, stage.name);
+          stageOutcomeById.set(stage.id, { is_won: stage.is_won, is_lost: stage.is_lost });
         }
       }
 
@@ -103,6 +105,10 @@ export function createCompaniesOverviewRouter(
         : [];
 
       const totalDealValue = deals.reduce((sum, d) => sum + d.value, 0);
+      const openDealCount = pipelineItems.filter((item) => {
+        const outcome = stageOutcomeById.get(item.stage_id);
+        return !outcome || (!outcome.is_won && !outcome.is_lost);
+      }).length;
 
       res.json({
         data: {
@@ -113,7 +119,7 @@ export function createCompaniesOverviewRouter(
           tasks,
           metrics: {
             total_deal_value: totalDealValue,
-            open_deal_count: deals.length,
+            open_deal_count: openDealCount,
             contact_count: contacts.length,
             last_activity_at: activities[0]?.created_at
               ? new Date(activities[0].created_at).toISOString()

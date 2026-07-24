@@ -158,6 +158,44 @@ describe('GET /api/contacts', () => {
     expect(chain['where']).toHaveBeenCalledWith('contacts.status', '=', 'prospect');
   });
 
+  it('view=active_deals builds its exists() subquery against pipeline_items, not the dropped deals table', async () => {
+    const { db, chain } = buildDb({ countResult: 0 });
+    chain['execute'] = vi.fn().mockResolvedValue([]);
+    chain['executeTakeFirstOrThrow'] = vi.fn().mockResolvedValue({ count: 0 });
+
+    // The real query builder invokes `.where(eb => ...)` callbacks with a
+    // Kysely ExpressionBuilder; this shared-chain mock normally just returns
+    // itself without calling the callback, so this test wires in a minimal
+    // fake `eb` that records which table `.selectFrom()` is called on inside
+    // that callback — the only way to see what the exists() subquery targets.
+    const subqueryTables: string[] = [];
+    const fakeSubBuilder = {
+      select: () => fakeSubBuilder,
+      whereRef: () => fakeSubBuilder,
+      where: () => fakeSubBuilder,
+    };
+    const fakeEb = {
+      exists: (x: unknown) => x,
+      selectFrom: (table: string) => {
+        subqueryTables.push(table);
+        return fakeSubBuilder;
+      },
+      or: (arr: unknown) => arr,
+    };
+    chain['where'] = vi.fn((arg: unknown) => {
+      if (typeof arg === 'function') (arg as (eb: unknown) => unknown)(fakeEb);
+      return chain;
+    });
+
+    const { createContactsRouter } = await import('../routes/contacts');
+    const router = createContactsRouter(db as never, noopPermission as never);
+    const handler = getHandler(router, '/');
+    await handler(buildReq({ query: { view: 'active_deals' } }), buildRes(), vi.fn());
+
+    expect(subqueryTables).toContain('pipeline_items');
+    expect(subqueryTables).not.toContain('deals');
+  });
+
   it('attaches last_activity to each list row from the most recent activity', async () => {
     const fakeContacts = [{ id: 'c1', name: 'Alice', email: 'alice@example.com', status: 'prospect' }];
     const activityRows = [

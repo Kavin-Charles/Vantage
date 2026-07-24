@@ -481,7 +481,7 @@ app.use('/api/websites', requireAuth, requireInfraFeature('infra:websites'), cre
 app.use('/api/alert-thresholds', requireAuth, requireInfraFeature('infra:alerts'), createAlertThresholdsRouter(db));
 app.use('/api/settings/module-events', requireAuth, createModuleEventSettingsRouter(db));
 app.use('/api/settings/notifications', requireAuth, createNotificationPreferencesRouter(db));
-app.use('/api/settings/crm', requireAuth, createCrmSettingsRouter(db));
+app.use('/api/settings/crm', requireAuth, requireCrmFeature('crm:contacts'), createCrmSettingsRouter(db));
 app.use('/api/settings', requireAuth, createHubProvidersRouter(db));
 app.use('/api/settings', requireAuth, createHooksRouter(db));
 app.use('/api/hub/sections', requireAuth, createHubSectionsRouter(db));

@@ -176,6 +176,63 @@ describe('GET /api/companies/:id/overview', () => {
     expect(contactsChain['where']).toHaveBeenCalledWith('company_id', '=', 'co1');
   });
 
+  it('open_deal_count excludes deals whose stage is won or lost', async () => {
+    const company = {
+      id: 'co3',
+      workspace_id: WORKSPACE_ID,
+      name: 'Won Deals Co',
+      deleted_at: null,
+    };
+    const contacts = [
+      { id: 'c1', workspace_id: WORKSPACE_ID, company_id: 'co3', name: 'Alice', email: 'alice@example.com', deleted_at: null },
+    ];
+    const pipelineItems = [
+      {
+        id: 'd1',
+        workspace_id: WORKSPACE_ID,
+        contact_id: 'c1',
+        company_id: 'co3',
+        stage_id: 'stage-lead',
+        field_values: { name: 'Open Deal', value: 500 },
+        deleted_at: null,
+      },
+      {
+        id: 'd2',
+        workspace_id: WORKSPACE_ID,
+        contact_id: 'c1',
+        company_id: 'co3',
+        stage_id: 'stage-won',
+        field_values: { name: 'Won Deal', value: 4000 },
+        deleted_at: null,
+      },
+      {
+        id: 'd3',
+        workspace_id: WORKSPACE_ID,
+        contact_id: 'c1',
+        company_id: 'co3',
+        stage_id: 'stage-lost',
+        field_values: { name: 'Lost Deal', value: 750 },
+        deleted_at: null,
+      },
+    ];
+    const pipelineStages = [
+      { id: 'stage-lead', name: 'Lead', is_won: false, is_lost: false },
+      { id: 'stage-won', name: 'Won', is_won: true, is_lost: false },
+      { id: 'stage-lost', name: 'Lost', is_won: false, is_lost: true },
+    ];
+    const { db } = buildDb({ company, contacts, pipelineItems, pipelineStages });
+    const { createCompaniesOverviewRouter } = await import('../routes/companies-overview');
+    const app = buildApp(db, createCompaniesOverviewRouter);
+
+    const res = await request(app).get('/api/companies/co3/overview');
+
+    expect(res.status).toBe(200);
+    const { data } = res.body;
+    expect(data.deals).toHaveLength(3);
+    expect(data.metrics.total_deal_value).toBe(5250);
+    expect(data.metrics.open_deal_count).toBe(1);
+  });
+
   it('returns empty contacts/deals/activities/tasks and zeroed metrics when the company has no contacts (guards empty "in" lists)', async () => {
     const company = {
       id: 'co2',

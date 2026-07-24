@@ -141,7 +141,7 @@ describe('GET /api/contacts/:id/overview', () => {
     const tasks = [
       { id: 't1', workspace_id: WORKSPACE_ID, contact_id: 'c1', assignee_id: 'u1', title: 'Follow up', status: 'todo', created_at: new Date('2026-07-21T10:00:00.000Z') },
     ];
-    const { db, pipelineStagesChain } = buildDb({ contact, pipelineItems, pipelineStages, activities, tasks });
+    const { db, pipelineItemsChain, pipelineStagesChain } = buildDb({ contact, pipelineItems, pipelineStages, activities, tasks });
     const { createContactsOverviewRouter } = await import('../routes/contacts-overview');
     const app = buildApp(db, createContactsOverviewRouter);
 
@@ -178,6 +178,11 @@ describe('GET /api/contacts/:id/overview', () => {
     expect(funnelTotal).toBe(3000);
 
     expect(pipelineStagesChain['where']).toHaveBeenCalledWith('id', 'in', ['stage-lead', 'stage-proposal']);
+
+    // current_stage must be deterministic — pipeline_items is ordered by
+    // created_at desc so the most recently created deal wins, not whatever
+    // order the DB happens to return rows in.
+    expect(pipelineItemsChain['orderBy']).toHaveBeenCalledWith('created_at', 'desc');
   });
 
   it('does not query pipeline_stages when the contact has no deals (guards empty "in" list)', async () => {
