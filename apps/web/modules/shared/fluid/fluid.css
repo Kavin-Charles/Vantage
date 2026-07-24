@@ -96,3 +96,13 @@
   border: 1px solid var(--fl-glass-border);
   border-radius: var(--fl-radius-card);
 }
+
+.fl-dock { width: 64px; transition: width .3s cubic-bezier(0.4,0,0.2,1); }
+.fl-dock:hover { width: 232px; }
+.fl-dock-label { opacity: 0; transition: opacity .2s; white-space: nowrap; font-family: var(--fl-font-body); font-size: 13px; font-weight: 600; }
+.fl-dock:hover .fl-dock-label { opacity: 1; }
+.fl-dock-group-label { margin: 0 0 4px; padding: 0 10px; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--fl-outline); white-space: nowrap; opacity: 0; transition: opacity .2s; }
+.fl-dock:hover .fl-dock-group-label { opacity: .5; }
+.fl-dock-scroll { scrollbar-width: thin; scrollbar-color: var(--fl-outline-variant) transparent; }
+.fl-dock-scroll::-webkit-scrollbar { width: 6px; }
+.fl-dock-scroll::-webkit-scrollbar-thumb { background: var(--fl-outline-variant); border-radius: 3px; }
