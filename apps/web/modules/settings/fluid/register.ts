@@ -3,6 +3,7 @@ import { SettingsStub } from './SettingsStub';
 import { ProfilePanel } from './personal/ProfilePanel';
 import { PreferencesPanel } from './personal/PreferencesPanel';
 import { SecurityPanel } from './personal/SecurityPanel';
+import { WorkspacePanel } from './workspace/WorkspacePanel';
 
 // Personal
 registerSettingsEntry({
@@ -38,7 +39,7 @@ registerSettingsEntry({
   label: 'Workspace',
   icon: 'domain',
   adminOnly: true,
-  component: SettingsStub,
+  component: WorkspacePanel,
 });
 
 registerSettingsEntry({
