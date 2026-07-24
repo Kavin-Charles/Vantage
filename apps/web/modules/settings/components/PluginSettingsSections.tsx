@@ -24,12 +24,24 @@ interface ContributedSection {
   fields: ContributedField[];
 }
 
+interface Props {
+  /**
+   * When set, renders only the sections contributed by this plugin (matched
+   * against ContributedSection.plugin_id). Filtering is client-side — the
+   * backing endpoint (GET /api/settings/domain) has no per-plugin query
+   * param, and there's no other consumer that needs one yet. Omit to render
+   * every contributed section across every domain (used by the Integrations
+   * page).
+   */
+  pluginId?: string;
+}
+
 /**
  * Renders every settings section contributed by installed plugins, across all
  * domains. Fully data-driven — no hardcoded domain or plugin. Renders nothing
  * when no plugin contributes settings, so the page is unchanged without plugins.
  */
-export function PluginSettingsSections() {
+export function PluginSettingsSections({ pluginId }: Props = {}) {
   const getToken = useApiToken();
   const apiUrl = (typeof process !== 'undefined' && process.env['NEXT_PUBLIC_API_URL']) ?? '';
   const [sections, setSections] = useState<ContributedSection[]>([]);
@@ -81,7 +93,9 @@ export function PluginSettingsSections() {
     }
   }
 
-  if (loading || sections.length === 0) return null;
+  const visibleSections = pluginId ? sections.filter(s => s.plugin_id === pluginId) : sections;
+
+  if (loading || visibleSections.length === 0) return null;
 
   return (
     <div style={{ marginBottom: 28 }}>
@@ -92,7 +106,7 @@ export function PluginSettingsSections() {
         Plugin settings
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {sections.map((s) => (
+        {visibleSections.map((s) => (
           <div key={`${s.plugin_id}:${s.domain}:${s.section}`} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
               <p style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>{s.label}</p>
