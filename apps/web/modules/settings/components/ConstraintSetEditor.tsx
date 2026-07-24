@@ -13,12 +13,17 @@ import {
   deleteDsdSet,
   type ConstraintSet,
 } from '@vencore/api-client';
+import { FluidInput, FluidButton } from '@/modules/shared/fluid/ui';
 
 const api = {
   ssd: { list: listSsdSets, create: createSsdSet, remove: deleteSsdSet },
   dsd: { list: listDsdSets, create: createDsdSet, remove: deleteDsdSet },
 };
 
+/**
+ * Only used by the Fluid roles-constraints screen (RoleConstraintsScreen) —
+ * restyled to `--fl-*` in place since it had no other importers.
+ */
 export function ConstraintSetEditor({ kind }: { kind: 'ssd' | 'dsd' }) {
   const getToken = useApiToken();
   const qc = useQueryClient();
@@ -52,42 +57,34 @@ export function ConstraintSetEditor({ kind }: { kind: 'ssd' | 'dsd' }) {
           key={s.id}
           style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px',
-            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+            background: 'var(--fl-surface-container-low)', border: '1px solid var(--fl-outline-variant)', borderRadius: 'var(--fl-radius-input)',
           }}
         >
-          <span style={{ fontSize: 13 }}>
+          <span style={{ fontSize: 13, color: 'var(--fl-on-surface)' }}>
             <b>{s.name}</b>{' '}
-            <span style={{ color: 'var(--text2)' }}>· at most {s.cardinality - 1} of {s.roleIds.length}</span>
+            <span style={{ color: 'var(--fl-on-surface-variant)' }}>· at most {s.cardinality - 1} of {s.roleIds.length}</span>
           </span>
           <button
             onClick={() => remove.mutate(s.id)}
             disabled={remove.isPending}
-            style={{ fontSize: 12, color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer' }}
+            style={{ fontSize: 12, color: 'var(--fl-error)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
             Delete
           </button>
         </div>
       ))}
       {sets.data?.data.length === 0 && (
-        <p style={{ fontSize: 13, color: 'var(--text3)', margin: 0 }}>No constraint sets yet.</p>
+        <p style={{ fontSize: 13, color: 'var(--fl-outline)', margin: 0 }}>No constraint sets yet.</p>
       )}
-      <div style={{ padding: 12, background: 'var(--surface2)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <input
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="Set name"
-          style={{
-            padding: '7px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)',
-            background: 'var(--bg)', color: 'var(--text)', fontSize: 13,
-          }}
-        />
+      <div style={{ padding: 16, background: 'var(--fl-surface-container-low)', borderRadius: 'var(--fl-radius-input)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <FluidInput value={name} onChange={setName} placeholder="Set name" />
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {(roles.data?.data ?? []).filter(r => !r.grants_all).map(r => (
             <label
               key={r.id}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '4px 8px',
-                border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)',
+                border: '1px solid var(--fl-outline-variant)', borderRadius: 'var(--fl-radius-pill)', color: 'var(--fl-on-surface)',
               }}
             >
               <input
@@ -99,7 +96,7 @@ export function ConstraintSetEditor({ kind }: { kind: 'ssd' | 'dsd' }) {
             </label>
           ))}
         </div>
-        <label style={{ fontSize: 12, color: 'var(--text2)' }}>
+        <label style={{ fontSize: 12, color: 'var(--fl-on-surface-variant)' }}>
           Cardinality (min roles that conflict):{' '}
           <input
             type="number"
@@ -107,28 +104,23 @@ export function ConstraintSetEditor({ kind }: { kind: 'ssd' | 'dsd' }) {
             value={cardinality}
             onChange={e => setCardinality(Number(e.target.value))}
             style={{
-              width: 56, marginLeft: 6, padding: '4px 6px', borderRadius: 'var(--radius-sm)',
-              border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)',
+              width: 56, marginLeft: 6, padding: '4px 6px', borderRadius: 'var(--fl-radius-input)',
+              border: '1px solid var(--fl-outline-variant)', background: 'var(--fl-surface-container-lowest)', color: 'var(--fl-on-surface)',
             }}
           />
         </label>
         {error && (
-          <div style={{ fontSize: 12, color: 'var(--red)', background: 'var(--red-bg)', padding: '6px 10px', borderRadius: 'var(--radius-sm)' }}>
+          <div style={{ fontSize: 12, color: 'var(--fl-on-error-container)', background: 'var(--fl-error-container)', padding: '6px 10px', borderRadius: 'var(--fl-radius-input)' }}>
             {error}
           </div>
         )}
-        <button
+        <FluidButton
           onClick={() => create.mutate()}
           disabled={!name.trim() || roleIds.length < 2 || create.isPending}
-          style={{
-            alignSelf: 'flex-start', padding: '7px 14px', borderRadius: 'var(--radius-sm)', border: 'none',
-            background: 'var(--text)', color: 'var(--bg)', fontSize: 13,
-            cursor: !name.trim() || roleIds.length < 2 || create.isPending ? 'not-allowed' : 'pointer',
-            opacity: !name.trim() || roleIds.length < 2 || create.isPending ? 0.6 : 1,
-          }}
+          style={{ alignSelf: 'flex-start' }}
         >
-          Create set
-        </button>
+          {create.isPending ? 'Creating…' : 'Create set'}
+        </FluidButton>
       </div>
     </div>
   );

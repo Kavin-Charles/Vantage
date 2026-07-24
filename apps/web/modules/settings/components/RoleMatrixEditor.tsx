@@ -5,7 +5,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getRole, setRolePermissions } from '@vencore/api-client';
 import { PermissionRow } from './PermissionRow';
+import { FluidInput } from '@/modules/shared/fluid/ui';
 
+/**
+ * Only used by the Fluid role-detail screen (RoleDetailScreen) — restyled to
+ * `--fl-*` in place since it had no other importers.
+ */
 export function RoleMatrixEditor({ roleId }: { roleId: string }) {
   const getToken = useApiToken();
   const qc = useQueryClient();
@@ -48,24 +53,16 @@ export function RoleMatrixEditor({ roleId }: { roleId: string }) {
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search permissions…"
-        style={{
-          padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)',
-          background: 'var(--bg)', color: 'var(--text)', fontSize: 13,
-        }}
-      />
+      <FluidInput value={q} onChange={setQ} placeholder="Search permissions…" icon="search" />
       {modules.length === 0 && (
-        <p style={{ fontSize: 13, color: 'var(--text3)' }}>No permissions match &ldquo;{q}&rdquo;.</p>
+        <p style={{ fontSize: 13, color: 'var(--fl-outline)' }}>No permissions match &ldquo;{q}&rdquo;.</p>
       )}
       {modules.map((mod) => (
         <div key={mod.id}>
           <p
             style={{
-              position: 'sticky', top: 0, background: 'var(--bg)', margin: '0 0 8px', fontSize: 13,
-              fontWeight: 700, zIndex: 1,
+              position: 'sticky', top: 0, background: 'var(--fl-surface-container-lowest)', margin: '0 0 8px',
+              fontSize: 13, fontWeight: 700, zIndex: 1, color: 'var(--fl-on-surface)',
             }}
           >
             {mod.name}
@@ -79,7 +76,7 @@ export function RoleMatrixEditor({ roleId }: { roleId: string }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
                   <span
                     style={{
-                      fontSize: 12, fontWeight: 600, color: 'var(--text2)', textTransform: 'uppercase',
+                      fontSize: 12, fontWeight: 600, color: 'var(--fl-on-surface-variant)', textTransform: 'uppercase',
                       letterSpacing: '.04em',
                     }}
                   >
@@ -89,8 +86,8 @@ export function RoleMatrixEditor({ roleId }: { roleId: string }) {
                     <button
                       onClick={() => grantAll(editable.map((p) => p.key), !allOn)}
                       style={{
-                        fontSize: 11, color: 'var(--text2)', background: 'none', border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-sm)', padding: '2px 8px', cursor: 'pointer',
+                        fontSize: 11, color: 'var(--fl-on-surface-variant)', background: 'none', border: '1px solid var(--fl-outline-variant)',
+                        borderRadius: 'var(--fl-radius-pill)', padding: '2px 8px', cursor: 'pointer',
                       }}
                     >
                       {allOn ? 'Clear all' : someOn ? 'Grant rest' : 'Grant all'}

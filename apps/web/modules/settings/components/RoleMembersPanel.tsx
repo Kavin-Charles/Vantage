@@ -5,8 +5,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getRole, addRoleMember, removeRoleMember } from '@vencore/api-client';
 import { apiFetch } from '@/modules/shared/lib/api';
+import { FluidSelect, FluidButton } from '@/modules/shared/fluid/ui';
 import type { User } from '@vencore/types';
 
+/**
+ * Only used by the Fluid role-detail screen (RoleDetailScreen) — restyled to
+ * `--fl-*` in place since it had no other importers.
+ */
 export function RoleMembersPanel({ roleId }: { roleId: string }) {
   const getToken = useApiToken();
   const qc = useQueryClient();
@@ -46,59 +51,45 @@ export function RoleMembersPanel({ roleId }: { roleId: string }) {
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {members.length === 0 && (
-        <p style={{ fontSize: 13, color: 'var(--text3)', margin: 0 }}>No members in this role yet.</p>
+        <p style={{ fontSize: 13, color: 'var(--fl-outline)', margin: 0 }}>No members in this role yet.</p>
       )}
       {members.map(m => (
         <div
           key={m.id}
           style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px',
-            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
+            background: 'var(--fl-surface-container-low)', border: '1px solid var(--fl-outline-variant)', borderRadius: 'var(--fl-radius-input)',
           }}
         >
-          <span style={{ fontSize: 13 }}>
-            {m.name} <span style={{ color: 'var(--text3)', marginLeft: 6 }}>{m.email}</span>
+          <span style={{ fontSize: 13, color: 'var(--fl-on-surface)' }}>
+            {m.name} <span style={{ color: 'var(--fl-outline)', marginLeft: 6 }}>{m.email}</span>
           </span>
           <button
             onClick={() => remove.mutate(m.id)}
             disabled={remove.isPending}
-            style={{ fontSize: 12, color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer' }}
+            style={{ fontSize: 12, color: 'var(--fl-error)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
             Remove
           </button>
         </div>
       ))}
       {error && (
-        <div style={{ fontSize: 12, color: 'var(--red)', background: 'var(--red-bg)', padding: '6px 10px', borderRadius: 'var(--radius-sm)' }}>
+        <div style={{ fontSize: 12, color: 'var(--fl-on-error-container)', background: 'var(--fl-error-container)', padding: '6px 10px', borderRadius: 'var(--fl-radius-input)' }}>
           {error}
         </div>
       )}
       {nonMembers.length > 0 && (
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <select
-            value={addId}
-            onChange={e => setAddId(e.target.value)}
-            style={{
-              flex: 1, padding: '7px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)',
-              background: 'var(--bg)', color: 'var(--text)', fontSize: 13,
-            }}
-          >
-            <option value="">Add a member…</option>
-            {nonMembers.map(u => (
-              <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
-            ))}
-          </select>
-          <button
-            onClick={() => addId && add.mutate(addId)}
-            disabled={!addId || add.isPending}
-            style={{
-              padding: '7px 14px', borderRadius: 'var(--radius-sm)', border: 'none', background: 'var(--text)',
-              color: 'var(--bg)', fontSize: 13, cursor: !addId || add.isPending ? 'not-allowed' : 'pointer',
-              opacity: !addId || add.isPending ? 0.6 : 1,
-            }}
-          >
-            Add
-          </button>
+          <div style={{ flex: 1 }}>
+            <FluidSelect
+              value={addId}
+              onChange={setAddId}
+              options={[{ label: 'Add a member…', value: '' }, ...nonMembers.map(u => ({ label: `${u.name} (${u.email})`, value: u.id }))]}
+            />
+          </div>
+          <FluidButton onClick={() => addId && add.mutate(addId)} disabled={!addId || add.isPending}>
+            {add.isPending ? 'Adding…' : 'Add'}
+          </FluidButton>
         </div>
       )}
     </div>

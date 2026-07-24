@@ -4,7 +4,12 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getRole, listRoles, addInheritance, removeInheritance } from '@vencore/api-client';
+import { FluidSelect, FluidButton } from '@/modules/shared/fluid/ui';
 
+/**
+ * Only used by the Fluid role-detail screen (RoleDetailScreen) — restyled to
+ * `--fl-*` in place since it had no other importers.
+ */
 export function RoleInheritancePanel({ roleId }: { roleId: string }) {
   const getToken = useApiToken();
   const qc = useQueryClient();
@@ -36,61 +41,47 @@ export function RoleInheritancePanel({ roleId }: { roleId: string }) {
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <p style={{ fontSize: 12, color: 'var(--text2)', margin: 0 }}>
+      <p style={{ fontSize: 12, color: 'var(--fl-on-surface-variant)', margin: 0 }}>
         This role inherits all permissions of its child roles.
       </p>
       {children.length === 0 && (
-        <p style={{ fontSize: 13, color: 'var(--text3)', margin: 0 }}>No inherited roles yet.</p>
+        <p style={{ fontSize: 13, color: 'var(--fl-outline)', margin: 0 }}>No inherited roles yet.</p>
       )}
       {children.map(c => (
         <div
           key={c}
           style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px',
-            background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
+            background: 'var(--fl-surface-container-low)', border: '1px solid var(--fl-outline-variant)', borderRadius: 'var(--fl-radius-input)',
           }}
         >
-          <span style={{ fontSize: 13 }}>↳ {byId.get(c) ?? c}</span>
+          <span style={{ fontSize: 13, color: 'var(--fl-on-surface)' }}>↳ {byId.get(c) ?? c}</span>
           <button
             onClick={() => remove.mutate(c)}
             disabled={remove.isPending}
-            style={{ fontSize: 12, color: 'var(--red)', background: 'none', border: 'none', cursor: 'pointer' }}
+            style={{ fontSize: 12, color: 'var(--fl-error)', background: 'none', border: 'none', cursor: 'pointer' }}
           >
             Remove
           </button>
         </div>
       ))}
       {error && (
-        <div style={{ fontSize: 12, color: 'var(--red)', background: 'var(--red-bg)', padding: '6px 10px', borderRadius: 'var(--radius-sm)' }}>
+        <div style={{ fontSize: 12, color: 'var(--fl-on-error-container)', background: 'var(--fl-error-container)', padding: '6px 10px', borderRadius: 'var(--fl-radius-input)' }}>
           {error}
         </div>
       )}
       {candidates.length > 0 && (
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <select
-            value={childId}
-            onChange={e => setChildId(e.target.value)}
-            style={{
-              flex: 1, padding: '7px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)',
-              background: 'var(--bg)', color: 'var(--text)', fontSize: 13,
-            }}
-          >
-            <option value="">Inherit a role…</option>
-            {candidates.map(r => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </select>
-          <button
-            onClick={() => childId && add.mutate(childId)}
-            disabled={!childId || add.isPending}
-            style={{
-              padding: '7px 14px', borderRadius: 'var(--radius-sm)', border: 'none', background: 'var(--text)',
-              color: 'var(--bg)', fontSize: 13, cursor: !childId || add.isPending ? 'not-allowed' : 'pointer',
-              opacity: !childId || add.isPending ? 0.6 : 1,
-            }}
-          >
-            Add
-          </button>
+          <div style={{ flex: 1 }}>
+            <FluidSelect
+              value={childId}
+              onChange={setChildId}
+              options={[{ label: 'Inherit a role…', value: '' }, ...candidates.map(r => ({ label: r.name, value: r.id }))]}
+            />
+          </div>
+          <FluidButton onClick={() => childId && add.mutate(childId)} disabled={!childId || add.isPending}>
+            {add.isPending ? 'Adding…' : 'Add'}
+          </FluidButton>
         </div>
       )}
     </div>

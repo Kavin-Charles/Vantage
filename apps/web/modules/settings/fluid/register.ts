@@ -5,6 +5,7 @@ import { PreferencesPanel } from './personal/PreferencesPanel';
 import { SecurityPanel } from './personal/SecurityPanel';
 import { WorkspacePanel } from './workspace/WorkspacePanel';
 import { UsersPanel } from './workspace/UsersPanel';
+import { RolesPanel } from './workspace/RolesPanel';
 
 // Personal
 registerSettingsEntry({
@@ -58,7 +59,7 @@ registerSettingsEntry({
   label: 'Roles',
   icon: 'admin_panel_settings',
   adminOnly: true,
-  component: SettingsStub,
+  component: RolesPanel,
 });
 
 registerSettingsEntry({
