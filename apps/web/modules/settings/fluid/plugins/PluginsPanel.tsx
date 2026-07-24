@@ -8,8 +8,19 @@ import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import {
-  PageHeader, FluidTable, FluidBadge, FluidButton, MSIcon, EmptyState, type FluidColumn,
+  PageHeader, FluidTable, FluidBadge, FluidButton, FluidModal, FluidInput, MSIcon, EmptyState, type FluidColumn,
 } from '@/modules/shared/fluid/ui';
+
+/**
+ * `GET /api/plugins` and `GET /api/plugins/marketplace` return the full
+ * `workspace_plugins` row (server does `selectAll()`), which includes the
+ * license fields below — `InstalledPlugin` just doesn't declare them. Extend
+ * locally rather than widening the shared hook's type.
+ */
+interface InstalledPluginLicenseFields {
+  pricing_type?: 'free' | 'paid';
+  license_key?: string | null;
+}
 
 /**
  * Marketplace plugin shape returned by GET /api/plugins/marketplace — see
@@ -44,16 +55,19 @@ interface MarketplaceResponse {
  * Reuses the exact data/mutation surfaces the legacy
  * apps/web/app/(dashboard)/settings/plugins/page.tsx relied on:
  *   - useInstalledPlugins()                          → installed list (['plugins'] query)
- *   - PATCH  /api/plugins/:id            { enabled }  → toggle enable/disable
+ *   - PATCH  /api/plugins/:id     { enabled, license_key? }  → toggle enable/disable
  *   - DELETE /api/plugins/:id                         → uninstall
  *   - GET    /api/plugins/marketplace                 → marketplace listing
- *   - POST   /api/plugins/marketplace/install/:slug   → install
+ *   - POST   /api/plugins/marketplace/install/:slug { license_key? } → install
  *
- * Paid marketplace plugins that require a license_key surface the server's
- * error message inline rather than opening a license-entry modal — that flow
- * is deliberately out of scope for this page (FluidModal is not part of the
- * approved primitive set here); free installs/toggles/uninstalls behave
- * identically to the legacy page.
+ * Paid plugins require a `license_key` — the server 402s with
+ * `LICENSE_REQUIRED` otherwise (see apps/api/src/routes/plugins.ts). This
+ * mirrors the legacy page's `LicenseModal` flow using the Fluid `FluidModal`
+ * + `FluidInput` primitives: a license prompt opens for (a) installing a paid
+ * marketplace plugin, and (b) enabling an installed paid plugin that has no
+ * stored key yet. Free installs/toggles/uninstalls behave identically to the
+ * legacy page. The license key is only ever sent in the install/enable
+ * request body — never logged or persisted client-side.
  */
 export function PluginsPanel() {
   const router = useRouter();
@@ -85,6 +99,17 @@ export function PluginsPanel() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [installingSlug, setInstallingSlug] = useState<string | null>(null);
 
+  // License-entry modal — shared by the marketplace install flow and the
+  // installed-plugin enable toggle, mirroring the legacy LicenseModal.
+  const [licenseTarget, setLicenseTarget] = useState<
+    | { kind: 'install'; plugin: MarketplacePlugin }
+    | { kind: 'toggle'; plugin: InstalledPlugin }
+    | null
+  >(null);
+  const [licenseKeyInput, setLicenseKeyInput] = useState('');
+  const [licenseSubmitting, setLicenseSubmitting] = useState(false);
+  const [licenseError, setLicenseError] = useState<string | null>(null);
+
   async function refreshAll() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['plugins'] }),
@@ -92,14 +117,23 @@ export function PluginsPanel() {
     ]);
   }
 
-  async function togglePlugin(plugin: InstalledPlugin) {
+  function closeLicenseModal() {
+    setLicenseTarget(null);
+    setLicenseKeyInput('');
+    setLicenseError(null);
+  }
+
+  /** Runs the actual PATCH — called directly for free plugins, or after license entry for paid ones. */
+  async function performToggle(plugin: InstalledPlugin, licenseKey?: string) {
     setTogglingId(plugin.id);
     setError(null);
     try {
       const token = await getToken();
+      const body: Record<string, unknown> = { enabled: !plugin.enabled };
+      if (licenseKey) body['license_key'] = licenseKey;
       await apiFetch(`/api/plugins/${plugin.id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ enabled: !plugin.enabled }),
+        body: JSON.stringify(body),
         token,
       });
       await refreshAll();
@@ -108,6 +142,16 @@ export function PluginsPanel() {
     } finally {
       setTogglingId(null);
     }
+  }
+
+  function togglePlugin(plugin: InstalledPlugin) {
+    const p = plugin as InstalledPlugin & InstalledPluginLicenseFields;
+    const enabling = !plugin.enabled;
+    if (enabling && p.pricing_type === 'paid' && !p.license_key) {
+      setLicenseTarget({ kind: 'toggle', plugin });
+      return;
+    }
+    void performToggle(plugin);
   }
 
   function confirmUninstall(plugin: InstalledPlugin) {
@@ -134,21 +178,56 @@ export function PluginsPanel() {
     }
   }
 
-  async function installPlugin(plugin: MarketplacePlugin) {
+  /**
+   * Runs the install request. Throws on failure (mirrors the legacy
+   * `performInstall`) so the license modal can show the error inline and
+   * stay open for a retry; the free-path caller below wraps it in its own
+   * try/catch to surface failures via the top banner instead.
+   */
+  async function performInstall(plugin: MarketplacePlugin, licenseKey?: string): Promise<void> {
     setInstallingSlug(plugin.slug);
     setError(null);
     try {
       const token = await getToken();
+      const body: Record<string, unknown> = {};
+      if (licenseKey) body['license_key'] = licenseKey;
       await apiFetch(`/api/plugins/marketplace/install/${plugin.slug}`, {
         method: 'POST',
-        body: JSON.stringify({}),
+        body: JSON.stringify(body),
         token,
       });
       await refreshAll();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Install failed');
     } finally {
       setInstallingSlug(null);
+    }
+  }
+
+  function installPlugin(plugin: MarketplacePlugin) {
+    if (plugin.pricing_type === 'paid') {
+      setLicenseTarget({ kind: 'install', plugin });
+      return;
+    }
+    performInstall(plugin).catch((err) => {
+      setError(err instanceof Error ? err.message : 'Install failed');
+    });
+  }
+
+  async function submitLicense() {
+    if (!licenseTarget || !licenseKeyInput.trim()) return;
+    setLicenseSubmitting(true);
+    setLicenseError(null);
+    try {
+      const key = licenseKeyInput.trim();
+      if (licenseTarget.kind === 'install') {
+        await performInstall(licenseTarget.plugin, key);
+      } else {
+        await performToggle(licenseTarget.plugin, key);
+      }
+      closeLicenseModal();
+    } catch (err) {
+      setLicenseError(err instanceof Error ? err.message : 'Invalid license key');
+    } finally {
+      setLicenseSubmitting(false);
     }
   }
 
@@ -156,12 +235,18 @@ export function PluginsPanel() {
     {
       key: 'name',
       header: 'Plugin',
-      render: p => (
-        <div>
-          <div style={{ fontWeight: 600 }}>{p.name}</div>
-          <div style={{ fontSize: 12, color: 'var(--fl-on-surface-variant)', marginTop: 2 }}>{p.plugin_id}</div>
-        </div>
-      ),
+      render: p => {
+        const licensed = (p as InstalledPlugin & InstalledPluginLicenseFields).pricing_type === 'paid';
+        return (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600 }}>
+              {p.name}
+              {licensed ? <FluidBadge tone="gold">Paid</FluidBadge> : null}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--fl-on-surface-variant)', marginTop: 2 }}>{p.plugin_id}</div>
+          </div>
+        );
+      },
     },
     {
       key: 'version',
@@ -327,6 +412,38 @@ export function PluginsPanel() {
           <FluidTable columns={marketplaceColumns} rows={marketplace} rowKey={mp => mp.id} />
         )}
       </div>
+
+      <FluidModal
+        open={licenseTarget !== null}
+        onClose={closeLicenseModal}
+        title="Activate License"
+        subtitle={licenseTarget ? `Enter your license key for ${licenseTarget.plugin.name}.` : undefined}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <FluidInput
+            value={licenseKeyInput}
+            onChange={setLicenseKeyInput}
+            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          />
+          {licenseError ? (
+            <div style={{
+              padding: '10px 12px', borderRadius: 8,
+              background: 'var(--fl-error-container)', color: 'var(--fl-on-error-container)', fontSize: 13,
+            }}>
+              {licenseError}
+            </div>
+          ) : null}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
+            <FluidButton variant="ghost" onClick={closeLicenseModal}>Cancel</FluidButton>
+            <FluidButton
+              onClick={() => void submitLicense()}
+              disabled={licenseSubmitting || !licenseKeyInput.trim()}
+            >
+              {licenseSubmitting ? 'Activating…' : 'Activate & Enable'}
+            </FluidButton>
+          </div>
+        </div>
+      </FluidModal>
 
       {confirmEl}
     </>
