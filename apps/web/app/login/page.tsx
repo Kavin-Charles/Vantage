@@ -16,6 +16,8 @@ function LoginForm() {
   const { data: config } = useConfig();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
+  const [totpRequired, setTotpRequired] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -28,11 +30,21 @@ function LoginForm() {
         data: {
           id: string; name: string; email: string; token: string;
           isAdmin: boolean; permissions: string[]; theme: 'light' | 'dark';
+          // Present (and the only field) when the account has 2FA enabled and no
+          // valid code was supplied yet — the server withholds the session token.
+          totp_required?: boolean;
         };
       }>('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(
+          totpRequired ? { email, password, code } : { email, password },
+        ),
       });
+      if (res.data.totp_required) {
+        // Second factor needed — reveal the code field and wait for the user.
+        setTotpRequired(true);
+        return;
+      }
       dispatch(setAuth({
         token: res.data.token,
         user: {
@@ -49,7 +61,7 @@ function LoginForm() {
       const from = raw.startsWith('/') && !raw.startsWith('//') ? raw : '/crm/pipeline';
       window.location.href = from;
     } catch {
-      setError('Invalid email or password');
+      setError(totpRequired ? 'Invalid two-factor code' : 'Invalid email or password');
     } finally {
       setLoading(false);
     }
@@ -135,6 +147,32 @@ function LoginForm() {
             </Link>
           </div>
 
+          {totpRequired && (
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--text2)', display: 'block', marginBottom: 5 }}>
+                Authentication code
+              </label>
+              <input
+                type="text"
+                inputMode="text"
+                autoComplete="one-time-code"
+                value={code}
+                onChange={e => setCode(e.target.value.trim())}
+                required
+                autoFocus
+                placeholder="6-digit code or recovery code"
+                style={{
+                  width: '100%', padding: '8px 12px', borderRadius: 7,
+                  border: '1px solid var(--border)', background: 'var(--bg)',
+                  color: 'var(--text)', fontSize: 14, boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 5 }}>
+                Enter the code from your authenticator app, or a one-time recovery code.
+              </div>
+            </div>
+          )}
+
           {error && (
             <div style={{ fontSize: 13, color: 'var(--red)', padding: '8px 12px', background: 'rgba(239,68,68,0.08)', borderRadius: 7 }}>
               {error}
@@ -151,7 +189,7 @@ function LoginForm() {
               opacity: loading ? 0.6 : 1, marginTop: 4,
             }}
           >
-            {loading ? 'Signing in…' : 'Sign in'}
+            {loading ? 'Signing in…' : totpRequired ? 'Verify' : 'Sign in'}
           </button>
         </form>
       </div>
