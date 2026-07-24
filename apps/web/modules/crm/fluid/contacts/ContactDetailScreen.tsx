@@ -1,7 +1,8 @@
 'use client';
 
 import { useContactOverview } from '@/modules/crm/fluid/lib/useContactOverview';
-import { PageHeader, FluidButton, GlassCard, MetricPill, Avatar, EmptyState, MSIcon } from '@/modules/shared/fluid/ui';
+import { TasksPanel } from '@/modules/crm/fluid/shared/TasksPanel';
+import { PageHeader, FluidButton, GlassCard, FluidBadge, MetricPill, Avatar, EmptyState, MSIcon } from '@/modules/shared/fluid/ui';
 import { FluidPanelSlot } from '@/modules/shared/fluid/host/FluidPanelSlot';
 
 export function ContactDetailScreen({ id }: { id: string }) {
@@ -12,7 +13,7 @@ export function ContactDetailScreen({ id }: { id: string }) {
     return <EmptyState icon="error" title="Could not load contact" message="Try again shortly." />;
   }
 
-  const { contact, metrics, activities, stage_funnel } = data;
+  const { contact, metrics, activities, deals, stage_funnel } = data;
   const money = (n: number) => `$${n.toLocaleString()}`;
 
   return (
@@ -76,6 +77,28 @@ export function ContactDetailScreen({ id }: { id: string }) {
             <div style={{ fontSize: 14 }}>Phone: {contact.phone ?? '—'}</div>
           </GlassCard>
         </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, marginTop: 24 }}>
+        <GlassCard>
+          <h3 style={{ marginTop: 0, fontFamily: 'var(--fl-font-display)' }}>Deals</h3>
+          {deals.length === 0 ? (
+            <EmptyState icon="account_tree" title="No linked deals" />
+          ) : (
+            deals.map(d => (
+              <div
+                key={d.id}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '12px 0', borderTop: '1px solid var(--fl-outline-variant)' }}
+              >
+                <span style={{ fontWeight: 600 }}>{d.name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span>{money(d.value)}</span>
+                  {d.stage ? <FluidBadge tone="blue">{d.stage}</FluidBadge> : null}
+                </div>
+              </div>
+            ))
+          )}
+        </GlassCard>
+        <TasksPanel contactId={id} />
       </div>
       <div style={{ marginTop: 24 }}>
         <FluidPanelSlot recordType="contact" recordId={id} />
