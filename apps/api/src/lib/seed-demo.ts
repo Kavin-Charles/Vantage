@@ -162,19 +162,27 @@ export async function seedDemo(db: Kysely<Database>): Promise<void> {
   const lostId      = stageMap['Lost']!;
 
   // ── Deals ─────────────────────────────────────────────────────────────────
+  // Deals live in `pipeline_items` (the `deals` table was migrated away by the
+  // 20260615 pipeline-overhaul + 20260602 migrate-deals-to-records migrations).
+  // name/value/probability/close_date go in `field_values`; contact_id/company_id
+  // are top-level columns (added by 20260724_001_pipeline_items_links).
+
+  function dateOnly(d: Date) {
+    return d.toISOString().split('T')[0];
+  }
 
   await db
-    .insertInto('deals')
+    .insertInto('pipeline_items')
     .values([
-      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: leadId,     owner_id: adminId, contact_id: amir.id,   company_id: stackline.id, name: 'Stackline — Developer Plan',    value: 4800,   probability: 20, close_date: daysFromNow(45) },
-      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: leadId,     owner_id: adminId, contact_id: ben.id,    company_id: null,         name: 'Ben Hartley — Indie License',   value: 990,    probability: 30, close_date: daysFromNow(30) },
-      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: qualifyId,  owner_id: adminId, contact_id: sophie.id, company_id: fenix.id,     name: 'Fenix Analytics — Team Plan',   value: 18000,  probability: 40, close_date: daysFromNow(21) },
-      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: qualifyId,  owner_id: adminId, contact_id: james.id,  company_id: cobalt.id,    name: 'Cobalt Systems — Enterprise',   value: 55000,  probability: 45, close_date: daysFromNow(60) },
-      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: proposalId, owner_id: adminId, contact_id: nina.id,   company_id: cobalt.id,    name: 'Cobalt — Infra Monitoring Add-on', value: 12000, probability: 65, close_date: daysFromNow(14) },
-      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: closingId,  owner_id: adminId, contact_id: rachel.id, company_id: orbit.id,     name: 'Orbit Cloud — Platform License', value: 36000, probability: 85, close_date: daysFromNow(7) },
-      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: wonId,      owner_id: adminId, contact_id: priya.id,  company_id: meridian.id,  name: 'Meridian Labs — Annual Plan',   value: 24000,  probability: 100, close_date: daysAgo(10) },
-      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: wonId,      owner_id: adminId, contact_id: james.id,  company_id: cobalt.id,    name: 'Cobalt Systems — Starter',      value: 9600,   probability: 100, close_date: daysAgo(25) },
-      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: lostId,     owner_id: adminId, contact_id: sophie.id, company_id: fenix.id,     name: 'Fenix — Q1 Outreach',           value: 8400,   probability: 0,  close_date: daysAgo(15) },
+      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: leadId,     contact_id: amir.id,   company_id: stackline.id, field_values: { name: 'Stackline — Developer Plan',       value: 4800,  probability: 20,  close_date: dateOnly(daysFromNow(45)) } },
+      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: leadId,     contact_id: ben.id,    company_id: null,         field_values: { name: 'Ben Hartley — Indie License',      value: 990,   probability: 30,  close_date: dateOnly(daysFromNow(30)) } },
+      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: qualifyId,  contact_id: sophie.id, company_id: fenix.id,     field_values: { name: 'Fenix Analytics — Team Plan',      value: 18000, probability: 40,  close_date: dateOnly(daysFromNow(21)) } },
+      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: qualifyId,  contact_id: james.id,  company_id: cobalt.id,    field_values: { name: 'Cobalt Systems — Enterprise',      value: 55000, probability: 45,  close_date: dateOnly(daysFromNow(60)) } },
+      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: proposalId, contact_id: nina.id,   company_id: cobalt.id,    field_values: { name: 'Cobalt — Infra Monitoring Add-on', value: 12000, probability: 65,  close_date: dateOnly(daysFromNow(14)) } },
+      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: closingId,  contact_id: rachel.id, company_id: orbit.id,     field_values: { name: 'Orbit Cloud — Platform License',   value: 36000, probability: 85,  close_date: dateOnly(daysFromNow(7)) } },
+      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: wonId,      contact_id: priya.id,  company_id: meridian.id,  field_values: { name: 'Meridian Labs — Annual Plan',      value: 24000, probability: 100, close_date: dateOnly(daysAgo(10)) } },
+      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: wonId,      contact_id: james.id,  company_id: cobalt.id,    field_values: { name: 'Cobalt Systems — Starter',         value: 9600,  probability: 100, close_date: dateOnly(daysAgo(25)) } },
+      { workspace_id: wid, pipeline_id: pipeline.id, stage_id: lostId,     contact_id: sophie.id, company_id: fenix.id,     field_values: { name: 'Fenix — Q1 Outreach',              value: 8400,  probability: 0,   close_date: dateOnly(daysAgo(15)) } },
     ])
     .execute();
 
