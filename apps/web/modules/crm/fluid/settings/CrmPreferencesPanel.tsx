@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { GlassCard, FluidSelect, FluidInput, FluidButton, FluidChip, PageHeader, MSIcon } from '@/modules/shared/fluid/ui';
+import { apiFetch } from '@/modules/shared/lib/api';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listPipelines } from '@/modules/crm/pipeline/lib/pipelines';
 
-const STORAGE_KEY = 'crm-preferences';
+const SETTINGS_QUERY_KEY = ['crm-preferences'];
+const SETTINGS_PATH = '/api/settings/crm';
 
 interface CrmPreferences {
   defaultPipelineId: string;
@@ -22,6 +24,11 @@ const DEFAULT_PREFS: CrmPreferences = {
   showOwnerColumn: true,
 };
 
+interface CrmPreferencesResponse {
+  data: CrmPreferences;
+  error: null;
+}
+
 const LABEL_STYLE: React.CSSProperties = {
   display: 'block',
   marginBottom: 8,
@@ -32,32 +39,6 @@ const LABEL_STYLE: React.CSSProperties = {
 };
 
 /**
- * Persistence stub: there is no generic workspace/user preferences endpoint
- * in this codebase yet. The only existing preferences route,
- * /api/settings/notifications, is a dedicated schema for notification
- * channel/severity toggles and doesn't fit arbitrary CRM defaults. Until a
- * proper settings endpoint exists, these preferences are held in
- * localStorage (namespaced under `crm-preferences`) as a minimal functional
- * stub. Swap `loadPrefs`/`savePrefs` for real API calls once one lands.
- */
-function loadPrefs(): CrmPreferences {
-  if (typeof window === 'undefined') return DEFAULT_PREFS;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_PREFS;
-    const parsed = JSON.parse(raw) as Partial<CrmPreferences>;
-    return { ...DEFAULT_PREFS, ...parsed };
-  } catch {
-    return DEFAULT_PREFS;
-  }
-}
-
-function savePrefs(prefs: CrmPreferences): void {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-}
-
-/**
  * Minimal CRM preferences panel registered into the Foundation settings
  * registry (workspace scope, admin-gated). Takes no props — the Settings
  * module (a later plan) mounts registered entries by looking them up via
@@ -65,11 +46,28 @@ function savePrefs(prefs: CrmPreferences): void {
  */
 export function CrmPreferencesPanel() {
   const getToken = useApiToken();
-  // Lazy initializers (not an effect) so the persisted value is read once on
-  // mount without triggering a second, cascading render.
-  const [prefs, setPrefs] = useState<CrmPreferences>(() => loadPrefs());
-  const [pageSizeInput, setPageSizeInput] = useState(() => String(loadPrefs().defaultPageSize));
+  const queryClient = useQueryClient();
+  const [prefs, setPrefs] = useState<CrmPreferences>(DEFAULT_PREFS);
+  const [pageSizeInput, setPageSizeInput] = useState(() => String(DEFAULT_PREFS.defaultPageSize));
   const [saved, setSaved] = useState(false);
+
+  const { data: storedPrefs } = useQuery({
+    queryKey: SETTINGS_QUERY_KEY,
+    queryFn: async () => {
+      const res = await apiFetch<CrmPreferencesResponse>(SETTINGS_PATH, {
+        token: await getToken(),
+      });
+      return res.data;
+    },
+  });
+
+  // Sync local editable state once the server value loads, without
+  // clobbering in-flight edits on background refetches.
+  useEffect(() => {
+    if (!storedPrefs) return;
+    setPrefs(storedPrefs);
+    setPageSizeInput(String(storedPrefs.defaultPageSize));
+  }, [storedPrefs]);
 
   const { data: pipelines } = useQuery({
     queryKey: ['pipelines'],
@@ -81,16 +79,30 @@ export function CrmPreferencesPanel() {
     ...(pipelines ?? []).map(p => ({ label: p.name, value: p.id })),
   ];
 
+  const saveMutation = useMutation({
+    mutationFn: async (next: CrmPreferences) => {
+      const res = await apiFetch<CrmPreferencesResponse>(SETTINGS_PATH, {
+        method: 'PUT',
+        body: JSON.stringify(next),
+        token: await getToken(),
+      });
+      return res.data;
+    },
+    onSuccess: next => {
+      setPrefs(next);
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    },
+  });
+
   function handleSave() {
     const parsedSize = Number.parseInt(pageSizeInput, 10);
     const next: CrmPreferences = {
       ...prefs,
       defaultPageSize: Number.isFinite(parsedSize) && parsedSize > 0 ? parsedSize : DEFAULT_PREFS.defaultPageSize,
     };
-    setPrefs(next);
-    savePrefs(next);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    saveMutation.mutate(next);
   }
 
   return (
@@ -136,7 +148,9 @@ export function CrmPreferencesPanel() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <FluidButton onClick={handleSave} icon="save">Save preferences</FluidButton>
+          <FluidButton onClick={handleSave} icon="save" disabled={saveMutation.isPending}>
+            {saveMutation.isPending ? 'Saving…' : 'Save preferences'}
+          </FluidButton>
           {saved ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--fl-font-body)', fontSize: 13, color: 'var(--fl-primary)' }}>
               <MSIcon name="check_circle" size={16} /> Saved
