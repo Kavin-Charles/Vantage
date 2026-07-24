@@ -55,7 +55,8 @@ integrate Tasks into the CRM, wire up Settings access, and finish CRM module set
     deals). Each panel: list + inline toggle (done) + quick-add.
   - **Hub — complete fluid redesign.** Rebuild the standalone `/crm/tasks` screen from scratch in
     Fluid style (reuse existing data hooks/mutations only). Every task row shows and **links to
-    its related contact/deal** (jump to the record). New grouped/bento layout, glass cards,
+    its related contact** (`task.contact_id` → `/crm/contacts/:id`; tasks have no `deal_id`
+    column, so the record link is the contact). New grouped/bento layout, glass cards,
     Space Grotesk headings, metric pills, pill filters. Retire the legacy-styled inner components
     for the Fluid hub (leave the legacy `(dashboard)` tasks module untouched).
 - **Settings access.** Dock gear → `/settings`. In `/settings/modules`, every module **row shows
@@ -66,42 +67,65 @@ integrate Tasks into the CRM, wire up Settings access, and finish CRM module set
 - **Design consistency.** All CRM screens on Fluid tokens (glass surfaces, pill controls,
   Space Grotesk + Inter, blue `--fl-primary`), matching the six source mocks + `DESIGN.md`.
 
-## Data model reconciliation (critical)
+## Data model reconciliation (critical — verified against the live DB)
 
 The original overview endpoint assumed the CLAUDE.md `Deal` table. The running app has **no
-`deals` table**. Deals are `pipeline_items`:
+`deals` table** (dropped in an earlier records migration → HTTP 500 `relation "deals" does not
+exist`). Two parallel deal models coexist mid-refactor; the plan MUST target the live one:
 
-```
-pipeline_items(
-  id uuid, pipeline_id uuid, stage_id uuid, workspace_id uuid,
-  position int, field_values jsonb, deleted_at timestamptz, created_at, updated_at
-)
-```
+- **`pipeline_items` — LIVE/canonical for CRM.** The fluid pipeline board and deal create/edit
+  use it via `/api/pipelines/:pipelineId/items` (`pipeline-items.ts`, `crm/pipeline/lib/items`).
+  ```
+  pipeline_items(id, pipeline_id, stage_id, workspace_id, position,
+                 field_values jsonb, deleted_at, created_at, updated_at)
+  ```
+  Deal **name/value/probability/close_date** live in `field_values`
+  (`field_values.name`, `.value`, `.probability`, `.close_date` — confirmed from live rows).
+  **Stage name** resolves via `pipeline_stages` (join `stage_id`).
+- **`pipeline_records` — DORMANT.** Has `contact_id`/`company_id` columns but is written only by
+  offline scripts (`backfill-pipeline-engine.ts`, `fix-atp-stages.ts`), never by the running app,
+  and read only by `analytics.ts`. Do NOT build CRM overview on it. Leave it alone.
 
-- Deal **name/value** live in `field_values` (`field_values.name`, `field_values.value`),
-  consistent with `crm-provider.ts` (`searchCrmRecords` reads `field_values->>'name'` / `'value'`).
-- **Stage name** resolves via `pipeline_stages` (join `stage_id`).
-- **Contact/Company linkage** is NOT a column — it lives in `field_values` (e.g.
-  `field_values.contact_id` / `field_values.company_id`). The implementer MUST confirm the exact
-  link key from seed data (`apps/api/src/lib/seed-pipeline.ts`) and the pipeline field schema
-  before writing filters; do not assume a column.
-- Activities: `activities` table with `contact_id` (exists and works).
-- Tasks: `tasks` table with `contact_id`, `deal_id` (→ `pipeline_items.id`), `assignee_id`,
-  `status`, `due_date`, `title` — `GET /api/tasks` already filters by `contact_id`/`deal_id`.
+**Deal↔contact/company linkage does not exist today** on the live model: `pipeline_items` has no
+contact/company column, and `field_values` on seeded rows contains only name/value/prob/close_date
+(0 rows linked). The active create path (`pipeline-items.ts`) never captures a contact/company.
+
+### Deal-linkage change (one migration — DECIDED)
+
+Add real linkage to the live model:
+
+- **Migration** `packages/db/migrations/20260724_001_pipeline_items_links.ts`: add nullable
+  `contact_id uuid` and `company_id uuid` columns to `pipeline_items`, each a FK
+  (`contact_id → contacts(id)`, `company_id → companies(id)`), indexed. Update `PipelineItemTable`
+  in `packages/db/src/schema.ts`. Never edit an existing migration.
+- **Create/edit capture:** `pipeline-items.ts` create + update accept optional `contact_id` /
+  `company_id` (Zod-validated) and persist them to the new columns.
+- **Backfill + seed:** a backfill maps existing `pipeline_items` to a contact/company using the
+  deal `name` prefix → company name (seed deal names begin with the company, e.g. "Stackline —
+  Developer Plan"), and `seed-demo.ts` writes `contact_id`/`company_id` directly for new deals.
+- **Overview reads:** contact/company overview query `pipeline_items WHERE contact_id = :id`
+  (or `company_id`), map `{id, name: field_values.name, value: field_values.value, stage,
+  stage_id}`, stage from `pipeline_stages`.
+
+Other linkages (already present, used as-is):
+
+- Activities: `activities` table with `contact_id` (works today).
+- Tasks: `tasks` table with `contact_id` (present); `GET /api/tasks` filters by `contact_id`.
+  (No `deal_id` column on the live `tasks` table — the hub links tasks to their contact, not deal.)
 
 ### New/updated endpoints
 
 - `GET /api/contacts/:id/overview` — **fix**. Return `{ contact, deals, activities, tasks,
-  metrics, stage_funnel }` where `deals` come from `pipeline_items` (mapped to `{id, name, value,
-  stage, stage_id}`), `stage` from `pipeline_stages`, `tasks` from `tasks WHERE contact_id`, and
-  metrics recomputed from the mapped deals. Keep the `{ data, error }` envelope and
-  `contacts:view` permission.
+  metrics, stage_funnel }` where `deals` come from `pipeline_items WHERE contact_id = :id`
+  (mapped to `{id, name: field_values.name, value: field_values.value, stage, stage_id}`),
+  `stage` from `pipeline_stages`, `tasks` from `tasks WHERE contact_id`, and metrics recomputed
+  from the mapped deals. Keep the `{ data, error }` envelope and `contacts:view` permission.
 - `GET /api/companies/:id/overview` — **new**. Return `{ company, contacts, deals, activities,
   tasks, metrics }`: the company row, its contacts (`contacts WHERE company_id`), its deals
-  (`pipeline_items` linked to the company via `field_values` or via linked contacts — confirm from
-  seed), recent activity, tasks across those contacts/deals, and rolled-up metrics (total deal
-  value, open deal count, contact count, last activity). Same envelope; `companies:view` (or the
-  existing companies read permission) guard.
+  (`pipeline_items WHERE company_id = :id`, mapped like above), recent activity (across its
+  contacts), tasks across those contacts, and rolled-up metrics (total deal value, open deal
+  count, contact count, last activity). Same envelope; guard with the existing companies read
+  permission (`companies:view` — confirm exact string from `companies.ts`).
 
 Both endpoints unit-tested with the existing hand-rolled Kysely mock pattern
 (`apps/api/src/__tests__/contacts-overview.test.ts`) — no live DB needed for `vitest run`.
@@ -128,8 +152,9 @@ Both endpoints unit-tested with the existing hand-rolled Kysely mock pattern
 - Do NOT change `contacts.status` enum; Active/Lead/Dormant remain derived views.
 - Route-conflict landmine: `(dashboard)/[slug]` catches one-segment top-level paths; keep CRM
   paths two-segment, and never duplicate a path across `(fluid)` and `(dashboard)`.
-- No new DB migration required for this pass (overview fixes are read-only; tasks/panels use
-  existing tables).
+- **One DB migration** this pass: `20260724_001_pipeline_items_links` (adds `contact_id` /
+  `company_id` FK columns to `pipeline_items`). Never modify an existing migration. Migration is
+  applied to the local DB (`db:migrate` reads `apps/api/.env`) before testing overview screens.
 - Verify each screen live in the browser (stack is up: web :3000, API :3001, login
   `admin@localhost` / `admin123`) and against the source mocks.
 - After the work: run graphify update (`/graphify . --update`, user-invoked) per CLAUDE.md.
