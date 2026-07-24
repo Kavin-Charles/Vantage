@@ -1,5 +1,4 @@
 import { registerSettingsEntry } from '@/modules/shared/fluid/settings-registry';
-import { SettingsStub } from './SettingsStub';
 import { ModulesListPanel } from './modules/ModulesListPanel';
 import { PluginsPanel } from './plugins/PluginsPanel';
 import { ProfilePanel } from './personal/ProfilePanel';
@@ -8,6 +7,9 @@ import { SecurityPanel } from './personal/SecurityPanel';
 import { WorkspacePanel } from './workspace/WorkspacePanel';
 import { UsersPanel } from './workspace/UsersPanel';
 import { RolesPanel } from './workspace/RolesPanel';
+import { ApiKeysPanel } from './workspace/ApiKeysPanel';
+import { UpdatesPanel } from './workspace/UpdatesPanel';
+import { AboutPanel } from './workspace/AboutPanel';
 
 // Personal
 registerSettingsEntry({
@@ -88,7 +90,7 @@ registerSettingsEntry({
   label: 'API Keys',
   icon: 'vpn_key',
   adminOnly: true,
-  component: SettingsStub,
+  component: ApiKeysPanel,
 });
 
 registerSettingsEntry({
@@ -97,7 +99,7 @@ registerSettingsEntry({
   label: 'Updates',
   icon: 'system_update',
   adminOnly: true,
-  component: SettingsStub,
+  component: UpdatesPanel,
 });
 
 registerSettingsEntry({
@@ -106,5 +108,5 @@ registerSettingsEntry({
   label: 'About',
   icon: 'info',
   adminOnly: true,
-  component: SettingsStub,
+  component: AboutPanel,
 });

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiFetch } from '@/modules/shared/lib/api';
-import { Button } from '@/modules/shared/components/ui/Button';
+import { GlassCard, PageHeader, FluidButton, FluidInput, MSIcon } from '@/modules/shared/fluid/ui';
 
 interface UpdateInfo {
   currentVersion: string;
@@ -20,18 +20,31 @@ interface UpdaterStatus {
 
 type Phase = 'ready' | 'confirming' | 'updating' | 'waiting' | 'done' | 'failed';
 
-const card: React.CSSProperties = {
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius-lg)',
-  padding: '20px 24px',
-};
-
 function majorOf(v: string): number {
   return Number(v.split('.')[0] ?? 0);
 }
 
-export default function UpdatesPage() {
+const row: React.CSSProperties = {
+  display: 'flex', justifyContent: 'space-between', padding: '14px 0',
+  borderBottom: '1px solid var(--fl-outline-variant)',
+};
+const label: React.CSSProperties = { fontSize: 13, color: 'var(--fl-on-surface-variant)', fontWeight: 600 };
+const value: React.CSSProperties = { fontSize: 14, color: 'var(--fl-on-surface)' };
+
+/**
+ * Fluid Updates settings panel — registered into the Foundation settings
+ * registry (workspace scope, admin-only). Mounted directly by
+ * apps/web/app/(fluid)/settings/updates/page.tsx.
+ *
+ * Reuses the exact backend surface as the legacy
+ * apps/web/app/(dashboard)/settings/updates/page.tsx it replaces:
+ *   - GET  /api/system/update-info    → current/latest version + availability
+ *   - POST /api/system/check-updates  → force a check now
+ *   - POST /api/system/update         → kick off an update to a version
+ *   - GET  /api/system/update-status  → poll progress during an update
+ *   - GET  /api/system/version        → poll for the app coming back post-restart
+ */
+export function UpdatesPanel() {
   const [info, setInfo] = useState<UpdateInfo | null>(null);
   const [status, setStatus] = useState<UpdaterStatus | null>(null);
   const [phase, setPhase] = useState<Phase>('ready');
@@ -122,23 +135,11 @@ export default function UpdatesPage() {
     /^\d+\.\d+\.\d+$/.test(info.currentVersion) &&
     majorOf(info.latestVersion) > majorOf(info.currentVersion);
 
-  const row: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '10px 0',
-    borderBottom: '1px solid var(--border)',
-  };
-  const label: React.CSSProperties = { fontSize: 12, color: 'var(--text3)', fontWeight: 500 };
-  const value: React.CSSProperties = { fontSize: 13, color: 'var(--text)' };
-
   return (
-    <div style={{ maxWidth: 560 }}>
-      <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 600 }}>Updates</h2>
-      <p style={{ margin: '0 0 24px', fontSize: 13, color: 'var(--text2)' }}>
-        Keep this instance up to date.
-      </p>
+    <>
+      <PageHeader title="Updates" subtitle="Keep this instance up to date." />
 
-      <div style={card}>
+      <GlassCard>
         <div style={row}>
           <span style={label}>Current version</span>
           <span style={value}>{info?.currentVersion ?? '…'}</span>
@@ -156,64 +157,75 @@ export default function UpdatesPage() {
         {info?.releaseUrl && (
           <div style={row}>
             <span style={label}>Release notes</span>
-            <a href={info.releaseUrl} target="_blank" rel="noreferrer" style={{ ...value, textDecoration: 'underline' }}>
+            <a
+              href={info.releaseUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{ ...value, color: 'var(--fl-primary)', textDecoration: 'underline' }}
+            >
               View on GitHub
             </a>
           </div>
         )}
 
         {error && (
-          <p style={{ fontSize: 12, color: 'var(--red)', background: 'var(--red-bg)', padding: '8px 10px', borderRadius: 8, marginTop: 12 }}>
+          <p style={{
+            fontSize: 13, color: 'var(--fl-on-error-container)', background: 'var(--fl-error-container)',
+            padding: '10px 14px', borderRadius: 'var(--fl-radius-card)', marginTop: 16,
+          }}>
             {error}
           </p>
         )}
 
         {phase === 'ready' && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-            <Button onClick={() => void checkNow()} disabled={checking}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+            <FluidButton variant="ghost" onClick={() => void checkNow()} disabled={checking}>
               {checking ? 'Checking…' : 'Check now'}
-            </Button>
+            </FluidButton>
             {info?.updateAvailable && (
-              <Button variant="primary" onClick={() => setPhase('confirming')}>
+              <FluidButton onClick={() => setPhase('confirming')}>
                 Update to {info.latestVersion}
-              </Button>
+              </FluidButton>
             )}
           </div>
         )}
 
         {phase === 'confirming' && info?.latestVersion && (
-          <div style={{ marginTop: 16, padding: 14, background: isMajor ? 'var(--amber-bg)' : 'var(--surface2)', borderRadius: 10 }}>
-            <p style={{ fontSize: 13, margin: '0 0 10px', color: isMajor ? 'var(--amber)' : 'var(--text)' }}>
+          <div style={{
+            marginTop: 20, padding: 16,
+            background: isMajor ? 'var(--fl-secondary-container)' : 'var(--fl-surface-container-high)',
+            borderRadius: 'var(--fl-radius-card)',
+          }}>
+            <p style={{
+              fontSize: 14, margin: '0 0 12px',
+              color: isMajor ? 'var(--fl-on-secondary-container)' : 'var(--fl-on-surface)',
+            }}>
               {isMajor
                 ? `This is a major version upgrade (${info.currentVersion} → ${info.latestVersion}) and may include breaking changes. Type the version to confirm.`
                 : `Update from ${info.currentVersion} to ${info.latestVersion}? The app will restart briefly.`}
             </p>
             {isMajor && (
-              <input
-                value={confirmText}
-                onChange={e => setConfirmText(e.target.value)}
-                placeholder={info.latestVersion}
-                style={{ width: '100%', marginBottom: 10, padding: '7px 10px', fontSize: 13, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)' }}
-              />
+              <div style={{ marginBottom: 12 }}>
+                <FluidInput value={confirmText} onChange={setConfirmText} placeholder={info.latestVersion} />
+              </div>
             )}
             <div style={{ display: 'flex', gap: 8 }}>
-              <Button
-                variant="primary"
+              <FluidButton
                 disabled={isMajor && confirmText !== info.latestVersion}
                 onClick={() => void startUpdate()}
               >
                 Update now
-              </Button>
-              <Button onClick={() => { setPhase('ready'); setConfirmText(''); }}>
+              </FluidButton>
+              <FluidButton variant="ghost" onClick={() => { setPhase('ready'); setConfirmText(''); }}>
                 Cancel
-              </Button>
+              </FluidButton>
             </div>
           </div>
         )}
 
         {(phase === 'updating' || phase === 'waiting') && (
-          <div style={{ marginTop: 16, padding: 14, background: 'var(--surface2)', borderRadius: 10 }}>
-            <p style={{ fontSize: 13, margin: 0, fontWeight: 500 }}>
+          <div style={{ marginTop: 20, padding: 16, background: 'var(--fl-surface-container-high)', borderRadius: 'var(--fl-radius-card)' }}>
+            <p style={{ fontSize: 14, margin: 0, fontWeight: 600, color: 'var(--fl-on-surface)' }}>
               {phase === 'updating'
                 ? status?.state === 'recreating'
                   ? 'Restarting services…'
@@ -221,7 +233,7 @@ export default function UpdatesPage() {
                 : 'Waiting for services to come back…'}
             </p>
             {status?.log && status.log.length > 0 && (
-              <pre style={{ fontSize: 11, color: 'var(--text2)', maxHeight: 160, overflow: 'auto', marginTop: 10, marginBottom: 0 }}>
+              <pre style={{ fontSize: 12, color: 'var(--fl-on-surface-variant)', maxHeight: 160, overflow: 'auto', marginTop: 12, marginBottom: 0 }}>
                 {status.log.slice(-12).join('\n')}
               </pre>
             )}
@@ -229,29 +241,38 @@ export default function UpdatesPage() {
         )}
 
         {phase === 'done' && (
-          <p style={{ fontSize: 13, color: 'var(--green)', background: 'var(--green-bg)', padding: '8px 10px', borderRadius: 8, marginTop: 16 }}>
+          <p style={{
+            fontSize: 14, color: 'var(--fl-on-success-container)', background: 'var(--fl-success-container)',
+            padding: '10px 14px', borderRadius: 'var(--fl-radius-card)', marginTop: 20,
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <MSIcon name="check_circle" size={18} />
             Updated successfully — reloading…
           </p>
         )}
 
         {phase === 'failed' && (
-          <div style={{ marginTop: 16, padding: 14, background: 'var(--red-bg)', borderRadius: 10 }}>
-            <p style={{ fontSize: 13, color: 'var(--red)', margin: '0 0 8px', fontWeight: 500 }}>Update failed.</p>
+          <div style={{ marginTop: 20, padding: 16, background: 'var(--fl-error-container)', borderRadius: 'var(--fl-radius-card)' }}>
+            <p style={{ fontSize: 14, color: 'var(--fl-on-error-container)', margin: '0 0 10px', fontWeight: 600 }}>
+              Update failed.
+            </p>
             {status?.log && (
-              <pre style={{ fontSize: 11, color: 'var(--text2)', maxHeight: 160, overflow: 'auto', margin: '0 0 8px' }}>
+              <pre style={{ fontSize: 12, color: 'var(--fl-on-surface-variant)', maxHeight: 160, overflow: 'auto', margin: '0 0 10px' }}>
                 {status.log.slice(-12).join('\n')}
               </pre>
             )}
-            <p style={{ fontSize: 12, color: 'var(--text2)', margin: 0 }}>
+            <p style={{ fontSize: 13, color: 'var(--fl-on-surface-variant)', margin: 0 }}>
               To roll back manually: set VENCORE_VERSION back to the value of VENCORE_PREVIOUS_VERSION in your install
               directory&apos;s .env, then run <code>docker compose up -d</code>.
             </p>
-            <Button style={{ marginTop: 10 }} onClick={() => { setPhase('ready'); setStatus(null); }}>
-              Dismiss
-            </Button>
+            <div style={{ marginTop: 12 }}>
+              <FluidButton variant="ghost" onClick={() => { setPhase('ready'); setStatus(null); }}>
+                Dismiss
+              </FluidButton>
+            </div>
           </div>
         )}
-      </div>
-    </div>
+      </GlassCard>
+    </>
   );
 }

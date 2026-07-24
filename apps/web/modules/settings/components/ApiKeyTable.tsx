@@ -3,8 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listApiKeys, deleteApiKey } from '@/modules/shared/lib/api-keys';
-import { Button } from '@/modules/shared/components/ui/Button';
-import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/shared/components/ui/ContextMenu';
+import {
+  PageHeader, FluidTable, FluidButton, FluidBadge, EmptyState, type FluidColumn,
+} from '@/modules/shared/fluid/ui';
 import type { ApiKey } from '@vencore/types';
 
 function formatDate(iso: string) {
@@ -29,88 +30,84 @@ export function ApiKeyTable({ onCreateClick }: Props) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['api-keys'] }),
   });
 
-  const { menu, open: openMenu, close: closeMenu } = useContextMenu();
   const keys: ApiKey[] = data?.data ?? [];
 
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600 }}>API Keys</h2>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text2)' }}>
-            Use API keys to access Vencore from external tools and scripts.
-          </p>
+  const columns: FluidColumn<ApiKey>[] = [
+    {
+      key: 'name',
+      header: 'Name',
+      render: k => <span style={{ fontWeight: 600, color: 'var(--fl-on-surface)' }}>{k.name}</span>,
+    },
+    {
+      key: 'prefix',
+      header: 'Prefix',
+      render: k => (
+        <span style={{ fontFamily: 'monospace', fontSize: 13, color: 'var(--fl-on-surface-variant)' }}>
+          {k.prefix}…
+        </span>
+      ),
+    },
+    {
+      key: 'scope',
+      header: 'Scope',
+      width: 120,
+      render: k => (
+        <FluidBadge tone={k.scope === 'read_write' ? 'gold' : 'blue'}>
+          {k.scope === 'read_write' ? 'read+write' : 'read'}
+        </FluidBadge>
+      ),
+    },
+    {
+      key: 'last_used',
+      header: 'Last used',
+      render: k => (
+        <span style={{ color: 'var(--fl-on-surface-variant)' }}>
+          {k.last_used_at ? formatDate(k.last_used_at) : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'created',
+      header: 'Created',
+      render: k => <span style={{ color: 'var(--fl-on-surface-variant)' }}>{formatDate(k.created_at)}</span>,
+    },
+    {
+      key: 'actions',
+      header: '',
+      width: 100,
+      render: k => (
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onClick={e => { e.stopPropagation(); revokeMut.mutate(k.id); }}
+            disabled={revokeMut.isPending}
+            style={{
+              fontFamily: 'var(--fl-font-body)', fontSize: 13, fontWeight: 600, color: 'var(--fl-error)',
+              background: 'none', border: 'none', cursor: revokeMut.isPending ? 'not-allowed' : 'pointer',
+              opacity: revokeMut.isPending ? 0.5 : 1,
+            }}
+          >
+            Revoke
+          </button>
         </div>
-        <Button variant="primary" onClick={onCreateClick}>Create API Key</Button>
-      </div>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <PageHeader
+        title="API Keys"
+        subtitle="Use API keys to access Vencore from external tools and scripts."
+        actions={<FluidButton icon="add" onClick={onCreateClick}>Create API Key</FluidButton>}
+      />
 
       {isLoading ? (
-        <div style={{ color: 'var(--text3)', fontSize: 13 }}>Loading…</div>
+        <EmptyState icon="hourglass_empty" title="Loading…" />
       ) : keys.length === 0 ? (
-        <div style={{ color: 'var(--text3)', fontSize: 13, padding: '32px 0', textAlign: 'center' }}>
-          No API keys yet. Create one to get started.
-        </div>
+        <EmptyState icon="vpn_key" title="No API keys yet" message="Create one to get started." />
       ) : (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface2)' }}>
-                {['Name', 'Prefix', 'Scope', 'Last used', 'Created', ''].map(h => (
-                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 500, color: 'var(--text2)', whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {keys.map((k, i) => (
-                <tr
-                  key={k.id}
-                  onContextMenu={e => {
-                    const items: ContextMenuItem[] = [
-                      { icon: 'copy', label: 'Copy name', onClick: () => navigator.clipboard.writeText(k.name) },
-                      { icon: 'copy', label: 'Copy prefix', onClick: () => navigator.clipboard.writeText(k.prefix) },
-                      { icon: 'copy', label: 'Copy ID', onClick: () => navigator.clipboard.writeText(k.id) },
-                      { type: 'separator' },
-                      { icon: 'trash', label: 'Revoke', danger: true, disabled: revokeMut.isPending, onClick: () => revokeMut.mutate(k.id) },
-                    ];
-                    openMenu(e, items);
-                  }}
-                  style={{ borderTop: i > 0 ? '1px solid var(--border)' : undefined }}
-                >
-                  <td style={{ padding: '12px 14px', fontWeight: 500 }}>{k.name}</td>
-                  <td style={{ padding: '12px 14px', fontFamily: 'monospace', fontSize: 12, color: 'var(--text2)' }}>{k.prefix}…</td>
-                  <td style={{ padding: '12px 14px' }}>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '2px 8px',
-                      borderRadius: 99,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      background: k.scope === 'read_write' ? 'var(--amber-bg)' : 'var(--blue-bg)',
-                      color: k.scope === 'read_write' ? 'var(--amber)' : 'var(--blue)',
-                    }}>
-                      {k.scope === 'read_write' ? 'read+write' : 'read'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 14px', color: 'var(--text2)' }}>
-                    {k.last_used_at ? formatDate(k.last_used_at) : '—'}
-                  </td>
-                  <td style={{ padding: '12px 14px', color: 'var(--text2)' }}>{formatDate(k.created_at)}</td>
-                  <td style={{ padding: '12px 14px', textAlign: 'right' }}>
-                    <Button
-                      onClick={() => revokeMut.mutate(k.id)}
-                      disabled={revokeMut.isPending}
-                      style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
-                    >
-                      Revoke
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <FluidTable columns={columns} rows={keys} rowKey={k => k.id} />
       )}
-      <ContextMenu menu={menu} onClose={closeMenu} />
-    </div>
+    </>
   );
 }
