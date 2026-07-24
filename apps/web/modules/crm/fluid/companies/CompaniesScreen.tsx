@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import {
@@ -42,6 +43,7 @@ function statusTone(status: Company['status']): 'blue' | 'gold' | 'red' {
 }
 
 export function CompaniesScreen() {
+  const router = useRouter();
   const getToken = useApiToken();
 
   const [view, setView] = useState('all');
@@ -123,7 +125,12 @@ export function CompaniesScreen() {
           message={debouncedQ || view !== 'all' ? 'Try a different search or view.' : 'Add your first company to get started.'}
         />
       ) : (
-        <FluidTable columns={columns} rows={rows} rowKey={r => r.id} />
+        <FluidTable
+          columns={columns}
+          rows={rows}
+          rowKey={r => r.id}
+          onRowClick={r => router.push(`/crm/companies/${r.id}`)}
+        />
       )}
     </>
   );
