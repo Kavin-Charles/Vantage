@@ -74,11 +74,15 @@ const createItemSchema = z.object({
   stage_id: z.string().uuid(),
   field_values: z.record(z.unknown()).default({}),
   position: z.number().int().default(0),
+  contact_id: z.string().uuid().nullish(),
+  company_id: z.string().uuid().nullish(),
 });
 
 const updateItemSchema = z.object({
   stage_id: z.string().uuid().optional(),
   field_values: z.record(z.unknown()).optional(),
+  contact_id: z.string().uuid().nullish(),
+  company_id: z.string().uuid().nullish(),
 });
 
 const moveItemSchema = z.object({
@@ -134,6 +138,8 @@ export function createPipelineItemsRouter(
         stage_id: body.stage_id,
         field_values: body.field_values as any,
         position: body.position,
+        contact_id: body.contact_id ?? null,
+        company_id: body.company_id ?? null,
       }).returningAll().executeTakeFirstOrThrow();
 
       await logItemCreated({
@@ -220,6 +226,8 @@ export function createItemRouter(
         .set({
           ...(body.stage_id ? { stage_id: body.stage_id } : {}),
           ...(body.field_values ? { field_values: body.field_values as any } : {}),
+          ...(body.contact_id !== undefined ? { contact_id: body.contact_id } : {}),
+          ...(body.company_id !== undefined ? { company_id: body.company_id } : {}),
           updated_at: new Date(),
         })
         .where('id', '=', req.params['id']!)
