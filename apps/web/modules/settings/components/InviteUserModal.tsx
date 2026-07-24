@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/modules/shared/lib/api';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { FluidModal, FluidInput, FluidSelect, FluidButton } from '@/modules/shared/fluid/ui';
 
 interface Props {
   hasSMTP: boolean;
@@ -36,73 +37,68 @@ export function InviteUserModal({ hasSMTP, onClose }: Props) {
     },
   });
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '8px 12px', borderRadius: 7,
-    border: '1px solid var(--border)', background: 'var(--bg)',
-    color: 'var(--text)', fontSize: 13, boxSizing: 'border-box',
+  const labelStyle: React.CSSProperties = {
+    display: 'block', marginBottom: 8, fontFamily: 'var(--fl-font-body)',
+    fontSize: 13, fontWeight: 600, color: 'var(--fl-on-surface-variant)',
   };
 
+  const canSubmit = Boolean(email) && (hasSMTP || (Boolean(name) && Boolean(password)));
+
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-    }}>
-      <div style={{
-        background: 'var(--surface)', border: '1px solid var(--border)',
-        borderRadius: 12, padding: 24, width: 400,
-      }}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 600 }}>
-          {hasSMTP ? 'Invite User' : 'Add User'}
-        </h3>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {!hasSMTP && (
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text2)', display: 'block', marginBottom: 4 }}>Name</label>
-              <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="Full name" />
-            </div>
-          )}
-
+    <FluidModal
+      open
+      onClose={onClose}
+      title={hasSMTP ? 'Invite User' : 'Add User'}
+      subtitle={hasSMTP ? 'Send an email invite to join this workspace.' : 'Create a new workspace member.'}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {!hasSMTP && (
           <div>
-            <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text2)', display: 'block', marginBottom: 4 }}>Email</label>
-            <input style={inputStyle} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="user@example.com" />
+            <label style={labelStyle}>Name</label>
+            <FluidInput value={name} onChange={setName} placeholder="Full name" />
           </div>
+        )}
 
-          {!hasSMTP && (
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text2)', display: 'block', marginBottom: 4 }}>Password</label>
-              <input style={inputStyle} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 8 characters" />
-            </div>
-          )}
-
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text2)', display: 'block', marginBottom: 4 }}>Role</label>
-            <select style={inputStyle} value={role} onChange={e => setRole(e.target.value as 'admin' | 'member')}>
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-
-          {error && (
-            <div style={{ fontSize: 12, color: 'var(--red)', background: 'rgba(239,68,68,0.08)', padding: '8px 12px', borderRadius: 7 }}>
-              {error}
-            </div>
-          )}
+        <div>
+          <label style={labelStyle}>Email</label>
+          <FluidInput value={email} onChange={setEmail} type="email" placeholder="user@example.com" />
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginTop: 20, justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '7px 16px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--surface)', fontSize: 13, cursor: 'pointer' }}>
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !email || (!hasSMTP && (!name || !password))}
-            style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--text)', color: 'var(--bg)', fontSize: 13, cursor: 'pointer', opacity: mutation.isPending ? 0.6 : 1 }}
-          >
+        {!hasSMTP && (
+          <div>
+            <label style={labelStyle}>Password</label>
+            <FluidInput value={password} onChange={setPassword} type="password" placeholder="Min 8 characters" />
+          </div>
+        )}
+
+        <div>
+          <label style={labelStyle}>Role</label>
+          <FluidSelect
+            value={role}
+            onChange={v => setRole(v as 'admin' | 'member')}
+            options={[
+              { label: 'Member', value: 'member' },
+              { label: 'Admin', value: 'admin' },
+            ]}
+          />
+        </div>
+
+        {error && (
+          <div style={{
+            fontSize: 13, color: 'var(--fl-on-error-container)', background: 'var(--fl-error-container)',
+            padding: '10px 12px', borderRadius: 8,
+          }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 12, marginTop: 8, justifyContent: 'flex-end' }}>
+          <FluidButton variant="ghost" onClick={onClose}>Cancel</FluidButton>
+          <FluidButton onClick={() => mutation.mutate()} disabled={mutation.isPending || !canSubmit}>
             {mutation.isPending ? (hasSMTP ? 'Sending…' : 'Adding…') : (hasSMTP ? 'Send Invite' : 'Add User')}
-          </button>
+          </FluidButton>
         </div>
       </div>
-    </div>
+    </FluidModal>
   );
 }

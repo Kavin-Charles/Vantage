@@ -4,6 +4,7 @@ import { ProfilePanel } from './personal/ProfilePanel';
 import { PreferencesPanel } from './personal/PreferencesPanel';
 import { SecurityPanel } from './personal/SecurityPanel';
 import { WorkspacePanel } from './workspace/WorkspacePanel';
+import { UsersPanel } from './workspace/UsersPanel';
 
 // Personal
 registerSettingsEntry({
@@ -48,7 +49,7 @@ registerSettingsEntry({
   label: 'Users',
   icon: 'group',
   adminOnly: true,
-  component: SettingsStub,
+  component: UsersPanel,
 });
 
 registerSettingsEntry({
