@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await apiFetch<{
         data: {
-          user: { id: string; name: string; email: string; theme: 'light' | 'dark'; default_landing_page: string | null };
+          user: { id: string; name: string; email: string; theme: 'light' | 'dark'; default_landing_page: string | null; totp_enabled: boolean };
           workspace: { id: string };
           isAdmin: boolean;
           permissions: string[];

@@ -11,6 +11,8 @@ export interface AuthUser {
   default_landing_page?: string | null;
   /** Optional — only populated once /api/me has been fetched (see AuthContext.fetchUser). */
   workspaceId?: string;
+  /** Optional — only populated once /api/me has been fetched (see AuthContext.fetchUser). */
+  totp_enabled?: boolean;
 }
 
 interface AuthState {

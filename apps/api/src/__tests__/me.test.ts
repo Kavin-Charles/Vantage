@@ -35,6 +35,20 @@ describe('GET /api/me', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.user).toMatchObject({ default_landing_page: '/analytics' });
   });
+
+  it('returns totp_enabled for the current user', async () => {
+    const db: any = {};
+    const res = await request(buildApp(db, { totp_enabled: true })).get('/api/me');
+    expect(res.status).toBe(200);
+    expect(res.body.data.user).toMatchObject({ totp_enabled: true });
+  });
+
+  it('returns totp_enabled: false when 2FA is not enabled', async () => {
+    const db: any = {};
+    const res = await request(buildApp(db, { totp_enabled: false })).get('/api/me');
+    expect(res.status).toBe(200);
+    expect(res.body.data.user).toMatchObject({ totp_enabled: false });
+  });
 });
 
 describe('PATCH /api/me', () => {

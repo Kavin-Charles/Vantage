@@ -31,6 +31,7 @@ export function createMeRouter(db: Kysely<Database>): ExpressRouter {
             email: user.email,
             theme: user.theme,
             default_landing_page: user.default_landing_page,
+            totp_enabled: user.totp_enabled,
           },
           workspace,
           isAdmin,

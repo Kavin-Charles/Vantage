@@ -2,6 +2,7 @@ import { registerSettingsEntry } from '@/modules/shared/fluid/settings-registry'
 import { SettingsStub } from './SettingsStub';
 import { ProfilePanel } from './personal/ProfilePanel';
 import { PreferencesPanel } from './personal/PreferencesPanel';
+import { SecurityPanel } from './personal/SecurityPanel';
 
 // Personal
 registerSettingsEntry({
@@ -25,7 +26,7 @@ registerSettingsEntry({
   scope: 'personal',
   label: 'Security',
   icon: 'lock',
-  component: SettingsStub,
+  component: SecurityPanel,
 });
 
 // Workspace (admin-gated; no RBAC permission key covers these panels
