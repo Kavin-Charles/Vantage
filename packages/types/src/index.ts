@@ -762,3 +762,19 @@ export interface ContactOverview {
   metrics: ContactOverviewMetrics;
   stage_funnel: StageFunnelEntry[];
 }
+
+export interface CompanyOverviewMetrics {
+  total_deal_value: number;
+  open_deal_count: number;
+  contact_count: number;
+  last_activity_at: string | null;
+}
+
+export interface CompanyOverview {
+  company: Company;
+  contacts: Contact[];
+  deals: OverviewDeal[];
+  activities: Activity[];
+  tasks: Task[];
+  metrics: CompanyOverviewMetrics;
+}
