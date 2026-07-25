@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FluidModal, FluidInput, FluidButton, Avatar } from '@/modules/shared/fluid/ui';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FluidModal, FluidInput, FluidButton, FluidSelect, Avatar } from '@/modules/shared/fluid/ui';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { createContact } from '@/modules/crm/contacts/lib/contacts';
+import { listCompanies } from '@/modules/crm/companies/lib/companies';
 import type { Contact } from '@vencore/types';
 
 export function AddContactModal({
@@ -21,7 +22,17 @@ export function AddContactModal({
   const [title, setTitle] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [companyId, setCompanyId] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+
+  const { data: companiesData } = useQuery({
+    queryKey: ['companies'],
+    queryFn: async () => listCompanies(await getToken(), {}),
+  });
+  const companyOptions = [
+    { label: 'No company', value: '' },
+    ...(companiesData?.data ?? []).map(c => ({ label: c.name, value: c.id })),
+  ];
 
   const create = useMutation({
     mutationFn: async (body: Partial<Contact>) => createContact(await getToken(), body),
@@ -34,6 +45,7 @@ export function AddContactModal({
     setTitle('');
     setEmail('');
     setPhone('');
+    setCompanyId('');
     setFormError(null);
   }
 
@@ -49,6 +61,7 @@ export function AddContactModal({
     const body: Partial<Contact> = { name, email: email.trim().toLowerCase() };
     if (title.trim()) body.title = title.trim();
     if (phone.trim()) body.phone = phone.trim();
+    if (companyId) body.company_id = companyId;
     try {
       await create.mutateAsync(body);
       reset();
@@ -76,6 +89,7 @@ export function AddContactModal({
         <FluidInput value={title} onChange={setTitle} placeholder="Title (e.g. Head of Product)" />
         <FluidInput value={email} onChange={setEmail} placeholder="Email" type="email" />
         <FluidInput value={phone} onChange={setPhone} placeholder="Phone" />
+        <FluidSelect value={companyId} onChange={setCompanyId} options={companyOptions} />
         {formError ? (
           <div style={{
             padding: '10px 12px', borderRadius: 8,
