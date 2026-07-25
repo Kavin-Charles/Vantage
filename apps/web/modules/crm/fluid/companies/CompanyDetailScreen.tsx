@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useCompanyOverview } from '@/modules/crm/fluid/lib/useCompanyOverview';
-import { PageHeader, GlassCard, FluidBadge, MetricPill, EmptyState, MSIcon } from '@/modules/shared/fluid/ui';
+import { PageHeader, GlassCard, FluidBadge, FluidButton, MetricPill, EmptyState, MSIcon } from '@/modules/shared/fluid/ui';
 import { FluidPanelSlot } from '@/modules/shared/fluid/host/FluidPanelSlot';
+import { CompanyFormModal } from './CompanyFormModal';
 
 export function CompanyDetailScreen({ id }: { id: string }) {
-  const { data, isLoading, error } = useCompanyOverview(id);
+  const { data, isLoading, error, refetch } = useCompanyOverview(id);
+  const [editing, setEditing] = useState(false);
 
   if (isLoading) return <EmptyState icon="hourglass_empty" title="Loading…" />;
   if (error || !data) {
@@ -18,7 +21,13 @@ export function CompanyDetailScreen({ id }: { id: string }) {
 
   return (
     <>
-      <PageHeader title={company.name} subtitle={company.industry ?? 'Company'} />
+      <PageHeader
+        title={company.name}
+        subtitle={company.industry ?? 'Company'}
+        actions={(
+          <FluidButton variant="ghost" icon="edit" onClick={() => setEditing(true)}>Edit</FluidButton>
+        )}
+      />
       <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
         <MetricPill icon="payments" label="Total Deal Value" value={money(metrics.total_deal_value)} />
         <MetricPill icon="account_tree" label="Open Deals" value={String(metrics.open_deal_count)} />
@@ -116,6 +125,13 @@ export function CompanyDetailScreen({ id }: { id: string }) {
       <div style={{ marginTop: 24 }}>
         <FluidPanelSlot recordType="company" recordId={id} />
       </div>
+      <CompanyFormModal
+        open={editing}
+        mode="edit"
+        initial={company}
+        onClose={() => setEditing(false)}
+        onSaved={() => { setEditing(false); void refetch(); }}
+      />
     </>
   );
 }
