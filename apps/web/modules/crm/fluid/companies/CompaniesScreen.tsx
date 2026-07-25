@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import {
-  PageHeader, FluidInput, FluidChip, FluidTable, FluidBadge, MetricPill, EmptyState,
+  PageHeader, FluidButton, FluidInput, FluidChip, FluidTable, FluidBadge, MetricPill, EmptyState,
   type FluidColumn,
 } from '@/modules/shared/fluid/ui';
 import { listCompanies } from '@/modules/crm/companies/lib/companies';
+import { CompanyFormModal } from './CompanyFormModal';
 import type { Company } from '@vencore/types';
 
 interface Row extends Company {
@@ -49,6 +50,7 @@ export function CompaniesScreen() {
   const [view, setView] = useState('all');
   const [q, setQ] = useState('');
   const [debouncedQ, setDebouncedQ] = useState('');
+  const [adding, setAdding] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSearch = useCallback((v: string) => {
@@ -61,7 +63,7 @@ export function CompaniesScreen() {
   if (debouncedQ) params.search = debouncedQ;
   if (view !== 'all') params.view = view;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['companies', params],
     queryFn: async () => listCompanies(await getToken(), params),
   });
@@ -106,7 +108,12 @@ export function CompaniesScreen() {
       <PageHeader
         title="Companies"
         subtitle={`${total} company records tracked`}
-        actions={<MetricPill icon="apartment" label="Companies" value={String(total)} trend="tracked" />}
+        actions={(
+          <>
+            <MetricPill icon="apartment" label="Companies" value={String(total)} trend="tracked" />
+            <FluidButton icon="add" onClick={() => setAdding(true)}>Add Company</FluidButton>
+          </>
+        )}
       />
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, width: 320 }}>
         <FluidInput value={q} onChange={handleSearch} placeholder="Search companies…" icon="search" />
@@ -132,6 +139,12 @@ export function CompaniesScreen() {
           onRowClick={r => router.push(`/crm/companies/${r.id}`)}
         />
       )}
+      <CompanyFormModal
+        open={adding}
+        mode="create"
+        onClose={() => setAdding(false)}
+        onSaved={() => { setAdding(false); void refetch(); }}
+      />
     </>
   );
 }
