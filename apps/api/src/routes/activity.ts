@@ -9,6 +9,9 @@ const createActivitySchema = z.object({
   body: z.string().optional(),
   contact_id: z.string().uuid().optional(),
   record_id: z.string().uuid().nullable().optional(),
+  // deal_id is the CRM-facing alias for the generic record_id linkage column
+  // (deals are pipeline records under the hood); accept either.
+  deal_id: z.string().uuid().nullable().optional(),
   meta: z.record(z.unknown()).optional(),
 });
 
@@ -81,7 +84,7 @@ export function createActivityRouter(db: Kysely<Database>, requirePermission: (p
           type: body.type,
           body: body.body ?? null,
           contact_id: body.contact_id ?? null,
-          record_id: body.record_id ?? null,
+          record_id: body.record_id ?? body.deal_id ?? null,
           meta: body.meta ?? null,
         })
         .returningAll()
