@@ -175,6 +175,13 @@ export function PipelineBoard({ pipelineId }: Props) {
                 Add Deal
               </FluidButton>
             )}
+            <FluidButton
+              variant="ghost"
+              icon="settings"
+              onClick={() => router.push(`/settings/pipelines/${pipelineId}`)}
+            >
+              Pipeline settings
+            </FluidButton>
           </>
         )}
       />
