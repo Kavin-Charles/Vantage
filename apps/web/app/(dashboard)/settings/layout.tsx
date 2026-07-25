@@ -18,7 +18,6 @@ interface SettingsGroup {
 }
 
 const ADMIN_ONLY_DEEP_LINKS = [
-  '/settings/pipelines',
   '/settings/tasks',
   '/settings/activity',
   '/settings/messaging',

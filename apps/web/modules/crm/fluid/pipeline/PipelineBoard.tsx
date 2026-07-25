@@ -25,6 +25,7 @@ export function PipelineBoard({ pipelineId }: Props) {
   const { user, hasPermission } = useAuth();
   const canEdit = hasPermission('pipelines:edit');
   const canDelete = hasPermission('pipelines:delete');
+  const canConfig = hasPermission('pipelines:config');
 
   const { menu, open: openMenu, close: closeMenu } = useContextMenu();
 
@@ -175,13 +176,15 @@ export function PipelineBoard({ pipelineId }: Props) {
                 Add Deal
               </FluidButton>
             )}
-            <FluidButton
-              variant="ghost"
-              icon="settings"
-              onClick={() => router.push(`/settings/pipelines/${pipelineId}`)}
-            >
-              Pipeline settings
-            </FluidButton>
+            {canConfig && (
+              <FluidButton
+                variant="ghost"
+                icon="settings"
+                onClick={() => router.push(`/settings/pipelines/${pipelineId}`)}
+              >
+                Pipeline settings
+              </FluidButton>
+            )}
           </>
         )}
       />

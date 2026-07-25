@@ -2,8 +2,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
 import { getPipeline } from '@/modules/crm/pipeline/lib/pipelines';
-import { GlassCard, PillTabs, PageHeader } from '@/modules/shared/fluid/ui';
+import { GlassCard, PillTabs, PageHeader, EmptyState } from '@/modules/shared/fluid/ui';
 import { StagesTab } from './StagesTab';
 import { FieldsTab } from './FieldsTab';
 import { GeneralTab } from './GeneralTab';
@@ -22,12 +23,25 @@ interface Props {
 
 export function PipelineSettingsScreen({ pipelineId }: Props) {
   const getToken = useApiToken();
+  const { hasPermission } = useAuth();
+  const canConfig = hasPermission('pipelines:config');
   const [tab, setTab] = useState<Tab>('stages');
 
   const { data: pipeline, isLoading } = useQuery({
     queryKey: ['pipeline', pipelineId],
     queryFn: async () => getPipeline(await getToken(), pipelineId),
+    enabled: canConfig,
   });
+
+  if (!canConfig) {
+    return (
+      <EmptyState
+        icon="lock"
+        title="Access restricted"
+        message="You don't have permission to configure pipelines."
+      />
+    );
+  }
 
   if (isLoading || !pipeline) {
     return (
