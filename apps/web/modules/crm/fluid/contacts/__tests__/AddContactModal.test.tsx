@@ -12,6 +12,7 @@ import { listCompanies } from '@/modules/crm/companies/lib/companies';
 
 vi.mock('@/modules/crm/contacts/lib/contacts', () => ({
   createContact: vi.fn().mockResolvedValue({ data: { id: 'ct1', name: 'Jane Doe' }, error: null }),
+  updateContact: vi.fn().mockResolvedValue({ data: { id: 'ct1', name: 'Jane Doe' }, error: null }),
 }));
 
 vi.mock('@/modules/crm/companies/lib/companies', () => ({
@@ -66,7 +67,7 @@ describe('AddContactModal', () => {
     fireEvent.change(screen.getByPlaceholderText('Last name'), { target: { value: 'Doe' } });
     fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'jane@acme.com' } });
 
-    const companySelect = await screen.findByRole('combobox');
+    const companySelect = await screen.findByTestId('contact-company-select');
     await screen.findByText('Acme Corp');
     fireEvent.change(companySelect, { target: { value: 'co1' } });
 

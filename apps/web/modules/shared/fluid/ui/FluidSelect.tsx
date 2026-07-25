@@ -1,15 +1,17 @@
 'use client';
 export function FluidSelect({
-  value, onChange, options,
+  value, onChange, options, testId,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: { label: string; value: string }[];
+  testId?: string;
 }) {
   return (
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
+      data-testid={testId}
       style={{
         padding: '12px 16px', borderRadius: 'var(--fl-radius-input)',
         fontFamily: 'var(--fl-font-body)', fontSize: 15, color: 'var(--fl-on-surface)',
