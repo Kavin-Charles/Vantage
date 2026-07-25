@@ -248,24 +248,31 @@ export function createContactsRouter(
       }
       const { page, per_page, status, owner_id, tag_id, q, view, sort, order } = parsed.data;
 
+      const sortColumn = {
+        name: 'contacts.name',
+        created_at: 'contacts.created_at',
+        last_contacted_at: 'contacts.last_contacted_at',
+      } as const;
+
       const base = db
         .selectFrom('contacts')
-        .where('workspace_id', '=', workspace.id)
-        .where('deleted_at', 'is', null);
+        .leftJoin('companies', 'companies.id', 'contacts.company_id')
+        .where('contacts.workspace_id', '=', workspace.id)
+        .where('contacts.deleted_at', 'is', null);
 
       const applyFilters = <T extends typeof base>(qb: T) => {
         let q2 = qb;
-        if (status) q2 = q2.where('status', '=', status) as T;
-        if (owner_id) q2 = q2.where('owner_id', '=', owner_id) as T;
+        if (status) q2 = q2.where('contacts.status', '=', status) as T;
+        if (owner_id) q2 = q2.where('contacts.owner_id', '=', owner_id) as T;
         if (tag_id) {
-          q2 = q2.where('id', 'in',
+          q2 = q2.where('contacts.id', 'in',
             db.selectFrom('contact_tag_links').select('contact_id').where('tag_id', '=', tag_id),
           ) as T;
         }
         if (q) {
           const pattern = `%${q}%`;
           q2 = q2.where(eb =>
-            eb.or([eb('name', 'ilike', pattern), eb('email', 'ilike', pattern)]),
+            eb.or([eb('contacts.name', 'ilike', pattern), eb('contacts.email', 'ilike', pattern)]),
           ) as T;
         }
         if (view === 'leads') q2 = q2.where('contacts.status', '=', 'prospect') as T;
@@ -282,8 +289,10 @@ export function createContactsRouter(
         return q2;
       };
 
-      const contacts = await applyFilters(base.selectAll())
-        .orderBy(sort, order)
+      const contacts = await applyFilters(
+        base.selectAll('contacts').select(['companies.id as company_id_j', 'companies.name as company_name']),
+      )
+        .orderBy(sortColumn[sort], order)
         .limit(per_page)
         .offset((page - 1) * per_page)
         .execute();
@@ -295,11 +304,15 @@ export function createContactsRouter(
       const contactIds = contacts.map(c => c.id);
       const tagMap = await tagsByContactId(db, workspace.id, contactIds);
       const activityMap = await lastActivityByContactId(db, workspace.id, contactIds);
-      const withTags = contacts.map(c => ({
-        ...c,
-        tags: tagMap.get(c.id) ?? [],
-        last_activity: activityMap.get(c.id) ?? null,
-      }));
+      const withTags = contacts.map(c => {
+        const { company_id_j, company_name, ...contact } = c;
+        return {
+          ...contact,
+          company: company_id_j ? { id: company_id_j, name: company_name } : null,
+          tags: tagMap.get(c.id) ?? [],
+          last_activity: activityMap.get(c.id) ?? null,
+        };
+      });
 
       res.json({ data: withTags, total: Number(count), page, per_page, error: null });
     } catch (err) {

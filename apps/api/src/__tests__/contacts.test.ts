@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 function makeChain(leafValues: Record<string, unknown> = {}): Record<string, unknown> {
   const chain: Record<string, unknown> = {};
   const FLUENT = ['selectFrom','insertInto','updateTable','deleteFrom','where','selectAll','select',
-                  'orderBy','limit','offset','values','set','returningAll','fn','countAll','as','innerJoin'];
+                  'orderBy','limit','offset','values','set','returningAll','fn','countAll','as','innerJoin','leftJoin'];
   for (const m of FLUENT) chain[m] = vi.fn().mockReturnValue(chain);
   chain['execute'] = vi.fn().mockResolvedValue(leafValues['execute'] ?? []);
   chain['executeTakeFirst'] = vi.fn().mockResolvedValue(leafValues['executeTakeFirst'] ?? undefined);
@@ -119,7 +119,7 @@ describe('GET /api/contacts', () => {
     const res = buildRes();
     await handler(buildReq({ query: {} }), res, vi.fn());
     expect(res['json']).toHaveBeenCalledWith(expect.objectContaining({
-      data: fakeContacts.map(c => ({ ...c, tags: [], last_activity: null })), page: 1, per_page: 25, error: null,
+      data: fakeContacts.map(c => ({ ...c, company: null, tags: [], last_activity: null })), page: 1, per_page: 25, error: null,
     }));
   });
 
@@ -132,7 +132,7 @@ describe('GET /api/contacts', () => {
     const router = createContactsRouter(db as never, noopPermission as never);
     const handler = getHandler(router, '/');
     await handler(buildReq({ query: { status: 'customer' } }), buildRes(), vi.fn());
-    expect(chain['where']).toHaveBeenCalledWith('status', '=', 'customer');
+    expect(chain['where']).toHaveBeenCalledWith('contacts.status', '=', 'customer');
   });
 
   it('returns 400 for per_page > 100', async () => {
@@ -218,10 +218,36 @@ describe('GET /api/contacts', () => {
     expect(res['json']).toHaveBeenCalledWith(expect.objectContaining({
       data: [{
         ...fakeContacts[0],
+        company: null,
         tags: [],
         last_activity: { label: 'Left a voicemail', at: '2026-07-20T10:00:00.000Z' },
       }],
     }));
+  });
+
+  it('joins companies and maps company:{id,name} when company_id is set, company:null otherwise', async () => {
+    const fakeContacts = [
+      { id: 'c1', name: 'Alice', email: 'alice@example.com', status: 'prospect', company_id: 'co1', company_id_j: 'co1', company_name: 'Acme Inc' },
+      { id: 'c2', name: 'Bob', email: 'bob@example.com', status: 'prospect', company_id: null, company_id_j: null, company_name: null },
+    ];
+    const { db, chain } = buildDb({ selectListResult: fakeContacts, countResult: 2 });
+    chain['execute'] = vi.fn()
+      .mockResolvedValueOnce(fakeContacts) // main list query
+      .mockResolvedValueOnce([])           // tagsByContactId
+      .mockResolvedValueOnce([]);          // lastActivityByContactId
+    chain['executeTakeFirstOrThrow'] = vi.fn().mockResolvedValue({ count: 2 });
+
+    const { createContactsRouter } = await import('../routes/contacts');
+    const router = createContactsRouter(db as never, noopPermission as never);
+    const handler = getHandler(router, '/');
+
+    const res = buildRes();
+    await handler(buildReq({ query: {} }), res, vi.fn());
+
+    expect(chain['leftJoin']).toHaveBeenCalledWith('companies', 'companies.id', 'contacts.company_id');
+    const arg = (res['json'] as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
+    expect(arg.data[0].company).toEqual({ id: 'co1', name: 'Acme Inc' });
+    expect(arg.data[1].company).toBeNull();
   });
 });
 
