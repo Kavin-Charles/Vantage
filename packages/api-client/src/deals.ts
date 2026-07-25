@@ -21,6 +21,7 @@ export async function createDeal(
     contact_id?: string;
     company_id?: string;
     field_values?: Record<string, string>;
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
   },
 ): Promise<{ data: PipelineRecord }> {
   return apiFetch<{ data: PipelineRecord }>('/api/deals', {
@@ -37,6 +38,7 @@ export async function updateDeal(
     name?: string;
     stage_id?: string;
     field_values?: Record<string, string>;
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
   },
 ): Promise<{ data: PipelineRecord }> {
   return apiFetch<{ data: PipelineRecord }>(`/api/deals/${id}`, {

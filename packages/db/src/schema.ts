@@ -304,6 +304,7 @@ export interface PipelineItemTable {
   company_id: string | null;
   position: Generated<number>;
   field_values: Generated<Record<string, unknown>>;
+  priority: string | null;
   deleted_at: Date | null;
   created_at: Generated<Date>;
   updated_at: Generated<Date>;
