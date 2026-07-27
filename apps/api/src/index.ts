@@ -82,6 +82,7 @@ import { startRecurringTaskGenerator } from './workers/recurring-task-generator'
 import { createPluginsRouter } from './routes/plugins';
 import { createV1Router } from './routes/v1/index';
 import { loadPluginBackend, getPluginRouter } from './lib/plugin-loader';
+import { killAllSandboxes, usingInProcessSandbox, getSandboxMode } from './lib/plugin-sandbox/manager';
 import { createAutomationRouter, createAutomationLogsRouter } from './routes/automation';
 import { initAutomationEngine } from './lib/automation-engine';
 import { createPmAnalyticsRouter } from './routes/pm-analytics';
@@ -567,7 +568,10 @@ async function start(): Promise<void> {
   }
 
   httpServer.listen(env.PORT, () => {
-    logger.info({ port: env.PORT }, 'API server running');
+    logger.info(
+      { port: env.PORT, pluginSandboxMode: getSandboxMode(), inProcessPlugins: usingInProcessSandbox() },
+      'API server running',
+    );
 
     // Respawn backends for all enabled plugins on boot — otherwise plugin
     // sandboxes stay dead after a restart until each is re-uploaded/re-enabled.
@@ -593,3 +597,22 @@ void start().catch((err: unknown) => {
   logger.error({ err }, 'API startup failed');
   process.exit(1);
 });
+
+// Graceful shutdown — tear down plugin sandboxes (kills child processes and
+// unsubscribes in-process bus handlers) before the HTTP server closes.
+let shuttingDown = false;
+function shutdown(signal: NodeJS.Signals): void {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info({ signal }, 'Shutting down — tearing down plugin sandboxes');
+  try {
+    killAllSandboxes();
+  } catch (err) {
+    logger.error({ err }, 'Error tearing down plugin sandboxes on shutdown');
+  }
+  httpServer.close(() => process.exit(0));
+  // Failsafe: force-exit if connections keep the server open too long.
+  setTimeout(() => process.exit(0), 10_000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
