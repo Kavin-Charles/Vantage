@@ -40,6 +40,11 @@ export const apiEnvSchema = z.object({
   // The sandbox layer reads process.env['PLUGIN_SANDBOX_MODE'] directly; this
   // schema entry provides validation + documentation.
   PLUGIN_SANDBOX_MODE: z.enum(['auto', 'child', 'in-process']).default('auto'),
+  // How long a forked plugin sandbox may take to signal `ready` before it is
+  // treated as fork being unavailable. Covers hosts where fork() succeeds but
+  // the child can never boot (exhausted process/thread budget), which would
+  // otherwise hang the spawn forever and leave the plugin unmounted.
+  PLUGIN_SANDBOX_READY_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
 });
 
 // Web env

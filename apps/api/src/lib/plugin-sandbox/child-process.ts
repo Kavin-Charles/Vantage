@@ -102,6 +102,23 @@ function spawn(input: SandboxSpawnInput, hooks?: SpawnHooks): void {
 
   let ready = false;
 
+  // A restricted host does not always make fork() fail loudly. When the limit is
+  // a process/thread budget rather than an outright block, fork() succeeds and
+  // the child exists but can never finish booting — so it emits no error, never
+  // exits, and never signals `ready`. Without a deadline the parent waits
+  // forever and the plugin stays unmounted, which is the 404 PLUGIN_NOT_MOUNTED
+  // this fallback exists to prevent (GH #93). Treat a child that misses the
+  // deadline as another form of fork being unavailable.
+  const readyTimeoutMs = Number(process.env['PLUGIN_SANDBOX_READY_TIMEOUT_MS'] ?? 15_000);
+  const readyTimer = setTimeout(() => {
+    if (ready) return;
+    // SIGKILL, not SIGTERM: a child wedged before boot may never run a handler.
+    try { child.kill('SIGKILL'); } catch { /* already gone */ }
+    reportForkUnavailable(`child did not signal ready within ${readyTimeoutMs}ms`);
+  }, readyTimeoutMs);
+  // Never let the deadline itself hold the event loop open.
+  readyTimer.unref?.();
+
   const entry: SandboxEntry = {
     child,
     router: null,
@@ -119,6 +136,7 @@ function spawn(input: SandboxSpawnInput, hooks?: SpawnHooks): void {
     switch (msg['type']) {
       case 'ready': {
         ready = true;
+        clearTimeout(readyTimer);
         // Send setup message once child signals ready
         child.send({
           type: 'setup',
@@ -251,6 +269,7 @@ function spawn(input: SandboxSpawnInput, hooks?: SpawnHooks): void {
   });
 
   child.on('exit', (code, signal) => {
+    clearTimeout(readyTimer);
     logger.warn({ pluginId, workspaceId, code, signal }, 'Plugin sandbox process exited');
     unsubscribeBus(entry);
     sandboxes.delete(key);
