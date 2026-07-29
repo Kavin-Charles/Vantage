@@ -5,14 +5,14 @@ import { useState } from 'react';
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 
 const BASE: Record<Variant, React.CSSProperties> = {
-  primary:   { background: 'var(--text)',    color: 'var(--bg)',    border: '1px solid var(--text)' },
+  primary:   { background: 'var(--accent)',  color: 'var(--accent-fg)', border: '1px solid var(--accent)' },
   secondary: { background: 'var(--surface)', color: 'var(--text)',  border: '1px solid var(--border)' },
   danger:    { background: 'var(--red-bg)',  color: 'var(--red)',   border: '1px solid var(--red-bg)' },
   ghost:     { background: 'transparent',    color: 'var(--text2)', border: '1px solid transparent' },
 };
 
 const HOVER_BG: Record<Variant, string> = {
-  primary:   'var(--text2)',
+  primary:   'var(--accent-hover)',
   secondary: 'var(--surface2)',
   danger:    '#fed7d7',
   ghost:     'var(--surface2)',

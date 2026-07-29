@@ -14,6 +14,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const dispatch = useDispatch<AppDispatch>();
   const { data: config } = useConfig();
+  const login = config?.app.appearance?.login;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +62,15 @@ function LoginForm() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'var(--bg)',
+      ...(login?.backgroundImage
+        ? {
+            backgroundImage: `url(${login.backgroundImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }
+        : login?.background
+          ? { background: login.background }
+          : { background: 'var(--bg)' }),
     }}>
       <div style={{
         width: 360,

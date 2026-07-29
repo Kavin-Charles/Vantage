@@ -25,6 +25,20 @@
   --purple:       #4c1d95;
   --purple-bg:    #ede9fe;
 
+  /* Brand accent (overridden by SSR <style id="brand-theme">) */
+  --accent:        #0b1330;
+  --accent-hover:  #4a5677;
+  --accent-active: #0b1330;
+  --accent-weak:   #dbeafe;
+  --accent-fg:     #ffffff;
+
+  /* Navigation chrome */
+  --nav-bg:        var(--surface);
+  --nav-fg:        var(--text);
+  --nav-fg-muted:  var(--text2);
+  --nav-active:    var(--accent);
+  --nav-border:    var(--border);
+
   /* Layout */
   --sidebar-w:   220px;
   --header-h:    56px;
@@ -80,9 +94,36 @@
   --purple:       #c4b5fd;
   --purple-bg:    #2a1f3a;
 
+  --accent:        #60a5fa;
+  --accent-hover:  #93c5fd;
+  --accent-active: #3b82f6;
+  --accent-weak:   #16233a;
+  --accent-fg:     #0f1117;
+
   --shadow-hover: 0 2px 8px rgba(0,0,0,0.4);
   --shadow-modal: 0 8px 32px rgba(0,0,0,0.5);
 }
+
+[data-nav="dark"] {
+  --nav-bg:       #171a23;
+  --nav-fg:       #e8eaf0;
+  --nav-fg-muted: #aab0c0;
+  --nav-border:   #2a2f3b;
+  --nav-active:   #e8eaf0;
+}
+
+[data-nav="brand"] {
+  --nav-bg:       var(--accent);
+  --nav-fg:       var(--accent-fg);
+  --nav-fg-muted: color-mix(in srgb, var(--accent-fg) 72%, transparent);
+  --nav-border:   var(--accent-active);
+  --nav-active:   var(--accent-fg);
+}
+
+[data-radius="sharp"] { --radius-sm:2px; --radius:3px; --radius-md:4px; --radius-lg:6px; --radius-xl:8px; }
+[data-radius="pill"]  { --radius-sm:10px; --radius:14px; --radius-md:16px; --radius-lg:22px; --radius-xl:28px; }
+[data-density="compact"] { --header-h:48px; }
+[data-density="compact"] body { font-size: 13px; }
 
 @keyframes shimmer {
   0%   { background-position: -200px 0; }

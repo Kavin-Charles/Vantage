@@ -59,7 +59,18 @@ describe('wizardReducer', () => {
   });
 
   it('SET_BRANDING updates branding', () => {
-    const updated = { name: 'Acme', logoUrl: '', faviconUrl: '', primaryColor: '#000', tagline: 'hello' };
+    const updated = {
+      name: 'Acme',
+      logoUrl: '',
+      faviconUrl: '',
+      primaryColor: '#000',
+      tagline: 'hello',
+      preset: 'default',
+      radius: 'rounded' as const,
+      density: 'comfortable' as const,
+      sidebarStyle: 'light' as const,
+      login: { background: null, backgroundImage: null },
+    };
     const next = wizardReducer(INITIAL_STATE, { type: 'SET_BRANDING', value: updated });
     expect(next.branding.name).toBe('Acme');
   });

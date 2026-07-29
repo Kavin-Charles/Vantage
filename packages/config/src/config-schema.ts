@@ -20,6 +20,19 @@ export const smtpSchema = z.object({
   from: z.string(),
 });
 
+export const appearanceSchema = z.object({
+  accentColor: z.string().default('#0b1330'),
+  preset: z.string().default('default'),
+  radius: z.enum(['sharp', 'rounded', 'pill']).default('rounded'),
+  density: z.enum(['comfortable', 'compact']).default('comfortable'),
+  sidebarStyle: z.enum(['light', 'dark', 'brand']).default('light'),
+  login: z.object({
+    background: z.string().nullable().default(null),
+    backgroundImage: z.string().nullable().default(null),
+  }).default({ background: null, backgroundImage: null }),
+});
+export type Appearance = z.infer<typeof appearanceSchema>;
+
 export const configSchema = z.object({
   app: z.object({
     name: z.string(),
@@ -28,6 +41,7 @@ export const configSchema = z.object({
     faviconUrl: z.string().optional(),
     tagline: z.string().optional(),
     primaryColor: z.string().optional(),
+    appearance: appearanceSchema.optional(),
   }),
   features: z.object({
     crm: z.boolean().default(true),
@@ -38,6 +52,10 @@ export const configSchema = z.object({
   }),
   smtp: smtpSchema.nullable().optional(),
   databases: z.array(dbSeedSchema).default([]),
+}).transform((cfg) => {
+  const seed = cfg.app.appearance?.accentColor ?? cfg.app.primaryColor ?? '#0b1330';
+  const appearance = appearanceSchema.parse({ ...cfg.app.appearance, accentColor: seed });
+  return { ...cfg, app: { ...cfg.app, appearance } };
 });
 
 export type VantageConfig = z.infer<typeof configSchema>;

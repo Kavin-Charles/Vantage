@@ -25,6 +25,11 @@ export type SetupState = {
     faviconUrl: string;
     primaryColor: string;
     tagline: string;
+    preset: string;
+    radius: 'sharp' | 'rounded' | 'pill';
+    density: 'comfortable' | 'compact';
+    sidebarStyle: 'light' | 'dark' | 'brand';
+    login: { background: string | null; backgroundImage: string | null };
   };
   smtp: SmtpConfig | null;
   features: { crm: boolean; infra: boolean; alerts: boolean; analytics: boolean };
@@ -46,7 +51,18 @@ export const OPTIONAL_STEPS: StepId[] = ['smtp'];
 export const INITIAL_STATE: SetupState = {
   currentStep: 'branding',
   skipped: [],
-  branding: { name: '', logoUrl: '/logo.png', faviconUrl: '', primaryColor: '#0b1330', tagline: '' },
+  branding: {
+    name: '',
+    logoUrl: '/logo.png',
+    faviconUrl: '',
+    primaryColor: '#0b1330',
+    tagline: '',
+    preset: 'default',
+    radius: 'rounded',
+    density: 'comfortable',
+    sidebarStyle: 'light',
+    login: { background: null, backgroundImage: null },
+  },
   smtp: null,
   features: { crm: true, infra: true, alerts: true, analytics: false },
   admin: { name: '', email: '', password: '' },

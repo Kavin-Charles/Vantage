@@ -379,7 +379,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 
 // Public routes (no auth)
-app.use('/api/config', createConfigRouter(config, db));
+app.use('/api/config', createConfigRouter(config, db, requireAuth));
 app.use('/api/auth', createAuthRouter(db, env.JWT_SECRET, config.smtp, env.APP_URL));
 // Setup (public — must come before requireAuth routes)
 app.use('/api/setup', createSetupRouter(db));
