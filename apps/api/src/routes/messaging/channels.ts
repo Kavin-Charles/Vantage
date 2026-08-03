@@ -141,18 +141,40 @@ export function createChannelsRouter(
         }
       }
 
+      // DM rows are all stored as name='dm'; the display name is built from the
+      // participants. Without members here the sidebar renders every DM
+      // identically, so attach them for dm/group_dm rows only.
+      const dmIds = rows.filter(r => r.type === 'dm' || r.type === 'group_dm').map(r => r.id);
+      const dmMembers = dmIds.length
+        ? await db
+            .selectFrom('channel_members')
+            .innerJoin('users', 'users.id', 'channel_members.user_id')
+            .where('channel_members.channel_id', 'in', dmIds)
+            .select(['channel_members.channel_id', 'channel_members.user_id', 'users.name', 'users.email'])
+            .execute()
+        : [];
+
+      const membersByChannel = new Map<string, { user_id: string; name: string; email: string }[]>();
+      for (const m of dmMembers) {
+        const list = membersByChannel.get(m.channel_id) ?? [];
+        list.push({ user_id: m.user_id, name: m.name, email: m.email });
+        membersByChannel.set(m.channel_id, list);
+      }
+
       const channels = rows.map(r => ({
         ...r,
         unread_count: unreadCounts[r.id] ?? 0,
         last_message: latestMap.get(r.id) ?? null,
+        ...(membersByChannel.has(r.id) ? { members: membersByChannel.get(r.id) } : {}),
       }));
 
       res.json({ data: channels, error: null });
     } catch (err) { next(err); }
   });
 
-  // Create channel
-  router.post('/', requirePermission('messaging:manage'), async (req, res, next) => {
+  // Create channel. Gated on create_channel, not manage — 'manage' is admin-only
+  // and would stop ordinary members from ever creating a channel.
+  router.post('/', requirePermission('messaging:create_channel'), async (req, res, next) => {
     try {
       const { workspace, user } = req as unknown as AuthenticatedRequest;
       const body = createChannelSchema.parse(req.body);

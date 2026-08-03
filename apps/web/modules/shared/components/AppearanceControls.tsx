@@ -1,6 +1,6 @@
 'use client';
 
-import { PRESETS } from '@vencore/config';
+import { PRESETS } from '@vencore/config/theme';
 import { Dropzone } from '@/modules/shared/components/ui/Dropzone';
 
 export interface AppearanceValues {
