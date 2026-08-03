@@ -13,6 +13,7 @@ import { ChannelSettings } from './ChannelSettings';
 import { useChat } from '../hooks/useChat';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { getChannel, type PendingAttachment } from '../lib/messaging';
+import { channelDisplayName } from '../lib/dm-name';
 import { useAuth } from '@/modules/shared/lib/AuthContext';
 import type { Message } from '@vencore/types';
 
@@ -84,7 +85,7 @@ export function ChannelView({ channelId }: Props) {
             {isDm ? '●' : channelData?.is_private ? <Icon name="lock" size={14} /> : '#'}
           </span>
           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
-            {channelData?.name ?? '…'}
+            {channelData ? channelDisplayName(channelData, user?.id ?? '') : '…'}
           </span>
           {channelData?.topic && (
             <>
@@ -131,7 +132,7 @@ export function ChannelView({ channelId }: Props) {
         <MessageInput
           onSend={handleSend}
           onTyping={sendTyping}
-          placeholder={`Message ${channelData?.name ? (isDm ? channelData.name : `#${channelData.name}`) : '…'}`}
+          placeholder={`Message ${channelData ? (isDm ? channelDisplayName(channelData, user?.id ?? '') : `#${channelData.name}`) : '…'}`}
           disabled={!wsReady && messages.length === 0}
         />
       </div>
