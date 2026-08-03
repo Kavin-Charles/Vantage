@@ -9,13 +9,20 @@ import { ContextMenu, useContextMenu, type ContextMenuItem } from '@/modules/sha
 import { useConfirm } from '@/modules/shared/components/ui/ConfirmDialog';
 import { useApiToken } from '@/modules/shared/lib/useApiToken';
 import { listChannels, createChannel, updateChannel, archiveChannel, markChannelRead } from '../lib/messaging';
+import { channelDisplayName, type ChannelMemberSummary } from '../lib/dm-name';
+import { useAuth } from '@/modules/shared/lib/AuthContext';
 import { NewDMModal } from './NewDMModal';
 import type { Channel, Message } from '@vencore/types';
 
-type ChannelWithMeta = Channel & { unread_count: number; last_message: Message | null };
+type ChannelWithMeta = Channel & {
+  unread_count: number;
+  last_message: Message | null;
+  members?: ChannelMemberSummary[];
+};
 
 export function ChannelSidebar() {
   const getToken = useApiToken();
+  const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
   const activeId = params?.['channelId'] as string | undefined;
@@ -163,6 +170,7 @@ export function ChannelSidebar() {
             active={activeId === ch.id}
             onClick={() => router.push(`/messaging/${ch.id}`)}
             onMarkRead={ch.last_message ? () => markRead.mutate({ id: ch.id, messageId: ch.last_message!.id }) : undefined}
+            displayName={channelDisplayName(ch, user?.id ?? '')}
             isDm
           />
         ))}
@@ -232,12 +240,14 @@ function SectionLabel({ label }: { label: string }) {
 }
 
 function ChannelRow({
-  channel, active, onClick, isDm, onOpenDetails, onRename, onArchive, onMarkRead,
+  channel, active, onClick, isDm, displayName, onOpenDetails, onRename, onArchive, onMarkRead,
 }: {
   channel: ChannelWithMeta;
   active: boolean;
   onClick: () => void;
   isDm?: boolean;
+  /** DMs are stored as name='dm'; the row shows the other participant instead. */
+  displayName?: string;
   onOpenDetails?: () => void;
   onRename?: (name: string) => void;
   onArchive?: () => void;
@@ -323,7 +333,7 @@ function ChannelRow({
           {isDm ? '●' : channel.is_private ? <Icon name="lock" size={13} /> : '#'}
         </span>
         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {channel.name}
+          {displayName ?? channel.name}
         </span>
         {hasUnread && !active && (
           <span style={{

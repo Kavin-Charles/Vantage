@@ -85,7 +85,7 @@ export function createUnifiedTasksRouter(db: Kysely<Database>, requirePermission
         return
       }
       const { status, source, priority, show_all, q, owner_id } = parsed.data
-      const showAll = show_all && user.role === 'admin'
+      const showAll = show_all && isAdmin
 
       // ── 1. CRM tasks ────────────────────────────────────────────────────────
       let crmQ = db

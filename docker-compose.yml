@@ -55,6 +55,10 @@ services:
 
   api:
     image: ${API_IMAGE:-ghcr.io/vencorehq/vencore-api:latest}
+    # Published so a locally-run `pnpm dev` web server can reach the API through
+    # the Next.js rewrite (and so WS upgrades can bypass Next entirely).
+    ports:
+      - "127.0.0.1:3001:3001"
     env_file: .env
     environment:
       DATABASE_URL: postgresql://${DB_USER:-vencore}:${DB_PASSWORD:-vencore}@db:5432/${DB_NAME:-vencore}
