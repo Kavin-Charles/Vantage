@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google';
-import { generateTheme, appearanceSchema, type Appearance } from '@vencore/config';
+import { generateTheme, appearanceSchema, type Appearance } from '@vencore/config/theme';
 import { AuthProvider } from '@/modules/shared/lib/AuthContext';
 import { ThemeProvider } from '@/modules/shared/contexts/ThemeContext';
 import { Providers } from '@/modules/shared/components/Providers';
