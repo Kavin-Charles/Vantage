@@ -37,6 +37,19 @@ export const apiEnvSchema = z.object({
   // Updater sidecar — optional; update routes return 503 when unset
   UPDATER_URL: z.string().default('http://updater:9500'),
   UPDATER_SECRET: z.string().optional(),
+  // Plugin sandbox execution strategy.
+  //   auto        — isolated child process; auto-fall back to in-process the
+  //                 first time child-process fork is detected as restricted.
+  //   child       — force isolated child process (fail if fork is blocked).
+  //   in-process  — run plugin bundles in the API process (no fork).
+  // The sandbox layer reads process.env['PLUGIN_SANDBOX_MODE'] directly; this
+  // schema entry provides validation + documentation.
+  PLUGIN_SANDBOX_MODE: z.enum(['auto', 'child', 'in-process']).default('auto'),
+  // How long a forked plugin sandbox may take to signal `ready` before it is
+  // treated as fork being unavailable. Covers hosts where fork() succeeds but
+  // the child can never boot (exhausted process/thread budget), which would
+  // otherwise hang the spawn forever and leave the plugin unmounted.
+  PLUGIN_SANDBOX_READY_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
 });
 
 // Web env

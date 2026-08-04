@@ -20,6 +20,7 @@
  */
 
 import path from 'path';
+import { buildVencoreFacade, type FacadeTransport } from './facade';
 
 interface SetupMsg {
   type: 'setup';
@@ -85,100 +86,26 @@ process.on('message', async (msg: InboundMsg) => {
           return;
         }
 
-        // Build the vencore facade for the plugin
-        const vencore = {
-          storage: {
-            get: (key: string) => bridge('storage.get', { key }),
-            set: (key: string, value: unknown) => bridge('storage.set', { key, value }),
-            delete: (key: string) => bridge('storage.delete', { key }),
+        // IPC transport for the shared facade builder: data calls go over IPC to
+        // the parent; HTTP/bus/cron registrations populate the local maps that
+        // this process's message handlers dispatch against.
+        const transport: FacadeTransport = {
+          bridge,
+          registerHttp: (endpointPath, handler) => {
+            httpHandlers.set(endpointPath, handler as (req: unknown) => Promise<unknown>);
+            sendToParent({ type: 'http_handler_registered', path: endpointPath });
           },
-          settings: {
-            get: (key: string) => bridge('settings.get', { key }),
-            set: (key: string, value: unknown) => bridge('settings.set', { key, value }),
-          },
-          http: {
-            fetch: (url: string, opts?: unknown) => bridge('http.fetch', { url, ...(opts as object ?? {}) }),
-            onEndpoint: (endpointPath: string, handler: (req: unknown) => Promise<unknown>) => {
-              httpHandlers.set(endpointPath, handler);
-              sendToParent({ type: 'http_handler_registered', path: endpointPath });
-            },
-          },
-          table: (name: string) => ({
-            list: (opts?: unknown) => bridge('table.list', { name, ...(opts as object ?? {}) }),
-            get: (id: string) => bridge('table.get', { name, id }),
-            insert: (data: unknown) => bridge('table.insert', { name, data }),
-            update: (id: string, data: unknown) => bridge('table.update', { name, id, data }),
-            delete: (id: string) => bridge('table.delete', { name, id }),
-            upsert: (data: unknown, opts: unknown) => bridge('table.upsert', { name, data, ...(opts as object) }),
-            count: (where?: unknown) => bridge('table.count', { name, where }),
-          }),
-          list: (resource: string, filter?: unknown) => bridge(`${resource}.list`, { filter }),
-          get: (resource: string, id: string) => bridge(`${resource}.get`, { id }),
-          create: (resource: string, data: unknown) => bridge(`${resource}.create`, { data }),
-          update: (resource: string, id: string, data: unknown) => bridge(`${resource}.update`, { id, data }),
-          delete: (resource: string, id: string) => bridge(`${resource}.delete`, { id }),
-          action: (resource: string, action: string, payload?: unknown) => bridge(`${resource}.${action}`, { payload }),
-          user: { get: () => bridge('user.get', {}) },
-          workspace: { get: () => bridge('workspace.get', {}) },
-          notify: (opts: unknown) => bridge('notify', opts),
-          files: {
-            upload: (buffer: Uint8Array, opts: unknown) => bridge('files.upload', { buffer: Buffer.from(buffer).toString('base64'), ...(opts as object) }),
-            getUrl: (fileId: string) => bridge('files.getUrl', { fileId }),
-            delete: (fileId: string) => bridge('files.delete', { fileId }),
-          },
-          cron: {
-            register: (schedule: string, name: string, handler: () => void | Promise<void>) => {
-              // Store cron handler locally; parent worker will trigger via bus_event or separate message
-              bridge('cron.register', { schedule, name }).catch(() => {});
-              busHandlers.set(`cron:${name}`, [handler]);
-            },
-          },
-          permissions: {
-            check: (userId: string, permissionKey: string) => bridge('permissions.check', { userId, permissionKey }),
-          },
-          context: {
-            get: () => bridge('context.get', {}),
-          },
-          bus: {
-            on: (event: string, handler: (payload: unknown) => void | Promise<void>) => {
-              const arr = busHandlers.get(event) ?? [];
-              arr.push(handler);
-              busHandlers.set(event, arr);
-            },
-            emit: (event: string, payload: unknown) => bridge('bus.emit', { event, payload }),
-          },
-          hub: {
-            publish: (contract: string, records: unknown[]) => bridge('hub.publish', { contract, records }),
-            query: (contract: string, opts?: unknown) => bridge('hub.query', { contract, ...(opts as object ?? {}) }),
-            providers: (contract: string) => bridge('hub.providers', { contract }),
-            delete: (contract: string, externalIds: string[]) => bridge('hub.delete', { contract, external_ids: externalIds }),
-            contracts: () => bridge('hub.contracts', {}),
-            subscribe: (contract: string, handler: (payload: unknown) => void | Promise<void>) => {
-              const event = `hub:${contract}:changed`;
-              const arr = busHandlers.get(event) ?? [];
-              arr.push(handler);
-              busHandlers.set(event, arr);
-            },
-            getSetting: (key: string) => bridge('hub.getSetting', { key }),
-            setSetting: (key: string, value: unknown) => bridge('hub.setSetting', { key, value }),
-            getSharedSetting: (pluginId: string, key: string) => bridge('hub.getSharedSetting', { plugin_id: pluginId, key }),
-          },
-          // Handler for an admin-enabled hook feature declared in the manifest.
-          // Fires with { feature, trigger, payload, config } when the host
-          // dispatches the feature's trigger event.
-          onHookFeature: (featureId: string, handler: (payload: unknown) => void | Promise<void>) => {
-            const event = `hook:${featureId}`;
+          registerBus: (event, handler) => {
             const arr = busHandlers.get(event) ?? [];
             arr.push(handler);
             busHandlers.set(event, arr);
           },
-          on: (event: string, handler: (payload: unknown) => void | Promise<void>) => {
-            const arr = busHandlers.get(event) ?? [];
-            arr.push(handler);
-            busHandlers.set(event, arr);
+          persistCron: (schedule, name) => {
+            bridge('cron.register', { schedule, name }).catch(() => {});
           },
-          safe: {} as any,
         };
+
+        const vencore = buildVencoreFacade(transport);
 
         await Promise.resolve(mod.default.setup(vencore));
         sendToParent({ type: 'setup_done' });
